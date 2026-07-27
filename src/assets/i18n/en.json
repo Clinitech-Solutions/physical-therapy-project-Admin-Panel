@@ -1,0 +1,26 @@
+{
+  "NAVBAR": {
+    "WELCOME": "Welcome",
+    "LOGOUT": "Logout",
+    "PROFILE": "Profile"
+  },
+  "ROLES": {
+    "CEO": "CEO",
+    "RECEPTIONIST": "Receptionist",
+    "SENIOR": "Senior Therapist",
+    "DOCTOR": "Doctor"
+  },
+  "SIDEBAR": {
+    "DASHBOARD": "Dashboard",
+    "PATIENTS": "Patients",
+    "APPOINTMENTS": "Bookings",
+    "INSURANCE": "Insurance",
+    "BILLING": "Billing",
+    "SETTINGS": "Settings"
+  },
+  "COMMON": {
+    "SAVE": "Save",
+    "CANCEL": "Cancel",
+    "SEARCH": "Search..."
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "NAVBAR": {
+    "WELCOME": "مرحباً",
+    "LOGOUT": "تسجيل الخروج",
+    "PROFILE": "الملف الشخصي"
+  },
+  "ROLES": {
+    "CEO": "المدير التنفيذي",
+    "RECEPTIONIST": "الاستقبال",
+    "SENIOR": "أخصائي أول",
+    "DOCTOR": "طبيب"
+  },
+  "SIDEBAR": {
+    "DASHBOARD": "لوحة التحكم",
+    "PATIENTS": "المرضى",
+    "APPOINTMENTS": "الحجوزات",
+    "INSURANCE": "التأمين",
+    "BILLING": "الحسابات",
+    "SETTINGS": "الإعدادات"
+  },
+  "COMMON": {
+    "SAVE": "حفظ",
+    "CANCEL": "إلغاء",
+    "SEARCH": "بحث..."
+  }
+}
