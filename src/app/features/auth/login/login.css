@@ -1,0 +1,112 @@
+.login-wrapper {
+  min-height: 100vh;
+  width: 100%;
+  background-color: var(--bg-page);
+  display: flex;
+}
+
+.login-split {
+  display: flex;
+  width: 100%;
+  height: 100vh;
+  direction: ltr; /* Force LTR flex model to bypass browser quirks */
+}
+
+/* For Arabic, explicitly reverse the row so Image is on Right */
+[dir="rtl"] .login-split {
+  flex-direction: row-reverse;
+}
+
+/* Restore RTL direction for the form content */
+[dir="rtl"] .login-right {
+  direction: rtl;
+}
+
+.login-left {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.login-bg-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 10s ease;
+}
+
+.login-left:hover .login-bg-img {
+  transform: scale(1.05);
+}
+
+.login-overlay-blob {
+  position: absolute;
+  bottom: -100px;
+  left: -100px;
+  width: 400px;
+  height: 400px;
+  background: var(--mq-gradient);
+  opacity: 0.15;
+  border-radius: 50%;
+  filter: blur(50px);
+  pointer-events: none;
+}
+
+[dir="rtl"] .login-overlay-blob {
+  left: auto;
+  right: -100px;
+}
+
+.login-right {
+  flex: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-card);
+  overflow-y: auto;
+}
+
+.login-form-container {
+  width: 100%;
+  max-width: 460px;
+  padding: var(--space-8);
+  margin: auto;
+  margin-bottom: auto; /* Ensure it doesn't get pushed too far down if screen is tall */
+  z-index: 10;
+  background: var(--bg-glass);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border-color-subtle);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-elevated);
+}
+
+/* Logical Properties for RTL Support on Form Inputs */
+.input-icon-wrapper {
+  position: relative;
+}
+
+.input-icon-start {
+  position: absolute;
+  top: 12px;
+  inset-inline-start: 12px;
+  color: var(--text-muted);
+}
+
+.input-icon-end {
+  position: absolute;
+  top: 12px;
+  inset-inline-end: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.input-with-icon {
+  padding-inline-start: 36px !important;
+}
+
+.input-with-icon-end {
+  padding-inline-end: 36px !important;
+}
+
+
+

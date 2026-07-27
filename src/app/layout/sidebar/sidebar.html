@@ -1,0 +1,33 @@
+<div class="sidebar" 
+     [class.collapsed]="!isHovered() && !isMobileOpen()" 
+     [class.open]="isMobileOpen()"
+     (mouseenter)="onMouseEnter()" 
+     (mouseleave)="onMouseLeave()">
+  
+  <div class="sidebar-logo">
+    <div class="avatar" style="background: var(--mq-gradient); color: white;">
+      <i class="bi bi-heart-pulse"></i>
+    </div>
+    <div class="sidebar-logo-text" *ngIf="isHovered() || isMobileOpen()">
+      MediQova
+    </div>
+  </div>
+
+  <div class="sidebar-nav">
+    <a *ngFor="let item of navItems()" 
+       [routerLink]="item.route"
+       routerLinkActive="active"
+       class="sidebar-item">
+      <i class="sidebar-item-icon bi" [ngClass]="item.icon"></i>
+      <span class="label" *ngIf="isHovered() || isMobileOpen()">{{ item.labelEn }}</span>
+      <span class="badge badge-info ml-auto" *ngIf="(isHovered() || isMobileOpen()) && item.badge">{{ item.badge }}</span>
+    </a>
+  </div>
+
+  <div class="divider" style="margin: 0; opacity: 0.5;"></div>
+  
+  <a class="sidebar-item" (click)="auth.logout(); $event.preventDefault()">
+    <i class="sidebar-item-icon bi bi-box-arrow-left text-danger"></i>
+    <span class="label text-danger" *ngIf="isHovered() || isMobileOpen()">Logout</span>
+  </a>
+</div>

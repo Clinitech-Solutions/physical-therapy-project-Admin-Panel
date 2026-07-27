@@ -1,0 +1,26 @@
+<div class="topbar w-full">
+  <!-- Mobile toggle -->
+  <button class="btn btn-ghost btn-icon d-md-none mr-auto">
+    <i class="bi bi-list"></i>
+  </button>
+
+  <div class="ml-auto flex items-center gap-4">
+    <!-- Language & Theme Toggles -->
+    <app-language-selector></app-language-selector>
+    <app-theme-toggle></app-theme-toggle>
+
+    <!-- Notification Bell -->
+    <button class="btn btn-ghost btn-icon">
+      <i class="bi bi-bell"></i>
+    </button>
+
+    <!-- Avatar & Role -->
+    <div class="flex items-center gap-3">
+      <div class="flex-col items-end d-none d-md-flex">
+        <span class="text-sm fw-bold">Admin</span>
+        <span class="badge badge-info">{{ authService.currentRole() }}</span>
+      </div>
+      <div class="avatar avatar-sm">A</div>
+    </div>
+  </div>
+</div>
