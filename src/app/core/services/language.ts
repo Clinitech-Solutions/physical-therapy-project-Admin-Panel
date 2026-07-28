@@ -1,5 +1,6 @@
 import { Injectable, signal, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { TranslateService } from '@ngx-translate/core';
 
 export type LanguageCode = 'en' | 'ar';
 
@@ -9,8 +10,10 @@ export type LanguageCode = 'en' | 'ar';
 export class LanguageService {
   currentLang = signal<LanguageCode>('en');
   private platformId = inject(PLATFORM_ID);
+  private translate = inject(TranslateService);
 
   constructor() {
+    this.translate.setDefaultLang('en');
     this.initLang();
   }
 
@@ -23,12 +26,14 @@ export class LanguageService {
         // Default to english
         this.currentLang.set('en');
       }
+      this.translate.use(this.currentLang());
       this.applyLang();
     }
   }
 
   toggleLanguage() {
     this.currentLang.set(this.currentLang() === 'en' ? 'ar' : 'en');
+    this.translate.use(this.currentLang());
     this.applyLang();
     if (isPlatformBrowser(this.platformId)) {
       localStorage.setItem('mediqova-lang', this.currentLang());

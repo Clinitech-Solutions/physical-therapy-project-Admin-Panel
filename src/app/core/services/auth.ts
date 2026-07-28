@@ -1,5 +1,6 @@
 import { Injectable, signal, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { Router } from '@angular/router';
 
 export type UserRole = 'Receptionist' | 'Senior Therapist' | 'Doctor' | 'CEO' | null;
 
@@ -9,6 +10,8 @@ export type UserRole = 'Receptionist' | 'Senior Therapist' | 'Doctor' | 'CEO' | 
 export class AuthService {
   currentRole = signal<UserRole>(null);
   private platformId = inject(PLATFORM_ID);
+
+  private router = inject(Router);
 
   constructor() {
     this.initAuth();
@@ -39,6 +42,7 @@ export class AuthService {
     if (isPlatformBrowser(this.platformId)) {
       localStorage.removeItem('mediqova-role');
     }
+    this.router.navigate(['/login']);
   }
 }
 

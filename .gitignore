@@ -1,0 +1,14 @@
+# Node dependencies
+node_modules/
+
+# Compiled output
+dist/
+tmp/
+out-tsc/
+bazel-out/
+
+# Angular
+.angular/
+
+# Environment
+.env

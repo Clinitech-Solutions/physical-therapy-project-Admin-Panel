@@ -19,8 +19,10 @@
        routerLinkActive="active"
        class="sidebar-item">
       <i class="sidebar-item-icon bi" [ngClass]="item.icon"></i>
-      <span class="label" *ngIf="isHovered() || isMobileOpen()">{{ item.labelEn }}</span>
-      <span class="badge badge-info ml-auto" *ngIf="(isHovered() || isMobileOpen()) && item.badge">{{ item.badge }}</span>
+      <span class="label" *ngIf="isHovered() || isMobileOpen()">
+        {{ item.labelKey | translate }}
+      </span>
+      <span class="badge badge-info ms-auto" *ngIf="(isHovered() || isMobileOpen()) && item.badge">{{ item.badge }}</span>
     </a>
   </div>
 
@@ -28,6 +30,8 @@
   
   <a class="sidebar-item" (click)="auth.logout(); $event.preventDefault()">
     <i class="sidebar-item-icon bi bi-box-arrow-left text-danger"></i>
-    <span class="label text-danger" *ngIf="isHovered() || isMobileOpen()">Logout</span>
+    <span class="label text-danger" *ngIf="isHovered() || isMobileOpen()">
+      {{ 'COMMON.LOGOUT' | translate }}
+    </span>
   </a>
 </div>

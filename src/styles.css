@@ -152,8 +152,13 @@ html.light {
   --border-color-subtle: #E8EEFF;
   --border-brand: rgba(0, 201, 167, 0.4);
 
-  --sidebar-bg: #0A1628;
-  --sidebar-border: #0F1E38;
+  --sidebar-bg: #FFFFFF;
+  --sidebar-border: #D0DCFF;
+  --sidebar-text: #7A90B0;
+  --sidebar-text-hover: #1B4FFF;
+  --sidebar-text-active: #0A1628;
+  --sidebar-active-bg: rgba(0, 201, 167, 0.08);
+
   --topbar-bg: rgba(255, 255, 255, 0.85);
   --topbar-border: #D0DCFF;
 
@@ -164,26 +169,12 @@ html.light {
 }
 
 /* ── RTL SUPPORT ──────────────────────────────────────────── */
+/* ── RTL SUPPORT ──────────────────────────────────────────── */
 html[dir="rtl"] {
   font-family: var(--font-arabic);
 }
 
-html[dir="rtl"] .sidebar {
-  left: auto;
-  right: 0;
-  border-right: none;
-  border-left: 1px solid var(--sidebar-border);
-}
-
-html[dir="rtl"] .main-content {
-  margin-left: 0;
-  margin-right: var(--sidebar-collapsed);
-}
-
-html[dir="rtl"] .sidebar-item.active {
-  border-right: none;
-  border-left: 3px solid var(--sidebar-active-border);
-}
+/* Logical properties below automatically handle RTL layouts */
 
 /* ── RESET ────────────────────────────────────────────────── */
 *,
@@ -218,10 +209,10 @@ body {
 .sidebar {
   width: var(--sidebar-width);
   background: var(--sidebar-bg);
-  border-right: 1px solid var(--sidebar-border);
+  border-inline-end: 1px solid var(--sidebar-border);
   position: fixed;
   top: 0;
-  left: 0;
+  inset-inline-start: 0;
   height: 100vh;
   display: flex;
   flex-direction: column;
@@ -235,11 +226,12 @@ body {
 }
 
 .main-content {
-  margin-left: var(--sidebar-collapsed);
+  margin-inline-start: var(--sidebar-collapsed);
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  transition: margin-left var(--transition-base);
+  transition: margin-inline-start var(--transition-base), margin-left var(--transition-base), margin-right var(--transition-base);
 }
 
 .topbar {
@@ -259,10 +251,11 @@ body {
 
 .page-content {
   padding: var(--space-6);
-  max-width: 1440px;
+  /* max-width: 1440px; */
   width: 100%;
-  margin: 0 auto;
+  /* margin: 0 auto; */
   flex: 1;
+  min-width: 0;
 }
 
 /* ── TYPOGRAPHY ───────────────────────────────────────────── */
@@ -682,25 +675,29 @@ tbody tr:hover {
   font-weight: var(--font-medium);
   cursor: pointer;
   transition: all var(--transition-fast);
-  border-right: 3px solid transparent;
+  border-inline-end: 3px solid transparent;
   text-decoration: none;
   white-space: nowrap;
 }
 
 .sidebar-item:hover {
   color: var(--sidebar-text-hover);
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(122, 144, 176, 0.08); /* Better hover for both dark and light modes */
 }
 
 .sidebar-item.active {
   color: var(--sidebar-text-active);
   background: var(--sidebar-active-bg);
-  border-right-color: var(--sidebar-active-border);
+  border-inline-end-color: var(--sidebar-active-border);
 }
 
 .sidebar-item-icon {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
+  font-size: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
   opacity: 0.6;
 }
@@ -1090,12 +1087,22 @@ html[dir="rtl"] .alert {
   width: 100%;
 }
 
-.ml-auto {
-  margin-left: auto;
+.ms-auto {
+  margin-inline-start: auto !important;
 }
 
-.mr-auto {
-  margin-right: auto;
+.me-auto {
+  margin-inline-end: auto !important;
+}
+
+html[dir="rtl"] .ms-auto {
+  margin-left: 0 !important;
+  margin-right: auto !important;
+}
+
+html[dir="rtl"] .me-auto {
+  margin-right: 0 !important;
+  margin-left: auto !important;
 }
 
 .mt-4 {

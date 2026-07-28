@@ -2,11 +2,12 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService, UserRole } from '../../core/services/auth';
+import { LanguageService } from '../../core/services/language';
+import { TranslateModule } from '@ngx-translate/core';
 
 interface NavItem {
   icon: string;
-  labelEn: string;
-  labelAr: string;
+  labelKey: string;
   route: string;
   badge?: number;
 }
@@ -14,12 +15,13 @@ interface NavItem {
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, TranslateModule],
   templateUrl: './sidebar.html',
   styleUrl: './sidebar.css',
 })
 export class Sidebar {
   auth = inject(AuthService);
+  langService = inject(LanguageService);
   
   isHovered = signal(false);
   isMobileOpen = signal(false);
@@ -29,25 +31,25 @@ export class Sidebar {
     switch (role) {
       case 'Receptionist':
         return [
-          { icon: 'bi-speedometer2', labelEn: 'Dashboard', labelAr: 'لوحة التحكم', route: '/receptionist' },
-          { icon: 'bi-people', labelEn: 'Patients', labelAr: 'المرضى', route: '/receptionist/patients', badge: 3 },
-          { icon: 'bi-calendar-event', labelEn: 'Bookings', labelAr: 'الحجوزات', route: '/receptionist/bookings' },
+          { icon: 'bi-speedometer2', labelKey: 'SIDEBAR.DASHBOARD', route: '/receptionist' },
+          { icon: 'bi-people', labelKey: 'SIDEBAR.PATIENTS', route: '/receptionist/patients', badge: 3 },
+          { icon: 'bi-calendar-event', labelKey: 'SIDEBAR.BOOKINGS', route: '/receptionist/bookings' },
         ];
       case 'Senior Therapist':
         return [
-          { icon: 'bi-speedometer2', labelEn: 'Dashboard', labelAr: 'لوحة التحكم', route: '/senior' },
-          { icon: 'bi-clipboard-check', labelEn: 'Assessments', labelAr: 'التقييمات', route: '/senior/assessments', badge: 5 },
+          { icon: 'bi-speedometer2', labelKey: 'SIDEBAR.DASHBOARD', route: '/senior' },
+          { icon: 'bi-clipboard-check', labelKey: 'SIDEBAR.ASSESSMENTS', route: '/senior/assessments', badge: 5 },
         ];
       case 'Doctor':
         return [
-          { icon: 'bi-calendar3', labelEn: 'Today\'s Schedule', labelAr: 'جدول اليوم', route: '/doctor' },
-          { icon: 'bi-person-lines-fill', labelEn: 'My Patients', labelAr: 'مرضاي', route: '/doctor/patients' },
+          { icon: 'bi-calendar3', labelKey: 'SIDEBAR.TODAYS_SCHEDULE', route: '/doctor' },
+          { icon: 'bi-person-lines-fill', labelKey: 'SIDEBAR.MY_PATIENTS', route: '/doctor/patients' },
         ];
       case 'CEO':
         return [
-          { icon: 'bi-speedometer2', labelEn: 'Overview', labelAr: 'نظرة عامة', route: '/ceo' },
-          { icon: 'bi-people', labelEn: 'Staff', labelAr: 'الموظفون', route: '/ceo/staff' },
-          { icon: 'bi-bar-chart', labelEn: 'Reports', labelAr: 'التقارير', route: '/ceo/reports' },
+          { icon: 'bi-speedometer2', labelKey: 'SIDEBAR.OVERVIEW', route: '/ceo' },
+          { icon: 'bi-people', labelKey: 'SIDEBAR.STAFF', route: '/ceo/staff' },
+          { icon: 'bi-bar-chart', labelKey: 'SIDEBAR.REPORTS', route: '/ceo/reports' },
         ];
       default:
         return [];

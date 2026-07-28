@@ -1,62 +1,62 @@
-<div class="dashboard-header mb-4 flex justify-between items-center">
+<div class="dashboard-header mb-4 d-flex justify-content-between align-items-center">
   <div>
-    <h2>Senior Dashboard</h2>
-    <p class="text-secondary">Overview of assessments and clinic floor</p>
+    <h2>{{ 'SENIOR.DASHBOARD_TITLE' | translate }}</h2>
+    <p class="text-secondary">{{ 'SENIOR.DASHBOARD_SUB' | translate }}</p>
   </div>
 </div>
 
-<div class="grid-2 gap-6 mb-6">
+<div class="grid-2 gap-6 mb-4">
   <div class="card">
-    <h4 class="mb-4">Today's Tasks</h4>
+    <h4 class="mb-4">{{ 'SENIOR.TODAYS_TASKS' | translate }}</h4>
     <div class="tabs">
-      <div class="tab active">Assessments (4)</div>
-      <div class="tab">Re-assessments (2)</div>
+      <div class="tab active">{{ 'SENIOR.ASSESSMENTS_4' | translate }}</div>
+      <div class="tab">{{ 'SENIOR.REASSESSMENTS_2' | translate }}</div>
     </div>
     
-    <div class="flex-col gap-3 mt-4">
-      <div class="flex items-center justify-between p-3" style="border: 1px solid var(--border-color); border-radius: var(--radius-md);">
-        <div class="flex items-center gap-3">
+    <div class="d-flex flex-column gap-3 mt-4">
+      <div class="d-flex align-items-center justify-content-between p-3" style="border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+        <div class="d-flex align-items-center gap-3">
           <div class="avatar avatar-sm">A</div>
           <div>
-            <div class="font-medium">Ahmed Ali</div>
+            <div class="fw-medium">Ahmed Ali</div>
             <div class="text-xs text-muted">10:00 AM</div>
           </div>
         </div>
-        <button class="btn btn-primary btn-sm">Start</button>
+        <button class="btn btn-primary btn-sm">{{ 'COMMON.START' | translate }}</button>
       </div>
-      <div class="flex items-center justify-between p-3" style="border: 1px solid var(--border-color); border-radius: var(--radius-md);">
-        <div class="flex items-center gap-3">
+      <div class="d-flex align-items-center justify-content-between p-3" style="border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+        <div class="d-flex align-items-center gap-3">
           <div class="avatar avatar-sm">M</div>
           <div>
-            <div class="font-medium">Mona Hassan</div>
+            <div class="fw-medium">Mona Hassan</div>
             <div class="text-xs text-muted">11:30 AM</div>
           </div>
         </div>
-        <button class="btn btn-primary btn-sm">Start</button>
+        <button class="btn btn-primary btn-sm">{{ 'COMMON.START' | translate }}</button>
       </div>
     </div>
   </div>
 
   <div class="card">
-    <h4 class="mb-4">Live View - Doctors Capacity</h4>
+    <h4 class="mb-4">{{ 'SENIOR.LIVE_VIEW_CAPACITY' | translate }}</h4>
     <div class="grid-2 gap-4">
       <div class="p-3" style="background: var(--bg-elevated); border-radius: var(--radius-md); border-left: 3px solid var(--mq-teal);">
-        <div class="flex justify-between items-center mb-2">
-          <div class="font-medium">Dr. Sarah</div>
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div class="fw-medium">Dr. Sarah</div>
           <span class="text-xs">0/2</span>
         </div>
         <div class="load-bar load-0"><div class="load-bar-fill"></div></div>
       </div>
       <div class="p-3" style="background: var(--bg-elevated); border-radius: var(--radius-md); border-left: 3px solid var(--color-warning);">
-        <div class="flex justify-between items-center mb-2">
-          <div class="font-medium">Dr. Khalid</div>
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div class="fw-medium">Dr. Khalid</div>
           <span class="text-xs">1/2</span>
         </div>
         <div class="load-bar load-1"><div class="load-bar-fill"></div></div>
       </div>
       <div class="p-3" style="background: var(--bg-elevated); border-radius: var(--radius-md); border-left: 3px solid var(--color-danger);">
-        <div class="flex justify-between items-center mb-2">
-          <div class="font-medium">Dr. Omar</div>
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div class="fw-medium">Dr. Omar</div>
           <span class="text-xs">2/2</span>
         </div>
         <div class="load-bar load-2"><div class="load-bar-fill"></div></div>

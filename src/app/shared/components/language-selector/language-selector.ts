@@ -2,15 +2,17 @@ import { Component, inject, signal, HostListener, ElementRef } from '@angular/co
 import { CommonModule } from '@angular/common';
 import { LanguageService } from '../../../core/services/language';
 
+import { TranslateModule } from '@ngx-translate/core';
+
 @Component({
   selector: 'app-language-selector',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TranslateModule],
   template: `
     <div class="lang-selector-container">
       <button class="btn btn-ghost lang-btn" (click)="toggleDropdown()">
         <i class="bi bi-globe2"></i>
-        <span>{{ langService.currentLang() === 'en' ? 'English' : 'عربي' }}</span>
+        <span>{{ 'COMMON.ENGLISH' | translate }}</span>
         <i class="bi bi-chevron-down" style="font-size: 10px; margin-inline-start: 4px;"></i>
       </button>
 

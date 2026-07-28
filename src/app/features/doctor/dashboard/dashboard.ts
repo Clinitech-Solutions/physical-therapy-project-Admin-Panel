@@ -1,9 +1,15 @@
-import { Component } from "@angular/core";
+import { Component, inject } from "@angular/core";
+import { CommonModule } from "@angular/common";
+import { LanguageService } from "../../../core/services/language";
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
-  selector: "app-dashboard",
-  imports: [],
+  selector: "app-doctor-dashboard",
+  standalone: true,
+  imports: [CommonModule, TranslateModule],
   templateUrl: "./dashboard.html",
   styleUrl: "./dashboard.css",
 })
-export class Dashboard {}
+export class Dashboard {
+  langService = inject(LanguageService);
+}

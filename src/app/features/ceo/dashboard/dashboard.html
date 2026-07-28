@@ -1,37 +1,37 @@
-<div class="dashboard-header mb-4 flex justify-between items-center">
+<div class="dashboard-header mb-4 d-flex justify-content-between align-items-center">
   <div>
-    <h2>Executive Overview</h2>
-    <p class="text-secondary">Real-time performance metrics</p>
+    <h2>{{ 'CEO.DASHBOARD_TITLE' | translate }}</h2>
+    <p class="text-secondary">{{ 'CEO.DASHBOARD_SUB' | translate }}</p>
   </div>
-  <button class="btn btn-primary"><i class="bi bi-download"></i> Export Report</button>
+  <button class="btn btn-primary"><i class="bi bi-download"></i> {{ 'CEO.EXPORT_REPORT' | translate }}</button>
 </div>
 
-<div class="grid-4 mb-6">
+<div class="grid-4 mb-4">
   <div class="stat-card">
-    <div class="stat-label">Today's Revenue</div>
+    <div class="stat-label">{{ 'CEO.TODAYS_REVENUE' | translate }}</div>
     <div class="stat-value text-gradient">$12,450</div>
-    <div class="stat-sub"><span class="badge badge-success">+14%</span> vs yesterday</div>
+    <div class="stat-sub"><span class="badge badge-success">+14%</span> {{ 'CEO.VS_YESTERDAY' | translate }}</div>
   </div>
   <div class="stat-card">
-    <div class="stat-label">Active Patients</div>
+    <div class="stat-label">{{ 'CEO.ACTIVE_PATIENTS' | translate }}</div>
     <div class="stat-value">342</div>
-    <div class="stat-sub"><span class="badge badge-success">+5</span> new today</div>
+    <div class="stat-sub"><span class="badge badge-success">+5</span> {{ 'CEO.NEW_TODAY' | translate }}</div>
   </div>
   <div class="stat-card">
-    <div class="stat-label">Sessions Today</div>
+    <div class="stat-label">{{ 'CEO.SESSIONS_TODAY' | translate }}</div>
     <div class="stat-value">124</div>
-    <div class="stat-sub">98% attendance</div>
+    <div class="stat-sub">98% {{ 'CEO.ATTENDANCE' | translate }}</div>
   </div>
   <div class="stat-card">
-    <div class="stat-label">Pending Payments</div>
+    <div class="stat-label">{{ 'CEO.PENDING_PAYMENTS' | translate }}</div>
     <div class="stat-value">$4,250</div>
-    <div class="stat-sub text-danger">Insurance delays</div>
+    <div class="stat-sub text-danger">{{ 'CEO.INSURANCE_DELAYS' | translate }}</div>
   </div>
 </div>
 
-<div class="grid-3 mb-6">
+<div class="grid-3 mb-4">
   <div class="card" style="grid-column: span 2;">
-    <h4 class="mb-4">Revenue Trend (30 Days)</h4>
+    <h4 class="mb-4">{{ 'CEO.REVENUE_TREND' | translate }}</h4>
     <div style="height: 300px; display: flex; align-items: flex-end; justify-content: space-between; padding-bottom: 20px; border-bottom: 1px solid var(--border-color)">
       <!-- Mock Bar Chart -->
       <div style="width: 8%; background: var(--mq-teal); height: 40%; border-radius: 4px 4px 0 0;"></div>
@@ -44,27 +44,27 @@
     </div>
   </div>
   <div class="card">
-    <h4 class="mb-4">Recent Activity</h4>
-    <div class="flex-col gap-4">
-      <div class="flex gap-3">
+    <h4 class="mb-4">{{ 'CEO.RECENT_ACTIVITY' | translate }}</h4>
+    <div class="d-flex flex-column gap-4">
+      <div class="d-flex gap-3">
         <div class="avatar avatar-sm">M</div>
         <div>
-          <div class="text-sm"><strong>Mona</strong> booked a session</div>
-          <div class="text-xs text-muted">2 mins ago</div>
+          <div class="text-sm"><strong>Mona</strong> {{ 'CEO.BOOKED_SESSION' | translate }}</div>
+          <div class="text-xs text-muted">{{ 'CEO.MINS_AGO_2' | translate }}</div>
         </div>
       </div>
-      <div class="flex gap-3">
+      <div class="d-flex gap-3">
         <div class="avatar avatar-sm" style="background: var(--role-senior-bg); color: var(--role-senior)">S</div>
         <div>
-          <div class="text-sm"><strong>Sarah</strong> completed assessment</div>
-          <div class="text-xs text-muted">15 mins ago</div>
+          <div class="text-sm"><strong>Sarah</strong> {{ 'CEO.COMPLETED_ASSESSMENT' | translate }}</div>
+          <div class="text-xs text-muted">{{ 'CEO.MINS_AGO_15' | translate }}</div>
         </div>
       </div>
-      <div class="flex gap-3">
+      <div class="d-flex gap-3">
         <div class="avatar avatar-sm" style="background: var(--role-doctor-bg); color: var(--role-doctor)">K</div>
         <div>
-          <div class="text-sm"><strong>Dr. Khalid</strong> marked absent</div>
-          <div class="text-xs text-muted">1 hour ago</div>
+          <div class="text-sm"><strong>Dr. Khalid</strong> {{ 'CEO.MARKED_ABSENT' | translate }}</div>
+          <div class="text-xs text-muted">{{ 'CEO.HOUR_AGO_1' | translate }}</div>
         </div>
       </div>
     </div>
