@@ -1,0 +1,133 @@
+<div class="page-content fade-in">
+  <div class="page-header">
+    <div>
+      <h2 class="font-clash">{{ 'RECEPTIONIST.BILLING_TITLE' | translate }}</h2>
+      <p>{{ 'RECEPTIONIST.BILLING_SUB' | translate }}</p>
+    </div>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <div class="col-md-4">
+      <div class="card h-100">
+        <div class="card-body d-flex flex-column justify-content-center h-100">
+          <h3 class="mb-0">EGP 12,450</h3>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card h-100 border-start border-4 border-warning">
+        <div class="card-body">
+          <div class="text-secondary small fw-semibold text-uppercase mb-1">{{ 'RECEPTIONIST.CASH_PAYMENTS' | translate }}</div>
+          <h4 class="text-warning mb-0">EGP 3,200</h4>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card h-100 border-start border-4 border-primary">
+        <div class="card-body">
+          <div class="text-secondary small fw-semibold text-uppercase mb-1">{{ 'RECEPTIONIST.ONLINE_PAYMENTS' | translate }}</div>
+          <h4 class="text-primary mb-0">EGP 5,000</h4>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead>
+            <tr>
+              <th>{{ 'RECEPTIONIST.INVOICE_ID' | translate }}</th>
+              <th>{{ 'COMMON.PATIENT' | translate }}</th>
+              <th>{{ 'RECEPTIONIST.TYPE' | translate }}</th>
+              <th>{{ 'RECEPTIONIST.DATE' | translate }}</th>
+              <th>{{ 'RECEPTIONIST.AMOUNT' | translate }}</th>
+              <th>{{ 'COMMON.STATUS' | translate }}</th>
+              <th class="text-end">{{ 'COMMON.ACTION' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (invoice of invoices(); track invoice.id) {
+              <tr>
+                <td>{{ invoice.id }}</td>
+                <td class="fw-semibold">{{ invoice.patient }}</td>
+                <td>{{ invoice.type }}</td>
+                <td>{{ invoice.date }}</td>
+                <td class="fw-bold">EGP {{ invoice.amount }}</td>
+                <td>
+                  <span class="badge" [ngClass]="{
+                    'badge-warning': invoice.status === 'Pending',
+                    'badge-success': invoice.status === 'Paid',
+                    'badge-info': invoice.status === 'Partial'
+                  }">{{ invoice.status }}</span>
+                </td>
+                <td class="text-end" dir="ltr">
+                  @if (invoice.status !== 'Paid') {
+                    <button class="btn btn-ghost-primary btn-sm" (click)="openDrawer(invoice)">
+                      <i class="bi bi-wallet2 me-1"></i> {{ 'RECEPTIONIST.COLLECT' | translate }}
+                    </button>
+                  } @else {
+                    <button class="btn btn-ghost-primary btn-sm">
+                      <i class="bi bi-printer me-1"></i> {{ 'RECEPTIONIST.PRINT' | translate }}
+                    </button>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Payment Drawer Overlay -->
+@if (showDrawer()) {
+  <div class="drawer-overlay fade-in" (click)="closeDrawer()"></div>
+  <div class="drawer slide-in-right card-bg border-start shadow d-flex flex-column" style="width: 400px; max-width: 100vw;">
+    <div class="drawer-header p-4 border-bottom d-flex justify-content-between align-items-center">
+      <h5 class="mb-0 font-clash">{{ 'RECEPTIONIST.COLLECT_PAYMENT' | translate }}</h5>
+      <button class="btn btn-ghost-danger btn-icon" (click)="closeDrawer()"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="drawer-body p-4 flex-grow-1 overflow-auto">
+      <div class="mb-4">
+        <label class="form-label text-secondary small">{{ 'COMMON.PATIENT' | translate }}</label>
+        <div class="fw-semibold">{{ selectedInvoice?.patient }}</div>
+      </div>
+      <div class="mb-4">
+        <label class="form-label text-secondary small">{{ 'RECEPTIONIST.AMOUNT_DUE' | translate }}</label>
+        <h4 class="text-primary mb-0">EGP {{ selectedInvoice?.amount }}</h4>
+      </div>
+      
+      <div class="form-group mb-4">
+        <label class="form-label">{{ 'RECEPTIONIST.AMOUNT_COLLECTED' | translate }}</label>
+        <div class="input-group">
+          <span class="input-group-text card-bg border-end-0">{{ 'RECEPTIONIST.EGP' | translate }}</span>
+          <input type="number" class="form-control border-start-0 card-bg" [(ngModel)]="amountCollected">
+        </div>
+      </div>
+
+      <div class="form-group mb-4">
+        <label class="form-label">{{ 'RECEPTIONIST.PAYMENT_METHOD' | translate }}</label>
+        <div class="d-flex gap-2">
+          <button class="btn flex-grow-1" [ngClass]="paymentMethod === 'Cash' ? 'btn-primary' : 'btn-outline-primary'" (click)="paymentMethod = 'Cash'">{{ 'RECEPTIONIST.CASH' | translate }}</button>
+          <button class="btn flex-grow-1" [ngClass]="paymentMethod === 'Card' ? 'btn-primary' : 'btn-outline-primary'" (click)="paymentMethod = 'Card'">{{ 'RECEPTIONIST.CARD' | translate }}</button>
+          <button class="btn flex-grow-1" [ngClass]="paymentMethod === 'InstaPay' ? 'btn-primary' : 'btn-outline-primary'" (click)="paymentMethod = 'InstaPay'">{{ 'RECEPTIONIST.INSTAPAY' | translate }}</button>
+        </div>
+      </div>
+    </div>
+    <div class="drawer-footer p-4 border-top">
+      <div class="d-flex gap-3">
+        <button class="btn btn-outline-secondary w-50" (click)="closeDrawer()">{{ 'RECEPTIONIST.CANCEL' | translate }}</button>
+        <button class="btn btn-primary w-50" (click)="processPayment()" [disabled]="isProcessing()">
+          @if (isProcessing()) {
+            <span class="spinner-border spinner-border-sm me-2"></span> {{ 'RECEPTIONIST.PROCESSING' | translate }}
+          } @else {
+            {{ 'RECEPTIONIST.PROCESS_PAYMENT' | translate }}
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}

@@ -1,0 +1,61 @@
+<div class="page-content fade-in">
+  <div class="page-header">
+    <div>
+      <h2 class="font-clash">{{ 'RECEPTIONIST.ROOMS_TITLE' | translate }}</h2>
+      <p>{{ 'RECEPTIONIST.ROOMS_SUB' | translate }}</p>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    @for(room of rooms(); track room.name) {
+      <div class="col-md-4">
+        <div class="card h-100">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+              <h4 class="font-clash mb-0">{{ room.name }}</h4>
+              <span class="badge" [ngClass]="{'badge-success': room.status === 'Available', 'badge-warning': room.status === 'Occupied', 'badge-error': room.status === 'Maintenance'}">
+                @if(room.status === 'Available') { {{ 'RECEPTIONIST.AVAILABLE' | translate }} }
+                @if(room.status === 'Occupied') { {{ 'RECEPTIONIST.OCCUPIED' | translate }} }
+                @if(room.status === 'Maintenance') { {{ 'RECEPTIONIST.MAINTENANCE' | translate }} }
+              </span>
+            </div>
+            
+            <div class="mb-4" style="min-height: 48px;">
+              @if(room.status === 'Occupied') {
+                <div class="d-flex align-items-center gap-3">
+                  <div class="avatar avatar-sm bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center">
+                    <i class="bi bi-heart-pulse"></i>
+                  </div>
+                  <div>
+                    <div class="fw-semibold">{{ room.doctor }}</div>
+                    <div class="small text-muted">{{ 'RECEPTIONIST.LOAD' | translate }}: {{ room.load }}</div>
+                  </div>
+                </div>
+              } @else if(room.status === 'Maintenance') {
+                <div class="text-danger small d-flex align-items-center">
+                  <i class="bi bi-tools me-2"></i> {{ 'RECEPTIONIST.UNDER_MAINTENANCE' | translate }}
+                </div>
+              } @else {
+                <div class="text-success small d-flex align-items-center">
+                  <i class="bi bi-door-open me-2"></i> {{ 'RECEPTIONIST.READY_FOR_ASSIGNMENT' | translate }}
+                </div>
+              }
+            </div>
+
+            <div class="dropdown w-100 mt-auto">
+              <button class="btn btn-outline-secondary w-100 dropdown-toggle" type="button" data-bs-toggle="dropdown" [disabled]="room.status === 'Maintenance'">
+                {{ 'RECEPTIONIST.REASSIGN_DOCTOR' | translate }}
+              </button>
+              <ul class="dropdown-menu w-100">
+                <li><a class="dropdown-item" href="javascript:void(0)" (click)="reassign(room.name, 'Dr. Sarah')">Assign Dr. Sarah</a></li>
+                <li><a class="dropdown-item" href="javascript:void(0)" (click)="reassign(room.name, 'Dr. Omar')">Assign Dr. Omar</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item text-danger" href="javascript:void(0)" (click)="reassign(room.name, null)">{{ 'RECEPTIONIST.CLEAR_ROOM' | translate }}</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</div>

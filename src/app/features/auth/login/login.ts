@@ -22,7 +22,7 @@ export class Login {
 
   onLogin(role: UserRole) {
     this.authService.login(role);
-    if (role === 'Receptionist') this.router.navigate(['/receptionist']);
+    if (role === 'Receptionist') this.router.navigate(['/receptionist/dashboard']);
     else if (role === 'Senior Therapist') this.router.navigate(['/senior']);
     else if (role === 'Doctor') this.router.navigate(['/doctor']);
     else if (role === 'CEO') this.router.navigate(['/ceo']);

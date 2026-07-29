@@ -1,0 +1,153 @@
+<div class="page-content fade-in">
+  <div class="page-header">
+    <div>
+      <h2 class="font-clash">{{ 'RECEPTIONIST.PATIENTS_TITLE' | translate }}</h2>
+      <p>{{ 'RECEPTIONIST.PATIENTS_SUB' | translate }}</p>
+    </div>
+    <button class="btn btn-primary fw-semibold" (click)="openDrawer()">
+      <i class="bi bi-person-plus me-1"></i> {{ 'RECEPTIONIST.ADD_PATIENT' | translate }}
+    </button>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <!-- Search and Filter -->
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="input-group" style="max-width: 400px;" dir="ltr">
+          <span class="input-group-text card-bg border-end-0"><i class="bi bi-search text-muted"></i></span>
+          <input type="text" class="form-control border-start-0 card-bg" [placeholder]="'RECEPTIONIST.SEARCH_PLACEHOLDER' | translate" dir="auto">
+        </div>
+        <button class="btn btn-outline-secondary">
+          <i class="bi bi-funnel"></i>
+        </button>
+      </div>
+
+      <!-- Patients Table -->
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead>
+            <tr>
+              <th>{{ 'COMMON.PATIENT' | translate }}</th>
+              <th>{{ 'RECEPTIONIST.GENDER_TH' | translate }}</th>
+              <th>{{ 'RECEPTIONIST.PHONE' | translate }}</th>
+              <th>{{ 'RECEPTIONIST.PAYMENT_TYPE' | translate }}</th>
+              <th>{{ 'RECEPTIONIST.LAST_VISIT' | translate }}</th>
+              <th class="text-end">{{ 'COMMON.ACTION' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for(patient of patients(); track patient.id) {
+              <tr>
+                <td>
+                  <div class="d-flex align-items-center gap-3">
+                    <div class="avatar avatar-sm bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center">
+                      {{ patient.avatar }}
+                    </div>
+                    <div>
+                      <div class="fw-semibold">{{ patient.nameEn }}</div>
+                      <div class="d-flex gap-2 mt-1">
+                        <span class="small text-muted">{{ patient.id }}</span>
+                        @if(!patient.documents.medicalConsent || !patient.documents.liabilityWaiver || !patient.documents.idCard) {
+                          <span class="badge bg-danger bg-opacity-10 text-danger border border-danger rounded-pill" style="font-size: 0.65rem;" title="Missing Intake Documents">
+                            <i class="bi bi-file-earmark-x me-1"></i> {{ 'RECEPTIONIST.NEEDS_PAPERWORK' | translate }}
+                          </span>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td>{{ patient.gender }}</td>
+                <td dir="ltr" class="text-start">{{ patient.phone }}</td>
+                <td>
+                  <span class="badge" [ngClass]="{'badge-success': patient.paymentType === 'Cash', 'badge-info': patient.paymentType === 'Insurance'}">
+                    {{ patient.paymentType }}
+                  </span>
+                </td>
+                <td class="text-muted">{{ patient.lastVisit }}</td>
+                <td class="text-end" dir="ltr">
+                  <button class="btn btn-ghost-primary btn-icon"><i class="bi bi-eye"></i></button>
+                  <button class="btn btn-ghost-primary btn-icon"><i class="bi bi-pencil"></i></button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Patient Drawer -->
+@if(showDrawer()) {
+  <div class="modal-backdrop fade show" (click)="closeDrawer()"></div>
+  <div class="drawer drawer-end fade-in bg-white shadow-lg h-100 position-fixed top-0 end-0" style="width: 440px; z-index: 1055; overflow-y: auto;">
+    <div class="drawer-header p-4 d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">{{ 'RECEPTIONIST.ADD_PATIENT' | translate }}</h5>
+      <button class="btn-close" (click)="closeDrawer()"></button>
+    </div>
+    
+    <div class="drawer-body p-4">
+      <div class="form-group mb-4">
+        <label class="form-label">{{ 'RECEPTIONIST.FULL_NAME_EN' | translate }}</label>
+        <input type="text" class="form-control" placeholder="e.g. John Doe" [(ngModel)]="newPatient.nameEn">
+      </div>
+      <div class="form-group mb-4">
+        <label class="form-label">{{ 'RECEPTIONIST.FULL_NAME_AR' | translate }}</label>
+        <input type="text" class="form-control" placeholder="مثال: جون دو" dir="rtl" [(ngModel)]="newPatient.nameAr">
+      </div>
+      
+      <div class="row g-3 mb-4">
+        <div class="col-md-6 form-group">
+          <label class="form-label">{{ 'RECEPTIONIST.PHONE' | translate }}</label>
+          <input type="text" class="form-control" placeholder="01xxxxxxxxx" [(ngModel)]="newPatient.phone">
+        </div>
+        <div class="col-md-6 form-group">
+          <label class="form-label">{{ 'RECEPTIONIST.DOB' | translate }}</label>
+          <input type="date" class="form-control" [(ngModel)]="newPatient.dob">
+        </div>
+      </div>
+
+      <div class="form-group mb-4">
+        <label class="form-label">{{ 'RECEPTIONIST.PAYMENT_TYPE' | translate }}</label>
+        <select class="form-select" [(ngModel)]="newPatient.paymentType">
+          <option value="Cash">{{ 'RECEPTIONIST.CASH' | translate }}</option>
+          <option value="Insurance">{{ 'RECEPTIONIST.INSURANCE_PAYMENT' | translate }}</option>
+        </select>
+      </div>
+
+      <div class="card card-bg border-0 mb-4">
+        <div class="card-body">
+          <h6 class="fw-semibold mb-3">{{ 'RECEPTIONIST.REQUIRED_DOCS' | translate }}</h6>
+          
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" id="docConsent" [(ngModel)]="newPatient.docs.medicalConsent">
+            <label class="form-check-label" for="docConsent">
+              {{ 'RECEPTIONIST.MEDICAL_CONSENT' | translate }}
+            </label>
+          </div>
+          
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" id="docWaiver" [(ngModel)]="newPatient.docs.liabilityWaiver">
+            <label class="form-check-label" for="docWaiver">
+              {{ 'RECEPTIONIST.LIABILITY_WAIVER' | translate }}
+            </label>
+          </div>
+          
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="docId" [(ngModel)]="newPatient.docs.idCard">
+            <label class="form-check-label" for="docId">
+              {{ 'RECEPTIONIST.ID_CARD' | translate }}
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="drawer-footer p-4 border-top">
+      <div class="d-flex gap-3">
+        <button class="btn btn-outline-secondary w-50" (click)="closeDrawer()">{{ 'RECEPTIONIST.CANCEL' | translate }}</button>
+        <button class="btn btn-primary w-50" (click)="createProfile()">{{ 'RECEPTIONIST.CREATE_PROFILE' | translate }}</button>
+      </div>
+    </div>
+  </div>
+}

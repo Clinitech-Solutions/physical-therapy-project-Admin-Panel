@@ -1,0 +1,127 @@
+<div class="page-content fade-in">
+  <div class="page-header">
+    <div>
+      <h2 class="font-clash">{{ 'RECEPTIONIST.INSURANCE_TITLE' | translate }}</h2>
+      <p>{{ 'RECEPTIONIST.INSURANCE_SUB' | translate }}</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead>
+            <tr>
+              <th>{{ 'COMMON.PATIENT' | translate }}</th>
+              <th>{{ 'RECEPTIONIST.COMPANY' | translate }}</th>
+              <th>{{ 'COMMON.STATUS' | translate }}</th>
+              <th>{{ 'RECEPTIONIST.CO_PAY' | translate }}</th>
+              <th class="text-end">{{ 'COMMON.ACTION' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for(patient of patients(); track patient.id) {
+              <tr>
+                <td class="fw-semibold">{{ patient.name }}</td>
+                <td>
+                  <span class="badge border text-body">{{ patient.company }}</span>
+                </td>
+                <td>
+                  <span class="badge" [ngClass]="{
+                    'badge-info': patient.status === 'Documents Pending' || patient.status === 'Submitted',
+                    'badge-warning': patient.status === 'Under Review',
+                    'badge-success': patient.status === 'Approved'
+                  }">
+                    @if(patient.status === 'Documents Pending') { {{ 'RECEPTIONIST.DOCUMENTS_PENDING' | translate }} }
+                    @if(patient.status === 'Submitted') { {{ 'RECEPTIONIST.SUBMITTED' | translate }} }
+                    @if(patient.status === 'Under Review') { {{ 'RECEPTIONIST.UNDER_REVIEW' | translate }} }
+                    @if(patient.status === 'Approved') { {{ 'RECEPTIONIST.APPROVED' | translate }} }
+                  </span>
+                </td>
+                <td>
+                  @if(patient.copay !== null) {
+                    <span class="fw-bold">{{ patient.copay }}%</span>
+                  } @else {
+                    <span class="text-muted">-</span>
+                  }
+                </td>
+                <td class="text-end">
+                  <button class="btn btn-ghost-primary btn-sm" (click)="openDrawer(patient)">
+                    {{ 'RECEPTIONIST.MANAGE' | translate }} <i class="bi bi-chevron-right ms-1"></i>
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Manage Insurance Drawer -->
+@if(showDrawer()) {
+  <div class="modal-backdrop fade show" (click)="closeDrawer()"></div>
+  <div class="drawer drawer-end fade-in card-bg shadow-lg h-100 position-fixed top-0 end-0" style="width: 440px; z-index: 1055; overflow-y: auto;">
+    <div class="drawer-header p-4 d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">{{ 'RECEPTIONIST.MANAGE_INSURANCE' | translate }}: {{ selectedPatient?.name }}</h5>
+      <button class="btn-close" (click)="closeDrawer()"></button>
+    </div>
+    
+    <div class="drawer-body p-4">
+      <!-- Status tracker -->
+      <div class="mb-4 pb-4 border-bottom">
+        <h6 class="text-muted mb-3">{{ 'RECEPTIONIST.CURRENT_STATUS' | translate }}</h6>
+        <span class="badge badge-info fs-6 px-3 py-2">{{ selectedPatient?.status }}</span>
+      </div>
+
+      <div class="mb-4">
+        <label class="form-label">{{ 'RECEPTIONIST.UPLOAD_DOCS' | translate }}</label>
+        <div class="border border-dashed rounded p-4 text-center card-bg cursor-pointer">
+          <i class="bi bi-cloud-arrow-up fs-2 text-primary mb-2 d-block"></i>
+          <span class="text-muted">{{ 'RECEPTIONIST.DRAG_DROP' | translate }}</span>
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <label class="form-label">{{ 'RECEPTIONIST.INSURANCE_COMPANY' | translate }}</label>
+        <select class="form-select" [(ngModel)]="insuranceCompany">
+          <option value="Bupa">Bupa</option>
+          <option value="AXA">AXA</option>
+          <option value="MetLife">MetLife</option>
+        </select>
+      </div>
+
+      <div class="mb-4">
+        <label class="form-label">{{ 'RECEPTIONIST.PACKAGE' | translate }}</label>
+        <select class="form-select" [(ngModel)]="package">
+          <option value="">{{ 'RECEPTIONIST.SELECT_PACKAGE' | translate }}</option>
+          <option value="Gold">{{ 'RECEPTIONIST.GOLD_NETWORK' | translate }}</option>
+          <option value="Silver">{{ 'RECEPTIONIST.SILVER_NETWORK' | translate }}</option>
+        </select>
+      </div>
+
+      @if(selectedPatient?.status === 'Approved' || selectedPatient?.status === 'Under Review') {
+        <div class="mb-4 fade-in">
+          <label class="form-label">{{ 'RECEPTIONIST.RECORD_COPAY' | translate }}</label>
+          <div class="input-group">
+            <input type="number" class="form-control" [(ngModel)]="copayInput">
+            <span class="input-group-text">%</span>
+          </div>
+          <button class="btn btn-success w-100 mt-3" (click)="saveCopay()">{{ 'RECEPTIONIST.SAVE_COPAY' | translate }}</button>
+        </div>
+      }
+    </div>
+    
+    <div class="drawer-footer p-4">
+        <button class="btn btn-outline-secondary w-50" (click)="closeDrawer()">{{ 'RECEPTIONIST.CANCEL' | translate }}</button>
+        <button class="btn btn-primary w-50" (click)="submitToInsurer()" [disabled]="isProcessing()">
+          @if (isProcessing()) {
+            <span class="spinner-border spinner-border-sm me-2"></span> {{ 'RECEPTIONIST.PROCESSING' | translate }}
+          } @else {
+            {{ 'RECEPTIONIST.SUBMIT_TO_INSURER' | translate }}
+          }
+        </button>
+      </div>
+  </div>
+}

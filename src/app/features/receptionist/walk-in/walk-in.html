@@ -1,0 +1,109 @@
+<div class="page-content fade-in">
+  <div class="page-header">
+    <div>
+      <h2 class="font-clash">{{ 'RECEPTIONIST.WALKIN_TITLE' | translate }}</h2>
+      <p>{{ 'RECEPTIONIST.WALKIN_SUB' | translate }}</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <div class="row g-4 align-items-end">
+        <div class="col-md-5">
+          <label class="form-label">{{ 'COMMON.PATIENT' | translate }}</label>
+          <input type="text" class="form-control" [placeholder]="'RECEPTIONIST.SEARCH_PLACEHOLDER' | translate" [(ngModel)]="patient" (keyup.enter)="searchSlots()">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label d-block">{{ 'RECEPTIONIST.GENDER' | translate }}</label>
+          <div class="btn-group w-100" role="group">
+            <button type="button" class="btn" [ngClass]="gender() === 'Male' ? 'btn-primary' : 'btn-outline-primary'" (click)="gender.set('Male')">{{ 'RECEPTIONIST.MALE' | translate }}</button>
+            <button type="button" class="btn" [ngClass]="gender() === 'Female' ? 'btn-primary' : 'btn-outline-primary'" (click)="gender.set('Female')">{{ 'RECEPTIONIST.FEMALE' | translate }}</button>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">{{ 'RECEPTIONIST.PREFERRED_TIME' | translate }}</label>
+          <select class="form-select" [(ngModel)]="timePref">
+            <option value="Now">{{ 'RECEPTIONIST.NOW' | translate }}</option>
+            <option value="Within 1 hour">Within 1 hour</option>
+            <option value="Within 2 hours">Within 2 hours</option>
+          </select>
+        </div>
+        <div class="col-md-3 d-flex align-items-end">
+          <button class="btn btn-primary w-100 py-2" (click)="searchSlots()" [disabled]="!patient() || isSearching()">
+            @if (isSearching()) {
+              <span class="spinner-border spinner-border-sm me-2"></span> {{ 'RECEPTIONIST.PROCESSING' | translate }}
+            } @else {
+              <i class="bi bi-search me-2"></i> {{ 'RECEPTIONIST.SEARCH' | translate }}
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  @if (bookedDoctor()) {
+    <div class="alert alert-success d-flex align-items-center mt-4">
+      <i class="bi bi-check-circle-fill fs-4 me-3"></i>
+      <div>
+        <h6 class="mb-1 fw-bold">Successfully Booked!</h6>
+        <div>{{ patient() }} has been assigned to {{ bookedDoctor() }}.</div>
+      </div>
+    </div>
+  }
+
+  @if (hasSearched()) {
+    <div class="mt-4 fade-in">
+      <h5 class="font-clash mb-3">{{ 'RECEPTIONIST.AVAILABLE_SLOTS' | translate }}</h5>
+      <div class="row g-4">
+        @for (result of results(); track result.doctor) {
+          <div class="col-md-4">
+            <div class="card h-100 border hover-shadow" [ngClass]="{'border-primary shadow-sm': bookedDoctor() === result.doctor}">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                  <div>
+                    <h5 class="font-clash mb-1">{{ result.doctor }}</h5>
+                    <span class="badge bg-secondary bg-opacity-10 text-secondary">{{ result.doctorGender }}</span>
+                  </div>
+                  <span class="badge badge-success">{{ 'RECEPTIONIST.AVAILABLE' | translate }}</span>
+                </div>
+                
+                <div class="d-flex align-items-center mb-3">
+                  <div class="avatar avatar-sm bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center me-3">
+                    <i class="bi bi-clock"></i>
+                  </div>
+                  <div>
+                    <div class="small text-muted">{{ 'COMMON.TIME' | translate }}</div>
+                    <div class="fw-semibold">{{ result.time }}</div>
+                  </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                  <span class="small text-muted"><i class="bi bi-door-open me-1"></i> {{ result.room }}</span>
+                  <span class="small text-muted"><i class="bi bi-people me-1"></i> {{ 'RECEPTIONIST.LOAD' | translate }}: {{ result.load }}</span>
+                </div>
+
+                @if (bookedDoctor() === result.doctor) {
+                  <button class="btn btn-success w-100" disabled>
+                    <i class="bi bi-check2-circle me-1"></i> {{ 'RECEPTIONIST.CONFIRMED' | translate }}
+                  </button>
+                } @else {
+                  <button class="btn btn-outline-primary w-100" (click)="bookSlot(result.doctor)" [disabled]="bookedDoctor() !== null">
+                    {{ 'RECEPTIONIST.FILL_SLOT' | translate }}
+                  </button>
+                }
+              </div>
+            </div>
+          </div>
+        }
+        @if (results().length === 0) {
+          <div class="col-12">
+            <div class="alert alert-info d-flex align-items-center">
+              <i class="bi bi-info-circle fs-4 me-3"></i>
+              <div>No matching slots found for the selected gender. Please adjust your criteria.</div>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>

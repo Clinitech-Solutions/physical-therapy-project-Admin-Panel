@@ -18,7 +18,7 @@
        [routerLink]="item.route"
        routerLinkActive="active"
        class="sidebar-item">
-      <i class="sidebar-item-icon bi" [ngClass]="item.icon"></i>
+      <i class="sidebar-item-icon" [ngClass]="item.icon"></i>
       <span class="label" *ngIf="isHovered() || isMobileOpen()">
         {{ item.labelKey | translate }}
       </span>
