@@ -1,7 +1,9 @@
-import { Component, signal } from "@angular/core";
+import { Component, signal, inject } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { TranslateModule } from '@ngx-translate/core';
 import { FormsModule } from '@angular/forms';
+import { BillingService } from '../../../core/services/api/billing.service';
+import { MessageService } from 'primeng/api';
 
 @Component({
   selector: "app-receptionist-billing",
@@ -10,18 +12,16 @@ import { FormsModule } from '@angular/forms';
   templateUrl: "./billing.html"
 })
 export class BillingComponent {
-  invoices = signal([
-    { id: 'INV-1001', patient: 'Ahmed Fathy', amount: 500, status: 'Pending', type: 'Session', date: 'Today' },
-    { id: 'INV-1002', patient: 'Mona Zaki', amount: 300, status: 'Paid', type: 'Assessment', date: 'Yesterday' },
-    { id: 'INV-1003', patient: 'Omar Hassan', amount: 5000, status: 'Partial', type: 'Package (10 Sessions)', date: '12 May 2026' },
-  ]);
+  billingService = inject(BillingService);
+  messageService = inject(MessageService);
+  invoices = this.billingService.invoices;
+  isProcessing = this.billingService.processingPayment;
 
   showDrawer = signal(false);
   selectedInvoice: any = null;
 
   paymentMethod = 'Cash';
   amountCollected = 0;
-  isProcessing = signal(false);
 
   openDrawer(invoice: any) {
     this.selectedInvoice = invoice;
@@ -34,21 +34,10 @@ export class BillingComponent {
     this.selectedInvoice = null;
   }
 
-  processPayment() {
+  async processPayment() {
     if (!this.selectedInvoice) return;
-    
-    this.isProcessing.set(true);
-    
-    setTimeout(() => {
-      this.invoices.update(invs =>
-        invs.map(inv =>
-          inv.id === this.selectedInvoice?.id
-            ? { ...inv, status: 'Paid' }
-            : inv
-        )
-      );
-      this.isProcessing.set(false);
-      this.closeDrawer();
-    }, 1000);
+    await this.billingService.processPayment(this.selectedInvoice.id);
+    this.closeDrawer();
+    this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Payment processed successfully' });
   }
 }

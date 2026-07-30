@@ -4,16 +4,9 @@ import { LanguageService } from "../../../core/services/language";
 import { TranslateModule } from '@ngx-translate/core';
 import { FormsModule } from '@angular/forms';
 
-interface SessionRow {
-  id: string;
-  time: string;
-  patientName: string;
-  patientAvatar: string;
-  doctorName: string;
-  room: string;
-  status: 'Confirmed' | 'In Progress' | 'Pending' | 'Cancelled' | 'Waiting' | 'Completed';
-  packageAlert?: string;
-}
+import { SessionService } from '../../../core/services/api/session.service';
+import { Session } from '../../../core/models/session.model';
+import { MessageService } from 'primeng/api';
 
 @Component({
   selector: "app-receptionist-dashboard",
@@ -33,14 +26,9 @@ export class Dashboard {
     pendingPayments: 5
   };
 
-  // Timeline Data
-  sessions = signal<SessionRow[]>([
-    { id: '1', time: '09:00 AM', patientName: 'Ahmed Fathy', patientAvatar: 'AF', doctorName: 'Dr. Sarah', room: 'Room 1', status: 'Confirmed', packageAlert: 'Session 12 of 12' },
-    { id: '2', time: '09:00 AM', patientName: 'Mona Zaki', patientAvatar: 'MZ', doctorName: 'Dr. Omar', room: 'Room 2', status: 'In Progress' },
-    { id: '3', time: '10:00 AM', patientName: 'Ali Hassan', patientAvatar: 'AH', doctorName: 'Dr. Sarah', room: 'Room 1', status: 'Pending' },
-    { id: '4', time: '10:30 AM', patientName: 'Nour El Din', patientAvatar: 'NE', doctorName: 'Dr. Omar', room: 'Room 2', status: 'Cancelled' },
-    { id: '5', time: '11:00 AM', patientName: 'Laila Tarek', patientAvatar: 'LT', doctorName: 'Dr. Youssef', room: 'Room 3', status: 'Completed' },
-  ]);
+  sessionService = inject(SessionService);
+  messageService = inject(MessageService);
+  sessions = this.sessionService.sessions;
 
   // Filters
   filterDoctor = signal<string>('');
@@ -67,18 +55,17 @@ export class Dashboard {
     setTimeout(() => {
       this.isProcessing.set(false);
       this.closeAbsenceModal();
+      this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Doctor marked absent' });
     }, 1000);
   }
 
-  checkIn(id: string) {
-    this.sessions.update(sessions => 
-      sessions.map(s => s.id === id ? { ...s, status: 'In Progress' } : s)
-    );
+  async checkIn(id: string) {
+    await this.sessionService.checkIn(id);
+    this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Patient checked in' });
   }
 
-  checkOut(id: string) {
-    this.sessions.update(sessions => 
-      sessions.map(s => s.id === id ? { ...s, status: 'Completed' } : s)
-    );
+  async checkOut(id: string) {
+    await this.sessionService.checkOut(id);
+    this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Patient checked out' });
   }
 }

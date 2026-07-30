@@ -5,7 +5,7 @@
    ============================================================ */
 
 /* ── FONTS ────────────────────────────────────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap');
 
 /* Clash Display & Bebas Neue — load via your font host or CDN */
 /* @font-face { font-family: 'Clash Display'; src: url('/fonts/ClashDisplay-Bold.woff2'); } */
@@ -259,8 +259,7 @@ body {
 .page-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
-  margin-bottom: var(--space-6);
+   margin-bottom: var(--space-6);
 }
 
 .page-header h2 {
@@ -1323,4 +1322,10 @@ h1, h2, h3, h4, h5, h6 {
   text-transform: uppercase;
   font-size: var(--text-xs);
   letter-spacing: 0.5px;
+}
+
+/* ── TOAST CUSTOMIZATION ──────────────────────────────────── */
+html.light .p-toast-message .p-toast-summary,
+html.light .p-toast-message .p-toast-detail {
+    color: var(--text-primary) !important;
 }

@@ -1,7 +1,9 @@
-import { Component, signal, computed } from "@angular/core";
+import { Component, signal, computed, inject } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { TranslateModule } from '@ngx-translate/core';
 import { FormsModule } from '@angular/forms';
+import { BookingService } from '../../../core/services/api/booking.service';
+import { MessageService } from 'primeng/api';
 
 @Component({
   selector: "app-receptionist-walk-in",
@@ -10,40 +12,30 @@ import { FormsModule } from '@angular/forms';
   templateUrl: "./walk-in.html"
 })
 export class WalkInComponent {
+  bookingService = inject(BookingService);
+  messageService = inject(MessageService);
+
   patient = signal('');
   gender = signal('Male');
   timePref = signal('Now');
   bookedDoctor = signal<string | null>(null);
 
   hasSearched = signal(false);
-  isSearching = signal(false);
+  isSearching = this.bookingService.searching;
 
-  private baseResults = signal([
-    { doctor: 'Dr. Sarah', doctorGender: 'Female', time: '10:30 AM', room: 'Room 1', load: 1 },
-    { doctor: 'Dr. Omar', doctorGender: 'Male', time: '11:00 AM', room: 'Room 2', load: 0 },
-    { doctor: 'Dr. Youssef', doctorGender: 'Male', time: '12:00 PM', room: 'Room 3', load: 1 },
-  ]);
+  results = this.bookingService.doctorSlots;
 
-  results = computed(() => {
-    return this.baseResults().filter(r => 
-      (this.gender() === 'Any' || r.doctorGender === this.gender())
-    );
-  });
-
-  searchSlots() {
+  async searchSlots() {
     if (!this.patient()) return;
-    this.isSearching.set(true);
     this.hasSearched.set(false);
     this.bookedDoctor.set(null);
-    
-    setTimeout(() => {
-      this.isSearching.set(false);
-      this.hasSearched.set(true);
-    }, 1000);
+    await this.bookingService.searchSlots(this.gender());
+    this.hasSearched.set(true);
   }
 
   bookSlot(doctor: string) {
     this.bookedDoctor.set(doctor);
     this.hasSearched.set(false);
+    this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Walk-in session booked successfully' });
   }
 }

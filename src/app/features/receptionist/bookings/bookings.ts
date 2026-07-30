@@ -1,7 +1,9 @@
-import { Component, signal } from "@angular/core";
+import { Component, signal, inject } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { TranslateModule } from '@ngx-translate/core';
 import { FormsModule } from '@angular/forms';
+import { BookingService } from '../../../core/services/api/booking.service';
+import { MessageService } from 'primeng/api';
 
 @Component({
   selector: "app-receptionist-bookings",
@@ -11,6 +13,9 @@ import { FormsModule } from '@angular/forms';
   styleUrl: "./bookings.css"
 })
 export class BookingsComponent {
+  bookingService = inject(BookingService);
+  messageService = inject(MessageService);
+
   viewMode = signal<'Week' | 'Day'>('Day');
 
   // Book Assessment Drawer
@@ -31,7 +36,7 @@ export class BookingsComponent {
 
   confirmAssessment() {
     this.closeAssessmentDrawer();
-    alert('Assessment booked successfully');
+    this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Assessment booked successfully' });
   }
 
   openSessionDrawer() {
@@ -44,27 +49,19 @@ export class BookingsComponent {
 
   confirmSession() {
     this.closeSessionDrawer();
-    alert('Therapy session booked successfully');
+    this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Therapy session booked successfully' });
   }
 
   timeSlots = [
     '09:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '01:00 PM', '02:00 PM'
   ];
   
-  doctors = [
-    { name: 'Dr. Sarah', load: 1, room: 'Room 1' },
-    { name: 'Dr. Omar', load: 2, room: 'Room 2' },
-    { name: 'Dr. Youssef', load: 0, room: 'Room 3' }
-  ];
+  doctors = this.bookingService.doctors;
+  waitlist = this.bookingService.waitlist;
 
-  waitlist = signal([
-    { patient: 'Youssef Ali', request: 'Any time today', contact: '+201112223344' },
-    { patient: 'Sara Mahmoud', request: 'Morning (09:00 - 12:00)', contact: '+201011122233' }
-  ]);
-
-  fillSlot(waitlistItem: any) {
+  async fillSlot(waitlistItem: any) {
     this.sessionForm.patient = waitlistItem.patient;
     this.showSessionDrawer.set(true);
-    this.waitlist.update(list => list.filter(item => item !== waitlistItem));
+    await this.bookingService.fillWaitlistSlot(waitlistItem.patient);
   }
 }

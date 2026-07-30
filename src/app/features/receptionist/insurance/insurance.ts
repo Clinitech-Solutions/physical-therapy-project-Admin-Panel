@@ -1,7 +1,9 @@
-import { Component, signal } from "@angular/core";
+import { Component, signal, inject } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { TranslateModule } from '@ngx-translate/core';
 import { FormsModule } from '@angular/forms';
+import { InsuranceService } from '../../../core/services/api/insurance.service';
+import { MessageService } from 'primeng/api';
 
 @Component({
   selector: "app-receptionist-insurance",
@@ -10,22 +12,19 @@ import { FormsModule } from '@angular/forms';
   templateUrl: "./insurance.html"
 })
 export class InsuranceComponent {
-  patients = signal([
-    { id: '1', name: 'Ahmed Fathy', company: 'Bupa', status: 'Documents Pending', copay: null },
-    { id: '2', name: 'Mona Zaki', company: 'AXA', status: 'Submitted', copay: null },
-    { id: '3', name: 'Omar Hassan', company: 'MetLife', status: 'Under Review', copay: null },
-    { id: '4', name: 'Laila Tarek', company: 'Bupa', status: 'Approved', copay: 20 },
-  ]);
+  insuranceService = inject(InsuranceService);
+  messageService = inject(MessageService);
+  patients = this.insuranceService.claims;
+  isProcessing = this.insuranceService.processing;
 
   showDrawer = signal(false);
   selectedPatient: any = null;
 
   copayInput = 0;
   insuranceCompany = '';
-  package = '';
   activeDrawerTab = 'docs'; // 'docs' or 'copay'
+  package = '';
   copayValue = 0;
-  isProcessing = signal(false);
 
   openDrawer(patient: any) {
     this.selectedPatient = patient;
@@ -39,34 +38,18 @@ export class InsuranceComponent {
     this.selectedPatient = null;
   }
 
-  submitToInsurer() {
+  async submitToInsurer() {
     if (!this.selectedPatient) return;
-    
-    this.isProcessing.set(true);
-    
-    setTimeout(() => {
-      this.patients.update(pts =>
-        pts.map(p =>
-          p.id === this.selectedPatient?.id
-            ? { ...p, status: 'Submitted', pendingDocs: 0 }
-            : p
-        )
-      );
-      this.isProcessing.set(false);
-      this.closeDrawer();
-    }, 1000);
+    await this.insuranceService.submitClaim(this.selectedPatient.id);
+    this.closeDrawer();
+    this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Claim submitted successfully' });
   }
 
-  saveCopay() {
+  async saveCopay() {
     if (this.selectedPatient) {
-      const pid = this.selectedPatient.id;
-      this.patients.update(p => p.map(x => {
-        if (x.id === pid) {
-          return { ...x, copay: this.copayInput, status: 'Approved' };
-        }
-        return x;
-      }));
+      await this.insuranceService.saveCopay(this.selectedPatient.id, this.copayInput);
     }
     this.closeDrawer();
+    this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Copay updated' });
   }
 }
