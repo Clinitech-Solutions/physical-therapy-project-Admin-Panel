@@ -7,56 +7,42 @@
   </div>
 
   <!-- KPI Row -->
-  <div class="row g-4 mb-4">
-    <div class="col-md-3">
-      <div class="card h-100">
-        <div class="card-body">
-          <h6 class="text-secondary mb-2">{{ 'RECEPTIONIST.TODAYS_SESSIONS' | translate }}</h6>
-          <h2 class="font-bebas text-teal mb-0">{{ kpis.todaysSessions }}</h2>
-        </div>
-      </div>
+  <div class="kpi-row">
+    <div class="stat-card border-start-teal">
+      <div class="stat-label">{{ 'RECEPTIONIST.TODAYS_SESSIONS' | translate }}</div>
+      <div class="stat-value text-teal">{{ kpis.todaysSessions }}</div>
     </div>
-    <div class="col-md-3">
-      <div class="card h-100">
-        <div class="card-body">
-          <h6 class="text-secondary mb-2">{{ 'RECEPTIONIST.PRESENT_DOCTORS' | translate }}</h6>
-          <h2 class="font-bebas text-blue mb-0">{{ kpis.presentDoctors }}</h2>
-        </div>
-      </div>
+    <div class="stat-card border-start-blue">
+      <div class="stat-label">{{ 'RECEPTIONIST.PRESENT_DOCTORS' | translate }}</div>
+      <div class="stat-value text-blue">{{ kpis.presentDoctors }}</div>
     </div>
-    <div class="col-md-3">
-      <div class="card h-100">
-        <div class="card-body">
-          <h6 class="text-secondary mb-2">{{ 'RECEPTIONIST.WALKINS' | translate }}</h6>
-          <h2 class="font-bebas text-amber mb-0">{{ kpis.walkInsToday }}</h2>
-        </div>
-      </div>
+    <div class="stat-card border-start-amber">
+      <div class="stat-label">{{ 'RECEPTIONIST.WALKINS' | translate }}</div>
+      <div class="stat-value text-amber">{{ kpis.walkInsToday }}</div>
     </div>
-    <div class="col-md-3">
-      <div class="card h-100">
-        <div class="card-body">
-          <h6 class="text-secondary mb-2">{{ 'RECEPTIONIST.PENDING_PAYMENTS' | translate }}</h6>
-          <h2 class="font-bebas text-danger mb-0">{{ kpis.pendingPayments }}</h2>
-        </div>
-      </div>
+    <div class="stat-card border-start-red">
+      <div class="stat-label">{{ 'RECEPTIONIST.PENDING_PAYMENTS' | translate }}</div>
+      <div class="stat-value text-red">{{ kpis.pendingPayments }}</div>
     </div>
   </div>
 
   <!-- Daily Timeline -->
   <div class="card">
     <div class="card-body">
-      <div class="d-flex justify-content-between align-items-center mb-4">
+      <div class="d-flex justify-content-between align-items-center mb-3">
         <h4 class="mb-0">{{ 'RECEPTIONIST.TIMELINE_TITLE' | translate }}</h4>
-        <div class="d-flex gap-2">
-          <!-- Filters -->
-          <input type="text" class="form-control" [placeholder]="'RECEPTIONIST.SEARCH_PLACEHOLDER' | translate" [(ngModel)]="searchPatient" />
-          <select class="form-select" [(ngModel)]="filterDoctor">
+        <div class="d-flex gap-2 align-items-center">
+          <div class="search-bar">
+            <i class="bi bi-search"></i>
+            <input type="text" [placeholder]="'RECEPTIONIST.SEARCH_PLACEHOLDER' | translate" [(ngModel)]="searchPatient" />
+          </div>
+          <select class="form-select form-select-sm" style="width:auto" [(ngModel)]="filterDoctor">
             <option value="">{{ 'RECEPTIONIST.ALL_DOCTORS' | translate }}</option>
             <option value="Dr. Sarah">Dr. Sarah</option>
             <option value="Dr. Omar">Dr. Omar</option>
             <option value="Dr. Youssef">Dr. Youssef</option>
           </select>
-          <select class="form-select" [(ngModel)]="filterRoom">
+          <select class="form-select form-select-sm" style="width:auto" [(ngModel)]="filterRoom">
             <option value="">{{ 'RECEPTIONIST.ALL_ROOMS' | translate }}</option>
             <option value="Room 1">{{ 'RECEPTIONIST.ROOM_1' | translate }}</option>
             <option value="Room 3">{{ 'RECEPTIONIST.ROOM_3' | translate }}</option>
@@ -64,8 +50,8 @@
         </div>
       </div>
 
-      <div class="table-responsive">
-        <table class="table table-hover align-middle">
+      <div class="table-wrapper">
+        <table>
           <thead>
             <tr>
               <th>{{ 'COMMON.TIME' | translate }}</th>
@@ -73,28 +59,26 @@
               <th>{{ 'COMMON.DOCTOR' | translate }}</th>
               <th>{{ 'COMMON.ROOM' | translate }}</th>
               <th>{{ 'COMMON.STATUS' | translate }}</th>
-              <th class="text-end">{{ 'COMMON.ACTION' | translate }}</th>
+              <th style="text-align:end">{{ 'COMMON.ACTION' | translate }}</th>
             </tr>
           </thead>
           <tbody>
             @for(session of sessions(); track session.id) {
               <tr>
-                <td class="font-bebas fs-5">{{ session.time }}</td>
+                <td class="font-bebas" style="font-size:1rem">{{ session.time }}</td>
                 <td>
-                  <div class="d-flex align-items-center gap-3">
-                    <div class="avatar avatar-sm bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center">
-                      {{ session.patientAvatar }}
-                    </div>
+                  <div class="d-flex align-items-center gap-2">
+                    <div class="avatar avatar-sm">{{ session.patientAvatar }}</div>
                     <span class="fw-semibold">{{ session.patientName }}</span>
                     @if(session.packageAlert) {
-                      <span class="badge badge-warning ms-2" title="Insurance Package Alert">
-                        <i class="bi bi-exclamation-triangle-fill me-1"></i> {{ session.packageAlert }}
+                      <span class="badge badge-warning" title="Insurance Package Alert">
+                        <i class="bi bi-exclamation-triangle-fill"></i> {{ session.packageAlert }}
                       </span>
                     }
                   </div>
                 </td>
                 <td>{{ session.doctorName }}</td>
-                <td><span class="badge border text-body">{{ session.room }}</span></td>
+                <td><span class="badge badge-neutral">{{ session.room }}</span></td>
                 <td>
                   <span class="badge" [ngClass]="{
                     'badge-success': session.status === 'Confirmed' || session.status === 'Completed',
@@ -110,20 +94,22 @@
                     @if(session.status === 'Completed') { {{ 'RECEPTIONIST.COMPLETED' | translate }} }
                   </span>
                 </td>
-                <td class="text-end">
-                  @if(session.status === 'Confirmed' || session.status === 'Pending') {
-                    <button class="btn btn-primary btn-sm me-2" (click)="checkIn(session.id)">
-                      <i class="bi bi-box-arrow-in-right me-1"></i> {{ 'RECEPTIONIST.CHECK_IN' | translate }}
+                <td style="text-align:end">
+                  <div class="d-flex gap-1 justify-content-end align-items-center">
+                    @if(session.status === 'Confirmed' || session.status === 'Pending') {
+                      <button class="btn btn-primary btn-sm" (click)="checkIn(session.id)">
+                        <i class="bi bi-box-arrow-in-right"></i> {{ 'RECEPTIONIST.CHECK_IN' | translate }}
+                      </button>
+                    }
+                    @if(session.status === 'In Progress' || session.status === 'Waiting') {
+                      <button class="btn btn-success btn-sm" (click)="checkOut(session.id)">
+                        <i class="bi bi-box-arrow-right"></i> {{ 'RECEPTIONIST.CHECK_OUT' | translate }}
+                      </button>
+                    }
+                    <button class="btn-action action-danger" [attr.data-tip]="'RECEPTIONIST.MARK_ABSENT' | translate" (click)="openAbsenceModal(session.doctorName)">
+                      <i class="bi bi-person-x"></i>
                     </button>
-                  }
-                  @if(session.status === 'In Progress' || session.status === 'Waiting') {
-                    <button class="btn btn-success btn-sm me-2" (click)="checkOut(session.id)">
-                      <i class="bi bi-box-arrow-right me-1"></i> {{ 'RECEPTIONIST.CHECK_OUT' | translate }}
-                    </button>
-                  }
-                  <button class="btn btn-ghost-danger btn-sm" (click)="openAbsenceModal(session.doctorName)">
-                    <i class="bi bi-person-x me-1"></i> {{ 'RECEPTIONIST.MARK_ABSENT' | translate }}
-                  </button>
+                  </div>
                 </td>
               </tr>
             }
@@ -140,41 +126,39 @@
   <div class="modal fade show d-block" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered">
       <div class="modal-content border-0 shadow-lg">
-        <div class="modal-header border-bottom p-4">
+        <div class="modal-header p-3">
           <h5 class="modal-title font-clash">{{ absentDoctorName() }} is absent today</h5>
           <button type="button" class="btn-close" (click)="closeAbsenceModal()"></button>
         </div>
-        <div class="modal-body p-4">
-          <div class="alert alert-warning d-flex align-items-center gap-3 mb-4">
-            <i class="bi bi-exclamation-triangle fs-4"></i>
-            <div>
-              <strong>{{ 'RECEPTIONIST.GENDER_MATCHING' | translate }}</strong>
-            </div>
+        <div class="modal-body p-3">
+          <div class="alert alert-warning d-flex align-items-center gap-3 mb-3">
+            <i class="bi bi-exclamation-triangle fs-5"></i>
+            <strong>{{ 'RECEPTIONIST.GENDER_MATCHING' | translate }}</strong>
           </div>
-          
-          <div class="row g-4">
+
+          <div class="row g-3">
             <div class="col-md-6">
-              <h6 class="text-success fw-semibold mb-3">Auto-Assigned to Senior (50%)</h6>
-              <div class="card card-bg border-0 mb-3">
+              <p class="section-label text-teal">Auto-Assigned to Senior (50%)</p>
+              <div class="card card-bg border-0 mb-2">
                 <div class="card-body p-3 d-flex justify-content-between align-items-center">
                   <span class="fw-medium">Ahmed Fathy</span>
-                  <i class="bi bi-check-circle-fill text-success fs-5"></i>
+                  <i class="bi bi-check-circle-fill" style="color:var(--color-success)"></i>
                 </div>
               </div>
-              <div class="card card-bg border-0 mb-3">
+              <div class="card card-bg border-0 mb-2">
                 <div class="card-body p-3 d-flex justify-content-between align-items-center">
                   <span class="fw-medium">Ali Hassan</span>
-                  <i class="bi bi-check-circle-fill text-success fs-5"></i>
+                  <i class="bi bi-check-circle-fill" style="color:var(--color-success)"></i>
                 </div>
               </div>
             </div>
-            
+
             <div class="col-md-6">
-              <h6 class="text-danger fw-semibold mb-3">{{ 'RECEPTIONIST.REQUIRES_REASSIGNMENT' | translate }}</h6>
-              <div class="card border border-danger mb-3">
+              <p class="section-label text-red">{{ 'RECEPTIONIST.REQUIRES_REASSIGNMENT' | translate }}</p>
+              <div class="card border border-danger mb-2">
                 <div class="card-body p-3 d-flex justify-content-between align-items-center">
                   <span class="fw-medium">Mostafa Kamal</span>
-                  <select class="form-select form-select-sm">
+                  <select class="form-select form-select-sm" style="width:auto">
                     <option>{{ 'RECEPTIONIST.RESCHEDULE' | translate }}</option>
                     <option>{{ 'RECEPTIONIST.REASSIGN' | translate }}</option>
                   </select>
@@ -183,11 +167,11 @@
             </div>
           </div>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" (click)="closeAbsenceModal()">{{ 'RECEPTIONIST.CANCEL' | translate }}</button>
-          <button type="button" class="btn btn-primary" (click)="confirmCoverage()" [disabled]="isProcessing()">
+        <div class="modal-footer p-3">
+          <button type="button" class="btn btn-outline-secondary btn-sm" (click)="closeAbsenceModal()">{{ 'RECEPTIONIST.CANCEL' | translate }}</button>
+          <button type="button" class="btn btn-primary btn-sm" (click)="confirmCoverage()" [disabled]="isProcessing()">
             @if (isProcessing()) {
-              <span class="spinner-border spinner-border-sm me-2"></span> {{ 'RECEPTIONIST.PROCESSING' | translate }}
+              <span class="spinner-border spinner-border-sm me-1"></span> {{ 'RECEPTIONIST.PROCESSING' | translate }}
             } @else {
               {{ 'RECEPTIONIST.CONFIRM_COVERAGE' | translate }}
             }
