@@ -7,12 +7,12 @@
   </div>
 
   <div class="row g-4">
-    @for(room of rooms(); track room.name) {
+    @for(room of rooms(); track room.id) {
       <div class="col-md-4">
         <div class="card h-100">
           <div class="card-body">
             <div class="d-flex justify-content-between align-items-start mb-3">
-              <h4 class="font-clash mb-0">{{ room.name }}</h4>
+              <h4 class="font-clash mb-0">{{ room.displayName }}</h4>
               <span class="badge" [ngClass]="{'badge-success': room.status === 'Available', 'badge-warning': room.status === 'Occupied', 'badge-error': room.status === 'Maintenance'}">
                 @if(room.status === 'Available') { {{ 'RECEPTIONIST.AVAILABLE' | translate }} }
                 @if(room.status === 'Occupied') { {{ 'RECEPTIONIST.OCCUPIED' | translate }} }
@@ -27,8 +27,8 @@
                     <i class="bi bi-heart-pulse"></i>
                   </div>
                   <div>
-                    <div class="fw-semibold">{{ room.doctor }}</div>
-                    <div class="small text-muted">{{ 'RECEPTIONIST.LOAD' | translate }}: {{ room.load }}</div>
+                    <div class="fw-semibold">{{ getDoctor(room.doctorId || '')?.name }}</div>
+                    <div class="small text-muted">{{ 'RECEPTIONIST.LOAD' | translate }}: {{ room.currentLoad }} / {{ room.capacity }}</div>
                   </div>
                 </div>
               } @else if(room.status === 'Maintenance') {
@@ -47,10 +47,11 @@
                 {{ 'RECEPTIONIST.REASSIGN_DOCTOR' | translate }}
               </button>
               <ul class="dropdown-menu w-100">
-                <li><a class="dropdown-item" href="javascript:void(0)" (click)="reassign(room.name, 'Dr. Sarah')">Assign Dr. Sarah</a></li>
-                <li><a class="dropdown-item" href="javascript:void(0)" (click)="reassign(room.name, 'Dr. Omar')">Assign Dr. Omar</a></li>
+                @for(doc of allDoctors(); track doc.id) {
+                  <li><a class="dropdown-item" href="javascript:void(0)" (click)="reassign(room.id, doc.id)">Assign {{ doc.name }}</a></li>
+                }
                 <li><hr class="dropdown-divider"></li>
-                <li><a class="dropdown-item text-danger" href="javascript:void(0)" (click)="reassign(room.name, null)">{{ 'RECEPTIONIST.CLEAR_ROOM' | translate }}</a></li>
+                <li><a class="dropdown-item text-danger" href="javascript:void(0)" (click)="reassign(room.id, null)">{{ 'RECEPTIONIST.CLEAR_ROOM' | translate }}</a></li>
               </ul>
             </div>
           </div>

@@ -3,6 +3,7 @@ import { CommonModule } from "@angular/common";
 import { TranslateModule } from '@ngx-translate/core';
 import { FormsModule } from '@angular/forms';
 import { PatientService } from '../../../core/services/api/patient.service';
+import { BillingService } from '../../../core/services/api/billing.service';
 import { MessageService } from 'primeng/api';
 
 @Component({

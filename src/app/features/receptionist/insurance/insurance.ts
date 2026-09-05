@@ -3,6 +3,7 @@ import { CommonModule } from "@angular/common";
 import { TranslateModule } from '@ngx-translate/core';
 import { FormsModule } from '@angular/forms';
 import { InsuranceService } from '../../../core/services/api/insurance.service';
+import { PatientService } from '../../../core/services/api/patient.service';
 import { MessageService } from 'primeng/api';
 
 @Component({
@@ -13,9 +14,12 @@ import { MessageService } from 'primeng/api';
 })
 export class InsuranceComponent {
   insuranceService = inject(InsuranceService);
+  patientService = inject(PatientService);
   messageService = inject(MessageService);
+  
   patients = this.insuranceService.claims;
   isProcessing = this.insuranceService.processing;
+  allPatients = this.patientService.patients;
 
   showDrawer = signal(false);
   selectedPatient: any = null;
@@ -25,6 +29,10 @@ export class InsuranceComponent {
   activeDrawerTab = 'docs'; // 'docs' or 'copay'
   package = '';
   copayValue = 0;
+
+  getPatient(id: string) {
+    return this.allPatients().find(p => p.id === id);
+  }
 
   openDrawer(patient: any) {
     this.selectedPatient = patient;

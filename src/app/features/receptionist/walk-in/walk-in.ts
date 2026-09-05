@@ -40,7 +40,8 @@ export class WalkInComponent {
     return this.allPatients().find(p => p.id === id);
   }
 
-  getDoctor(id: string) {
+  getDoctor(id: string | null) {
+    if (!id) return null;
     return this.allDoctors().find(d => d.id === id);
   }
 
@@ -71,7 +72,7 @@ export class WalkInComponent {
     this.hasSearched.set(true);
   }
 
-  bookSlot(doctorId: string) {
+  bookSlot(doctorId: string | null) {
     this.bookedDoctorId.set(doctorId);
     this.hasSearched.set(false);
     this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Walk-in session booked successfully' });

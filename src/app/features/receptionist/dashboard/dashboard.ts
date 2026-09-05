@@ -5,6 +5,9 @@ import { TranslateModule } from '@ngx-translate/core';
 import { FormsModule } from '@angular/forms';
 
 import { SessionService } from '../../../core/services/api/session.service';
+import { PatientService } from '../../../core/services/api/patient.service';
+import { DoctorService } from '../../../core/services/api/doctor.service';
+import { RoomService } from '../../../core/services/api/room.service';
 import { Session } from '../../../core/models/session.model';
 import { MessageService } from 'primeng/api';
 
@@ -27,13 +30,40 @@ export class Dashboard {
   };
 
   sessionService = inject(SessionService);
+  patientService = inject(PatientService);
+  doctorService = inject(DoctorService);
+  roomService = inject(RoomService);
   messageService = inject(MessageService);
+  
   sessions = this.sessionService.sessions;
+  allPatients = this.patientService.patients;
+  allDoctors = this.doctorService.doctors;
+  allRooms = this.roomService.rooms;
 
   // Filters
   filterDoctor = signal<string>('');
   filterRoom = signal<string>('');
   searchPatient = signal<string>('');
+
+  getPatient(id: string) {
+    return this.allPatients().find(p => p.id === id);
+  }
+
+  getDoctor(id: string) {
+    return this.allDoctors().find(d => d.id === id);
+  }
+
+  getRoom(id: string) {
+    return this.allRooms().find(r => r.id === id);
+  }
+
+  formatTime(isoString: string) {
+    try {
+      return new Date(isoString).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    } catch {
+      return isoString;
+    }
+  }
 
   // Absence Modal State
   showAbsenceModal = signal(false);

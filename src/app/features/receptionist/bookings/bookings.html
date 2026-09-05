@@ -63,7 +63,7 @@
         </div>
         
         <div class="p-3 d-flex flex-column gap-3">
-          @for(item of waitlist(); track item.patient) {
+          @for(item of waitlist(); track item.patientId) {
             <div class="border rounded p-3 hover-shadow transition-all bg-card">
               <div class="d-flex justify-content-between align-items-start mb-2">
                 <span class="fw-bold">{{ getPatient(item.patientId)?.nameEn }}</span>
@@ -91,7 +91,7 @@
 </div>
 
 <!-- Book Assessment Drawer -->
-@if(showAssessmentDrawer()) {
+@if(isAssessmentDrawerOpen()) {
   <div class="modal-backdrop fade show" (click)="closeAssessmentDrawer()"></div>
   <div class="drawer drawer-compact fade-in" style="width:420px; z-index:1055; position:fixed; top:0; right:0; height:100%; overflow-y:auto;">
     <div class="drawer-header d-flex justify-content-between align-items-center">
@@ -171,7 +171,7 @@
 }
 
 <!-- Book Session Drawer -->
-@if(showSessionDrawer()) {
+@if(isSessionDrawerOpen()) {
   <div class="modal-backdrop fade show" (click)="closeSessionDrawer()"></div>
   <div class="drawer drawer-compact fade-in" style="width:420px; z-index:1055; position:fixed; top:0; right:0; height:100%; overflow-y:auto;">
     <div class="drawer-header d-flex justify-content-between align-items-center">

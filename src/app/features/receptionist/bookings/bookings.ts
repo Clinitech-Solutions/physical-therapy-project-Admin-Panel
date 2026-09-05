@@ -63,13 +63,12 @@ export class BookingsComponent {
   // Dynamic grid state
   calendarGrid = computed(() => {
     const s = this.sessions();
-    const grid: { [time: string]: any[] } = {};
-    this.timeSlots.forEach(t => grid[t] = []);
+    const grid: { time: string, sessions: any[] }[] = this.timeSlots.map(t => ({ time: t, sessions: [] }));
     s.forEach(session => {
-      // Map scheduledAt back to a slot string for the UI grid for now
       const timeStr = this.formatTime(session.scheduledAt);
-      if (grid[timeStr]) {
-        grid[timeStr].push(session);
+      const slot = grid.find(g => g.time === timeStr);
+      if (slot) {
+        slot.sessions.push(session);
       }
     });
     return grid;
