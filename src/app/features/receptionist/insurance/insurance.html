@@ -6,55 +6,53 @@
     </div>
   </div>
 
-  <div class="card">
-    <div class="card-body">
-      <div class="table-responsive">
-        <table class="table table-hover align-middle">
-          <thead>
+  <div class="table-panel">
+    <div class="table-scroll-area">
+      <table>
+        <thead>
+          <tr>
+            <th>{{ 'COMMON.PATIENT' | translate }}</th>
+            <th>{{ 'RECEPTIONIST.COMPANY' | translate }}</th>
+            <th>{{ 'COMMON.STATUS' | translate }}</th>
+            <th>{{ 'RECEPTIONIST.CO_PAY' | translate }}</th>
+            <th style="text-align:end">{{ 'COMMON.ACTION' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for(patient of patients(); track patient.id) {
             <tr>
-              <th>{{ 'COMMON.PATIENT' | translate }}</th>
-              <th>{{ 'RECEPTIONIST.COMPANY' | translate }}</th>
-              <th>{{ 'COMMON.STATUS' | translate }}</th>
-              <th>{{ 'RECEPTIONIST.CO_PAY' | translate }}</th>
-              <th class="text-end">{{ 'COMMON.ACTION' | translate }}</th>
+              <td class="fw-semibold">{{ patient.name }}</td>
+              <td>
+                <span class="badge border text-body">{{ patient.company }}</span>
+              </td>
+              <td>
+                <span class="badge" [ngClass]="{
+                  'badge-info': patient.status === 'Documents Pending' || patient.status === 'Submitted',
+                  'badge-warning': patient.status === 'Under Review',
+                  'badge-success': patient.status === 'Approved'
+                }">
+                  @if(patient.status === 'Documents Pending') { {{ 'RECEPTIONIST.DOCUMENTS_PENDING' | translate }} }
+                  @if(patient.status === 'Submitted') { {{ 'RECEPTIONIST.SUBMITTED' | translate }} }
+                  @if(patient.status === 'Under Review') { {{ 'RECEPTIONIST.UNDER_REVIEW' | translate }} }
+                  @if(patient.status === 'Approved') { {{ 'RECEPTIONIST.APPROVED' | translate }} }
+                </span>
+              </td>
+              <td>
+                @if(patient.copay !== null) {
+                  <span class="fw-bold">{{ patient.copay }}%</span>
+                } @else {
+                  <span class="text-muted">-</span>
+                }
+              </td>
+              <td style="text-align:end" dir="ltr">
+                <button class="btn-action action-primary" [attr.data-tip]="'RECEPTIONIST.MANAGE' | translate" (click)="openDrawer(patient)">
+                  <i class="bi bi-pencil"></i>
+                </button>
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            @for(patient of patients(); track patient.id) {
-              <tr>
-                <td class="fw-semibold">{{ patient.name }}</td>
-                <td>
-                  <span class="badge border text-body">{{ patient.company }}</span>
-                </td>
-                <td>
-                  <span class="badge" [ngClass]="{
-                    'badge-info': patient.status === 'Documents Pending' || patient.status === 'Submitted',
-                    'badge-warning': patient.status === 'Under Review',
-                    'badge-success': patient.status === 'Approved'
-                  }">
-                    @if(patient.status === 'Documents Pending') { {{ 'RECEPTIONIST.DOCUMENTS_PENDING' | translate }} }
-                    @if(patient.status === 'Submitted') { {{ 'RECEPTIONIST.SUBMITTED' | translate }} }
-                    @if(patient.status === 'Under Review') { {{ 'RECEPTIONIST.UNDER_REVIEW' | translate }} }
-                    @if(patient.status === 'Approved') { {{ 'RECEPTIONIST.APPROVED' | translate }} }
-                  </span>
-                </td>
-                <td>
-                  @if(patient.copay !== null) {
-                    <span class="fw-bold">{{ patient.copay }}%</span>
-                  } @else {
-                    <span class="text-muted">-</span>
-                  }
-                </td>
-                <td class="text-end">
-                  <button class="btn btn-ghost-primary btn-sm" (click)="openDrawer(patient)">
-                    {{ 'RECEPTIONIST.MANAGE' | translate }} <i class="bi bi-chevron-right ms-1"></i>
-                  </button>
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
+          }
+        </tbody>
+      </table>
     </div>
   </div>
 </div>
@@ -62,28 +60,28 @@
 <!-- Manage Insurance Drawer -->
 @if(showDrawer()) {
   <div class="modal-backdrop fade show" (click)="closeDrawer()"></div>
-  <div class="drawer drawer-end fade-in card-bg shadow-lg h-100 position-fixed top-0 end-0" style="width: 440px; z-index: 1055; overflow-y: auto;">
-    <div class="drawer-header p-4 d-flex justify-content-between align-items-center">
+  <div class="drawer drawer-compact fade-in" style="width:420px; z-index:1055; position:fixed; top:0; right:0; height:100%; overflow-y:auto;">
+    <div class="drawer-header d-flex justify-content-between align-items-center">
       <h5 class="mb-0">{{ 'RECEPTIONIST.MANAGE_INSURANCE' | translate }}: {{ selectedPatient?.name }}</h5>
       <button class="btn-close" (click)="closeDrawer()"></button>
     </div>
     
-    <div class="drawer-body p-4">
+    <div class="drawer-body">
       <!-- Status tracker -->
-      <div class="mb-4 pb-4 border-bottom">
-        <h6 class="text-muted mb-3">{{ 'RECEPTIONIST.CURRENT_STATUS' | translate }}</h6>
+      <div class="mb-3 pb-3 border-bottom">
+        <p class="section-label mb-2">{{ 'RECEPTIONIST.CURRENT_STATUS' | translate }}</p>
         <span class="badge badge-info fs-6 px-3 py-2">{{ selectedPatient?.status }}</span>
       </div>
 
-      <div class="mb-4">
+      <div class="form-group mb-3">
         <label class="form-label">{{ 'RECEPTIONIST.UPLOAD_DOCS' | translate }}</label>
-        <div class="border border-dashed rounded p-4 text-center card-bg cursor-pointer">
+        <div class="border border-dashed rounded p-3 text-center card-bg cursor-pointer">
           <i class="bi bi-cloud-arrow-up fs-2 text-primary mb-2 d-block"></i>
           <span class="text-muted">{{ 'RECEPTIONIST.DRAG_DROP' | translate }}</span>
         </div>
       </div>
 
-      <div class="mb-4">
+      <div class="form-group mb-3">
         <label class="form-label">{{ 'RECEPTIONIST.INSURANCE_COMPANY' | translate }}</label>
         <select class="form-select" [(ngModel)]="insuranceCompany">
           <option value="Bupa">Bupa</option>
@@ -92,7 +90,7 @@
         </select>
       </div>
 
-      <div class="mb-4">
+      <div class="form-group mb-3">
         <label class="form-label">{{ 'RECEPTIONIST.PACKAGE' | translate }}</label>
         <select class="form-select" [(ngModel)]="package">
           <option value="">{{ 'RECEPTIONIST.SELECT_PACKAGE' | translate }}</option>
@@ -102,26 +100,28 @@
       </div>
 
       @if(selectedPatient?.status === 'Approved' || selectedPatient?.status === 'Under Review') {
-        <div class="mb-4 fade-in">
+        <div class="form-group mb-3 fade-in">
           <label class="form-label">{{ 'RECEPTIONIST.RECORD_COPAY' | translate }}</label>
           <div class="input-group">
-            <input type="number" class="form-control" [(ngModel)]="copayInput">
-            <span class="input-group-text">%</span>
+            <input type="number" class="form-control border-end-0" [(ngModel)]="copayInput">
+            <span class="input-group-text card-bg">%</span>
           </div>
           <button class="btn btn-success w-100 mt-3" (click)="saveCopay()">{{ 'RECEPTIONIST.SAVE_COPAY' | translate }}</button>
         </div>
       }
     </div>
     
-    <div class="drawer-footer p-4">
-        <button class="btn btn-outline-secondary w-50" (click)="closeDrawer()">{{ 'RECEPTIONIST.CANCEL' | translate }}</button>
-        <button class="btn btn-primary w-50" (click)="submitToInsurer()" [disabled]="isProcessing()">
+    <div class="drawer-footer">
+      <div class="d-flex gap-2">
+        <button class="btn btn-outline-secondary flex-1" (click)="closeDrawer()">{{ 'RECEPTIONIST.CANCEL' | translate }}</button>
+        <button class="btn btn-primary flex-1" (click)="submitToInsurer()" [disabled]="isProcessing()">
           @if (isProcessing()) {
-            <span class="spinner-border spinner-border-sm me-2"></span> {{ 'RECEPTIONIST.PROCESSING' | translate }}
+            <span class="spinner-border spinner-border-sm me-1"></span> {{ 'RECEPTIONIST.PROCESSING' | translate }}
           } @else {
             {{ 'RECEPTIONIST.SUBMIT_TO_INSURER' | translate }}
           }
         </button>
       </div>
+    </div>
   </div>
 }

@@ -32,66 +32,66 @@
     </div>
   </div>
 
-  <div class="card">
-    <div class="card-body">
-      <div class="table-responsive">
-        <table class="table table-hover align-middle">
-          <thead>
+  <div class="table-panel">
+    <div class="table-scroll-area">
+      <table>
+        <thead>
+          <tr>
+            <th>{{ 'RECEPTIONIST.INVOICE_ID' | translate }}</th>
+            <th>{{ 'COMMON.PATIENT' | translate }}</th>
+            <th>{{ 'RECEPTIONIST.TYPE' | translate }}</th>
+            <th>{{ 'RECEPTIONIST.DATE' | translate }}</th>
+            <th>{{ 'RECEPTIONIST.AMOUNT' | translate }}</th>
+            <th>{{ 'COMMON.STATUS' | translate }}</th>
+            <th style="text-align:end">{{ 'COMMON.ACTION' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (invoice of invoices(); track invoice.id) {
             <tr>
-              <th>{{ 'RECEPTIONIST.INVOICE_ID' | translate }}</th>
-              <th>{{ 'COMMON.PATIENT' | translate }}</th>
-              <th>{{ 'RECEPTIONIST.TYPE' | translate }}</th>
-              <th>{{ 'RECEPTIONIST.DATE' | translate }}</th>
-              <th>{{ 'RECEPTIONIST.AMOUNT' | translate }}</th>
-              <th>{{ 'COMMON.STATUS' | translate }}</th>
-              <th class="text-end">{{ 'COMMON.ACTION' | translate }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (invoice of invoices(); track invoice.id) {
-              <tr>
-                <td>{{ invoice.id }}</td>
-                <td class="fw-semibold">{{ invoice.patient }}</td>
-                <td>{{ invoice.type }}</td>
-                <td>{{ invoice.date }}</td>
-                <td class="fw-bold">EGP {{ invoice.amount }}</td>
-                <td>
-                  <span class="badge" [ngClass]="{
-                    'badge-warning': invoice.status === 'Pending',
-                    'badge-success': invoice.status === 'Paid',
-                    'badge-info': invoice.status === 'Partial'
-                  }">{{ invoice.status }}</span>
-                </td>
-                <td class="text-end" dir="ltr">
+              <td>{{ invoice.id }}</td>
+              <td class="fw-semibold">{{ invoice.patient }}</td>
+              <td>{{ invoice.type }}</td>
+              <td>{{ invoice.date }}</td>
+              <td class="fw-bold">EGP {{ invoice.amount }}</td>
+              <td>
+                <span class="badge" [ngClass]="{
+                  'badge-warning': invoice.status === 'Pending',
+                  'badge-success': invoice.status === 'Paid',
+                  'badge-info': invoice.status === 'Partial'
+                }">{{ invoice.status }}</span>
+              </td>
+              <td style="text-align:end" dir="ltr">
+                <div class="d-flex gap-1 justify-content-end align-items-center">
                   @if (invoice.status !== 'Paid') {
-                    <button class="btn btn-ghost-primary btn-sm" (click)="openDrawer(invoice)">
-                      <i class="bi bi-wallet2 me-1"></i> {{ 'RECEPTIONIST.COLLECT' | translate }}
+                    <button class="btn-action action-primary" [attr.data-tip]="'RECEPTIONIST.COLLECT' | translate" (click)="openDrawer(invoice)">
+                      <i class="bi bi-wallet2"></i>
                     </button>
                   } @else {
-                    <button class="btn btn-ghost-primary btn-sm">
-                      <i class="bi bi-printer me-1"></i> {{ 'RECEPTIONIST.PRINT' | translate }}
+                    <button class="btn-action action-success" [attr.data-tip]="'RECEPTIONIST.PRINT' | translate">
+                      <i class="bi bi-printer"></i>
                     </button>
                   }
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
     </div>
   </div>
 </div>
 
 <!-- Payment Drawer Overlay -->
 @if (showDrawer()) {
-  <div class="drawer-overlay fade-in" (click)="closeDrawer()"></div>
-  <div class="drawer slide-in-right card-bg border-start shadow d-flex flex-column" style="width: 400px; max-width: 100vw;">
-    <div class="drawer-header p-4 border-bottom d-flex justify-content-between align-items-center">
+  <div class="modal-backdrop fade show" (click)="closeDrawer()"></div>
+  <div class="drawer drawer-compact fade-in" style="width:420px; z-index:1055; position:fixed; top:0; right:0; height:100%; overflow-y:auto;">
+    <div class="drawer-header d-flex justify-content-between align-items-center">
       <h5 class="mb-0 font-clash">{{ 'RECEPTIONIST.COLLECT_PAYMENT' | translate }}</h5>
-      <button class="btn btn-ghost-danger btn-icon" (click)="closeDrawer()"><i class="bi bi-x-lg"></i></button>
+      <button class="btn-close" (click)="closeDrawer()"></button>
     </div>
-    <div class="drawer-body p-4 flex-grow-1 overflow-auto">
-      <div class="mb-4">
+    <div class="drawer-body">
+      <div class="mb-3">
         <label class="form-label text-secondary small">{{ 'COMMON.PATIENT' | translate }}</label>
         <div class="fw-semibold">{{ selectedInvoice?.patient }}</div>
       </div>
@@ -100,7 +100,7 @@
         <h4 class="text-primary mb-0">EGP {{ selectedInvoice?.amount }}</h4>
       </div>
       
-      <div class="form-group mb-4">
+      <div class="form-group mb-3">
         <label class="form-label">{{ 'RECEPTIONIST.AMOUNT_COLLECTED' | translate }}</label>
         <div class="input-group">
           <span class="input-group-text card-bg border-end-0">{{ 'RECEPTIONIST.EGP' | translate }}</span>
@@ -108,7 +108,7 @@
         </div>
       </div>
 
-      <div class="form-group mb-4">
+      <div class="form-group mb-3">
         <label class="form-label">{{ 'RECEPTIONIST.PAYMENT_METHOD' | translate }}</label>
         <div class="d-flex gap-2">
           <button class="btn flex-grow-1" [ngClass]="paymentMethod === 'Cash' ? 'btn-primary' : 'btn-outline-primary'" (click)="paymentMethod = 'Cash'">{{ 'RECEPTIONIST.CASH' | translate }}</button>
@@ -117,12 +117,12 @@
         </div>
       </div>
     </div>
-    <div class="drawer-footer p-4 border-top">
-      <div class="d-flex gap-3">
-        <button class="btn btn-outline-secondary w-50" (click)="closeDrawer()">{{ 'RECEPTIONIST.CANCEL' | translate }}</button>
-        <button class="btn btn-primary w-50" (click)="processPayment()" [disabled]="isProcessing()">
+    <div class="drawer-footer">
+      <div class="d-flex gap-2">
+        <button class="btn btn-outline-secondary flex-1" (click)="closeDrawer()">{{ 'RECEPTIONIST.CANCEL' | translate }}</button>
+        <button class="btn btn-primary flex-1" (click)="processPayment()" [disabled]="isProcessing()">
           @if (isProcessing()) {
-            <span class="spinner-border spinner-border-sm me-2"></span> {{ 'RECEPTIONIST.PROCESSING' | translate }}
+            <span class="spinner-border spinner-border-sm me-1"></span> {{ 'RECEPTIONIST.PROCESSING' | translate }}
           } @else {
             {{ 'RECEPTIONIST.PROCESS_PAYMENT' | translate }}
           }
