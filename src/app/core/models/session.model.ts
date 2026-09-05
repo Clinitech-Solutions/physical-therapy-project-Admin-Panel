@@ -1,3 +1,5 @@
+export type SessionStatus = 'Confirmed' | 'In Progress' | 'Pending' | 'Cancelled' | 'Waiting' | 'Completed';
+
 export interface Session {
   id: string;
   time: string;
@@ -5,6 +7,6 @@ export interface Session {
   patientAvatar: string;
   doctorName: string;
   room: string;
-  status: 'Confirmed' | 'In Progress' | 'Pending' | 'Cancelled' | 'Waiting' | 'Completed';
+  status: SessionStatus;
   packageAlert?: string;
 }

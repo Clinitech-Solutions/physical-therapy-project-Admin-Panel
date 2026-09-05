@@ -16,23 +16,23 @@
 
   <div class="row g-4">
     <div class="col-md-9">
-      <div class="card h-100">
-        <div class="card-body">
-          <div class="d-flex justify-content-between align-items-center mb-4">
-            <h4 class="mb-0">Today, 12 May 2026</h4>
-            <div class="btn-group">
-              <button class="btn btn-primary btn-sm">{{ 'RECEPTIONIST.DAY' | translate }}</button>
-              <button class="btn btn-outline-primary btn-sm">{{ 'RECEPTIONIST.WEEK' | translate }}</button>
-            </div>
+      <div class="table-panel h-100">
+        <div class="table-toolbar p-4 border-bottom d-flex justify-content-between align-items-center">
+          <h4 class="mb-0 font-clash">Today, 12 May 2026</h4>
+          <div class="btn-group">
+            <button class="btn btn-primary btn-sm">{{ 'RECEPTIONIST.DAY' | translate }}</button>
+            <button class="btn btn-outline-primary btn-sm">{{ 'RECEPTIONIST.WEEK' | translate }}</button>
           </div>
-          
-          <!-- Mock Calendar Grid -->
-          <div class="border rounded card-bg">
+        </div>
+        
+        <!-- Mock Calendar Grid -->
+        <div class="table-scroll-area p-0">
+          <div class="d-flex flex-column">
             <!-- 09:00 AM -->
             <div class="d-flex border-bottom">
-              <div class="p-3 text-secondary border-end" style="width: 100px;">09:00 AM</div>
+              <div class="p-3 text-secondary border-end font-monospace" style="width: 100px; font-size: 0.85rem;">09:00 AM</div>
               <div class="p-2 flex-grow-1">
-                <div class="bg-primary bg-opacity-25 text-primary p-2 rounded d-flex justify-content-between align-items-center" style="width: 50%;">
+                <div class="bg-primary bg-opacity-10 text-primary p-2 rounded d-flex justify-content-between align-items-center border border-primary border-opacity-25" style="width: 50%;">
                   <span class="fw-semibold small">Ahmed Fathy (Dr. Sarah)</span>
                   <span class="badge badge-warning">1/2</span>
                 </div>
@@ -41,13 +41,13 @@
             
             <!-- 10:00 AM -->
             <div class="d-flex border-bottom">
-              <div class="p-3 text-secondary border-end" style="width: 100px;">10:00 AM</div>
+              <div class="p-3 text-secondary border-end font-monospace" style="width: 100px; font-size: 0.85rem;">10:00 AM</div>
               <div class="p-2 flex-grow-1 d-flex gap-2">
-                <div class="bg-primary bg-opacity-25 text-primary p-2 rounded d-flex justify-content-between align-items-center flex-grow-1">
+                <div class="bg-primary bg-opacity-10 text-primary p-2 rounded d-flex justify-content-between align-items-center flex-grow-1 border border-primary border-opacity-25">
                   <span class="fw-semibold small">Mona Zaki (Dr. Omar)</span>
                   <span class="badge badge-error">2/2</span>
                 </div>
-                <div class="bg-primary bg-opacity-25 text-primary p-2 rounded d-flex justify-content-between align-items-center flex-grow-1">
+                <div class="bg-secondary bg-opacity-10 text-secondary p-2 rounded d-flex justify-content-between align-items-center flex-grow-1 border border-secondary border-opacity-25">
                   <span class="fw-semibold small">Laila Tarek (Dr. Omar)</span>
                   <span class="badge badge-error">{{ 'RECEPTIONIST.LOCKED' | translate }}</span>
                 </div>
@@ -56,25 +56,25 @@
             
             <!-- 11:00 AM -->
             <div class="d-flex border-bottom">
-              <div class="p-3 text-secondary border-end" style="width: 100px;">11:00 AM</div>
+              <div class="p-3 text-secondary border-end font-monospace" style="width: 100px; font-size: 0.85rem;">11:00 AM</div>
               <div class="p-2 flex-grow-1"></div>
             </div>
             
             <!-- 12:00 PM -->
             <div class="d-flex border-bottom">
-              <div class="p-3 text-secondary border-end" style="width: 100px;">12:00 PM</div>
+              <div class="p-3 text-secondary border-end font-monospace" style="width: 100px; font-size: 0.85rem;">12:00 PM</div>
               <div class="p-2 flex-grow-1"></div>
             </div>
             
             <!-- 01:00 PM -->
             <div class="d-flex border-bottom">
-              <div class="p-3 text-secondary border-end" style="width: 100px;">01:00 PM</div>
+              <div class="p-3 text-secondary border-end font-monospace" style="width: 100px; font-size: 0.85rem;">01:00 PM</div>
               <div class="p-2 flex-grow-1"></div>
             </div>
             
             <!-- 02:00 PM -->
             <div class="d-flex">
-              <div class="p-3 text-secondary border-end" style="width: 100px;">02:00 PM</div>
+              <div class="p-3 text-secondary border-end font-monospace" style="width: 100px; font-size: 0.85rem;">02:00 PM</div>
               <div class="p-2 flex-grow-1"></div>
             </div>
           </div>
@@ -82,36 +82,34 @@
       </div>
     </div>
     <div class="col-md-3">
-      <div class="card h-100 card-bg">
-        <div class="card-body">
-          <div class="d-flex justify-content-between align-items-center mb-4">
-            <h5 class="mb-0">{{ 'RECEPTIONIST.WAITLIST' | translate }}</h5>
-            <span class="badge badge-neutral">{{ waitlist().length }}</span>
-          </div>
-          
-          <div class="d-flex flex-column gap-3">
-            @for(item of waitlist(); track item.patient) {
-              <div class="card-bg p-3 rounded border shadow-sm">
-                <div class="d-flex justify-content-between align-items-start mb-2">
-                  <span class="fw-bold">{{ item.patient }}</span>
-                </div>
-                <div class="small text-secondary mb-2">
-                  <i class="bi bi-clock me-1"></i> {{ item.request }}
-                </div>
-                <div class="small text-secondary mb-3" dir="ltr" style="text-align: start;">
-                  <i class="bi bi-telephone me-1"></i> {{ item.contact }}
-                </div>
-                <button class="btn btn-outline-primary btn-sm w-100" (click)="fillSlot(item)">
-                  {{ 'RECEPTIONIST.FILL_SLOT' | translate }}
-                </button>
+      <div class="table-panel h-100">
+        <div class="p-4 border-bottom d-flex justify-content-between align-items-center">
+          <h5 class="mb-0 font-clash">{{ 'RECEPTIONIST.WAITLIST' | translate }}</h5>
+          <span class="badge badge-neutral">{{ waitlist().length }}</span>
+        </div>
+        
+        <div class="p-3 d-flex flex-column gap-3">
+          @for(item of waitlist(); track item.patient) {
+            <div class="border rounded p-3 hover-shadow transition-all bg-card">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <span class="fw-bold">{{ item.patient }}</span>
               </div>
-            }
-            @if(waitlist().length === 0) {
-              <div class="text-center text-muted py-4">
-                {{ 'RECEPTIONIST.NO_WAITLIST' | translate }}
+              <div class="small text-secondary mb-1">
+                <i class="bi bi-clock me-1"></i> {{ item.request }}
               </div>
-            }
-          </div>
+              <div class="small text-secondary mb-3" dir="ltr" style="text-align: start;">
+                <i class="bi bi-telephone me-1"></i> {{ item.contact }}
+              </div>
+              <button class="btn btn-outline-primary btn-sm w-100" (click)="fillSlot(item)">
+                {{ 'RECEPTIONIST.FILL_SLOT' | translate }}
+              </button>
+            </div>
+          }
+          @if(waitlist().length === 0) {
+            <div class="text-center text-muted py-4">
+              {{ 'RECEPTIONIST.NO_WAITLIST' | translate }}
+            </div>
+          }
         </div>
       </div>
     </div>

@@ -6,12 +6,15 @@
     </div>
   </div>
 
-  <div class="card">
-    <div class="card-body">
-      <div class="row g-4 align-items-end">
+  <div class="table-panel mb-4">
+    <div class="table-toolbar">
+      <div class="row w-100 g-3 align-items-end">
         <div class="col-md-5">
           <label class="form-label">{{ 'COMMON.PATIENT' | translate }}</label>
-          <input type="text" class="form-control" [placeholder]="'RECEPTIONIST.SEARCH_PLACEHOLDER' | translate" [(ngModel)]="patient" (keyup.enter)="searchSlots()">
+          <div class="search-bar w-100">
+            <i class="bi bi-search search-icon"></i>
+            <input type="text" class="search-input" [placeholder]="'RECEPTIONIST.SEARCH_PLACEHOLDER' | translate" [(ngModel)]="patient" (keyup.enter)="searchSlots()">
+          </div>
         </div>
         <div class="col-md-3">
           <label class="form-label d-block">{{ 'RECEPTIONIST.GENDER' | translate }}</label>
@@ -20,7 +23,7 @@
             <button type="button" class="btn" [ngClass]="gender() === 'Female' ? 'btn-primary' : 'btn-outline-primary'" (click)="gender.set('Female')">{{ 'RECEPTIONIST.FEMALE' | translate }}</button>
           </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
           <label class="form-label">{{ 'RECEPTIONIST.PREFERRED_TIME' | translate }}</label>
           <select class="form-select" [(ngModel)]="timePref">
             <option value="Now">{{ 'RECEPTIONIST.NOW' | translate }}</option>
@@ -28,12 +31,12 @@
             <option value="Within 2 hours">Within 2 hours</option>
           </select>
         </div>
-        <div class="col-md-3 d-flex align-items-end">
+        <div class="col-md-2 d-flex align-items-end">
           <button class="btn btn-primary w-100 py-2" (click)="searchSlots()" [disabled]="!patient() || isSearching()">
             @if (isSearching()) {
-              <span class="spinner-border spinner-border-sm me-2"></span> {{ 'RECEPTIONIST.PROCESSING' | translate }}
+              <span class="spinner-border spinner-border-sm"></span>
             } @else {
-              <i class="bi bi-search me-2"></i> {{ 'RECEPTIONIST.SEARCH' | translate }}
+              {{ 'RECEPTIONIST.SEARCH' | translate }}
             }
           </button>
         </div>

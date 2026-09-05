@@ -1,8 +1,10 @@
+export type InvoiceStatus = 'Pending' | 'Paid' | 'Partial' | 'Overdue';
+
 export interface Invoice {
   id: string;
   patient: string;
   amount: number;
-  status: 'Pending' | 'Paid' | 'Partial' | 'Overdue';
+  status: InvoiceStatus;
   type: string;
   date: string;
 }

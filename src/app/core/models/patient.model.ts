@@ -1,11 +1,14 @@
+export type Gender = 'Male' | 'Female';
+export type PaymentMethod = 'Cash' | 'Online' | 'Insurance' | 'Card' | 'InstaPay';
+
 export interface Patient {
   id: string;
   nameEn: string;
   nameAr: string;
   avatar: string;
-  gender: 'Male' | 'Female';
+  gender: Gender;
   phone: string;
-  paymentType: 'Cash' | 'Online' | 'Insurance';
+  paymentType: PaymentMethod;
   lastVisit: string;
   documents: {
     medicalConsent: boolean;
@@ -18,9 +21,9 @@ export interface NewPatient {
   nameEn: string;
   nameAr: string;
   phone: string;
-  gender: string;
+  gender: Gender;
   dob: string;
-  paymentType: string;
+  paymentType: PaymentMethod;
   insuranceCompany: string;
   docs: {
     medicalConsent: boolean;

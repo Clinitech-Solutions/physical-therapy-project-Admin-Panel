@@ -4,7 +4,7 @@ import { TranslateModule } from '@ngx-translate/core';
 import { FormsModule } from '@angular/forms';
 
 import { PatientService } from '../../../core/services/api/patient.service';
-import { Patient } from '../../../core/models/patient.model';
+import { Patient, NewPatient } from '../../../core/models/patient.model';
 import { MessageService } from 'primeng/api';
 
 @Component({
@@ -26,7 +26,7 @@ export class PatientsComponent {
   showDrawer = signal(false);
   
   // New Patient Form
-  newPatient = {
+  newPatient: NewPatient = {
     nameEn: '',
     nameAr: '',
     phone: '',
