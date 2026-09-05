@@ -26,32 +26,34 @@
     </div>
   </div>
 
-  <!-- Daily Timeline -->
-  <div class="card">
-    <div class="card-body">
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="mb-0">{{ 'RECEPTIONIST.TIMELINE_TITLE' | translate }}</h4>
-        <div class="d-flex gap-2 align-items-center">
-          <div class="search-bar">
-            <i class="bi bi-search"></i>
-            <input type="text" [placeholder]="'RECEPTIONIST.SEARCH_PLACEHOLDER' | translate" [(ngModel)]="searchPatient" />
-          </div>
-          <select class="form-select form-select-sm" style="width:auto" [(ngModel)]="filterDoctor">
-            <option value="">{{ 'RECEPTIONIST.ALL_DOCTORS' | translate }}</option>
-            <option value="Dr. Sarah">Dr. Sarah</option>
-            <option value="Dr. Omar">Dr. Omar</option>
-            <option value="Dr. Youssef">Dr. Youssef</option>
-          </select>
-          <select class="form-select form-select-sm" style="width:auto" [(ngModel)]="filterRoom">
-            <option value="">{{ 'RECEPTIONIST.ALL_ROOMS' | translate }}</option>
-            <option value="Room 1">{{ 'RECEPTIONIST.ROOM_1' | translate }}</option>
-            <option value="Room 3">{{ 'RECEPTIONIST.ROOM_3' | translate }}</option>
-          </select>
-        </div>
-      </div>
 
-      <div class="table-wrapper">
-        <table>
+  <!-- Daily Timeline -->
+  <div class="table-panel">
+    <!-- Sticky toolbar lives inside the scroll container -->
+    <div class="table-toolbar">
+      <h4 class="mb-0">{{ 'RECEPTIONIST.TIMELINE_TITLE' | translate }}</h4>
+      <div class="d-flex gap-2 align-items-center">
+        <div class="search-bar">
+          <i class="bi bi-search"></i>
+          <input type="text" [placeholder]="'RECEPTIONIST.SEARCH_PLACEHOLDER' | translate" [(ngModel)]="searchPatient" />
+        </div>
+        <select class="form-select form-select-sm" style="width:auto" [(ngModel)]="filterDoctor">
+          <option value="">{{ 'RECEPTIONIST.ALL_DOCTORS' | translate }}</option>
+          <option value="Dr. Sarah">Dr. Sarah</option>
+          <option value="Dr. Omar">Dr. Omar</option>
+          <option value="Dr. Youssef">Dr. Youssef</option>
+        </select>
+        <select class="form-select form-select-sm" style="width:auto" [(ngModel)]="filterRoom">
+          <option value="">{{ 'RECEPTIONIST.ALL_ROOMS' | translate }}</option>
+          <option value="Room 1">{{ 'RECEPTIONIST.ROOM_1' | translate }}</option>
+          <option value="Room 3">{{ 'RECEPTIONIST.ROOM_3' | translate }}</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="table-scroll-area">
+      <table>
+
           <thead>
             <tr>
               <th>{{ 'COMMON.TIME' | translate }}</th>
@@ -97,13 +99,13 @@
                 <td style="text-align:end">
                   <div class="d-flex gap-1 justify-content-end align-items-center">
                     @if(session.status === 'Confirmed' || session.status === 'Pending') {
-                      <button class="btn btn-primary btn-sm" (click)="checkIn(session.id)">
-                        <i class="bi bi-box-arrow-in-right"></i> {{ 'RECEPTIONIST.CHECK_IN' | translate }}
+                      <button class="btn-action action-primary" [attr.data-tip]="'RECEPTIONIST.CHECK_IN' | translate" (click)="checkIn(session.id)">
+                        <i class="bi bi-box-arrow-in-right"></i>
                       </button>
                     }
                     @if(session.status === 'In Progress' || session.status === 'Waiting') {
-                      <button class="btn btn-success btn-sm" (click)="checkOut(session.id)">
-                        <i class="bi bi-box-arrow-right"></i> {{ 'RECEPTIONIST.CHECK_OUT' | translate }}
+                      <button class="btn-action action-success" [attr.data-tip]="'RECEPTIONIST.CHECK_OUT' | translate" (click)="checkOut(session.id)">
+                        <i class="bi bi-box-arrow-right"></i>
                       </button>
                     }
                     <button class="btn-action action-danger" [attr.data-tip]="'RECEPTIONIST.MARK_ABSENT' | translate" (click)="openAbsenceModal(session.doctorName)">
@@ -116,7 +118,6 @@
           </tbody>
         </table>
       </div>
-    </div>
   </div>
 </div>
 
