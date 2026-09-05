@@ -34,11 +34,11 @@ export const mockRooms: Room[] = [
 ];
 
 export const mockSessions: Session[] = [
-  { id: '1', scheduledAt: '2026-05-12T09:00:00Z', patientId: '1', doctorId: 'doc_1', roomId: 'room_1', status: 'Confirmed', type: 'Session', packageAlert: 'Session 12 of 12' },
-  { id: '2', scheduledAt: '2026-05-12T09:00:00Z', patientId: '2', doctorId: 'doc_2', roomId: 'room_2', status: 'In Progress', type: 'Session' },
-  { id: '3', scheduledAt: '2026-05-12T10:00:00Z', patientId: '4', doctorId: 'doc_1', roomId: 'room_1', status: 'Pending', type: 'Session' },
-  { id: '4', scheduledAt: '2026-05-12T10:30:00Z', patientId: '5', doctorId: 'doc_2', roomId: 'room_2', status: 'Cancelled', type: 'Session' },
-  { id: '5', scheduledAt: '2026-05-12T11:00:00Z', patientId: '6', doctorId: 'doc_3', roomId: 'room_3', status: 'Completed', type: 'Session' },
+  { id: '1', scheduledAt: '2026-05-12T09:00:00', patientId: '1', doctorId: 'doc_1', roomId: 'room_1', status: 'Confirmed', type: 'Session', packageAlert: 'Session 12 of 12' },
+  { id: '2', scheduledAt: '2026-05-12T09:00:00', patientId: '2', doctorId: 'doc_2', roomId: 'room_2', status: 'In Progress', type: 'Session' },
+  { id: '3', scheduledAt: '2026-05-12T10:00:00', patientId: '4', doctorId: 'doc_1', roomId: 'room_1', status: 'Pending', type: 'Session' },
+  { id: '4', scheduledAt: '2026-05-12T10:30:00', patientId: '5', doctorId: 'doc_2', roomId: 'room_2', status: 'Cancelled', type: 'Session' },
+  { id: '5', scheduledAt: '2026-05-12T11:00:00', patientId: '6', doctorId: 'doc_3', roomId: 'room_3', status: 'Completed', type: 'Session' },
 ];
 
 export const mockInsuranceClaims: InsuranceClaim[] = [
