@@ -2,10 +2,7 @@ import { Component, signal, computed, inject } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { TranslateModule } from '@ngx-translate/core';
 import { FormsModule } from '@angular/forms';
-import { BookingService } from '../../../core/services/api/booking.service';
-import { PatientService } from '../../../core/services/api/patient.service';
-import { DoctorService } from '../../../core/services/api/doctor.service';
-import { RoomService } from '../../../core/services/api/room.service';
+import { ClinicStateService } from '../../../core/services/state/clinic-state.service';
 import { MessageService } from 'primeng/api';
 import { SelectModule } from 'primeng/select';
 import { SessionType } from '../../../core/models/session.model';
@@ -17,22 +14,19 @@ import { SessionType } from '../../../core/models/session.model';
   templateUrl: "./bookings.html"
 })
 export class BookingsComponent {
-  bookingService = inject(BookingService);
-  patientService = inject(PatientService);
-  doctorService = inject(DoctorService);
-  roomService = inject(RoomService);
+  clinicState = inject(ClinicStateService);
   messageService = inject(MessageService);
 
   viewMode = signal<'Week' | 'Day'>('Day');
-  isLoading = this.bookingService.loading;
+  isLoading = this.clinicState.isLoading;
 
   // Global State
-  waitlist = this.bookingService.waitlist;
-  doctors = this.bookingService.doctors;
-  sessions = this.bookingService.sessions;
-  allPatients = this.patientService.patients;
-  allDoctors = this.doctorService.doctors;
-  allRooms = this.roomService.rooms;
+  waitlist = this.clinicState.waitlist;
+  doctors = this.clinicState.doctors;
+  sessions = this.clinicState.sessions;
+  allPatients = this.clinicState.patients;
+  allDoctors = this.clinicState.doctors;
+  allRooms = this.clinicState.rooms;
 
   timeSlots = [
     '09:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '01:00 PM', '02:00 PM'
@@ -125,9 +119,9 @@ export class BookingsComponent {
     }
 
     // Dummy logic to convert time back to a pseudo ISO string for the mock DB today
-    const mockIso = `2026-05-12T${this.assessmentForm.time === '09:00 AM' ? '09:00:00' : '10:00:00'}Z`;
+    const mockIso = `2026-05-12T${this.assessmentForm.time === '09:00 AM' ? '09:00:00' : '10:00:00'}`;
 
-    await this.bookingService.addSession({
+    await this.clinicState.addSession({
       patientId: this.assessmentForm.patientId,
       doctorId: this.assessmentForm.doctorId,
       roomId: 'room_1', // Default assigned room for mock
@@ -145,9 +139,9 @@ export class BookingsComponent {
       return;
     }
 
-    const mockIso = `2026-05-12T${this.sessionForm.time === '09:00 AM' ? '09:00:00' : '10:00:00'}Z`;
+    const mockIso = `2026-05-12T${this.sessionForm.time === '09:00 AM' ? '09:00:00' : '10:00:00'}`;
 
-    await this.bookingService.addSession({
+    await this.clinicState.addSession({
       patientId: this.sessionForm.patientId,
       doctorId: this.sessionForm.doctorId,
       roomId: this.sessionForm.roomId,

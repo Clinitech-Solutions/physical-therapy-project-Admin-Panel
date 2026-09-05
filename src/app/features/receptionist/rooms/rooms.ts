@@ -1,8 +1,7 @@
 import { Component, signal, inject } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { TranslateModule } from '@ngx-translate/core';
-import { RoomService } from '../../../core/services/api/room.service';
-import { DoctorService } from '../../../core/services/api/doctor.service';
+import { ClinicStateService } from '../../../core/services/state/clinic-state.service';
 import { MessageService } from 'primeng/api';
 
 @Component({
@@ -12,19 +11,18 @@ import { MessageService } from 'primeng/api';
   templateUrl: "./rooms.html"
 })
 export class RoomsComponent {
-  roomService = inject(RoomService);
-  doctorService = inject(DoctorService);
+  clinicState = inject(ClinicStateService);
   messageService = inject(MessageService);
   
-  rooms = this.roomService.rooms;
-  allDoctors = this.doctorService.doctors;
+  rooms = this.clinicState.rooms;
+  allDoctors = this.clinicState.doctors;
 
   getDoctor(id: string) {
     return this.allDoctors().find(d => d.id === id);
   }
 
   async reassign(roomId: string, doctorId: string | null) {
-    await this.roomService.reassignRoom(roomId, doctorId);
+    await this.clinicState.reassignRoom(roomId, doctorId);
     const msg = doctorId ? `Room reassigned` : `Room cleared`;
     this.messageService.add({ severity: 'success', summary: 'Success', detail: msg });
   }

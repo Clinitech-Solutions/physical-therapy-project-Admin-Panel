@@ -2,10 +2,7 @@ import { Component, signal, computed, inject } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { TranslateModule } from '@ngx-translate/core';
 import { FormsModule } from '@angular/forms';
-import { BookingService } from '../../../core/services/api/booking.service';
-import { PatientService } from '../../../core/services/api/patient.service';
-import { DoctorService } from '../../../core/services/api/doctor.service';
-import { RoomService } from '../../../core/services/api/room.service';
+import { ClinicStateService } from '../../../core/services/state/clinic-state.service';
 import { MessageService } from 'primeng/api';
 import { SelectModule } from 'primeng/select';
 
@@ -16,15 +13,12 @@ import { SelectModule } from 'primeng/select';
   templateUrl: "./walk-in.html"
 })
 export class WalkInComponent {
-  bookingService = inject(BookingService);
-  patientService = inject(PatientService);
-  doctorService = inject(DoctorService);
-  roomService = inject(RoomService);
+  clinicState = inject(ClinicStateService);
   messageService = inject(MessageService);
 
-  allPatients = this.patientService.patients;
-  allDoctors = this.doctorService.doctors;
-  allRooms = this.roomService.rooms;
+  allPatients = this.clinicState.patients;
+  allDoctors = this.clinicState.doctors;
+  allRooms = this.clinicState.rooms;
 
   patientId = signal('');
   gender = signal('Male');
@@ -32,9 +26,9 @@ export class WalkInComponent {
   bookedDoctorId = signal<string | null>(null);
 
   hasSearched = signal(false);
-  isSearching = this.bookingService.searching;
+  isSearching = this.clinicState.isSearching;
 
-  results = this.bookingService.doctorSlots;
+  results = this.clinicState.doctorSlots;
 
   getPatient(id: string) {
     return this.allPatients().find(p => p.id === id);
@@ -68,7 +62,7 @@ export class WalkInComponent {
     if (!this.patientId()) return;
     this.hasSearched.set(false);
     this.bookedDoctorId.set(null);
-    await this.bookingService.searchSlots(this.gender());
+    await this.clinicState.searchSlots(this.gender());
     this.hasSearched.set(true);
   }
 

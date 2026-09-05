@@ -3,7 +3,7 @@ import { CommonModule } from "@angular/common";
 import { TranslateModule } from '@ngx-translate/core';
 import { FormsModule } from '@angular/forms';
 
-import { PatientService } from '../../../core/services/api/patient.service';
+import { ClinicStateService } from '../../../core/services/state/clinic-state.service';
 import { Patient, NewPatient, PaymentMethod } from '../../../core/models/patient.model';
 import { MessageService } from 'primeng/api';
 
@@ -14,7 +14,7 @@ import { MessageService } from 'primeng/api';
   templateUrl: "./patients.html",
 })
 export class PatientsComponent {
-  patientService = inject(PatientService);
+  clinicState = inject(ClinicStateService);
   messageService = inject(MessageService);
   
   // Search & Filter
@@ -22,8 +22,8 @@ export class PatientsComponent {
   filterPayment = signal<string>('All');
   
   // Base Data
-  patients = this.patientService.patients;
-  isLoading = this.patientService.loading;
+  patients = this.clinicState.patients;
+  isLoading = this.clinicState.isLoading;
 
   // Computed Filtered Data
   filteredPatients = computed(() => {
@@ -97,7 +97,7 @@ export class PatientsComponent {
   }
 
   async createProfile() {
-    await this.patientService.createPatient(this.newPatient);
+    await this.clinicState.createPatient(this.newPatient);
     this.closeDrawer();
     this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Patient profile created' });
   }
@@ -105,7 +105,7 @@ export class PatientsComponent {
   async updateProfile() {
     const p = this.selectedPatient();
     if (p) {
-      await this.patientService.updatePatient(p.id, this.editPatientForm);
+      await this.clinicState.updatePatient(p.id, this.editPatientForm);
       this.closeEditDrawer();
       this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Patient profile updated' });
     }

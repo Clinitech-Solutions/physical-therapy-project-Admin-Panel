@@ -4,10 +4,7 @@ import { LanguageService } from "../../../core/services/language";
 import { TranslateModule } from '@ngx-translate/core';
 import { FormsModule } from '@angular/forms';
 
-import { SessionService } from '../../../core/services/api/session.service';
-import { PatientService } from '../../../core/services/api/patient.service';
-import { DoctorService } from '../../../core/services/api/doctor.service';
-import { RoomService } from '../../../core/services/api/room.service';
+import { ClinicStateService } from '../../../core/services/state/clinic-state.service';
 import { Session } from '../../../core/models/session.model';
 import { MessageService } from 'primeng/api';
 
@@ -29,16 +26,13 @@ export class Dashboard {
     pendingPayments: 5
   };
 
-  sessionService = inject(SessionService);
-  patientService = inject(PatientService);
-  doctorService = inject(DoctorService);
-  roomService = inject(RoomService);
+  clinicState = inject(ClinicStateService);
   messageService = inject(MessageService);
   
-  sessions = this.sessionService.sessions;
-  allPatients = this.patientService.patients;
-  allDoctors = this.doctorService.doctors;
-  allRooms = this.roomService.rooms;
+  sessions = this.clinicState.sessions;
+  allPatients = this.clinicState.patients;
+  allDoctors = this.clinicState.doctors;
+  allRooms = this.clinicState.rooms;
 
   // Filters
   filterDoctor = signal<string>('');
@@ -90,12 +84,12 @@ export class Dashboard {
   }
 
   async checkIn(id: string) {
-    await this.sessionService.checkIn(id);
+    await this.clinicState.checkInPatient(id);
     this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Patient checked in' });
   }
 
   async checkOut(id: string) {
-    await this.sessionService.checkOut(id);
+    await this.clinicState.checkOutPatient(id);
     this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Patient checked out' });
   }
 }

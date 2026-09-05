@@ -2,8 +2,7 @@ import { Component, signal, inject } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { TranslateModule } from '@ngx-translate/core';
 import { FormsModule } from '@angular/forms';
-import { InsuranceService } from '../../../core/services/api/insurance.service';
-import { PatientService } from '../../../core/services/api/patient.service';
+import { ClinicStateService } from '../../../core/services/state/clinic-state.service';
 import { MessageService } from 'primeng/api';
 
 @Component({
@@ -13,13 +12,12 @@ import { MessageService } from 'primeng/api';
   templateUrl: "./insurance.html"
 })
 export class InsuranceComponent {
-  insuranceService = inject(InsuranceService);
-  patientService = inject(PatientService);
+  clinicState = inject(ClinicStateService);
   messageService = inject(MessageService);
   
-  patients = this.insuranceService.claims;
-  isProcessing = this.insuranceService.processing;
-  allPatients = this.patientService.patients;
+  patients = this.clinicState.claims;
+  isProcessing = this.clinicState.isLoading;
+  allPatients = this.clinicState.patients;
 
   showDrawer = signal(false);
   selectedPatient: any = null;
@@ -48,14 +46,14 @@ export class InsuranceComponent {
 
   async submitToInsurer() {
     if (!this.selectedPatient) return;
-    await this.insuranceService.submitClaim(this.selectedPatient.id);
+    await this.clinicState.submitClaim(this.selectedPatient.id);
     this.closeDrawer();
     this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Claim submitted successfully' });
   }
 
   async saveCopay() {
     if (this.selectedPatient) {
-      await this.insuranceService.saveCopay(this.selectedPatient.id, this.copayInput);
+      await this.clinicState.saveCopay(this.selectedPatient.id, this.copayInput);
     }
     this.closeDrawer();
     this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Copay updated' });

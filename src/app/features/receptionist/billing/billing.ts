@@ -2,8 +2,7 @@ import { Component, signal, inject } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { TranslateModule } from '@ngx-translate/core';
 import { FormsModule } from '@angular/forms';
-import { PatientService } from '../../../core/services/api/patient.service';
-import { BillingService } from '../../../core/services/api/billing.service';
+import { ClinicStateService } from '../../../core/services/state/clinic-state.service';
 import { MessageService } from 'primeng/api';
 
 @Component({
@@ -13,13 +12,12 @@ import { MessageService } from 'primeng/api';
   templateUrl: "./billing.html"
 })
 export class BillingComponent {
-  billingService = inject(BillingService);
-  patientService = inject(PatientService);
+  clinicState = inject(ClinicStateService);
   messageService = inject(MessageService);
   
-  invoices = this.billingService.invoices;
-  isProcessing = this.billingService.processingPayment;
-  allPatients = this.patientService.patients;
+  invoices = this.clinicState.invoices;
+  isProcessing = this.clinicState.isProcessingPayment;
+  allPatients = this.clinicState.patients;
 
   showDrawer = signal(false);
   selectedInvoice: any = null;
@@ -52,7 +50,7 @@ export class BillingComponent {
 
   async processPayment() {
     if (!this.selectedInvoice) return;
-    await this.billingService.processPayment(this.selectedInvoice.id);
+    await this.clinicState.processPayment(this.selectedInvoice.id);
     this.closeDrawer();
     this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Payment processed successfully' });
   }
