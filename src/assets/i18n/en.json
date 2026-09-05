@@ -93,6 +93,11 @@
     "LIABILITY_WAIVER": "Liability Waiver",
     "ID_CARD": "ID Card / Iqama",
     "CREATE_PROFILE": "Create Profile",
+    "VIEW_PROFILE": "View Profile",
+    "EDIT_PROFILE": "Edit Profile",
+    "SAVE_CHANGES": "Save Changes",
+    "ALL_PAYMENT_TYPES": "All Payment Types",
+    "FILTER_BY_PAYMENT": "Filter by Payment",
     
     "COMPANY": "Company",
     "CO_PAY": "Co-Pay",

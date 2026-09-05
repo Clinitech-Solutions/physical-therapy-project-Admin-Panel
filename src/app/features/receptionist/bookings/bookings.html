@@ -5,10 +5,10 @@
       <p>{{ 'RECEPTIONIST.BOOKINGS_SUB' | translate }}</p>
     </div>
     <div class="d-flex gap-3">
-      <button class="btn btn-ghost-primary fw-semibold">
+      <button class="btn btn-ghost-primary fw-semibold" (click)="openAssessmentDrawer()">
         <i class="bi bi-file-earmark-medical me-1"></i> {{ 'RECEPTIONIST.BOOK_ASSESSMENT' | translate }}
       </button>
-      <button class="btn btn-primary fw-semibold">
+      <button class="btn btn-primary fw-semibold" (click)="openSessionDrawer()">
         <i class="bi bi-calendar-plus me-1"></i> {{ 'RECEPTIONIST.BOOK_SESSION' | translate }}
       </button>
     </div>
@@ -25,58 +25,32 @@
           </div>
         </div>
         
-        <!-- Mock Calendar Grid -->
+        <!-- Dynamic Calendar Grid -->
         <div class="table-scroll-area p-0">
           <div class="d-flex flex-column">
-            <!-- 09:00 AM -->
-            <div class="d-flex border-bottom">
-              <div class="p-3 text-secondary border-end font-monospace" style="width: 100px; font-size: 0.85rem;">09:00 AM</div>
-              <div class="p-2 flex-grow-1">
-                <div class="bg-primary bg-opacity-10 text-primary p-2 rounded d-flex justify-content-between align-items-center border border-primary border-opacity-25" style="width: 50%;">
-                  <span class="fw-semibold small">Ahmed Fathy (Dr. Sarah)</span>
-                  <span class="badge badge-warning">1/2</span>
+            @for(slot of calendarGrid(); track slot.time) {
+              <div class="d-flex border-bottom min-h-[80px]">
+                <div class="p-3 text-secondary border-end font-monospace d-flex align-items-center" style="width: 100px; font-size: 0.85rem;">
+                  {{ slot.time }}
+                </div>
+                <div class="p-2 flex-grow-1 d-flex flex-wrap gap-2 align-items-start">
+                  @for(session of slot.sessions; track session.id) {
+                    <div class="bg-primary bg-opacity-10 text-primary p-2 rounded d-flex flex-column gap-2 border border-primary border-opacity-25" style="min-width: 200px; max-width: 300px;">
+                      <div class="d-flex justify-content-between align-items-start">
+                        <span class="fw-semibold small">{{ getPatient(session.patientId)?.nameEn }}</span>
+                        <span class="badge" [ngClass]="{'badge-warning': session.status === 'Confirmed', 'badge-success': session.status === 'Completed', 'badge-error': session.status === 'Cancelled'}">
+                          {{ session.status }}
+                        </span>
+                      </div>
+                      <div class="d-flex justify-content-between align-items-center text-muted" style="font-size: var(--text-xs)">
+                        <span><i class="bi bi-person me-1"></i> {{ getDoctor(session.doctorId)?.name }}</span>
+                        <span><i class="bi bi-door-open me-1"></i> {{ getRoom(session.roomId)?.displayName }}</span>
+                      </div>
+                    </div>
+                  }
                 </div>
               </div>
-            </div>
-            
-            <!-- 10:00 AM -->
-            <div class="d-flex border-bottom">
-              <div class="p-3 text-secondary border-end font-monospace" style="width: 100px; font-size: 0.85rem;">10:00 AM</div>
-              <div class="p-2 flex-grow-1 d-flex gap-2">
-                <div class="bg-primary bg-opacity-10 text-primary p-2 rounded d-flex justify-content-between align-items-center flex-grow-1 border border-primary border-opacity-25">
-                  <span class="fw-semibold small">Mona Zaki (Dr. Omar)</span>
-                  <span class="badge badge-error">2/2</span>
-                </div>
-                <div class="bg-secondary bg-opacity-10 text-secondary p-2 rounded d-flex justify-content-between align-items-center flex-grow-1 border border-secondary border-opacity-25">
-                  <span class="fw-semibold small">Laila Tarek (Dr. Omar)</span>
-                  <span class="badge badge-error">{{ 'RECEPTIONIST.LOCKED' | translate }}</span>
-                </div>
-              </div>
-            </div>
-            
-            <!-- 11:00 AM -->
-            <div class="d-flex border-bottom">
-              <div class="p-3 text-secondary border-end font-monospace" style="width: 100px; font-size: 0.85rem;">11:00 AM</div>
-              <div class="p-2 flex-grow-1"></div>
-            </div>
-            
-            <!-- 12:00 PM -->
-            <div class="d-flex border-bottom">
-              <div class="p-3 text-secondary border-end font-monospace" style="width: 100px; font-size: 0.85rem;">12:00 PM</div>
-              <div class="p-2 flex-grow-1"></div>
-            </div>
-            
-            <!-- 01:00 PM -->
-            <div class="d-flex border-bottom">
-              <div class="p-3 text-secondary border-end font-monospace" style="width: 100px; font-size: 0.85rem;">01:00 PM</div>
-              <div class="p-2 flex-grow-1"></div>
-            </div>
-            
-            <!-- 02:00 PM -->
-            <div class="d-flex">
-              <div class="p-3 text-secondary border-end font-monospace" style="width: 100px; font-size: 0.85rem;">02:00 PM</div>
-              <div class="p-2 flex-grow-1"></div>
-            </div>
+            }
           </div>
         </div>
       </div>
@@ -92,7 +66,7 @@
           @for(item of waitlist(); track item.patient) {
             <div class="border rounded p-3 hover-shadow transition-all bg-card">
               <div class="d-flex justify-content-between align-items-start mb-2">
-                <span class="fw-bold">{{ item.patient }}</span>
+                <span class="fw-bold">{{ getPatient(item.patientId)?.nameEn }}</span>
               </div>
               <div class="small text-secondary mb-1">
                 <i class="bi bi-clock me-1"></i> {{ item.request }}
@@ -100,7 +74,7 @@
               <div class="small text-secondary mb-3" dir="ltr" style="text-align: start;">
                 <i class="bi bi-telephone me-1"></i> {{ item.contact }}
               </div>
-              <button class="btn btn-outline-primary btn-sm w-100" (click)="fillSlot(item)">
+              <button class="btn btn-outline-primary btn-sm w-100" (click)="fillWaitlist(item.patientId)">
                 {{ 'RECEPTIONIST.FILL_SLOT' | translate }}
               </button>
             </div>
@@ -115,3 +89,172 @@
     </div>
   </div>
 </div>
+
+<!-- Book Assessment Drawer -->
+@if(showAssessmentDrawer()) {
+  <div class="modal-backdrop fade show" (click)="closeAssessmentDrawer()"></div>
+  <div class="drawer drawer-compact fade-in" style="width:420px; z-index:1055; position:fixed; top:0; right:0; height:100%; overflow-y:auto;">
+    <div class="drawer-header d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">{{ 'RECEPTIONIST.BOOK_ASSESSMENT' | translate }}</h5>
+      <button class="btn-close" (click)="closeAssessmentDrawer()"></button>
+    </div>
+
+    <div class="drawer-body">
+      <div class="form-group mb-3">
+        <label class="form-label">{{ 'COMMON.PATIENT' | translate }}</label>
+        <p-select 
+          [options]="allPatients()" 
+          [(ngModel)]="assessmentForm.patientId" 
+          optionValue="id" 
+          [filter]="true" 
+          filterBy="nameEn,phone" 
+          placeholder="Search Patient..." 
+          styleClass="w-100">
+          
+          <ng-template pTemplate="selectedItem" let-selectedOption>
+            <div class="d-flex align-items-center" *ngIf="selectedOption">
+              <div>{{ selectedOption.nameEn }}</div>
+            </div>
+          </ng-template>
+          
+          <ng-template pTemplate="item" let-patient>
+            <div class="d-flex align-items-center gap-2">
+              <div class="avatar avatar-xs bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width:24px;height:24px;font-size:10px">{{patient.avatar}}</div>
+              <div>
+                <div class="fw-medium" style="font-size: 0.9rem">{{ patient.nameEn }}</div>
+                <div class="text-muted" style="font-size: 0.75rem">{{ patient.phone }}</div>
+              </div>
+            </div>
+          </ng-template>
+        </p-select>
+      </div>
+      
+      <div class="form-group mb-3">
+        <label class="form-label">{{ 'ROLES.SENIOR' | translate }}</label>
+        <select class="form-select" [(ngModel)]="assessmentForm.doctorId">
+          <option value="">Select Senior</option>
+          @for(doc of allDoctors(); track doc.id) {
+            <option [value]="doc.id">{{ doc.name }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-6 form-group">
+          <label class="form-label">{{ 'COMMON.DATE' | translate }}</label>
+          <input type="date" class="form-control" [(ngModel)]="assessmentForm.date">
+        </div>
+        <div class="col-6 form-group">
+          <label class="form-label">{{ 'COMMON.TIME' | translate }}</label>
+          <select class="form-select" [(ngModel)]="assessmentForm.time">
+            @for (t of timeSlots; track t) {
+              <option [value]="t">{{ t }}</option>
+            }
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="drawer-footer">
+      <div class="d-flex gap-2">
+        <button class="btn btn-outline-secondary flex-1" (click)="closeAssessmentDrawer()">{{ 'COMMON.CANCEL' | translate }}</button>
+        <button class="btn btn-primary flex-1" (click)="submitAssessment()" [disabled]="isLoading() || !assessmentForm.patientId || !assessmentForm.doctorId">
+          @if (isLoading()) {
+            <span class="spinner-border spinner-border-sm me-1"></span>
+          } @else {
+            {{ 'COMMON.SAVE' | translate }}
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Book Session Drawer -->
+@if(showSessionDrawer()) {
+  <div class="modal-backdrop fade show" (click)="closeSessionDrawer()"></div>
+  <div class="drawer drawer-compact fade-in" style="width:420px; z-index:1055; position:fixed; top:0; right:0; height:100%; overflow-y:auto;">
+    <div class="drawer-header d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">{{ 'RECEPTIONIST.BOOK_SESSION' | translate }}</h5>
+      <button class="btn-close" (click)="closeSessionDrawer()"></button>
+    </div>
+
+    <div class="drawer-body">
+      <div class="form-group mb-3">
+        <label class="form-label">{{ 'COMMON.PATIENT' | translate }}</label>
+        <p-select 
+          [options]="allPatients()" 
+          [(ngModel)]="sessionForm.patientId" 
+          optionValue="id" 
+          [filter]="true" 
+          filterBy="nameEn,phone" 
+          placeholder="Search Patient..." 
+          styleClass="w-100">
+          
+          <ng-template pTemplate="selectedItem" let-selectedOption>
+            <div class="d-flex align-items-center" *ngIf="selectedOption">
+              <div>{{ selectedOption.nameEn }}</div>
+            </div>
+          </ng-template>
+          
+          <ng-template pTemplate="item" let-patient>
+            <div class="d-flex align-items-center gap-2">
+              <div class="avatar avatar-xs bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width:24px;height:24px;font-size:10px">{{patient.avatar}}</div>
+              <div>
+                <div class="fw-medium" style="font-size: 0.9rem">{{ patient.nameEn }}</div>
+                <div class="text-muted" style="font-size: 0.75rem">{{ patient.phone }}</div>
+              </div>
+            </div>
+          </ng-template>
+        </p-select>
+      </div>
+      
+      <div class="form-group mb-3">
+        <label class="form-label">{{ 'COMMON.DOCTOR' | translate }}</label>
+        <select class="form-select" [(ngModel)]="sessionForm.doctorId">
+          <option value="">Select Doctor</option>
+          @for(doc of allDoctors(); track doc.id) {
+            <option [value]="doc.id">{{ doc.name }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="form-group mb-3">
+        <label class="form-label">{{ 'COMMON.ROOM' | translate }}</label>
+        <select class="form-select" [(ngModel)]="sessionForm.roomId">
+          @for(room of allRooms(); track room.id) {
+            <option [value]="room.id">{{ room.displayName }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-6 form-group">
+          <label class="form-label">{{ 'COMMON.DATE' | translate }}</label>
+          <input type="date" class="form-control" [(ngModel)]="sessionForm.date">
+        </div>
+        <div class="col-6 form-group">
+          <label class="form-label">{{ 'COMMON.TIME' | translate }}</label>
+          <select class="form-select" [(ngModel)]="sessionForm.time">
+            @for (t of timeSlots; track t) {
+              <option [value]="t">{{ t }}</option>
+            }
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="drawer-footer">
+      <div class="d-flex gap-2">
+        <button class="btn btn-outline-secondary flex-1" (click)="closeSessionDrawer()">{{ 'COMMON.CANCEL' | translate }}</button>
+        <button class="btn btn-primary flex-1" (click)="submitSession()" [disabled]="isLoading() || !sessionForm.patientId || !sessionForm.doctorId">
+          @if (isLoading()) {
+            <span class="spinner-border spinner-border-sm me-1"></span>
+          } @else {
+            {{ 'COMMON.SAVE' | translate }}
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}

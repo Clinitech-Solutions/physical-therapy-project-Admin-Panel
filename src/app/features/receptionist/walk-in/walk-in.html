@@ -11,10 +11,33 @@
       <div class="row w-100 g-3 align-items-end">
         <div class="col-md-5">
           <label class="form-label">{{ 'COMMON.PATIENT' | translate }}</label>
-          <div class="search-bar w-100">
-            <i class="bi bi-search search-icon"></i>
-            <input type="text" class="search-input" [placeholder]="'RECEPTIONIST.SEARCH_PLACEHOLDER' | translate" [(ngModel)]="patient" (keyup.enter)="searchSlots()">
-          </div>
+          <p-select 
+            [options]="allPatients()" 
+            [ngModel]="patientId()"
+            (ngModelChange)="patientId.set($event)"
+            (onChange)="onPatientSelect($event)"
+            optionValue="id" 
+            [filter]="true" 
+            filterBy="nameEn,phone" 
+            [placeholder]="'RECEPTIONIST.SEARCH_PLACEHOLDER' | translate" 
+            styleClass="w-100">
+            
+            <ng-template pTemplate="selectedItem" let-selectedOption>
+              <div class="d-flex align-items-center" *ngIf="selectedOption">
+                <div>{{ selectedOption.nameEn }}</div>
+              </div>
+            </ng-template>
+            
+            <ng-template pTemplate="item" let-patient>
+              <div class="d-flex align-items-center gap-2">
+                <div class="avatar avatar-xs bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width:24px;height:24px;font-size:10px">{{patient.avatar}}</div>
+                <div>
+                  <div class="fw-medium" style="font-size: 0.9rem">{{ patient.nameEn }}</div>
+                  <div class="text-muted" style="font-size: 0.75rem">{{ patient.phone }}</div>
+                </div>
+              </div>
+            </ng-template>
+          </p-select>
         </div>
         <div class="col-md-3">
           <label class="form-label d-block">{{ 'RECEPTIONIST.GENDER' | translate }}</label>
@@ -32,7 +55,7 @@
           </select>
         </div>
         <div class="col-md-2 d-flex align-items-end">
-          <button class="btn btn-primary w-100 py-2" (click)="searchSlots()" [disabled]="!patient() || isSearching()">
+          <button class="btn btn-primary w-100 py-2" (click)="searchSlots()" [disabled]="!patientId() || isSearching()">
             @if (isSearching()) {
               <span class="spinner-border spinner-border-sm"></span>
             } @else {
@@ -44,12 +67,12 @@
     </div>
   </div>
 
-  @if (bookedDoctor()) {
+  @if (bookedDoctorId()) {
     <div class="alert alert-success d-flex align-items-center mt-4">
       <i class="bi bi-check-circle-fill fs-4 me-3"></i>
       <div>
         <h6 class="mb-1 fw-bold">Successfully Booked!</h6>
-        <div>{{ patient() }} has been assigned to {{ bookedDoctor() }}.</div>
+        <div>{{ getPatient(patientId())?.nameEn }} has been assigned to {{ getDoctor(bookedDoctorId())?.name }}.</div>
       </div>
     </div>
   }
@@ -58,14 +81,14 @@
     <div class="mt-4 fade-in">
       <h5 class="font-clash mb-3">{{ 'RECEPTIONIST.AVAILABLE_SLOTS' | translate }}</h5>
       <div class="row g-4">
-        @for (result of results(); track result.doctor) {
+        @for (result of results(); track result.doctorId) {
           <div class="col-md-4">
-            <div class="card h-100 border hover-shadow" [ngClass]="{'border-primary shadow-sm': bookedDoctor() === result.doctor}">
+            <div class="card h-100 border hover-shadow" [ngClass]="{'border-primary shadow-sm': bookedDoctorId() === result.doctorId}">
               <div class="card-body">
                 <div class="d-flex justify-content-between align-items-start mb-3">
                   <div>
-                    <h5 class="font-clash mb-1">{{ result.doctor }}</h5>
-                    <span class="badge bg-secondary bg-opacity-10 text-secondary">{{ result.doctorGender }}</span>
+                    <h5 class="font-clash mb-1">{{ getDoctor(result.doctorId)?.name }}</h5>
+                    <span class="badge bg-secondary bg-opacity-10 text-secondary">{{ getDoctor(result.doctorId)?.gender }}</span>
                   </div>
                   <span class="badge badge-success">{{ 'RECEPTIONIST.AVAILABLE' | translate }}</span>
                 </div>
@@ -76,21 +99,21 @@
                   </div>
                   <div>
                     <div class="small text-muted">{{ 'COMMON.TIME' | translate }}</div>
-                    <div class="fw-semibold">{{ result.time }}</div>
+                    <div class="fw-semibold">{{ formatTime(result.scheduledAt) }}</div>
                   </div>
                 </div>
 
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                  <span class="small text-muted"><i class="bi bi-door-open me-1"></i> {{ result.room }}</span>
-                  <span class="small text-muted"><i class="bi bi-people me-1"></i> {{ 'RECEPTIONIST.LOAD' | translate }}: {{ result.load }}</span>
+                  <span class="small text-muted"><i class="bi bi-door-open me-1"></i> {{ getRoom(result.roomId)?.displayName }}</span>
+                  <span class="small text-muted"><i class="bi bi-people me-1"></i> {{ 'RECEPTIONIST.LOAD' | translate }}: {{ result.currentLoad }} / {{ getRoom(result.roomId)?.capacity }}</span>
                 </div>
 
-                @if (bookedDoctor() === result.doctor) {
+                @if (bookedDoctorId() === result.doctorId) {
                   <button class="btn btn-success w-100" disabled>
                     <i class="bi bi-check2-circle me-1"></i> {{ 'RECEPTIONIST.CONFIRMED' | translate }}
                   </button>
                 } @else {
-                  <button class="btn btn-outline-primary w-100" (click)="bookSlot(result.doctor)" [disabled]="bookedDoctor() !== null">
+                  <button class="btn btn-outline-primary w-100" (click)="bookSlot(result.doctorId)" [disabled]="bookedDoctorId() !== null">
                     {{ 'RECEPTIONIST.FILL_SLOT' | translate }}
                   </button>
                 }

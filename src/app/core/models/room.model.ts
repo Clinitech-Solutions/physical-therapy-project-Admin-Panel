@@ -1,6 +1,8 @@
 export interface Room {
-  name: string;
+  id: string;
+  displayName: string;
   status: 'Occupied' | 'Available' | 'Maintenance';
-  doctor: string | null;
-  load: string | null;
+  doctorId: string | null;
+  currentLoad: number;
+  capacity: number;
 }

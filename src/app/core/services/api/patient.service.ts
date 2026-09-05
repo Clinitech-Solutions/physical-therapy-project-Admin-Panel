@@ -36,11 +36,21 @@ export class PatientService {
       gender: newPatient.gender as 'Male' | 'Female',
       phone: newPatient.phone,
       paymentType: newPatient.paymentType as 'Cash' | 'Online' | 'Insurance',
-      lastVisit: 'Today',
+      lastVisit: new Date().toISOString(),
       documents: { ...newPatient.docs }
     };
 
     this.patientsSignal.update(patients => [created, ...patients]);
+    this.loading.set(false);
+  }
+
+  async updatePatient(id: string, updatedData: Partial<Patient>) {
+    this.loading.set(true);
+    await new Promise(resolve => setTimeout(resolve, 800)); // Simulate network delay
+
+    this.patientsSignal.update(patients => 
+      patients.map(p => p.id === id ? { ...p, ...updatedData } : p)
+    );
     this.loading.set(false);
   }
 }

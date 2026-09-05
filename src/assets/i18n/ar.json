@@ -93,6 +93,11 @@
     "LIABILITY_WAIVER": "إخلاء المسؤولية",
     "ID_CARD": "بطاقة الهوية / إقامة",
     "CREATE_PROFILE": "إنشاء ملف شخصي",
+    "VIEW_PROFILE": "عرض الملف الشخصي",
+    "EDIT_PROFILE": "تعديل الملف الشخصي",
+    "SAVE_CHANGES": "حفظ التغييرات",
+    "ALL_PAYMENT_TYPES": "جميع طرق الدفع",
+    "FILTER_BY_PAYMENT": "تصفية حسب الدفع",
     
     "COMPANY": "الشركة",
     "CO_PAY": "نسبة التحمل",

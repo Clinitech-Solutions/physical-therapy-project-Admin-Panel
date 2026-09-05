@@ -2,7 +2,7 @@ import { Component, signal, inject } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { TranslateModule } from '@ngx-translate/core';
 import { FormsModule } from '@angular/forms';
-import { BillingService } from '../../../core/services/api/billing.service';
+import { PatientService } from '../../../core/services/api/patient.service';
 import { MessageService } from 'primeng/api';
 
 @Component({
@@ -13,15 +13,30 @@ import { MessageService } from 'primeng/api';
 })
 export class BillingComponent {
   billingService = inject(BillingService);
+  patientService = inject(PatientService);
   messageService = inject(MessageService);
+  
   invoices = this.billingService.invoices;
   isProcessing = this.billingService.processingPayment;
+  allPatients = this.patientService.patients;
 
   showDrawer = signal(false);
   selectedInvoice: any = null;
 
   paymentMethod = 'Cash';
   amountCollected = 0;
+
+  getPatient(id: string) {
+    return this.allPatients().find(p => p.id === id);
+  }
+
+  formatDate(isoString: string) {
+    try {
+      return new Date(isoString).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    } catch {
+      return isoString;
+    }
+  }
 
   openDrawer(invoice: any) {
     this.selectedInvoice = invoice;

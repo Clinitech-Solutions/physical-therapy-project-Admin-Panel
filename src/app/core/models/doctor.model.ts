@@ -1,13 +1,18 @@
+export interface Doctor {
+  id: string;
+  name: string;
+  gender: 'Male' | 'Female';
+}
+
 export interface DoctorSlot {
-  doctor: string;
-  doctorGender: string;
-  time: string;
-  room: string;
-  load: number;
+  doctorId: string;
+  scheduledAt: string; // ISO 8601
+  roomId: string;
+  currentLoad: number;
 }
 
 export interface DoctorAvailability {
-  name: string;
-  load: number;
-  room: string;
+  doctorId: string;
+  currentLoad: number;
+  roomId: string;
 }

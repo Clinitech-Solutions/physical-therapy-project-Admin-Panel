@@ -9,7 +9,7 @@ export interface Patient {
   gender: Gender;
   phone: string;
   paymentType: PaymentMethod;
-  lastVisit: string;
+  lastVisit: string; // ISO 8601
   documents: {
     medicalConsent: boolean;
     liabilityWaiver: boolean;

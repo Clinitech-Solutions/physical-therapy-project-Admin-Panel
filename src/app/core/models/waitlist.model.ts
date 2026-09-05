@@ -1,5 +1,5 @@
 export interface WaitlistItem {
-  patient: string;
+  patientId: string;
   request: string;
   contact: string;
 }

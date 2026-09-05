@@ -21,15 +21,15 @@ export class RoomService {
     this.loading.set(false);
   }
 
-  async reassignRoom(roomName: string, doctorName: string | null) {
+  async reassignRoom(roomId: string, doctorId: string | null) {
     this.loading.set(true);
     await new Promise(resolve => setTimeout(resolve, 300));
     this.roomsSignal.update(rooms => rooms.map(r => {
-      if (r.name === roomName) {
-        if (doctorName) {
-          return { ...r, status: 'Occupied', doctor: doctorName, load: '1/2' };
+      if (r.id === roomId) {
+        if (doctorId) {
+          return { ...r, status: 'Occupied', doctorId: doctorId, currentLoad: 1, capacity: r.capacity };
         } else {
-          return { ...r, status: 'Available', doctor: null, load: null };
+          return { ...r, status: 'Available', doctorId: null, currentLoad: 0, capacity: r.capacity };
         }
       }
       return r;

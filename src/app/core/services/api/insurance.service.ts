@@ -28,7 +28,7 @@ export class InsuranceService {
     this.claimsSignal.update(claims =>
       claims.map(c =>
         c.id === id
-          ? { ...c, status: 'Submitted', pendingDocs: 0 }
+          ? { ...c, status: 'Submitted', missingDocs: [] }
           : c
       )
     );

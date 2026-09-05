@@ -50,10 +50,10 @@
           @for (invoice of invoices(); track invoice.id) {
             <tr>
               <td>{{ invoice.id }}</td>
-              <td class="fw-semibold">{{ invoice.patient }}</td>
+              <td class="fw-semibold">{{ getPatient(invoice.patientId)?.nameEn }}</td>
               <td>{{ invoice.type }}</td>
-              <td>{{ invoice.date }}</td>
-              <td class="fw-bold">EGP {{ invoice.amount }}</td>
+              <td>{{ formatDate(invoice.createdAt) }}</td>
+              <td class="fw-bold">{{ invoice.currency || 'EGP' }} {{ invoice.amount }}</td>
               <td>
                 <span class="badge" [ngClass]="{
                   'badge-warning': invoice.status === 'Pending',
@@ -93,11 +93,11 @@
     <div class="drawer-body">
       <div class="mb-3">
         <label class="form-label text-secondary small">{{ 'COMMON.PATIENT' | translate }}</label>
-        <div class="fw-semibold">{{ selectedInvoice?.patient }}</div>
+        <div class="fw-semibold">{{ getPatient(selectedInvoice?.patientId)?.nameEn }}</div>
       </div>
       <div class="mb-4">
         <label class="form-label text-secondary small">{{ 'RECEPTIONIST.AMOUNT_DUE' | translate }}</label>
-        <h4 class="text-primary mb-0">EGP {{ selectedInvoice?.amount }}</h4>
+        <h4 class="text-primary mb-0">{{ selectedInvoice?.currency || 'EGP' }} {{ selectedInvoice?.amount }}</h4>
       </div>
       
       <div class="form-group mb-3">
