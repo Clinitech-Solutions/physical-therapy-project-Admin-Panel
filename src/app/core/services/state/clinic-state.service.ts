@@ -100,9 +100,7 @@ export class ClinicStateService {
     // 2. Update Room Status
     this.roomsSig.update(list => list.map(r => {
       if (r.id === sessionToUpdate.roomId) {
-        const newLoad = r.currentLoad + 1;
-        const newStatus = newLoad >= r.capacity ? 'Occupied' : 'Available';
-        return { ...r, currentLoad: newLoad, status: newStatus };
+        return { ...r, currentLoad: 1, status: 'Occupied' };
       }
       return r;
     }));
@@ -184,12 +182,25 @@ export class ClinicStateService {
     
     this.roomsSig.update(rooms => rooms.map(r => {
       if (r.id === roomId) {
-        if (doctorId === 'maintenance') {
+        return { ...r, doctorId: doctorId };
+      }
+      return r;
+    }));
+    this.isLoading.set(false);
+  }
+
+  async changeRoomStatus(roomId: string, status: 'Available' | 'Occupied' | 'Maintenance') {
+    this.isLoading.set(true);
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    this.roomsSig.update(rooms => rooms.map(r => {
+      if (r.id === roomId) {
+        if (status === 'Maintenance') {
           return { ...r, status: 'Maintenance', doctorId: null, currentLoad: 0 };
-        } else if (doctorId) {
-          return { ...r, status: 'Occupied', doctorId: doctorId, currentLoad: 1 };
-        } else {
-          return { ...r, status: 'Available', doctorId: null, currentLoad: 0 };
+        } else if (status === 'Available') {
+          return { ...r, status: 'Available', currentLoad: 0 };
+        } else if (status === 'Occupied') {
+          return { ...r, status: 'Occupied', currentLoad: 1 };
         }
       }
       return r;

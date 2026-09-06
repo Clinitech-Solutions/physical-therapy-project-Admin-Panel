@@ -16,6 +16,7 @@ export class RoomsComponent {
   clinicState = inject(ClinicStateService);
   messageService = inject(MessageService);
   
+  // Forcing angular to recompile to refresh assets cache
   rooms = this.clinicState.rooms;
   allDoctors = this.clinicState.doctors;
 
@@ -39,34 +40,45 @@ export class RoomsComponent {
   // Determines visual state for the floor plan
   getRoomStatusCssClass(room: Room): string {
     if (room.status === 'Maintenance') return 'room-maintenance';
-    if (room.currentLoad === 0) return 'room-available';
-    if (room.currentLoad > 0 && room.currentLoad < room.capacity) return 'room-in-progress';
-    if (room.currentLoad === room.capacity) return 'room-occupied';
+    if (room.status === 'Occupied') return 'room-occupied';
     return 'room-available';
   }
 
   getRoomStatusLabel(room: Room): string {
     if (room.status === 'Maintenance') return 'Maintenance';
-    if (room.currentLoad === 0) return 'Available';
-    if (room.currentLoad > 0 && room.currentLoad < room.capacity) return 'In Progress';
-    if (room.currentLoad === room.capacity) return 'Occupied';
+    if (room.status === 'Occupied') return 'Occupied';
     return 'Available';
   }
 
   async reassign(roomId: string, doctorId: string | null) {
     await this.clinicState.reassignRoom(roomId, doctorId);
-    const msg = doctorId ? `Room reassigned` : `Room cleared`;
+    const msg = doctorId ? `Doctor assigned` : `Doctor cleared`;
     this.messageService.add({ severity: 'success', summary: 'Success', detail: msg });
+    this.openDropdownId.set(null);
   }
 
-  // Helper just to demo maintenance toggling via our mocked reassign logic temporarily
-  async toggleMaintenance(roomId: string, setMaintenance: boolean) {
-    if (setMaintenance) {
-      await this.clinicState.reassignRoom(roomId, 'maintenance'); // Simple mock hack
-      this.messageService.add({ severity: 'info', summary: 'Maintenance', detail: 'Room set to maintenance' });
-    } else {
-      await this.clinicState.reassignRoom(roomId, null);
-      this.messageService.add({ severity: 'success', summary: 'Restored', detail: 'Room available' });
+  async setStatus(roomId: string, status: 'Available' | 'Occupied' | 'Maintenance') {
+    await this.clinicState.changeRoomStatus(roomId, status);
+    this.messageService.add({ severity: 'success', summary: 'Status Updated', detail: `Room marked as ${status}` });
+    this.openDropdownId.set(null);
+  }
+
+  // Identifies doctors managing multiple rooms and assigns a distinct theme color to visually link them
+  getDoctorTheme(doctorId: string | null) {
+    if (!doctorId) return null;
+    const rooms = this.clinicState.rooms();
+    const docRooms = rooms.filter(r => r.doctorId === doctorId && r.status !== 'Maintenance');
+    
+    if (docRooms.length > 1) {
+       const themes = [
+         { bg: 'rgba(139, 92, 246, 0.1)', text: '#8b5cf6', border: '#8b5cf6', name: 'purple' },
+         { bg: 'rgba(219, 39, 119, 0.1)', text: '#db2777', border: '#db2777', name: 'pink' },
+         { bg: 'rgba(8, 145, 178, 0.1)', text: '#0891b2', border: '#0891b2', name: 'cyan' },
+         { bg: 'rgba(234, 88, 12, 0.1)', text: '#ea580c', border: '#ea580c', name: 'orange' }
+       ];
+       const hash = doctorId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+       return themes[hash % themes.length];
     }
+    return null;
   }
 }

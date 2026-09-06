@@ -26,11 +26,11 @@ export const mockDoctors: Doctor[] = [
 ];
 
 export const mockRooms: Room[] = [
-  { id: 'room_1', displayName: 'Room 1', status: 'Occupied', doctorId: 'doc_1', currentLoad: 1, capacity: 2 },
-  { id: 'room_2', displayName: 'Room 2', status: 'Available', doctorId: null, currentLoad: 0, capacity: 2 },
-  { id: 'room_3', displayName: 'Room 3', status: 'Occupied', doctorId: 'doc_2', currentLoad: 2, capacity: 2 },
+  { id: 'room_1', displayName: 'Room 1', status: 'Occupied', doctorId: 'doc_1', currentLoad: 1, capacity: 1 },
+  { id: 'room_2', displayName: 'Room 2', status: 'Occupied', doctorId: 'doc_2', currentLoad: 1, capacity: 1 },
+  { id: 'room_3', displayName: 'Room 3', status: 'Available', doctorId: 'doc_2', currentLoad: 0, capacity: 1 },
   { id: 'room_4', displayName: 'Room 4', status: 'Maintenance', doctorId: null, currentLoad: 0, capacity: 1 },
-  { id: 'room_5', displayName: 'Room 5', status: 'Available', doctorId: null, currentLoad: 0, capacity: 2 },
+  { id: 'room_5', displayName: 'Room 5', status: 'Available', doctorId: null, currentLoad: 0, capacity: 1 },
 ];
 
 export const mockSessions: Session[] = [

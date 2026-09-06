@@ -12,19 +12,26 @@
         <span class="small text-muted">{{ 'RECEPTIONIST.AVAILABLE' | translate }}</span>
       </div>
       <div class="d-flex align-items-center gap-2">
-        <div style="width: 12px; height: 12px; border-radius: 50%; background-color: var(--color-primary, #3b82f6);"></div>
-        <span class="small text-muted">{{ 'RECEPTIONIST.IN_PROGRESS' | translate }}</span>
+        <div style="width: 12px; height: 12px; border-radius: 50%; background-color: var(--color-warning, #ef4444);"></div>
+        <span class="small text-muted">Occupied</span>
       </div>
       <div class="d-flex align-items-center gap-2">
-        <div style="width: 12px; height: 12px; border-radius: 50%; background-color: var(--color-warning, #f59e0b);"></div>
-        <span class="small text-muted">{{ 'RECEPTIONIST.OCCUPIED' | translate }}</span>
+        <div style="width: 12px; height: 12px; border-radius: 50%; background-color: #6b7280;"></div>
+        <span class="small text-muted">Maintenance</span>
       </div>
     </div>
   </div>
 
   <div class="floor-plan-grid">
     @for(room of rooms(); track room.id) {
-      <div class="room-card" [ngClass]="getRoomStatusCssClass(room)">
+      <div class="room-card" [ngClass]="getRoomStatusCssClass(room)" [style.border-color]="getDoctorTheme(room.doctorId)?.border || null">
+        
+        @if(getDoctorTheme(room.doctorId)) {
+          <div class="multi-room-ribbon" [style.background-color]="getDoctorTheme(room.doctorId)?.bg" [style.color]="getDoctorTheme(room.doctorId)?.text">
+            <i class="bi bi-link-45deg me-1"></i> Doctor covering multiple rooms
+          </div>
+        }
+
         <div class="card-body d-flex flex-column h-100 p-4">
           
           <div class="room-header d-flex justify-content-between align-items-center">
@@ -33,8 +40,7 @@
             </h4>
             <span class="badge rounded-pill px-3 py-2" [ngClass]="{
               'bg-success bg-opacity-10 text-success border border-success border-opacity-25': getRoomStatusLabel(room) === 'Available',
-              'bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25': getRoomStatusLabel(room) === 'In Progress',
-              'bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25': getRoomStatusLabel(room) === 'Occupied',
+              'bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25': getRoomStatusLabel(room) === 'Occupied',
               'bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25': getRoomStatusLabel(room) === 'Maintenance'
             }">
               {{ getRoomStatusLabel(room) | translate }}
@@ -50,7 +56,7 @@
             } @else {
               <div class="d-flex align-items-center gap-3 mb-4 mt-2">
                 @if(room.doctorId) {
-                  <div class="doctor-avatar">
+                  <div class="doctor-avatar" [style.background-color]="getDoctorTheme(room.doctorId)?.bg || 'rgba(59, 130, 246, 0.1)'" [style.color]="getDoctorTheme(room.doctorId)?.text || 'var(--color-primary)'">
                     <i class="bi bi-person-badge"></i>
                   </div>
                   <div>
@@ -67,32 +73,6 @@
                   </div>
                 }
               </div>
-
-              <!-- Capacity Indicator -->
-              <div class="capacity-indicator">
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                  <span class="text-muted fw-semibold small">
-                    <i class="bi bi-people-fill me-1"></i> {{ 'RECEPTIONIST.PATIENT_LOAD' | translate }}
-                  </span>
-                  <span class="fw-bold" [ngClass]="{
-                    'text-success': getRoomStatusLabel(room) === 'Available',
-                    'text-primary': getRoomStatusLabel(room) === 'In Progress',
-                    'text-warning': getRoomStatusLabel(room) === 'Occupied'
-                  }">
-                    {{ room.currentLoad }} / {{ room.capacity }}
-                  </span>
-                </div>
-                <div class="capacity-bar-container">
-                  <div class="capacity-bar-fill" 
-                       [style.width.%]="(room.currentLoad / room.capacity) * 100"
-                       [ngClass]="{
-                         'fill-available': getRoomStatusLabel(room) === 'Available',
-                         'fill-in-progress': getRoomStatusLabel(room) === 'In Progress',
-                         'fill-occupied': getRoomStatusLabel(room) === 'Occupied'
-                       }">
-                  </div>
-                </div>
-              </div>
             }
           </div>
 
@@ -101,12 +81,23 @@
             <div class="dropdown w-100">
               <button class="btn btn-light border w-100 dropdown-toggle d-flex justify-content-between align-items-center" 
                       type="button" 
-                      (click)="toggleDropdown(room.id, $event)"
-                      [disabled]="room.status === 'Maintenance'">
+                      (click)="toggleDropdown(room.id, $event)">
                 <span class="fw-medium"><i class="bi bi-sliders me-2"></i> {{ 'RECEPTIONIST.MANAGE_ROOM' | translate }}</span>
               </button>
               @if(openDropdownId() === room.id) {
                 <ul class="dropdown-menu w-100 shadow border-0 mt-1 d-block position-absolute" style="z-index: 1000;">
+                  <li><h6 class="dropdown-header">Change Status</h6></li>
+                  @if(room.status !== 'Available') {
+                    <li><a class="dropdown-item py-2 text-success" href="javascript:void(0)" (click)="setStatus(room.id, 'Available')"><i class="bi bi-check-circle me-2"></i> Mark Available</a></li>
+                  }
+                  @if(room.status !== 'Occupied') {
+                    <li><a class="dropdown-item py-2 text-danger" href="javascript:void(0)" (click)="setStatus(room.id, 'Occupied')"><i class="bi bi-person-fill me-2"></i> Mark Occupied</a></li>
+                  }
+                  @if(room.status !== 'Maintenance') {
+                    <li><a class="dropdown-item py-2 text-secondary" href="javascript:void(0)" (click)="setStatus(room.id, 'Maintenance')"><i class="bi bi-tools me-2"></i> Mark Maintenance</a></li>
+                  }
+                  
+                  <li><hr class="dropdown-divider"></li>
                   <li><h6 class="dropdown-header">{{ 'RECEPTIONIST.ASSIGN_DOCTOR' | translate }}</h6></li>
                   @for(doc of allDoctors(); track doc.id) {
                     <li>
@@ -121,22 +112,9 @@
                       <i class="bi bi-x-circle me-2"></i> {{ 'RECEPTIONIST.CLEAR_ROOM' | translate }}
                     </a>
                   </li>
-                  @if(room.status !== 'Maintenance') {
-                    <li>
-                      <a class="dropdown-item d-flex align-items-center py-2 text-secondary" href="javascript:void(0)" (click)="toggleMaintenance(room.id, true)">
-                        <i class="bi bi-tools me-2"></i> Mark for Maintenance
-                      </a>
-                    </li>
-                  }
                 </ul>
               }
             </div>
-            
-            @if(room.status === 'Maintenance') {
-              <button class="btn btn-outline-success w-100 mt-2" (click)="toggleMaintenance(room.id, false)">
-                <i class="bi bi-check-circle me-2"></i> Restore Room
-              </button>
-            }
           </div>
           
         </div>

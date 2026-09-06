@@ -14,6 +14,7 @@
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .room-card:hover {
@@ -21,65 +22,35 @@
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
 }
 
+.multi-room-ribbon {
+  padding: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
 .room-available {
   border-color: var(--color-success, #10b981);
   background: linear-gradient(145deg, #f0fdf4, #ffffff);
 }
 
-.room-in-progress {
-  border-color: var(--color-primary, #3b82f6);
-  background: linear-gradient(145deg, #eff6ff, #ffffff);
-}
-
 .room-occupied {
-  border-color: var(--color-warning, #f59e0b);
-  background: linear-gradient(145deg, #fffbeb, #ffffff);
+  border-color: var(--color-danger, #ef4444);
+  background: linear-gradient(145deg, #fef2f2, #ffffff);
 }
 
 .room-maintenance {
   border-color: #6b7280;
   background: #f9fafb;
-  opacity: 0.8;
-}
-
-.room-maintenance .card-body {
-  pointer-events: none;
 }
 
 .room-header {
   border-bottom: 1px solid rgba(0,0,0,0.05);
   padding-bottom: 1rem;
   margin-bottom: 1rem;
-}
-
-.capacity-indicator {
-  margin-top: 1rem;
-}
-
-.capacity-bar-container {
-  height: 8px;
-  background-color: #e5e7eb;
-  border-radius: 99px;
-  overflow: hidden;
-  margin-top: 0.5rem;
-}
-
-.capacity-bar-fill {
-  height: 100%;
-  border-radius: 99px;
-  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.fill-available {
-  background-color: var(--color-success, #10b981);
-}
-
-.fill-in-progress {
-  background-color: var(--color-primary, #3b82f6);
-}
-
-.fill-occupied {
-  background-color: var(--color-warning, #f59e0b);
 }
 
 .room-actions {
@@ -95,8 +66,6 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background-color: rgba(59, 130, 246, 0.1);
-  color: var(--color-primary);
   display: flex;
   align-items: center;
   justify-content: center;
