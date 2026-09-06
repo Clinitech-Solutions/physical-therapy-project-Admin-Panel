@@ -1,60 +1,144 @@
 <div class="page-content fade-in">
-  <div class="page-header">
+  <div class="page-header d-flex justify-content-between align-items-center">
     <div>
       <h2 class="font-clash">{{ 'RECEPTIONIST.ROOMS_TITLE' | translate }}</h2>
       <p>{{ 'RECEPTIONIST.ROOMS_SUB' | translate }}</p>
     </div>
+    
+    <!-- Legend -->
+    <div class="d-flex gap-3 bg-white p-3 rounded shadow-sm">
+      <div class="d-flex align-items-center gap-2">
+        <div style="width: 12px; height: 12px; border-radius: 50%; background-color: var(--color-success, #10b981);"></div>
+        <span class="small text-muted">{{ 'RECEPTIONIST.AVAILABLE' | translate }}</span>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <div style="width: 12px; height: 12px; border-radius: 50%; background-color: var(--color-primary, #3b82f6);"></div>
+        <span class="small text-muted">{{ 'RECEPTIONIST.IN_PROGRESS' | translate }}</span>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <div style="width: 12px; height: 12px; border-radius: 50%; background-color: var(--color-warning, #f59e0b);"></div>
+        <span class="small text-muted">{{ 'RECEPTIONIST.OCCUPIED' | translate }}</span>
+      </div>
+    </div>
   </div>
 
-  <div class="row g-4">
+  <div class="floor-plan-grid">
     @for(room of rooms(); track room.id) {
-      <div class="col-md-4">
-        <div class="card h-100">
-          <div class="card-body">
-            <div class="d-flex justify-content-between align-items-start mb-3">
-              <h4 class="font-clash mb-0">{{ room.displayName }}</h4>
-              <span class="badge" [ngClass]="{'badge-success': room.status === 'Available', 'badge-warning': room.status === 'Occupied', 'badge-error': room.status === 'Maintenance'}">
-                @if(room.status === 'Available') { {{ 'RECEPTIONIST.AVAILABLE' | translate }} }
-                @if(room.status === 'Occupied') { {{ 'RECEPTIONIST.OCCUPIED' | translate }} }
-                @if(room.status === 'Maintenance') { {{ 'RECEPTIONIST.MAINTENANCE' | translate }} }
-              </span>
-            </div>
-            
-            <div class="mb-4" style="min-height: 48px;">
-              @if(room.status === 'Occupied') {
-                <div class="d-flex align-items-center gap-3">
-                  <div class="avatar avatar-sm bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center">
-                    <i class="bi bi-heart-pulse"></i>
+      <div class="room-card" [ngClass]="getRoomStatusCssClass(room)">
+        <div class="card-body d-flex flex-column h-100 p-4">
+          
+          <div class="room-header d-flex justify-content-between align-items-center">
+            <h4 class="font-clash mb-0 d-flex align-items-center gap-2">
+              <i class="bi bi-door-open"></i> {{ room.displayName }}
+            </h4>
+            <span class="badge rounded-pill px-3 py-2" [ngClass]="{
+              'bg-success bg-opacity-10 text-success border border-success border-opacity-25': getRoomStatusLabel(room) === 'Available',
+              'bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25': getRoomStatusLabel(room) === 'In Progress',
+              'bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25': getRoomStatusLabel(room) === 'Occupied',
+              'bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25': getRoomStatusLabel(room) === 'Maintenance'
+            }">
+              {{ getRoomStatusLabel(room) | translate }}
+            </span>
+          </div>
+          
+          <div class="room-content flex-grow-1">
+            @if(room.status === 'Maintenance') {
+              <div class="d-flex flex-column align-items-center justify-content-center text-muted py-4 gap-2">
+                <i class="bi bi-cone-striped fs-1 text-secondary"></i>
+                <span class="fw-medium">{{ 'RECEPTIONIST.UNDER_MAINTENANCE' | translate }}</span>
+              </div>
+            } @else {
+              <div class="d-flex align-items-center gap-3 mb-4 mt-2">
+                @if(room.doctorId) {
+                  <div class="doctor-avatar">
+                    <i class="bi bi-person-badge"></i>
                   </div>
                   <div>
-                    <div class="fw-semibold">{{ clinicState.getDoctorName(room.doctorId) }}</div>
-                    <div class="small text-muted">{{ 'RECEPTIONIST.LOAD' | translate }}: {{ room.currentLoad }} / {{ room.capacity }}</div>
+                    <div class="text-muted small text-uppercase fw-semibold">{{ 'COMMON.ASSIGNED_TO' | translate }}</div>
+                    <div class="fw-bold fs-5">{{ clinicState.getDoctorName(room.doctorId) }}</div>
+                  </div>
+                } @else {
+                  <div class="doctor-avatar" style="background-color: rgba(16, 185, 129, 0.1); color: var(--color-success)">
+                    <i class="bi bi-person-plus"></i>
+                  </div>
+                  <div>
+                    <div class="text-muted small text-uppercase fw-semibold">{{ 'COMMON.ASSIGNED_TO' | translate }}</div>
+                    <div class="fw-bold fs-5 text-success">{{ 'RECEPTIONIST.NO_DOCTOR' | translate }}</div>
+                  </div>
+                }
+              </div>
+
+              <!-- Capacity Indicator -->
+              <div class="capacity-indicator">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <span class="text-muted fw-semibold small">
+                    <i class="bi bi-people-fill me-1"></i> {{ 'RECEPTIONIST.PATIENT_LOAD' | translate }}
+                  </span>
+                  <span class="fw-bold" [ngClass]="{
+                    'text-success': getRoomStatusLabel(room) === 'Available',
+                    'text-primary': getRoomStatusLabel(room) === 'In Progress',
+                    'text-warning': getRoomStatusLabel(room) === 'Occupied'
+                  }">
+                    {{ room.currentLoad }} / {{ room.capacity }}
+                  </span>
+                </div>
+                <div class="capacity-bar-container">
+                  <div class="capacity-bar-fill" 
+                       [style.width.%]="(room.currentLoad / room.capacity) * 100"
+                       [ngClass]="{
+                         'fill-available': getRoomStatusLabel(room) === 'Available',
+                         'fill-in-progress': getRoomStatusLabel(room) === 'In Progress',
+                         'fill-occupied': getRoomStatusLabel(room) === 'Occupied'
+                       }">
                   </div>
                 </div>
-              } @else if(room.status === 'Maintenance') {
-                <div class="text-danger small d-flex align-items-center">
-                  <i class="bi bi-tools me-2"></i> {{ 'RECEPTIONIST.UNDER_MAINTENANCE' | translate }}
-                </div>
-              } @else {
-                <div class="text-success small d-flex align-items-center">
-                  <i class="bi bi-door-open me-2"></i> {{ 'RECEPTIONIST.READY_FOR_ASSIGNMENT' | translate }}
-                </div>
+              </div>
+            }
+          </div>
+
+          <!-- Actions -->
+          <div class="room-actions">
+            <div class="dropdown w-100">
+              <button class="btn btn-light border w-100 dropdown-toggle d-flex justify-content-between align-items-center" 
+                      type="button" 
+                      (click)="toggleDropdown(room.id, $event)"
+                      [disabled]="room.status === 'Maintenance'">
+                <span class="fw-medium"><i class="bi bi-sliders me-2"></i> {{ 'RECEPTIONIST.MANAGE_ROOM' | translate }}</span>
+              </button>
+              @if(openDropdownId() === room.id) {
+                <ul class="dropdown-menu w-100 shadow border-0 mt-1 d-block position-absolute" style="z-index: 1000;">
+                  <li><h6 class="dropdown-header">{{ 'RECEPTIONIST.ASSIGN_DOCTOR' | translate }}</h6></li>
+                  @for(doc of allDoctors(); track doc.id) {
+                    <li>
+                      <a class="dropdown-item d-flex align-items-center py-2" href="javascript:void(0)" (click)="reassign(room.id, doc.id)">
+                        <i class="bi bi-person me-2 text-primary"></i> Assign {{ doc.name }}
+                      </a>
+                    </li>
+                  }
+                  <li><hr class="dropdown-divider"></li>
+                  <li>
+                    <a class="dropdown-item d-flex align-items-center py-2 text-danger" href="javascript:void(0)" (click)="reassign(room.id, null)">
+                      <i class="bi bi-x-circle me-2"></i> {{ 'RECEPTIONIST.CLEAR_ROOM' | translate }}
+                    </a>
+                  </li>
+                  @if(room.status !== 'Maintenance') {
+                    <li>
+                      <a class="dropdown-item d-flex align-items-center py-2 text-secondary" href="javascript:void(0)" (click)="toggleMaintenance(room.id, true)">
+                        <i class="bi bi-tools me-2"></i> Mark for Maintenance
+                      </a>
+                    </li>
+                  }
+                </ul>
               }
             </div>
-
-            <div class="dropdown w-100 mt-auto">
-              <button class="btn btn-outline-secondary w-100 dropdown-toggle" type="button" data-bs-toggle="dropdown" [disabled]="room.status === 'Maintenance'">
-                {{ 'RECEPTIONIST.REASSIGN_DOCTOR' | translate }}
+            
+            @if(room.status === 'Maintenance') {
+              <button class="btn btn-outline-success w-100 mt-2" (click)="toggleMaintenance(room.id, false)">
+                <i class="bi bi-check-circle me-2"></i> Restore Room
               </button>
-              <ul class="dropdown-menu w-100">
-                @for(doc of allDoctors(); track doc.id) {
-                  <li><a class="dropdown-item" href="javascript:void(0)" (click)="reassign(room.id, doc.id)">Assign {{ doc.name }}</a></li>
-                }
-                <li><hr class="dropdown-divider"></li>
-                <li><a class="dropdown-item text-danger" href="javascript:void(0)" (click)="reassign(room.id, null)">{{ 'RECEPTIONIST.CLEAR_ROOM' | translate }}</a></li>
-              </ul>
-            </div>
+            }
           </div>
+          
         </div>
       </div>
     }

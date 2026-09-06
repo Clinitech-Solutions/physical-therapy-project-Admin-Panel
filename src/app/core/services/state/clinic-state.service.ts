@@ -184,7 +184,9 @@ export class ClinicStateService {
     
     this.roomsSig.update(rooms => rooms.map(r => {
       if (r.id === roomId) {
-        if (doctorId) {
+        if (doctorId === 'maintenance') {
+          return { ...r, status: 'Maintenance', doctorId: null, currentLoad: 0 };
+        } else if (doctorId) {
           return { ...r, status: 'Occupied', doctorId: doctorId, currentLoad: 1 };
         } else {
           return { ...r, status: 'Available', doctorId: null, currentLoad: 0 };

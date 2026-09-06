@@ -30,7 +30,8 @@
     "TIME": "الوقت",
     "DATE": "التاريخ",
     "DOCTOR": "الطبيب",
-    "ROOM": "الغرفة"
+    "ROOM": "الغرفة",
+    "ASSIGNED_TO": "مخصص لـ"
   },
   "RECEPTIONIST": {
     "DASHBOARD_TITLE": "لوحة الاستقبال",
@@ -158,6 +159,10 @@
     "UNDER_MAINTENANCE": "تحت الصيانة",
     "READY_FOR_ASSIGNMENT": "جاهز للتعيين",
     "REASSIGN_DOCTOR": "تغيير الطبيب",
-    "CLEAR_ROOM": "إخلاء الغرفة"
+    "CLEAR_ROOM": "إخلاء الغرفة",
+    "NO_DOCTOR": "لا يوجد طبيب",
+    "PATIENT_LOAD": "كثافة الحالات",
+    "MANAGE_ROOM": "إدارة الغرفة",
+    "ASSIGN_DOCTOR": "تعيين طبيب"
   }
 }
