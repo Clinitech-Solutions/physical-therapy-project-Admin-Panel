@@ -208,6 +208,23 @@ export class ClinicStateService {
     this.isLoading.set(false);
   }
 
+  async toggleRoomMaintenance(roomId: string) {
+    this.isLoading.set(true);
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    this.roomsSig.update(rooms => rooms.map(r => {
+      if (r.id === roomId) {
+        if (r.status === 'Maintenance') {
+          return { ...r, status: 'Available', currentLoad: 0 };
+        } else {
+          return { ...r, status: 'Maintenance', doctorId: null, currentLoad: 0 };
+        }
+      }
+      return r;
+    }));
+    this.isLoading.set(false);
+  }
+
   // ==========================================
   // Patient Logic
   // ==========================================

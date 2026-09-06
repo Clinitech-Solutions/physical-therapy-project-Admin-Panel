@@ -20,23 +20,6 @@ export class RoomsComponent {
   rooms = this.clinicState.rooms;
   allDoctors = this.clinicState.doctors;
 
-  // Dropdown State Management
-  openDropdownId = signal<string | null>(null);
-
-  toggleDropdown(id: string, event: Event) {
-    event.stopPropagation();
-    if (this.openDropdownId() === id) {
-      this.openDropdownId.set(null);
-    } else {
-      this.openDropdownId.set(id);
-    }
-  }
-
-  @HostListener('document:click')
-  onDocumentClick() {
-    this.openDropdownId.set(null);
-  }
-
   // Determines visual state for the floor plan
   getRoomStatusCssClass(room: Room): string {
     if (room.status === 'Maintenance') return 'room-maintenance';
@@ -48,19 +31,6 @@ export class RoomsComponent {
     if (room.status === 'Maintenance') return 'Maintenance';
     if (room.status === 'Occupied') return 'Occupied';
     return 'Available';
-  }
-
-  async reassign(roomId: string, doctorId: string | null) {
-    await this.clinicState.reassignRoom(roomId, doctorId);
-    const msg = doctorId ? `Doctor assigned` : `Doctor cleared`;
-    this.messageService.add({ severity: 'success', summary: 'Success', detail: msg });
-    this.openDropdownId.set(null);
-  }
-
-  async setStatus(roomId: string, status: 'Available' | 'Occupied' | 'Maintenance') {
-    await this.clinicState.changeRoomStatus(roomId, status);
-    this.messageService.add({ severity: 'success', summary: 'Status Updated', detail: `Room marked as ${status}` });
-    this.openDropdownId.set(null);
   }
 
   // Identifies doctors managing multiple rooms and assigns a distinct theme color to visually link them
@@ -80,5 +50,10 @@ export class RoomsComponent {
        return themes[hash % themes.length];
     }
     return null;
+  }
+
+  async toggleMaintenance(roomId: string) {
+    await this.clinicState.toggleRoomMaintenance(roomId);
+    this.messageService.add({ severity: 'success', summary: 'Status Updated', detail: 'Maintenance status toggled' });
   }
 }
