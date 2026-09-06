@@ -1,12 +1,10 @@
 <div class="rooms-container fade-in">
   <div class="rooms-grid">
-    <div *ngFor="let room of clinicState.rooms()" 
-         class="room-card" 
-         [ngClass]="room.status.toLowerCase()">
-         
+    <div *ngFor="let room of clinicState.rooms()" class="room-card" [ngClass]="room.status.toLowerCase()">
+
       <!-- Top Section -->
       <div class="room-header">
-        <div class="room-title">
+        <div class="room-title" style="display: flex; align-items: center; gap: 1rem;">
           <span class="font-bold text-lg">{{ room.displayName }}</span>
         </div>
         <!-- Animated Pulse Status -->
@@ -17,13 +15,12 @@
       </div>
 
       <!-- Divider -->
-      <div class="room-divider"></div>
 
       <!-- Middle Section -->
       <div class="room-body">
         <div class="doctor-info" *ngIf="room.doctorId; else noDoctor">
           <div class="doctor-details">
-            <span class="label">{{ 'COMMON.ASSIGNED_TO' | translate }}</span>
+            <span class="label">{{ 'COMMON.ASSIGNED_TO' | translate }}:</span>
             <span class="font-semibold text-md">{{ clinicState.getDoctorName(room.doctorId) }}</span>
           </div>
         </div>
@@ -40,13 +37,12 @@
       <div class="room-footer">
         <div class="maintenance-toggle">
           <span class="text-sm font-medium">{{ 'RECEPTIONIST.MAINTENANCE' | translate }}</span>
-          <p-toggleSwitch 
-            [ngModel]="room.status === 'Maintenance'" 
+          <p-toggleSwitch [ngModel]="room.status === 'Maintenance'"
             (onChange)="clinicState.toggleRoomMaintenance(room.id)">
           </p-toggleSwitch>
         </div>
       </div>
-      
+
     </div>
   </div>
 </div>

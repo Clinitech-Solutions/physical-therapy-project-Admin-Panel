@@ -54,6 +54,21 @@ export class RoomsComponent {
     return null;
   }
 
+  getRoomThemeBg(doctorId: string | null): string {
+    const theme = this.getDoctorTheme(doctorId);
+    return theme ? theme.bg : 'transparent';
+  }
+
+  async assignDoctor(roomId: string, doctorId: string | null) {
+    try {
+      await this.clinicState.reassignRoom(roomId, doctorId);
+      this.messageService.add({ severity: 'success', summary: 'Doctor Assigned', detail: 'Room assignment updated.' });
+    } catch (e: any) {
+      this.messageService.add({ severity: 'error', summary: 'Assignment Failed', detail: e.message });
+      // We might want to refresh the rooms list here or rely on signals
+    }
+  }
+
   async toggleMaintenance(roomId: string) {
     await this.clinicState.toggleRoomMaintenance(roomId);
     this.messageService.add({ severity: 'success', summary: 'Status Updated', detail: 'Maintenance status toggled' });
