@@ -14,11 +14,13 @@
     "DASHBOARD": "لوحة التحكم",
     "PATIENTS": "المرضى",
     "APPOINTMENTS": "الحجوزات",
+    "BOOKINGS": "الحجوزات",
     "INSURANCE": "التأمين",
     "BILLING": "الحسابات",
     "SETTINGS": "الإعدادات",
     "ROOMS": "الغرف",
-    "WALKIN": "بدون موعد"
+    "WALKIN": "بدون موعد",
+    "WALK_IN": "بدون موعد"
   },
   "COMMON": {
     "SAVE": "حفظ",
@@ -31,7 +33,9 @@
     "DATE": "التاريخ",
     "DOCTOR": "الطبيب",
     "ROOM": "الغرفة",
-    "ASSIGNED_TO": "مخصص لـ"
+    "ASSIGNED_TO": "مخصص لـ",
+    "ENGLISH": "إنجليزي",
+    "ARABIC": "عربي"
   },
   "RECEPTIONIST": {
     "DASHBOARD_TITLE": "لوحة الاستقبال",

@@ -14,11 +14,13 @@
     "DASHBOARD": "Dashboard",
     "PATIENTS": "Patients",
     "APPOINTMENTS": "Bookings",
+    "BOOKINGS": "Bookings",
     "INSURANCE": "Insurance",
     "BILLING": "Billing",
     "SETTINGS": "Settings",
     "ROOMS": "Rooms",
-    "WALKIN": "Walk-In"
+    "WALKIN": "Walk-In",
+    "WALK_IN": "Walk-In"
   },
   "COMMON": {
     "SAVE": "Save",
@@ -31,7 +33,9 @@
     "DATE": "Date",
     "DOCTOR": "Doctor",
     "ROOM": "Room",
-    "ASSIGNED_TO": "Assigned To"
+    "ASSIGNED_TO": "Assigned To",
+    "ENGLISH": "English",
+    "ARABIC": "Arabic"
   },
   "RECEPTIONIST": {
     "DASHBOARD_TITLE": "Receptionist Dashboard",
