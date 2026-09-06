@@ -36,6 +36,7 @@
   "COMMON": {
     "SAVE": "Save",
     "CANCEL": "Cancel",
+    "LOGOUT": "Logout",
     "SEARCH": "Search...",
     "PATIENT": "Patient",
     "STATUS": "Status",

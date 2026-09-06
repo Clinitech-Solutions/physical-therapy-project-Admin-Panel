@@ -14,15 +14,29 @@
     "DASHBOARD": "Dashboard",
     "PATIENTS": "Patients",
     "APPOINTMENTS": "Bookings",
+    "BOOKINGS": "Bookings",
     "INSURANCE": "Insurance",
     "BILLING": "Billing",
     "SETTINGS": "Settings",
     "ROOMS": "Rooms",
-    "WALKIN": "Walk-In"
+    "WALKIN": "Walk-In",
+    "WALK_IN": "Walk-In",
+    "ASSESSMENTS": "Assessments",
+    "REASSESSMENTS": "Re-Assessments",
+    "LIVE_VIEW": "Live View",
+    "MY_SCHEDULE": "My Schedule",
+    "TODAYS_SCHEDULE": "Today's Schedule",
+    "MY_PATIENTS": "My Patients",
+    "SESSION_NOTES": "Session Notes",
+    "OVERVIEW": "Overview",
+    "STAFF": "Staff",
+    "REPORTS": "Reports",
+    "SYSTEM_SETTINGS": "System Settings"
   },
   "COMMON": {
     "SAVE": "Save",
     "CANCEL": "Cancel",
+    "LOGOUT": "Logout",
     "SEARCH": "Search...",
     "PATIENT": "Patient",
     "STATUS": "Status",
@@ -30,7 +44,10 @@
     "TIME": "Time",
     "DATE": "Date",
     "DOCTOR": "Doctor",
-    "ROOM": "Room"
+    "ROOM": "Room",
+    "ASSIGNED_TO": "Assigned To",
+    "ENGLISH": "English",
+    "ARABIC": "Arabic"
   },
   "RECEPTIONIST": {
     "DASHBOARD_TITLE": "Receptionist Dashboard",
@@ -158,6 +175,16 @@
     "UNDER_MAINTENANCE": "Under Maintenance",
     "READY_FOR_ASSIGNMENT": "Ready for Assignment",
     "REASSIGN_DOCTOR": "Reassign Doctor",
-    "CLEAR_ROOM": "Clear Room"
+    "CLEAR_ROOM": "Clear Room",
+    "NO_DOCTOR": "No Doctor",
+    "PATIENT_LOAD": "Patient Load",
+    "MANAGE_ROOM": "Manage Room",
+    "ASSIGN_DOCTOR": "Assign Doctor",
+    "DOCTOR_MULTIPLE_ROOMS": "Doctor covering multiple rooms",
+    "CHANGE_STATUS": "Change Status",
+    "MARK_AVAILABLE": "Mark Available",
+    "MARK_OCCUPIED": "Mark Occupied",
+    "MARK_MAINTENANCE": "Mark Maintenance",
+    "ASSIGN": "Assign"
   }
 }

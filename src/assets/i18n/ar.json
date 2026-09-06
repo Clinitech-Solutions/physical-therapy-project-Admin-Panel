@@ -36,6 +36,7 @@
   "COMMON": {
     "SAVE": "حفظ",
     "CANCEL": "إلغاء",
+    "LOGOUT": "تسجيل الخروج",
     "SEARCH": "بحث...",
     "PATIENT": "المريض",
     "STATUS": "الحالة",

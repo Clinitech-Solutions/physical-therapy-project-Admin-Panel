@@ -6,6 +6,7 @@ import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-layout',
+  standalone: true,
   imports: [RouterOutlet, Sidebar, Topbar, TranslateModule],
   templateUrl: './app-layout.html',
   styleUrl: './app-layout.css',
