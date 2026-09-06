@@ -26,6 +26,7 @@ export const appConfig: ApplicationConfig = {
     MessageService,
     importProvidersFrom(
       TranslateModule.forRoot({
+        defaultLanguage: 'en',
         loader: {
           provide: TranslateLoader,
           useFactory: HttpLoaderFactory,

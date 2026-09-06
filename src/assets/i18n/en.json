@@ -20,7 +20,18 @@
     "SETTINGS": "Settings",
     "ROOMS": "Rooms",
     "WALKIN": "Walk-In",
-    "WALK_IN": "Walk-In"
+    "WALK_IN": "Walk-In",
+    "ASSESSMENTS": "Assessments",
+    "REASSESSMENTS": "Re-Assessments",
+    "LIVE_VIEW": "Live View",
+    "MY_SCHEDULE": "My Schedule",
+    "TODAYS_SCHEDULE": "Today's Schedule",
+    "MY_PATIENTS": "My Patients",
+    "SESSION_NOTES": "Session Notes",
+    "OVERVIEW": "Overview",
+    "STAFF": "Staff",
+    "REPORTS": "Reports",
+    "SYSTEM_SETTINGS": "System Settings"
   },
   "COMMON": {
     "SAVE": "Save",
@@ -167,6 +178,12 @@
     "NO_DOCTOR": "No Doctor",
     "PATIENT_LOAD": "Patient Load",
     "MANAGE_ROOM": "Manage Room",
-    "ASSIGN_DOCTOR": "Assign Doctor"
+    "ASSIGN_DOCTOR": "Assign Doctor",
+    "DOCTOR_MULTIPLE_ROOMS": "Doctor covering multiple rooms",
+    "CHANGE_STATUS": "Change Status",
+    "MARK_AVAILABLE": "Mark Available",
+    "MARK_OCCUPIED": "Mark Occupied",
+    "MARK_MAINTENANCE": "Mark Maintenance",
+    "ASSIGN": "Assign"
   }
 }

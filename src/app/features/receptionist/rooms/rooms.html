@@ -13,11 +13,11 @@
       </div>
       <div class="d-flex align-items-center gap-2">
         <div style="width: 12px; height: 12px; border-radius: 50%; background-color: var(--color-warning, #ef4444);"></div>
-        <span class="small text-muted">Occupied</span>
+        <span class="small text-muted">{{ 'RECEPTIONIST.OCCUPIED' | translate }}</span>
       </div>
       <div class="d-flex align-items-center gap-2">
         <div style="width: 12px; height: 12px; border-radius: 50%; background-color: #6b7280;"></div>
-        <span class="small text-muted">Maintenance</span>
+        <span class="small text-muted">{{ 'RECEPTIONIST.MAINTENANCE' | translate }}</span>
       </div>
     </div>
   </div>
@@ -28,7 +28,7 @@
         
         @if(getDoctorTheme(room.doctorId)) {
           <div class="multi-room-ribbon" [style.background-color]="getDoctorTheme(room.doctorId)?.bg" [style.color]="getDoctorTheme(room.doctorId)?.text">
-            <i class="bi bi-link-45deg me-1"></i> Doctor covering multiple rooms
+            <i class="bi bi-link-45deg me-1"></i> {{ 'RECEPTIONIST.DOCTOR_MULTIPLE_ROOMS' | translate }}
           </div>
         }
 
@@ -86,15 +86,15 @@
               </button>
               @if(openDropdownId() === room.id) {
                 <ul class="dropdown-menu w-100 shadow border-0 mt-1 d-block position-absolute" style="z-index: 1000;">
-                  <li><h6 class="dropdown-header">Change Status</h6></li>
+                  <li><h6 class="dropdown-header">{{ 'RECEPTIONIST.CHANGE_STATUS' | translate }}</h6></li>
                   @if(room.status !== 'Available') {
-                    <li><a class="dropdown-item py-2 text-success" href="javascript:void(0)" (click)="setStatus(room.id, 'Available')"><i class="bi bi-check-circle me-2"></i> Mark Available</a></li>
+                    <li><a class="dropdown-item py-2 text-success" href="javascript:void(0)" (click)="setStatus(room.id, 'Available')"><i class="bi bi-check-circle me-2"></i> {{ 'RECEPTIONIST.MARK_AVAILABLE' | translate }}</a></li>
                   }
                   @if(room.status !== 'Occupied') {
-                    <li><a class="dropdown-item py-2 text-danger" href="javascript:void(0)" (click)="setStatus(room.id, 'Occupied')"><i class="bi bi-person-fill me-2"></i> Mark Occupied</a></li>
+                    <li><a class="dropdown-item py-2 text-danger" href="javascript:void(0)" (click)="setStatus(room.id, 'Occupied')"><i class="bi bi-person-fill me-2"></i> {{ 'RECEPTIONIST.MARK_OCCUPIED' | translate }}</a></li>
                   }
                   @if(room.status !== 'Maintenance') {
-                    <li><a class="dropdown-item py-2 text-secondary" href="javascript:void(0)" (click)="setStatus(room.id, 'Maintenance')"><i class="bi bi-tools me-2"></i> Mark Maintenance</a></li>
+                    <li><a class="dropdown-item py-2 text-secondary" href="javascript:void(0)" (click)="setStatus(room.id, 'Maintenance')"><i class="bi bi-tools me-2"></i> {{ 'RECEPTIONIST.MARK_MAINTENANCE' | translate }}</a></li>
                   }
                   
                   <li><hr class="dropdown-divider"></li>
@@ -102,7 +102,7 @@
                   @for(doc of allDoctors(); track doc.id) {
                     <li>
                       <a class="dropdown-item d-flex align-items-center py-2" href="javascript:void(0)" (click)="reassign(room.id, doc.id)">
-                        <i class="bi bi-person me-2 text-primary"></i> Assign {{ doc.name }}
+                        <i class="bi bi-person me-2 text-primary"></i> {{ 'RECEPTIONIST.ASSIGN' | translate }} {{ doc.name }}
                       </a>
                     </li>
                   }

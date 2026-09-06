@@ -20,7 +20,18 @@
     "SETTINGS": "الإعدادات",
     "ROOMS": "الغرف",
     "WALKIN": "بدون موعد",
-    "WALK_IN": "بدون موعد"
+    "WALK_IN": "بدون موعد",
+    "ASSESSMENTS": "التقييمات",
+    "REASSESSMENTS": "إعادة التقييم",
+    "LIVE_VIEW": "البث الحي",
+    "MY_SCHEDULE": "جدولي",
+    "TODAYS_SCHEDULE": "جدول اليوم",
+    "MY_PATIENTS": "مرضاي",
+    "SESSION_NOTES": "ملاحظات الجلسة",
+    "OVERVIEW": "نظرة عامة",
+    "STAFF": "الموظفين",
+    "REPORTS": "التقارير",
+    "SYSTEM_SETTINGS": "إعدادات النظام"
   },
   "COMMON": {
     "SAVE": "حفظ",
@@ -167,6 +178,12 @@
     "NO_DOCTOR": "لا يوجد طبيب",
     "PATIENT_LOAD": "كثافة الحالات",
     "MANAGE_ROOM": "إدارة الغرفة",
-    "ASSIGN_DOCTOR": "تعيين طبيب"
+    "ASSIGN_DOCTOR": "تعيين طبيب",
+    "DOCTOR_MULTIPLE_ROOMS": "طبيب يغطي غرف متعددة",
+    "CHANGE_STATUS": "تغيير الحالة",
+    "MARK_AVAILABLE": "تعيين كمتاح",
+    "MARK_OCCUPIED": "تعيين كمشغول",
+    "MARK_MAINTENANCE": "تعيين كصيانة",
+    "ASSIGN": "تعيين"
   }
 }
