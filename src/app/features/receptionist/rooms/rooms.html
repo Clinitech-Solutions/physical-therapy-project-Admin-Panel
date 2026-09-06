@@ -27,7 +27,7 @@
                     <i class="bi bi-heart-pulse"></i>
                   </div>
                   <div>
-                    <div class="fw-semibold">{{ getDoctor(room.doctorId || '')?.name }}</div>
+                    <div class="fw-semibold">{{ clinicState.getDoctorName(room.doctorId) }}</div>
                     <div class="small text-muted">{{ 'RECEPTIONIST.LOAD' | translate }}: {{ room.currentLoad }} / {{ room.capacity }}</div>
                   </div>
                 </div>

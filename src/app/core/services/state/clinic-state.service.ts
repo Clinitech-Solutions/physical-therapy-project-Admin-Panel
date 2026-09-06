@@ -260,4 +260,50 @@ export class ClinicStateService {
     );
     this.isProcessingPayment.set(false);
   }
+
+  // ==========================================
+  // UI Helper Methods (ID to Name Resolution)
+  // ==========================================
+
+  getPatientName(id: string | null): string {
+    if (!id) return 'Unknown Patient';
+    const p = this.patientsSig().find(x => x.id === id);
+    return p ? p.nameEn : 'Unknown Patient';
+  }
+
+  getPatientAvatar(id: string | null): string {
+    if (!id) return '';
+    const p = this.patientsSig().find(x => x.id === id);
+    return p ? p.avatar : '';
+  }
+
+  getPatientPhone(id: string | null): string {
+    if (!id) return '';
+    const p = this.patientsSig().find(x => x.id === id);
+    return p ? p.phone : '';
+  }
+
+  getDoctorName(id: string | null): string {
+    if (!id) return 'Unassigned';
+    const d = this.doctorsSig().find(x => x.id === id);
+    return d ? d.name : 'Unassigned';
+  }
+
+  getDoctorGender(id: string | null): string {
+    if (!id) return '';
+    const d = this.doctorsSig().find(x => x.id === id);
+    return d ? d.gender : '';
+  }
+
+  getRoomName(id: string | null): string {
+    if (!id) return 'No Room';
+    const r = this.roomsSig().find(x => x.id === id);
+    return r ? r.displayName : 'No Room';
+  }
+
+  getRoomCapacity(id: string | null): number {
+    if (!id) return 0;
+    const r = this.roomsSig().find(x => x.id === id);
+    return r ? r.capacity : 0;
+  }
 }

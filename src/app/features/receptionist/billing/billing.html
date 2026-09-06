@@ -50,7 +50,7 @@
           @for (invoice of invoices(); track invoice.id) {
             <tr>
               <td>{{ invoice.id }}</td>
-              <td class="fw-semibold">{{ getPatient(invoice.patientId)?.nameEn }}</td>
+              <td class="fw-semibold">{{ clinicState.getPatientName(invoice.patientId) }}</td>
               <td>{{ invoice.type }}</td>
               <td>{{ formatDate(invoice.createdAt) }}</td>
               <td class="fw-bold">{{ invoice.currency || 'EGP' }} {{ invoice.amount }}</td>
@@ -93,7 +93,7 @@
     <div class="drawer-body">
       <div class="mb-3">
         <label class="form-label text-secondary small">{{ 'COMMON.PATIENT' | translate }}</label>
-        <div class="fw-semibold">{{ getPatient(selectedInvoice?.patientId)?.nameEn }}</div>
+        <div class="fw-semibold">{{ clinicState.getPatientName(selectedInvoice?.patientId) }}</div>
       </div>
       <div class="mb-4">
         <label class="form-label text-secondary small">{{ 'RECEPTIONIST.AMOUNT_DUE' | translate }}</label>

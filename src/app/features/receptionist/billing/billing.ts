@@ -25,10 +25,6 @@ export class BillingComponent {
   paymentMethod = 'Cash';
   amountCollected = 0;
 
-  getPatient(id: string) {
-    return this.allPatients().find(p => p.id === id);
-  }
-
   formatDate(isoString: string) {
     try {
       return new Date(isoString).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });

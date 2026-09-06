@@ -32,19 +32,6 @@ export class BookingsComponent {
     '09:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '01:00 PM', '02:00 PM'
   ];
 
-  // Helper functions for UI resolution
-  getPatient(id: string) {
-    return this.allPatients().find(p => p.id === id);
-  }
-  
-  getDoctor(id: string) {
-    return this.allDoctors().find(d => d.id === id);
-  }
-
-  getRoom(id: string) {
-    return this.allRooms().find(r => r.id === id);
-  }
-  
   // Format ISO time to short time string (e.g. 09:00 AM)
   formatTime(isoString: string) {
     try {

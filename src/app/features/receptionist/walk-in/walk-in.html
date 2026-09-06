@@ -72,7 +72,7 @@
       <i class="bi bi-check-circle-fill fs-4 me-3"></i>
       <div>
         <h6 class="mb-1 fw-bold">Successfully Booked!</h6>
-        <div>{{ getPatient(patientId())?.nameEn }} has been assigned to {{ getDoctor(bookedDoctorId())?.name }}.</div>
+        <div>{{ clinicState.getPatientName(patientId()) }} has been assigned to {{ clinicState.getDoctorName(bookedDoctorId()) }}.</div>
       </div>
     </div>
   }
@@ -87,8 +87,8 @@
               <div class="card-body">
                 <div class="d-flex justify-content-between align-items-start mb-3">
                   <div>
-                    <h5 class="font-clash mb-1">{{ getDoctor(result.doctorId)?.name }}</h5>
-                    <span class="badge bg-secondary bg-opacity-10 text-secondary">{{ getDoctor(result.doctorId)?.gender }}</span>
+                    <h5 class="font-clash mb-1">{{ clinicState.getDoctorName(result.doctorId) }}</h5>
+                    <span class="badge bg-secondary bg-opacity-10 text-secondary">{{ clinicState.getDoctorGender(result.doctorId) }}</span>
                   </div>
                   <span class="badge badge-success">{{ 'RECEPTIONIST.AVAILABLE' | translate }}</span>
                 </div>
@@ -104,8 +104,8 @@
                 </div>
 
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                  <span class="small text-muted"><i class="bi bi-door-open me-1"></i> {{ getRoom(result.roomId)?.displayName }}</span>
-                  <span class="small text-muted"><i class="bi bi-people me-1"></i> {{ 'RECEPTIONIST.LOAD' | translate }}: {{ result.currentLoad }} / {{ getRoom(result.roomId)?.capacity }}</span>
+                  <span class="small text-muted"><i class="bi bi-door-open me-1"></i> {{ clinicState.getRoomName(result.roomId) }}</span>
+                  <span class="small text-muted"><i class="bi bi-people me-1"></i> {{ 'RECEPTIONIST.LOAD' | translate }}: {{ result.currentLoad }} / {{ clinicState.getRoomCapacity(result.roomId) }}</span>
                 </div>
 
                 @if (bookedDoctorId() === result.doctorId) {

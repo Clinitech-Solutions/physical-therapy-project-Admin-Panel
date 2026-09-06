@@ -28,10 +28,6 @@ export class InsuranceComponent {
   package = '';
   copayValue = 0;
 
-  getPatient(id: string) {
-    return this.allPatients().find(p => p.id === id);
-  }
-
   openDrawer(patient: any) {
     this.selectedPatient = patient;
     this.copayInput = patient.copay || 0;

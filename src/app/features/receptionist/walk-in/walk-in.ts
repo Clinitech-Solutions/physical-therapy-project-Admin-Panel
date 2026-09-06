@@ -30,19 +30,6 @@ export class WalkInComponent {
 
   results = this.clinicState.doctorSlots;
 
-  getPatient(id: string) {
-    return this.allPatients().find(p => p.id === id);
-  }
-
-  getDoctor(id: string | null) {
-    if (!id) return null;
-    return this.allDoctors().find(d => d.id === id);
-  }
-
-  getRoom(id: string) {
-    return this.allRooms().find(r => r.id === id);
-  }
-
   formatTime(isoString: string) {
     try {
       return new Date(isoString).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });

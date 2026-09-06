@@ -21,7 +21,7 @@
         <tbody>
           @for(patient of patients(); track patient.id) {
             <tr>
-              <td class="fw-semibold">{{ getPatient(patient.patientId)?.nameEn }}</td>
+              <td class="fw-semibold">{{ clinicState.getPatientName(patient.patientId) }}</td>
               <td>
                 <span class="badge border text-body">{{ patient.company }}</span>
               </td>
@@ -62,7 +62,7 @@
   <div class="modal-backdrop fade show" (click)="closeDrawer()"></div>
   <div class="drawer drawer-compact fade-in" style="width:420px; z-index:1055; position:fixed; top:0; right:0; height:100%; overflow-y:auto;">
     <div class="drawer-header d-flex justify-content-between align-items-center">
-      <h5 class="mb-0">{{ 'RECEPTIONIST.MANAGE_INSURANCE' | translate }}: {{ getPatient(selectedPatient?.patientId)?.nameEn }}</h5>
+      <h5 class="mb-0">{{ 'RECEPTIONIST.MANAGE_INSURANCE' | translate }}: {{ clinicState.getPatientName(selectedPatient?.patientId) }}</h5>
       <button class="btn-close" (click)="closeDrawer()"></button>
     </div>
     

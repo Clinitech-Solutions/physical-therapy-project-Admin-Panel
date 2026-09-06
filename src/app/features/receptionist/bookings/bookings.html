@@ -37,14 +37,14 @@
                   @for(session of slot.sessions; track session.id) {
                     <div class="bg-primary bg-opacity-10 text-primary p-2 rounded d-flex flex-column gap-2 border border-primary border-opacity-25" style="min-width: 200px; max-width: 300px;">
                       <div class="d-flex justify-content-between align-items-start">
-                        <span class="fw-semibold small">{{ getPatient(session.patientId)?.nameEn }}</span>
+                        <span class="fw-semibold small">{{ clinicState.getPatientName(session.patientId) }}</span>
                         <span class="badge" [ngClass]="{'badge-warning': session.status === 'Confirmed', 'badge-success': session.status === 'Completed', 'badge-error': session.status === 'Cancelled'}">
                           {{ session.status }}
                         </span>
                       </div>
                       <div class="d-flex justify-content-between align-items-center text-muted" style="font-size: var(--text-xs)">
-                        <span><i class="bi bi-person me-1"></i> {{ getDoctor(session.doctorId)?.name }}</span>
-                        <span><i class="bi bi-door-open me-1"></i> {{ getRoom(session.roomId)?.displayName }}</span>
+                        <span><i class="bi bi-person me-1"></i> {{ clinicState.getDoctorName(session.doctorId) }}</span>
+                        <span><i class="bi bi-door-open me-1"></i> {{ clinicState.getRoomName(session.roomId) }}</span>
                       </div>
                     </div>
                   }
@@ -66,7 +66,7 @@
           @for(item of waitlist(); track item.patientId) {
             <div class="border rounded p-3 hover-shadow transition-all bg-card">
               <div class="d-flex justify-content-between align-items-start mb-2">
-                <span class="fw-bold">{{ getPatient(item.patientId)?.nameEn }}</span>
+                <span class="fw-bold">{{ clinicState.getPatientName(item.patientId) }}</span>
               </div>
               <div class="small text-secondary mb-1">
                 <i class="bi bi-clock me-1"></i> {{ item.request }}

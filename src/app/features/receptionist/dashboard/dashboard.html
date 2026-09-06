@@ -70,8 +70,8 @@
                 <td class="font-bebas" style="font-size:1rem">{{ formatTime(session.scheduledAt) }}</td>
                 <td>
                   <div class="d-flex align-items-center gap-2">
-                    <div class="avatar avatar-sm">{{ getPatient(session.patientId)?.avatar }}</div>
-                    <span class="fw-semibold">{{ getPatient(session.patientId)?.nameEn }}</span>
+                    <div class="avatar avatar-sm">{{ clinicState.getPatientAvatar(session.patientId) }}</div>
+                    <span class="fw-semibold">{{ clinicState.getPatientName(session.patientId) }}</span>
                     @if(session.packageAlert) {
                       <span class="badge badge-warning" title="Insurance Package Alert">
                         <i class="bi bi-exclamation-triangle-fill"></i> {{ session.packageAlert }}
@@ -79,8 +79,8 @@
                     }
                   </div>
                 </td>
-                <td>{{ getDoctor(session.doctorId)?.name }}</td>
-                <td><span class="badge badge-neutral">{{ getRoom(session.roomId)?.displayName }}</span></td>
+                <td>{{ clinicState.getDoctorName(session.doctorId) }}</td>
+                <td><span class="badge badge-neutral">{{ clinicState.getRoomName(session.roomId) }}</span></td>
                 <td>
                   <span class="badge" [ngClass]="{
                     'badge-success': session.status === 'Confirmed' || session.status === 'Completed',
@@ -108,7 +108,7 @@
                         <i class="bi bi-box-arrow-right"></i>
                       </button>
                     }
-                    <button class="btn-action action-danger" [attr.data-tip]="'RECEPTIONIST.MARK_ABSENT' | translate" (click)="openAbsenceModal(getDoctor(session.doctorId)?.name || '')">
+                    <button class="btn-action action-danger" [attr.data-tip]="'RECEPTIONIST.MARK_ABSENT' | translate" (click)="openAbsenceModal(clinicState.getDoctorName(session.doctorId))">
                       <i class="bi bi-person-x"></i>
                     </button>
                   </div>

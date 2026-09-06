@@ -17,10 +17,6 @@ export class RoomsComponent {
   rooms = this.clinicState.rooms;
   allDoctors = this.clinicState.doctors;
 
-  getDoctor(id: string) {
-    return this.allDoctors().find(d => d.id === id);
-  }
-
   async reassign(roomId: string, doctorId: string | null) {
     await this.clinicState.reassignRoom(roomId, doctorId);
     const msg = doctorId ? `Room reassigned` : `Room cleared`;
