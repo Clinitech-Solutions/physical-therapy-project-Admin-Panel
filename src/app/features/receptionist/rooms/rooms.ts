@@ -4,11 +4,13 @@ import { TranslateModule } from '@ngx-translate/core';
 import { ClinicStateService } from '../../../core/services/state/clinic-state.service';
 import { MessageService } from 'primeng/api';
 import { Room } from '../../../core/models/room.model';
+import { FormsModule } from '@angular/forms';
+import { ToggleSwitchModule } from 'primeng/toggleswitch';
 
 @Component({
   selector: "app-receptionist-rooms",
   standalone: true,
-  imports: [CommonModule, TranslateModule],
+  imports: [CommonModule, TranslateModule, FormsModule, ToggleSwitchModule],
   templateUrl: "./rooms.html",
   styleUrl: "./rooms.css"
 })
