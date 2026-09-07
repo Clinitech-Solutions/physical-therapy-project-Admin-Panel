@@ -1,31 +1,223 @@
 <div class="page-content fade-in">
-  <div class="page-header">
+  <!-- Page Header -->
+  <div class="page-header mb-4">
     <div>
       <h2 class="font-clash">{{ 'RECEPTIONIST.BOOKINGS_TITLE' | translate }}</h2>
-      <p>{{ 'RECEPTIONIST.BOOKINGS_SUB' | translate }}</p>
-    </div>
-    <div class="d-flex gap-3">
-      <button class="btn btn-ghost-primary fw-semibold" (click)="openAssessmentDrawer()">
-        <i class="bi bi-file-earmark-medical me-1"></i> {{ 'RECEPTIONIST.BOOK_ASSESSMENT' | translate }}
-      </button>
-      <button class="btn btn-primary fw-semibold" (click)="openSessionDrawer()">
-        <i class="bi bi-calendar-plus me-1"></i> {{ 'RECEPTIONIST.BOOK_SESSION' | translate }}
-      </button>
+      <p>{{ 'RECEPTIONIST.BOOKINGS_SUB' | translate }} & Walk-In Care</p>
     </div>
   </div>
 
+  <!-- Unified Booking & Walk-in Form Card -->
+  <div class="card border-0 shadow-sm mb-4 bg-card">
+    <div class="card-header bg-transparent border-bottom py-3 d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-calendar2-plus text-primary fs-5"></i>
+        <h5 class="mb-0 font-clash fw-bold">Session Booking & Walk-In</h5>
+      </div>
+      @if (selectedPatientId && isNewPatient) {
+        <span class="badge bg-warning bg-opacity-10 text-warning border border-warning px-3 py-2 rounded-pill">
+          <i class="bi bi-shield-check me-1"></i> Assessment First: Initial Assessment Required
+        </span>
+      }
+    </div>
+
+    <div class="card-body p-4">
+      <div class="row g-4">
+        <!-- 1. Patient Selector with Quick Add Button -->
+        <div class="col-md-4">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <label class="form-label mb-0 fw-semibold text-secondary">
+              {{ 'COMMON.PATIENT' | translate }} <span class="text-danger">*</span>
+            </label>
+            <button 
+              type="button" 
+              class="btn btn-sm btn-link text-primary p-0 text-decoration-none fw-semibold d-flex align-items-center gap-1" 
+              (click)="openQuickAddModal()">
+              <i class="bi bi-person-plus-fill"></i> + Add New Patient
+            </button>
+          </div>
+          <div class="d-flex gap-2">
+            <p-select 
+              [options]="allPatients()" 
+              [(ngModel)]="selectedPatientId" 
+              (ngModelChange)="onPatientChange($event)"
+              optionValue="id" 
+              [filter]="true" 
+              filterBy="nameEn,phone" 
+              placeholder="Search or Select Patient..." 
+              styleClass="w-100">
+              
+              <ng-template pTemplate="selectedItem" let-patient>
+                <div class="d-flex align-items-center gap-2" *ngIf="patient">
+                  <div class="avatar avatar-xs bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width:24px;height:24px;font-size:11px">
+                    {{ patient.avatar }}
+                  </div>
+                  <span class="fw-medium">{{ patient.nameEn }}</span>
+                  <span class="badge bg-secondary bg-opacity-10 text-secondary ms-1">{{ patient.gender }}</span>
+                </div>
+              </ng-template>
+              
+              <ng-template pTemplate="item" let-patient>
+                <div class="d-flex align-items-center gap-2 py-1">
+                  <div class="avatar avatar-xs bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width:28px;height:28px;font-size:11px">
+                    {{ patient.avatar }}
+                  </div>
+                  <div class="d-flex flex-column">
+                    <div class="fw-semibold small">
+                      {{ patient.nameEn }}
+                      <span class="badge bg-secondary bg-opacity-10 text-secondary ms-1">{{ patient.gender }}</span>
+                    </div>
+                    <span class="text-muted" style="font-size: 0.75rem">{{ patient.phone }}</span>
+                  </div>
+                </div>
+              </ng-template>
+            </p-select>
+
+            <button 
+              type="button" 
+              class="btn btn-outline-primary d-flex align-items-center px-3" 
+              (click)="openQuickAddModal()" 
+              title="Add New Patient">
+              <i class="bi bi-plus-lg"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- 2. Session Type Dropdown (Locked to 'Assessment' if New Patient) -->
+        <div class="col-md-2">
+          <label class="form-label mb-2 fw-semibold text-secondary">
+            {{ 'RECEPTIONIST.TYPE' | translate }} <span class="text-danger">*</span>
+          </label>
+          <p-select 
+            [options]="sessionTypeOptions" 
+            [(ngModel)]="sessionType" 
+            optionLabel="label" 
+            optionValue="value" 
+            [disabled]="isNewPatient" 
+            placeholder="Select Type" 
+            styleClass="w-100">
+          </p-select>
+          @if (selectedPatientId && isNewPatient) {
+            <div class="form-text text-warning small mt-1">
+              <i class="bi bi-lock-fill me-1"></i>Locked for new patient
+            </div>
+          }
+        </div>
+
+        <!-- 3. Doctor Dropdown (Filtered by Gender Match) -->
+        <div class="col-md-3">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <label class="form-label mb-0 fw-semibold text-secondary">
+              {{ 'COMMON.DOCTOR' | translate }} <span class="text-danger">*</span>
+            </label>
+            @if (selectedPatient) {
+              <span class="badge bg-primary bg-opacity-10 text-primary small">
+                Match: {{ selectedPatient.gender }}
+              </span>
+            }
+          </div>
+          <p-select 
+            [options]="filteredDoctors" 
+            [(ngModel)]="selectedDoctorId" 
+            optionLabel="name" 
+            optionValue="id" 
+            placeholder="Select Doctor..." 
+            emptyMessage="No doctors matching patient gender"
+            styleClass="w-100">
+            <ng-template pTemplate="item" let-doc>
+              <div class="d-flex justify-content-between align-items-center w-100">
+                <span>{{ doc.name }}</span>
+                <span class="badge bg-secondary bg-opacity-10 text-secondary small">{{ doc.gender }}</span>
+              </div>
+            </ng-template>
+          </p-select>
+        </div>
+
+        <!-- 4. Room Dropdown (Bound to availableRooms()) -->
+        <div class="col-md-3">
+          <label class="form-label mb-2 fw-semibold text-secondary">
+            {{ 'COMMON.ROOM' | translate }} <span class="text-danger">*</span>
+          </label>
+          <p-select 
+            [options]="availableRooms()" 
+            [(ngModel)]="selectedRoomId" 
+            optionLabel="displayName" 
+            optionValue="id" 
+            placeholder="Select Room..." 
+            emptyMessage="{{ 'COMMON.NO_AVAILABLE_ROOMS' | translate }}"
+            styleClass="w-100">
+            <ng-template pTemplate="item" let-room>
+              <div class="d-flex justify-content-between align-items-center w-100">
+                <span><i class="bi bi-door-open me-2 text-primary"></i>{{ room.displayName }}</span>
+                <span class="badge bg-success bg-opacity-10 text-success small">Available</span>
+              </div>
+            </ng-template>
+          </p-select>
+        </div>
+
+        <!-- 5. Date & Time Picker -->
+        <div class="col-md-4">
+          <label class="form-label mb-2 fw-semibold text-secondary">
+            {{ 'COMMON.DATE' | translate }} & {{ 'COMMON.TIME' | translate }} <span class="text-danger">*</span>
+          </label>
+          <p-datepicker 
+            [(ngModel)]="scheduledDate" 
+            [showTime]="true" 
+            hourFormat="12" 
+            [showIcon]="true" 
+            placeholder="Select Date & Time" 
+            appendTo="body" 
+            styleClass="w-100">
+          </p-datepicker>
+        </div>
+
+        <!-- Actions: Walk-in Slot Finder & Submit Button -->
+        <div class="col-md-8 d-flex align-items-end justify-content-end gap-3">
+          <button 
+            type="button" 
+            class="btn btn-outline-secondary px-3 py-2" 
+            (click)="resetBookingForm()">
+            {{ 'COMMON.CANCEL' | translate }}
+          </button>
+          
+          <button 
+            type="button" 
+            class="btn btn-warning fw-semibold px-4 py-2 d-flex align-items-center shadow-sm" 
+            (click)="handleWalkInNearestSlot()"
+            [disabled]="!selectedPatientId">
+            <i class="bi bi-lightning-charge-fill me-2"></i> Find Nearest Slot (Walk-in)
+          </button>
+          
+          <button 
+            type="button" 
+            class="btn btn-primary fw-semibold px-4 py-2 d-flex align-items-center shadow-sm" 
+            (click)="submitBooking()"
+            [disabled]="isLoading() || !selectedPatientId || !selectedDoctorId || !selectedRoomId || !scheduledDate">
+            @if (isLoading()) {
+              <span class="spinner-border spinner-border-sm me-2"></span>
+              {{ 'RECEPTIONIST.PROCESSING' | translate }}
+            } @else {
+              <i class="bi bi-calendar-check me-2"></i> {{ 'RECEPTIONIST.BOOK_SESSION' | translate }}
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Schedule Overview & Waitlist -->
   <div class="row g-4">
+    <!-- Calendar Schedule Grid -->
     <div class="col-md-9">
       <div class="table-panel h-100">
         <div class="table-toolbar p-4 border-bottom d-flex justify-content-between align-items-center">
-          <h4 class="mb-0 font-clash">Today, 12 May 2026</h4>
+          <h4 class="mb-0 font-clash">Today's Schedule (12 May 2026)</h4>
           <div class="btn-group">
             <button class="btn btn-primary btn-sm">{{ 'RECEPTIONIST.DAY' | translate }}</button>
             <button class="btn btn-outline-primary btn-sm">{{ 'RECEPTIONIST.WEEK' | translate }}</button>
           </div>
         </div>
         
-        <!-- Dynamic Calendar Grid -->
         <div class="table-scroll-area p-0">
           <div class="d-flex flex-column">
             @for(slot of calendarGrid(); track slot.time) {
@@ -35,16 +227,19 @@
                 </div>
                 <div class="p-2 flex-grow-1 d-flex flex-wrap gap-2 align-items-start">
                   @for(session of slot.sessions; track session.id) {
-                    <div class="bg-primary bg-opacity-10 text-primary p-2 rounded d-flex flex-column gap-2 border border-primary border-opacity-25" style="min-width: 200px; max-width: 300px;">
+                    <div class="bg-primary bg-opacity-10 text-primary p-2 rounded d-flex flex-column gap-2 border border-primary border-opacity-25" style="min-width: 220px; max-width: 320px;">
                       <div class="d-flex justify-content-between align-items-start">
                         <span class="fw-semibold small">{{ clinicState.getPatientName(session.patientId) }}</span>
-                        <span class="badge" [ngClass]="{'badge-warning': session.status === 'Confirmed', 'badge-success': session.status === 'Completed', 'badge-error': session.status === 'Cancelled'}">
+                        <span class="badge" [ngClass]="{'badge-warning': session.status === 'Confirmed', 'badge-success': session.status === 'Completed', 'badge-error': session.status === 'Cancelled', 'badge-info': session.status === 'In Progress'}">
                           {{ session.status }}
                         </span>
                       </div>
                       <div class="d-flex justify-content-between align-items-center text-muted" style="font-size: var(--text-xs)">
                         <span><i class="bi bi-person me-1"></i> {{ clinicState.getDoctorName(session.doctorId) }}</span>
                         <span><i class="bi bi-door-open me-1"></i> {{ clinicState.getRoomName(session.roomId) }}</span>
+                      </div>
+                      <div class="small fw-semibold text-secondary" style="font-size: 0.7rem">
+                        Type: {{ session.type }}
                       </div>
                     </div>
                   }
@@ -55,6 +250,8 @@
         </div>
       </div>
     </div>
+
+    <!-- Waitlist Panel -->
     <div class="col-md-3">
       <div class="table-panel h-100">
         <div class="p-4 border-bottom d-flex justify-content-between align-items-center">
@@ -74,8 +271,8 @@
               <div class="small text-secondary mb-3" dir="ltr" style="text-align: start;">
                 <i class="bi bi-telephone me-1"></i> {{ item.contact }}
               </div>
-              <button class="btn btn-outline-primary btn-sm w-100" (click)="fillWaitlist(item.patientId)">
-                {{ 'RECEPTIONIST.FILL_SLOT' | translate }}
+              <button class="btn btn-outline-primary btn-sm w-100 d-flex align-items-center justify-content-center gap-1" (click)="fillWaitlist(item.patientId)">
+                <i class="bi bi-lightning-charge"></i> {{ 'RECEPTIONIST.FILL_SLOT' | translate }}
               </button>
             </div>
           }
@@ -90,175 +287,61 @@
   </div>
 </div>
 
-<!-- Book Assessment Drawer -->
-@if(isAssessmentDrawerOpen()) {
-  <div class="modal-backdrop fade show" (click)="closeAssessmentDrawer()"></div>
-  <div class="drawer drawer-compact fade-in" style="width:420px; z-index:1055; position:fixed; top:0; right:0; height:100%; overflow-y:auto;">
-    <div class="drawer-header d-flex justify-content-between align-items-center">
-      <h5 class="mb-0">{{ 'RECEPTIONIST.BOOK_ASSESSMENT' | translate }}</h5>
-      <button class="btn-close" (click)="closeAssessmentDrawer()"></button>
+<!-- Quick Add Patient Modal (Dialog) -->
+<p-dialog 
+  [(visible)]="isQuickAddModalOpen" 
+  [modal]="true" 
+  [header]="'RECEPTIONIST.ADD_PATIENT' | translate" 
+  [style]="{ width: '460px' }"
+  [draggable]="false" 
+  [resizable]="false">
+  
+  <div class="d-flex flex-column gap-3 py-2">
+    <div class="form-group">
+      <label class="form-label fw-semibold small">{{ 'RECEPTIONIST.FULL_NAME_EN' | translate }} <span class="text-danger">*</span></label>
+      <input type="text" class="form-control" [(ngModel)]="quickPatient.nameEn" placeholder="e.g. John Doe">
     </div>
 
-    <div class="drawer-body">
-      <div class="form-group mb-3">
-        <label class="form-label">{{ 'COMMON.PATIENT' | translate }}</label>
-        <p-select 
-          [options]="allPatients()" 
-          [(ngModel)]="assessmentForm.patientId" 
-          optionValue="id" 
-          [filter]="true" 
-          filterBy="nameEn,phone" 
-          placeholder="Search Patient..." 
-          styleClass="w-100">
-          
-          <ng-template pTemplate="selectedItem" let-selectedOption>
-            <div class="d-flex align-items-center" *ngIf="selectedOption">
-              <div>{{ selectedOption.nameEn }}</div>
-            </div>
-          </ng-template>
-          
-          <ng-template pTemplate="item" let-patient>
-            <div class="d-flex align-items-center gap-2">
-              <div class="avatar avatar-xs bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width:24px;height:24px;font-size:10px">{{patient.avatar}}</div>
-              <div>
-                <div class="fw-medium" style="font-size: 0.9rem">{{ patient.nameEn }}</div>
-                <div class="text-muted" style="font-size: 0.75rem">{{ patient.phone }}</div>
-              </div>
-            </div>
-          </ng-template>
-        </p-select>
-      </div>
-      
-      <div class="form-group mb-3">
-        <label class="form-label">{{ 'ROLES.SENIOR' | translate }}</label>
-        <select class="form-select" [(ngModel)]="assessmentForm.doctorId">
-          <option value="">Select Senior</option>
-          @for(doc of allDoctors(); track doc.id) {
-            <option [value]="doc.id">{{ doc.name }}</option>
-          }
+    <div class="form-group">
+      <label class="form-label fw-semibold small">{{ 'RECEPTIONIST.FULL_NAME_AR' | translate }}</label>
+      <input type="text" class="form-control" [(ngModel)]="quickPatient.nameAr" placeholder="e.g. جون دو" dir="rtl">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label fw-semibold small">{{ 'RECEPTIONIST.PHONE' | translate }} <span class="text-danger">*</span></label>
+      <input type="tel" class="form-control" [(ngModel)]="quickPatient.phone" placeholder="+201012345678" dir="ltr">
+    </div>
+
+    <div class="row g-3">
+      <div class="col-6 form-group">
+        <label class="form-label fw-semibold small">{{ 'RECEPTIONIST.GENDER_TH' | translate }} <span class="text-danger">*</span></label>
+        <select class="form-select" [(ngModel)]="quickPatient.gender">
+          <option value="Male">{{ 'RECEPTIONIST.MALE' | translate }}</option>
+          <option value="Female">{{ 'RECEPTIONIST.FEMALE' | translate }}</option>
         </select>
       </div>
-
-      <div class="row g-3 mb-3">
-        <div class="col-6 form-group">
-          <label class="form-label">{{ 'COMMON.DATE' | translate }}</label>
-          <input type="date" class="form-control" [(ngModel)]="assessmentForm.date">
-        </div>
-        <div class="col-6 form-group">
-          <label class="form-label">{{ 'COMMON.TIME' | translate }}</label>
-          <select class="form-select" [(ngModel)]="assessmentForm.time">
-            @for (t of timeSlots; track t) {
-              <option [value]="t">{{ t }}</option>
-            }
-          </select>
-        </div>
-      </div>
-    </div>
-
-    <div class="drawer-footer">
-      <div class="d-flex gap-2">
-        <button class="btn btn-outline-secondary flex-1" (click)="closeAssessmentDrawer()">{{ 'COMMON.CANCEL' | translate }}</button>
-        <button class="btn btn-primary flex-1" (click)="submitAssessment()" [disabled]="isLoading() || !assessmentForm.patientId || !assessmentForm.doctorId">
-          @if (isLoading()) {
-            <span class="spinner-border spinner-border-sm me-1"></span>
-          } @else {
-            {{ 'COMMON.SAVE' | translate }}
-          }
-        </button>
+      <div class="col-6 form-group">
+        <label class="form-label fw-semibold small">{{ 'RECEPTIONIST.PAYMENT_TYPE' | translate }}</label>
+        <select class="form-select" [(ngModel)]="quickPatient.paymentType">
+          <option value="Cash">{{ 'RECEPTIONIST.CASH' | translate }}</option>
+          <option value="Online">{{ 'RECEPTIONIST.ONLINE_PAYMENTS' | translate }}</option>
+          <option value="Insurance">{{ 'RECEPTIONIST.INSURANCE_PAYMENT' | translate }}</option>
+        </select>
       </div>
     </div>
   </div>
-}
 
-<!-- Book Session Drawer -->
-@if(isSessionDrawerOpen()) {
-  <div class="modal-backdrop fade show" (click)="closeSessionDrawer()"></div>
-  <div class="drawer drawer-compact fade-in" style="width:420px; z-index:1055; position:fixed; top:0; right:0; height:100%; overflow-y:auto;">
-    <div class="drawer-header d-flex justify-content-between align-items-center">
-      <h5 class="mb-0">{{ 'RECEPTIONIST.BOOK_SESSION' | translate }}</h5>
-      <button class="btn-close" (click)="closeSessionDrawer()"></button>
+  <ng-template pTemplate="footer">
+    <div class="d-flex justify-content-end gap-2 pt-2">
+      <button class="btn btn-outline-secondary btn-sm px-3" (click)="closeQuickAddModal()">
+        {{ 'COMMON.CANCEL' | translate }}
+      </button>
+      <button class="btn btn-primary btn-sm px-3" (click)="saveQuickPatient()" [disabled]="isLoading()">
+        @if (isLoading()) {
+          <span class="spinner-border spinner-border-sm me-1"></span>
+        }
+        Save & Select
+      </button>
     </div>
-
-    <div class="drawer-body">
-      <div class="form-group mb-3">
-        <label class="form-label">{{ 'COMMON.PATIENT' | translate }}</label>
-        <p-select 
-          [options]="allPatients()" 
-          [(ngModel)]="sessionForm.patientId" 
-          optionValue="id" 
-          [filter]="true" 
-          filterBy="nameEn,phone" 
-          placeholder="Search Patient..." 
-          styleClass="w-100">
-          
-          <ng-template pTemplate="selectedItem" let-selectedOption>
-            <div class="d-flex align-items-center" *ngIf="selectedOption">
-              <div>{{ selectedOption.nameEn }}</div>
-            </div>
-          </ng-template>
-          
-          <ng-template pTemplate="item" let-patient>
-            <div class="d-flex align-items-center gap-2">
-              <div class="avatar avatar-xs bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width:24px;height:24px;font-size:10px">{{patient.avatar}}</div>
-              <div>
-                <div class="fw-medium" style="font-size: 0.9rem">{{ patient.nameEn }}</div>
-                <div class="text-muted" style="font-size: 0.75rem">{{ patient.phone }}</div>
-              </div>
-            </div>
-          </ng-template>
-        </p-select>
-      </div>
-      
-      <div class="form-group mb-3">
-        <label class="form-label">{{ 'COMMON.DOCTOR' | translate }}</label>
-        <select class="form-select" [(ngModel)]="sessionForm.doctorId">
-          <option value="">Select Doctor</option>
-          @for(doc of allDoctors(); track doc.id) {
-            <option [value]="doc.id">{{ doc.name }}</option>
-          }
-        </select>
-      </div>
-
-      <div class="form-group mb-3">
-        <label class="form-label">{{ 'COMMON.ROOM' | translate }}</label>
-        <p-select 
-          [options]="clinicState.availableRooms()" 
-          [(ngModel)]="sessionForm.roomId" 
-          optionLabel="displayName" 
-          optionValue="id" 
-          [placeholder]="'COMMON.ROOM' | translate" 
-          emptyMessage="{{ 'COMMON.NO_AVAILABLE_ROOMS' | translate }}"
-          styleClass="w-100">
-        </p-select>
-      </div>
-
-      <div class="row g-3 mb-3">
-        <div class="col-6 form-group">
-          <label class="form-label">{{ 'COMMON.DATE' | translate }}</label>
-          <input type="date" class="form-control" [(ngModel)]="sessionForm.date">
-        </div>
-        <div class="col-6 form-group">
-          <label class="form-label">{{ 'COMMON.TIME' | translate }}</label>
-          <select class="form-select" [(ngModel)]="sessionForm.time">
-            @for (t of timeSlots; track t) {
-              <option [value]="t">{{ t }}</option>
-            }
-          </select>
-        </div>
-      </div>
-    </div>
-
-    <div class="drawer-footer">
-      <div class="d-flex gap-2">
-        <button class="btn btn-outline-secondary flex-1" (click)="closeSessionDrawer()">{{ 'COMMON.CANCEL' | translate }}</button>
-        <button class="btn btn-primary flex-1" (click)="submitSession()" [disabled]="isLoading() || !sessionForm.patientId || !sessionForm.doctorId">
-          @if (isLoading()) {
-            <span class="spinner-border spinner-border-sm me-1"></span>
-          } @else {
-            {{ 'COMMON.SAVE' | translate }}
-          }
-        </button>
-      </div>
-    </div>
-  </div>
-}
+  </ng-template>
+</p-dialog>

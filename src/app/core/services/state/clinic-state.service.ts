@@ -225,6 +225,73 @@ export class ClinicStateService {
     return this.addSession(sessionData);
   }
 
+  isPatientNew(patientId: string): boolean {
+    if (!patientId) return true;
+    const patientSessions = this.sessionsSig().filter(s => s.patientId === patientId);
+    if (patientSessions.length === 0) return true;
+
+    const hasCompletedAssessment = patientSessions.some(
+      s => s.type === 'Assessment' && s.status === 'Completed'
+    );
+    return !hasCompletedAssessment;
+  }
+
+  findNearestSlot(patientId: string): { doctorId: string; roomId: string; scheduledAt: string } {
+    if (!patientId) {
+      throw new Error('Please select a patient first.');
+    }
+
+    // a) Get patient's gender
+    const patient = this.patientsSig().find(p => p.id === patientId);
+    if (!patient) {
+      throw new Error('Patient not found.');
+    }
+    const patientGender = patient.gender;
+
+    // Helper: calculate doctor's current load
+    const getDoctorLoad = (doctorId: string): number => {
+      const avail = this.doctorAvailabilitySig().find(a => a.doctorId === doctorId);
+      if (avail !== undefined) {
+        return avail.currentLoad;
+      }
+      return this.sessionsSig().filter(s => s.doctorId === doctorId && s.status === 'In Progress').length;
+    };
+
+    // b) Find available doctor matching that gender who currently has currentLoad < 2
+    const matchingDoctors = this.doctorsSig().filter(d => {
+      return d.gender === patientGender && getDoctorLoad(d.id) < 2;
+    });
+
+    if (matchingDoctors.length === 0) {
+      throw new Error(`No available ${patientGender.toLowerCase()} doctor found with current load under 2.`);
+    }
+
+    // Pick doctor with the lowest current load
+    matchingDoctors.sort((a, b) => getDoctorLoad(a.id) - getDoctorLoad(b.id));
+    const selectedDoctor = matchingDoctors[0];
+
+    // c) Auto-select an available room from availableRooms()
+    const openRooms = this.availableRooms();
+    if (openRooms.length === 0) {
+      throw new Error('No available rooms found for booking.');
+    }
+    const selectedRoom = openRooms[0];
+
+    // d) Default scheduledAt time: rounded to next nearest 30 mins
+    const now = new Date();
+    const intervalMs = 30 * 60 * 1000;
+    const roundedTime = new Date(Math.ceil(now.getTime() / intervalMs) * intervalMs);
+
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const localIso = `${roundedTime.getFullYear()}-${pad(roundedTime.getMonth() + 1)}-${pad(roundedTime.getDate())}T${pad(roundedTime.getHours())}:${pad(roundedTime.getMinutes())}:00`;
+
+    return {
+      doctorId: selectedDoctor.id,
+      roomId: selectedRoom.id,
+      scheduledAt: localIso
+    };
+  }
+
   // ==========================================
   // Room Logic
   // ==========================================

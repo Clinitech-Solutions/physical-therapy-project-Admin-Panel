@@ -5,13 +5,25 @@ import { FormsModule } from '@angular/forms';
 import { ClinicStateService } from '../../../core/services/state/clinic-state.service';
 import { MessageService } from 'primeng/api';
 import { SelectModule } from 'primeng/select';
+import { DatePickerModule } from 'primeng/datepicker';
+import { DialogModule } from 'primeng/dialog';
 import { SessionType } from '../../../core/models/session.model';
+import { Doctor } from '../../../core/models/doctor.model';
+import { Patient } from '../../../core/models/patient.model';
 
 @Component({
   selector: "app-receptionist-bookings",
   standalone: true,
-  imports: [CommonModule, TranslateModule, FormsModule, SelectModule],
-  templateUrl: "./bookings.html"
+  imports: [
+    CommonModule, 
+    TranslateModule, 
+    FormsModule, 
+    SelectModule, 
+    DatePickerModule, 
+    DialogModule
+  ],
+  templateUrl: "./bookings.html",
+  styleUrls: ["./bookings.css"]
 })
 export class BookingsComponent {
   clinicState = inject(ClinicStateService);
@@ -20,20 +32,238 @@ export class BookingsComponent {
   viewMode = signal<'Week' | 'Day'>('Day');
   isLoading = this.clinicState.isLoading;
 
-  // Global State
+  // Global State Signals from ClinicStateService
   waitlist = this.clinicState.waitlist;
-  doctors = this.clinicState.doctors;
   sessions = this.clinicState.sessions;
   allPatients = this.clinicState.patients;
   allDoctors = this.clinicState.doctors;
   allRooms = this.clinicState.rooms;
   availableRooms = this.clinicState.availableRooms;
 
+  // Unified Booking State Variables
+  selectedPatientId: string = '';
+  selectedDoctorId: string = '';
+  selectedRoomId: string = '';
+  sessionType: SessionType = 'Assessment';
+  scheduledDate: Date | null = new Date();
+
+  // Session type options
+  sessionTypeOptions: { label: string; value: SessionType }[] = [
+    { label: 'Assessment', value: 'Assessment' },
+    { label: 'Session', value: 'Session' }
+  ];
+
+  // Quick Add Patient Modal State
+  isQuickAddModalOpen = false;
+  quickPatient = {
+    nameEn: '',
+    nameAr: '',
+    phone: '',
+    gender: 'Male' as 'Male' | 'Female',
+    paymentType: 'Cash' as 'Cash' | 'Online' | 'Insurance'
+  };
+
+  // Assessment First: computed / getter
+  get isNewPatient(): boolean {
+    return this.selectedPatientId ? this.clinicState.isPatientNew(this.selectedPatientId) : false;
+  }
+
+  // Selected Patient entity helper
+  get selectedPatient(): Patient | undefined {
+    return this.allPatients().find(p => p.id === this.selectedPatientId);
+  }
+
+  // Doctor dropdown filtered by patient's gender match
+  get filteredDoctors(): Doctor[] {
+    const patient = this.selectedPatient;
+    if (!patient || !patient.gender) {
+      return this.allDoctors();
+    }
+    return this.allDoctors().filter(doc => doc.gender === patient.gender);
+  }
+
+  // Patient selection change handler
+  onPatientChange(patientId?: string) {
+    if (patientId !== undefined) {
+      this.selectedPatientId = patientId;
+    }
+
+    // Business Rule: If patient is new, automatically set sessionType = 'Assessment'
+    if (this.isNewPatient) {
+      this.sessionType = 'Assessment';
+    }
+
+    // Filter and validate selected doctor against patient gender
+    if (this.selectedDoctorId) {
+      const isDocValid = this.filteredDoctors.some(d => d.id === this.selectedDoctorId);
+      if (!isDocValid) {
+        this.selectedDoctorId = '';
+      }
+    }
+  }
+
+  // Walk-in / Nearest Slot Handler
+  handleWalkInNearestSlot() {
+    if (!this.selectedPatientId) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Select Patient',
+        detail: 'Please select or add a patient first to find the nearest walk-in slot.'
+      });
+      return;
+    }
+
+    try {
+      const slot = this.clinicState.findNearestSlot(this.selectedPatientId);
+      this.selectedDoctorId = slot.doctorId;
+      this.selectedRoomId = slot.roomId;
+      this.scheduledDate = new Date(slot.scheduledAt);
+
+      if (this.isNewPatient) {
+        this.sessionType = 'Assessment';
+      }
+
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Walk-In Slot Found',
+        detail: `Auto-assigned Dr. ${this.clinicState.getDoctorName(slot.doctorId)} in ${this.clinicState.getRoomName(slot.roomId)} at ${this.formatTime(slot.scheduledAt)}.`
+      });
+    } catch (error: any) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Slot Search Failed',
+        detail: error.message || 'No suitable slot found.'
+      });
+    }
+  }
+
+  // Book Session Submission
+  async submitBooking() {
+    if (!this.selectedPatientId) {
+      this.messageService.add({ severity: 'error', summary: 'Validation Error', detail: 'Please select a patient.' });
+      return;
+    }
+    if (!this.selectedDoctorId) {
+      this.messageService.add({ severity: 'error', summary: 'Validation Error', detail: 'Please select a doctor.' });
+      return;
+    }
+    if (!this.selectedRoomId) {
+      this.messageService.add({ severity: 'error', summary: 'Validation Error', detail: 'Please select an available room.' });
+      return;
+    }
+    if (!this.scheduledDate) {
+      this.messageService.add({ severity: 'error', summary: 'Validation Error', detail: 'Please select date and time.' });
+      return;
+    }
+
+    // Enforce Assessment First rule
+    const finalType: SessionType = this.isNewPatient ? 'Assessment' : this.sessionType;
+
+    const dateObj = this.scheduledDate instanceof Date ? this.scheduledDate : new Date(this.scheduledDate);
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const scheduledIso = `${dateObj.getFullYear()}-${pad(dateObj.getMonth() + 1)}-${pad(dateObj.getDate())}T${pad(dateObj.getHours())}:${pad(dateObj.getMinutes())}:00`;
+
+    try {
+      await this.clinicState.addSession({
+        patientId: this.selectedPatientId,
+        doctorId: this.selectedDoctorId,
+        roomId: this.selectedRoomId,
+        scheduledAt: scheduledIso,
+        type: finalType
+      });
+
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Booking Successful',
+        detail: `${finalType} booked for ${this.clinicState.getPatientName(this.selectedPatientId)}!`
+      });
+
+      this.resetBookingForm();
+    } catch (e: any) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Booking Failed',
+        detail: e.message || 'Room is not available for booking.'
+      });
+    }
+  }
+
+  resetBookingForm() {
+    this.selectedPatientId = '';
+    this.selectedDoctorId = '';
+    this.selectedRoomId = '';
+    this.sessionType = 'Assessment';
+    this.scheduledDate = new Date();
+  }
+
+  // Quick Add Patient Modal
+  openQuickAddModal() {
+    this.quickPatient = {
+      nameEn: '',
+      nameAr: '',
+      phone: '',
+      gender: 'Male',
+      paymentType: 'Cash'
+    };
+    this.isQuickAddModalOpen = true;
+  }
+
+  closeQuickAddModal() {
+    this.isQuickAddModalOpen = false;
+  }
+
+  async saveQuickPatient() {
+    if (!this.quickPatient.nameEn.trim() || !this.quickPatient.phone.trim()) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Required Fields',
+        detail: 'Please enter patient name and phone number.'
+      });
+      return;
+    }
+
+    await this.clinicState.createPatient({
+      nameEn: this.quickPatient.nameEn.trim(),
+      nameAr: this.quickPatient.nameAr.trim() || this.quickPatient.nameEn.trim(),
+      phone: this.quickPatient.phone.trim(),
+      gender: this.quickPatient.gender,
+      paymentType: this.quickPatient.paymentType,
+      dob: '1995-01-01',
+      insuranceCompany: '',
+      docs: {
+        medicalConsent: true,
+        liabilityWaiver: true,
+        idCard: true
+      }
+    });
+
+    // Auto-select newly created patient
+    const newPatient = this.allPatients()[0];
+    if (newPatient) {
+      this.selectedPatientId = newPatient.id;
+      this.onPatientChange(newPatient.id);
+    }
+
+    this.closeQuickAddModal();
+    this.messageService.add({
+      severity: 'success',
+      summary: 'Patient Registered',
+      detail: 'New patient created and selected.'
+    });
+  }
+
+  // Fill Slot from Waitlist
+  fillWaitlist(patientId: string) {
+    this.selectedPatientId = patientId;
+    this.onPatientChange(patientId);
+    this.handleWalkInNearestSlot();
+  }
+
+  // Calendar & Schedule Grid
   timeSlots = [
     '09:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '01:00 PM', '02:00 PM'
   ];
 
-  // Format ISO time to short time string (e.g. 09:00 AM)
   formatTime(isoString: string) {
     try {
       return new Date(isoString).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
@@ -42,7 +272,6 @@ export class BookingsComponent {
     }
   }
 
-  // Dynamic grid state
   calendarGrid = computed(() => {
     const s = this.sessions();
     const grid: { time: string, sessions: any[] }[] = this.timeSlots.map(t => ({ time: t, sessions: [] }));
@@ -55,93 +284,4 @@ export class BookingsComponent {
     });
     return grid;
   });
-
-  // Drawer States
-  isAssessmentDrawerOpen = signal(false);
-  isSessionDrawerOpen = signal(false);
-
-  // Forms
-  assessmentForm = {
-    patientId: '',
-    doctorId: '',
-    date: '',
-    time: ''
-  };
-
-  sessionForm = {
-    patientId: '',
-    doctorId: '',
-    roomId: '',
-    date: '',
-    time: ''
-  };
-
-  openAssessmentDrawer() {
-    this.isAssessmentDrawerOpen.set(true);
-  }
-
-  closeAssessmentDrawer() {
-    this.isAssessmentDrawerOpen.set(false);
-    this.assessmentForm = { patientId: '', doctorId: '', date: '', time: '' };
-  }
-
-  openSessionDrawer() {
-    this.isSessionDrawerOpen.set(true);
-  }
-
-  closeSessionDrawer() {
-    this.isSessionDrawerOpen.set(false);
-    this.sessionForm = { patientId: '', doctorId: '', roomId: '', date: '', time: '' };
-  }
-
-  fillWaitlist(patientId: string) {
-    this.sessionForm.patientId = patientId;
-    this.openSessionDrawer();
-  }
-
-  // Form submission handlers
-  async submitAssessment() {
-    if (!this.assessmentForm.patientId || !this.assessmentForm.doctorId || !this.assessmentForm.time) {
-      this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Please fill all required fields.' });
-      return;
-    }
-
-    // Dummy logic to convert time back to a pseudo ISO string for the mock DB today
-    const mockIso = `2026-05-12T${this.assessmentForm.time === '09:00 AM' ? '09:00:00' : '10:00:00'}`;
-
-    await this.clinicState.addSession({
-      patientId: this.assessmentForm.patientId,
-      doctorId: this.assessmentForm.doctorId,
-      roomId: 'room_1', // Default assigned room for mock
-      scheduledAt: mockIso,
-      type: 'Assessment' as SessionType
-    });
-
-    this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Assessment booked successfully!' });
-    this.closeAssessmentDrawer();
-  }
-
-  async submitSession() {
-    if (!this.sessionForm.patientId || !this.sessionForm.doctorId || !this.sessionForm.roomId || !this.sessionForm.time) {
-      this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Please fill all required fields.' });
-      return;
-    }
-
-    const mockIso = `2026-05-12T${this.sessionForm.time === '09:00 AM' ? '09:00:00' : '10:00:00'}`;
-
-    try {
-      await this.clinicState.addSession({
-        patientId: this.sessionForm.patientId,
-        doctorId: this.sessionForm.doctorId,
-        roomId: this.sessionForm.roomId,
-        scheduledAt: mockIso,
-        type: 'Session' as SessionType
-      });
-
-      this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Session booked successfully!' });
-      this.closeSessionDrawer();
-    } catch (e: any) {
-      this.messageService.add({ severity: 'error', summary: 'Booking Failed', detail: e.message || 'Room is not available for booking.' });
-    }
-  }
 }
