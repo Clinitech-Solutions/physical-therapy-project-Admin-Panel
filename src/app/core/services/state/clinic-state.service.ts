@@ -34,16 +34,24 @@ export class ClinicStateService {
       const stored = localStorage.getItem('clinic_rooms');
       if (stored) {
         try {
-          return JSON.parse(stored);
+          const parsed: Room[] = JSON.parse(stored);
+          const cleaned = parsed.map(r => {
+            if (r.status === 'Available') {
+              return { ...r, doctorId: null };
+            }
+            return r;
+          });
+          this.saveRoomsToLocalStorage(cleaned);
+          return cleaned;
         } catch {
           // Fallback if parsing fails
         }
       }
-      const initial = [...mockRooms];
+      const initial = mockRooms.map(r => r.status === 'Available' ? { ...r, doctorId: null } : { ...r });
       this.saveRoomsToLocalStorage(initial);
       return initial;
     }
-    return [...mockRooms];
+    return mockRooms.map(r => r.status === 'Available' ? { ...r, doctorId: null } : { ...r });
   }
 
   // Global State Signals
@@ -53,6 +61,7 @@ export class ClinicStateService {
   private doctorsSig = signal<Doctor[]>([]);
   public doctors = this.doctorsSig.asReadonly();
 
+  // Rooms Signal & Available Rooms Computed Signal
   private roomsSig = signal<Room[]>(this.loadInitialRooms());
   public rooms = this.roomsSig.asReadonly();
   public availableRooms = computed(() => this.roomsSig().filter(r => r.status === 'Available' && r.currentLoad === 0));
@@ -129,10 +138,10 @@ export class ClinicStateService {
     // Update Session Status
     this.sessionsSig.update(list => list.map(s => s.id === sessionId ? { ...s, status: 'In Progress' } : s));
 
-    // 2. Update Room Status
+    // 2. Update Room Status (assigned doctor from session while occupied)
     this.roomsSig.update(list => list.map(r => {
       if (r.id === sessionToUpdate.roomId) {
-        return { ...r, currentLoad: 1, status: 'Occupied' };
+        return { ...r, currentLoad: 1, status: 'Occupied', doctorId: sessionToUpdate.doctorId };
       }
       return r;
     }));
@@ -154,11 +163,11 @@ export class ClinicStateService {
     if (sessionToUpdate) {
       this.sessionsSig.update(list => list.map(s => s.id === sessionId ? { ...s, status: 'Completed' } : s));
 
-      // Decrease Room Load
+      // Decrease Room Load and explicitly clear doctorId when room becomes Available
       this.roomsSig.update(list => list.map(r => {
         if (r.id === sessionToUpdate.roomId) {
           const newLoad = Math.max(0, r.currentLoad - 1);
-          return { ...r, currentLoad: newLoad, status: 'Available' };
+          return { ...r, currentLoad: newLoad, status: 'Available', doctorId: null };
         }
         return r;
       }));
@@ -228,7 +237,7 @@ export class ClinicStateService {
       id: ('id' in roomData && roomData.id) ? roomData.id : `room_${Date.now()}`,
       displayName: roomData.displayName,
       status: roomData.status || 'Available',
-      doctorId: roomData.doctorId ?? null,
+      doctorId: roomData.status === 'Occupied' ? (roomData.doctorId ?? null) : null,
       currentLoad: roomData.currentLoad ?? 0,
       capacity: roomData.capacity ?? 1
     };
@@ -262,7 +271,7 @@ export class ClinicStateService {
         if (status === 'Maintenance') {
           return { ...r, status: 'Maintenance', doctorId: null, currentLoad: 0 };
         } else if (status === 'Available') {
-          return { ...r, status: 'Available', currentLoad: 0 };
+          return { ...r, status: 'Available', currentLoad: 0, doctorId: null };
         } else if (status === 'Occupied') {
           return { ...r, status: 'Occupied', currentLoad: 1 };
         }
@@ -280,7 +289,7 @@ export class ClinicStateService {
     this.roomsSig.update(rooms => rooms.map(r => {
       if (r.id === roomId) {
         if (r.status === 'Maintenance') {
-          return { ...r, status: 'Available', currentLoad: 0 };
+          return { ...r, status: 'Available', currentLoad: 0, doctorId: null };
         } else {
           return { ...r, status: 'Maintenance', doctorId: null, currentLoad: 0 };
         }
