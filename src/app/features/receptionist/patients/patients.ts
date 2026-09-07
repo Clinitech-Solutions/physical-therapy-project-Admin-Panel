@@ -6,11 +6,12 @@ import { FormsModule } from '@angular/forms';
 import { ClinicStateService } from '../../../core/services/state/clinic-state.service';
 import { Patient, NewPatient, PaymentMethod } from '../../../core/models/patient.model';
 import { MessageService } from 'primeng/api';
+import { DialogModule } from 'primeng/dialog';
 
 @Component({
   selector: "app-receptionist-patients",
   standalone: true,
-  imports: [CommonModule, TranslateModule, FormsModule],
+  imports: [CommonModule, TranslateModule, FormsModule, DialogModule],
   templateUrl: "./patients.html",
 })
 export class PatientsComponent {
@@ -37,10 +38,24 @@ export class PatientsComponent {
     });
   });
 
-  // Drawer states
+  // Modal / Drawer states
   showDrawer = signal(false); // Add Patient
   showViewDrawer = signal(false);
   showEditDrawer = signal(false);
+
+  get isAddModalOpen(): boolean {
+    return this.showDrawer();
+  }
+  set isAddModalOpen(val: boolean) {
+    this.showDrawer.set(val);
+  }
+
+  get isEditModalOpen(): boolean {
+    return this.showEditDrawer();
+  }
+  set isEditModalOpen(val: boolean) {
+    this.showEditDrawer.set(val);
+  }
   
   // Selected Patient for View/Edit
   selectedPatient = signal<Patient | null>(null);

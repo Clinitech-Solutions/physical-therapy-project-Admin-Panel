@@ -1,4 +1,15 @@
 <div class="rooms-container fade-in">
+  <!-- Top Action Bar -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h4 class="fw-bold mb-0 text-primary">{{ 'SIDEBAR.ROOMS' | translate }}</h4>
+    </div>
+    <button class="btn btn-primary btn-sm d-flex align-items-center gap-2" (click)="openAddRoomModal()">
+      <i class="bi bi-plus-lg"></i>
+      <span>{{ 'RECEPTIONIST.ADD_ROOM' | translate }}</span>
+    </button>
+  </div>
+
   <div class="rooms-grid">
     <div *ngFor="let room of clinicState.rooms()" class="room-card" [ngClass]="room.status.toLowerCase()">
 
@@ -46,3 +57,80 @@
     </div>
   </div>
 </div>
+
+<!-- Add Room Modal (Standard Clean Modal) -->
+<p-dialog 
+  [(visible)]="isAddRoomModalOpen" 
+  [modal]="true" 
+  [draggable]="false" 
+  [resizable]="false" 
+  [closable]="true" 
+  [showHeader]="true" 
+  styleClass="clean-modal"
+  [style]="{ width: '450px' }"
+  [header]="'RECEPTIONIST.ADD_ROOM' | translate">
+
+  <div class="modal-form-vertical">
+    <div class="form-group">
+      <label class="form-label">
+        {{ 'RECEPTIONIST.ROOM_NAME' | translate }} <span class="required-asterisk">*</span>
+      </label>
+      <input 
+        type="text" 
+        class="form-control" 
+        [(ngModel)]="newRoom.displayName" 
+        placeholder="e.g. Therapy Room 4">
+    </div>
+
+    <div class="modal-form-grid">
+      <div class="form-group">
+        <label class="form-label">
+          {{ 'RECEPTIONIST.CAPACITY' | translate }} <span class="required-asterisk">*</span>
+        </label>
+        <input 
+          type="number" 
+          class="form-control" 
+          [(ngModel)]="newRoom.capacity" 
+          min="1" 
+          max="10">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">
+          {{ 'RECEPTIONIST.INITIAL_STATUS' | translate }}
+        </label>
+        <select class="form-select" [(ngModel)]="newRoom.status">
+          <option value="Available">{{ 'RECEPTIONIST.AVAILABLE' | translate }}</option>
+          <option value="Maintenance">{{ 'RECEPTIONIST.MAINTENANCE' | translate }}</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">
+        {{ 'COMMON.ASSIGNED_TO' | translate }}
+      </label>
+      <select class="form-select" [(ngModel)]="newRoom.doctorId">
+        <option [ngValue]="null">-- {{ 'RECEPTIONIST.NO_DOCTOR' | translate }} --</option>
+        <option *ngFor="let doc of allDoctors()" [value]="doc.id">
+          {{ doc.name }}
+        </option>
+      </select>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="modal-footer-actions">
+      <button class="btn btn-outline-secondary" (click)="closeAddRoomModal()">
+        {{ 'COMMON.CANCEL' | translate }}
+      </button>
+      <button 
+        class="btn btn-primary" 
+        (click)="saveNewRoom()" 
+        [disabled]="isSubmitting() || !newRoom.displayName.trim()">
+        <span *ngIf="isSubmitting()" class="spinner-border spinner-border-sm me-1"></span>
+        {{ 'COMMON.SAVE' | translate }}
+      </button>
+    </div>
+  </ng-template>
+</p-dialog>

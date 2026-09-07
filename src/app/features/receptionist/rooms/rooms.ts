@@ -6,11 +6,12 @@ import { MessageService } from 'primeng/api';
 import { Room } from '../../../core/models/room.model';
 import { FormsModule } from '@angular/forms';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
+import { DialogModule } from 'primeng/dialog';
 
 @Component({
   selector: "app-receptionist-rooms",
   standalone: true,
-  imports: [CommonModule, TranslateModule, FormsModule, ToggleSwitchModule],
+  imports: [CommonModule, TranslateModule, FormsModule, ToggleSwitchModule, DialogModule],
   templateUrl: "./rooms.html",
   styleUrl: "./rooms.css"
 })
@@ -21,6 +22,61 @@ export class RoomsComponent {
   // Forcing angular to recompile to refresh assets cache
   rooms = this.clinicState.rooms;
   allDoctors = this.clinicState.doctors;
+
+  // Add Room Modal State
+  isAddRoomModalOpen = signal(false);
+  isSubmitting = signal(false);
+  newRoom = {
+    displayName: '',
+    capacity: 1,
+    status: 'Available' as 'Available' | 'Maintenance' | 'Occupied',
+    doctorId: null as string | null
+  };
+
+  openAddRoomModal() {
+    this.newRoom = {
+      displayName: '',
+      capacity: 1,
+      status: 'Available',
+      doctorId: null
+    };
+    this.isAddRoomModalOpen.set(true);
+  }
+
+  closeAddRoomModal() {
+    this.isAddRoomModalOpen.set(false);
+  }
+
+  async saveNewRoom() {
+    if (!this.newRoom.displayName.trim()) {
+      return;
+    }
+
+    try {
+      this.isSubmitting.set(true);
+      await this.clinicState.addNewRoom({
+        displayName: this.newRoom.displayName.trim(),
+        capacity: Number(this.newRoom.capacity) || 1,
+        status: this.newRoom.status,
+        doctorId: this.newRoom.status === 'Occupied' ? this.newRoom.doctorId : (this.newRoom.doctorId || null),
+        currentLoad: 0
+      });
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Room Added',
+        detail: 'New room has been successfully added.'
+      });
+      this.closeAddRoomModal();
+    } catch (e: any) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: e?.message || 'Failed to add room.'
+      });
+    } finally {
+      this.isSubmitting.set(false);
+    }
+  }
 
   // Determines visual state for the floor plan
   getRoomStatusCssClass(room: Room): string {

@@ -95,71 +95,102 @@
   </div>
 </div>
 
-<!-- Add Patient Drawer -->
-@if(showDrawer()) {
-  <div class="modal-backdrop fade show" (click)="closeDrawer()"></div>
-  <div class="drawer drawer-compact fade-in" style="width:420px; z-index:1055; position:fixed; top:0; right:0; height:100%; overflow-y:auto;">
-    <div class="drawer-header d-flex justify-content-between align-items-center">
-      <h5 class="mb-0">{{ 'RECEPTIONIST.ADD_PATIENT' | translate }}</h5>
-      <button class="btn-close" (click)="closeDrawer()"></button>
+<!-- Add Patient Modal (Dialog) -->
+<p-dialog 
+  [(visible)]="isAddModalOpen" 
+  [modal]="true" 
+  [draggable]="false" 
+  [resizable]="false" 
+  [closable]="true" 
+  [showHeader]="true" 
+  styleClass="clean-modal"
+  [style]="{width: '450px'}"
+  [header]="'RECEPTIONIST.ADD_PATIENT' | translate">
+
+  <div class="modal-form-vertical" style="display: flex; flex-direction: column; gap: 1rem;">
+    <div class="form-group">
+      <label class="form-label fw-bold small mb-1">
+        {{ 'RECEPTIONIST.FULL_NAME_EN' | translate }} <span class="text-danger">*</span>
+      </label>
+      <input type="text" class="form-control form-control-sm" placeholder="e.g. John Doe" [(ngModel)]="newPatient.nameEn">
     </div>
 
-    <div class="drawer-body">
-      <div class="form-group mb-3">
-        <label class="form-label">{{ 'RECEPTIONIST.FULL_NAME_EN' | translate }}</label>
-        <input type="text" class="form-control" placeholder="e.g. John Doe" [(ngModel)]="newPatient.nameEn">
-      </div>
-      <div class="form-group mb-3">
-        <label class="form-label">{{ 'RECEPTIONIST.FULL_NAME_AR' | translate }}</label>
-        <input type="text" class="form-control" placeholder="مثال: جون دو" dir="rtl" [(ngModel)]="newPatient.nameAr">
-      </div>
+    <div class="form-group">
+      <label class="form-label fw-bold small mb-1">
+        {{ 'RECEPTIONIST.FULL_NAME_AR' | translate }}
+      </label>
+      <input type="text" class="form-control form-control-sm" placeholder="مثال: جون دو" dir="rtl" [(ngModel)]="newPatient.nameAr">
+    </div>
 
-      <div class="row g-3 mb-3">
-        <div class="col-6 form-group">
-          <label class="form-label">{{ 'RECEPTIONIST.PHONE' | translate }}</label>
-          <input type="text" class="form-control" placeholder="01xxxxxxxxx" [(ngModel)]="newPatient.phone">
-        </div>
-        <div class="col-6 form-group">
-          <label class="form-label">{{ 'RECEPTIONIST.DOB' | translate }}</label>
-          <input type="date" class="form-control" [(ngModel)]="newPatient.dob">
-        </div>
+    <div class="modal-form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+      <div class="form-group">
+        <label class="form-label fw-bold small mb-1">
+          {{ 'RECEPTIONIST.PHONE' | translate }} <span class="text-danger">*</span>
+        </label>
+        <input type="tel" class="form-control form-control-sm" placeholder="01xxxxxxxxx" [(ngModel)]="newPatient.phone" dir="ltr">
       </div>
+      <div class="form-group">
+        <label class="form-label fw-bold small mb-1">
+          {{ 'RECEPTIONIST.DOB' | translate }}
+        </label>
+        <input type="date" class="form-control form-control-sm" [(ngModel)]="newPatient.dob">
+      </div>
+    </div>
 
-      <div class="form-group mb-3">
-        <label class="form-label">{{ 'RECEPTIONIST.PAYMENT_TYPE' | translate }}</label>
-        <select class="form-select" [(ngModel)]="newPatient.paymentType">
+    <div class="modal-form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+      <div class="form-group">
+        <label class="form-label fw-bold small mb-1">
+          {{ 'RECEPTIONIST.GENDER_TH' | translate }} <span class="text-danger">*</span>
+        </label>
+        <select class="form-select form-select-sm" [(ngModel)]="newPatient.gender">
+          <option value="Male">{{ 'RECEPTIONIST.MALE' | translate }}</option>
+          <option value="Female">{{ 'RECEPTIONIST.FEMALE' | translate }}</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label fw-bold small mb-1">
+          {{ 'RECEPTIONIST.PAYMENT_TYPE' | translate }}
+        </label>
+        <select class="form-select form-select-sm" [(ngModel)]="newPatient.paymentType">
           <option value="Cash">{{ 'RECEPTIONIST.CASH' | translate }}</option>
           <option value="Insurance">{{ 'RECEPTIONIST.INSURANCE_PAYMENT' | translate }}</option>
         </select>
       </div>
+    </div>
 
-      <div class="card card-bg border-0">
-        <div class="card-body p-3">
-          <p class="section-label mb-2">{{ 'RECEPTIONIST.REQUIRED_DOCS' | translate }}</p>
-          <div class="form-check mb-2">
-            <input class="form-check-input" type="checkbox" id="docConsent" [(ngModel)]="newPatient.docs.medicalConsent">
-            <label class="form-check-label" for="docConsent">{{ 'RECEPTIONIST.MEDICAL_CONSENT' | translate }}</label>
-          </div>
-          <div class="form-check mb-2">
-            <input class="form-check-input" type="checkbox" id="docWaiver" [(ngModel)]="newPatient.docs.liabilityWaiver">
-            <label class="form-check-label" for="docWaiver">{{ 'RECEPTIONIST.LIABILITY_WAIVER' | translate }}</label>
-          </div>
-          <div class="form-check">
-            <input class="form-check-input" type="checkbox" id="docId" [(ngModel)]="newPatient.docs.idCard">
-            <label class="form-check-label" for="docId">{{ 'RECEPTIONIST.ID_CARD' | translate }}</label>
-          </div>
+    <div class="card card-bg border-0">
+      <div class="card-body p-3">
+        <p class="section-label mb-2 fw-bold small">{{ 'RECEPTIONIST.REQUIRED_DOCS' | translate }}</p>
+        <div class="form-check mb-2">
+          <input class="form-check-input" type="checkbox" id="docConsent" [(ngModel)]="newPatient.docs.medicalConsent">
+          <label class="form-check-label small" for="docConsent">{{ 'RECEPTIONIST.MEDICAL_CONSENT' | translate }}</label>
+        </div>
+        <div class="form-check mb-2">
+          <input class="form-check-input" type="checkbox" id="docWaiver" [(ngModel)]="newPatient.docs.liabilityWaiver">
+          <label class="form-check-label small" for="docWaiver">{{ 'RECEPTIONIST.LIABILITY_WAIVER' | translate }}</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="docId" [(ngModel)]="newPatient.docs.idCard">
+          <label class="form-check-label small" for="docId">{{ 'RECEPTIONIST.ID_CARD' | translate }}</label>
         </div>
       </div>
     </div>
-
-    <div class="drawer-footer">
-      <div class="d-flex gap-2">
-        <button class="btn btn-outline-secondary flex-1" (click)="closeDrawer()">{{ 'COMMON.CANCEL' | translate }}</button>
-        <button class="btn btn-primary flex-1" (click)="createProfile()">{{ 'RECEPTIONIST.CREATE_PROFILE' | translate }}</button>
-      </div>
-    </div>
   </div>
-}
+
+  <ng-template pTemplate="footer">
+    <div class="modal-footer-actions" style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+      <button class="btn btn-outline-secondary btn-sm px-3" (click)="closeDrawer()">
+        {{ 'COMMON.CANCEL' | translate }}
+      </button>
+      <button class="btn btn-primary btn-sm px-3" (click)="createProfile()" [disabled]="isLoading() || !newPatient.nameEn">
+        @if (isLoading()) {
+          <span class="spinner-border spinner-border-sm me-1"></span>
+        }
+        {{ 'RECEPTIONIST.CREATE_PROFILE' | translate }}
+      </button>
+    </div>
+  </ng-template>
+</p-dialog>
 
 <!-- View Profile Drawer -->
 @if(showViewDrawer() && selectedPatient()) {
@@ -221,78 +252,93 @@
   </div>
 }
 
-<!-- Edit Profile Drawer -->
-@if(showEditDrawer() && selectedPatient()) {
-  <div class="modal-backdrop fade show" (click)="closeEditDrawer()"></div>
-  <div class="drawer drawer-compact fade-in" style="width:420px; z-index:1055; position:fixed; top:0; right:0; height:100%; overflow-y:auto;">
-    <div class="drawer-header d-flex justify-content-between align-items-center">
-      <h5 class="mb-0">{{ 'RECEPTIONIST.EDIT_PROFILE' | translate }}</h5>
-      <button class="btn-close" (click)="closeEditDrawer()"></button>
+<!-- Edit Profile Modal (Dialog) -->
+<p-dialog 
+  [(visible)]="isEditModalOpen" 
+  [modal]="true" 
+  [draggable]="false" 
+  [resizable]="false" 
+  [closable]="true" 
+  [showHeader]="true" 
+  styleClass="clean-modal"
+  [style]="{width: '450px'}"
+  [header]="'RECEPTIONIST.EDIT_PROFILE' | translate">
+
+  <div class="modal-form-vertical" style="display: flex; flex-direction: column; gap: 1rem;">
+    <div class="form-group">
+      <label class="form-label fw-bold small mb-1">
+        {{ 'RECEPTIONIST.FULL_NAME_EN' | translate }} <span class="text-danger">*</span>
+      </label>
+      <input type="text" class="form-control form-control-sm" [(ngModel)]="editPatientForm.nameEn">
     </div>
 
-    <div class="drawer-body">
-      <div class="form-group mb-3">
-        <label class="form-label">{{ 'RECEPTIONIST.FULL_NAME_EN' | translate }}</label>
-        <input type="text" class="form-control" [(ngModel)]="editPatientForm.nameEn">
-      </div>
-      <div class="form-group mb-3">
-        <label class="form-label">{{ 'RECEPTIONIST.FULL_NAME_AR' | translate }}</label>
-        <input type="text" class="form-control" dir="rtl" [(ngModel)]="editPatientForm.nameAr">
-      </div>
+    <div class="form-group">
+      <label class="form-label fw-bold small mb-1">
+        {{ 'RECEPTIONIST.FULL_NAME_AR' | translate }}
+      </label>
+      <input type="text" class="form-control form-control-sm" dir="rtl" [(ngModel)]="editPatientForm.nameAr">
+    </div>
 
-      <div class="form-group mb-3">
-        <label class="form-label">{{ 'RECEPTIONIST.PHONE' | translate }}</label>
-        <input type="text" class="form-control" [(ngModel)]="editPatientForm.phone">
-      </div>
+    <div class="form-group">
+      <label class="form-label fw-bold small mb-1">
+        {{ 'RECEPTIONIST.PHONE' | translate }} <span class="text-danger">*</span>
+      </label>
+      <input type="tel" class="form-control form-control-sm" [(ngModel)]="editPatientForm.phone" dir="ltr">
+    </div>
 
-      <div class="row g-3 mb-3">
-        <div class="col-6 form-group">
-          <label class="form-label">{{ 'RECEPTIONIST.GENDER_TH' | translate }}</label>
-          <select class="form-select" [(ngModel)]="editPatientForm.gender">
-            <option value="Male">{{ 'RECEPTIONIST.MALE' | translate }}</option>
-            <option value="Female">{{ 'RECEPTIONIST.FEMALE' | translate }}</option>
-          </select>
-        </div>
-        <div class="col-6 form-group">
-          <label class="form-label">{{ 'RECEPTIONIST.PAYMENT_TYPE' | translate }}</label>
-          <select class="form-select" [(ngModel)]="editPatientForm.paymentType">
-            <option value="Cash">{{ 'RECEPTIONIST.CASH' | translate }}</option>
-            <option value="Insurance">{{ 'RECEPTIONIST.INSURANCE_PAYMENT' | translate }}</option>
-            <option value="Online">Online</option>
-          </select>
-        </div>
+    <div class="modal-form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+      <div class="form-group">
+        <label class="form-label fw-bold small mb-1">
+          {{ 'RECEPTIONIST.GENDER_TH' | translate }} <span class="text-danger">*</span>
+        </label>
+        <select class="form-select form-select-sm" [(ngModel)]="editPatientForm.gender">
+          <option value="Male">{{ 'RECEPTIONIST.MALE' | translate }}</option>
+          <option value="Female">{{ 'RECEPTIONIST.FEMALE' | translate }}</option>
+        </select>
       </div>
-
-      <div class="card card-bg border-0 mt-4">
-        <div class="card-body p-3">
-          <p class="section-label mb-2">{{ 'RECEPTIONIST.REQUIRED_DOCS' | translate }}</p>
-          <div class="form-check mb-2">
-            <input class="form-check-input" type="checkbox" id="editDocConsent" [(ngModel)]="editPatientForm.documents!.medicalConsent">
-            <label class="form-check-label" for="editDocConsent">{{ 'RECEPTIONIST.MEDICAL_CONSENT' | translate }}</label>
-          </div>
-          <div class="form-check mb-2">
-            <input class="form-check-input" type="checkbox" id="editDocWaiver" [(ngModel)]="editPatientForm.documents!.liabilityWaiver">
-            <label class="form-check-label" for="editDocWaiver">{{ 'RECEPTIONIST.LIABILITY_WAIVER' | translate }}</label>
-          </div>
-          <div class="form-check">
-            <input class="form-check-input" type="checkbox" id="editDocId" [(ngModel)]="editPatientForm.documents!.idCard">
-            <label class="form-check-label" for="editDocId">{{ 'RECEPTIONIST.ID_CARD' | translate }}</label>
-          </div>
-        </div>
+      <div class="form-group">
+        <label class="form-label fw-bold small mb-1">
+          {{ 'RECEPTIONIST.PAYMENT_TYPE' | translate }}
+        </label>
+        <select class="form-select form-select-sm" [(ngModel)]="editPatientForm.paymentType">
+          <option value="Cash">{{ 'RECEPTIONIST.CASH' | translate }}</option>
+          <option value="Insurance">{{ 'RECEPTIONIST.INSURANCE_PAYMENT' | translate }}</option>
+          <option value="Online">Online</option>
+        </select>
       </div>
     </div>
 
-    <div class="drawer-footer">
-      <div class="d-flex gap-2">
-        <button class="btn btn-outline-secondary flex-1" (click)="closeEditDrawer()">{{ 'COMMON.CANCEL' | translate }}</button>
-        <button class="btn btn-primary flex-1" (click)="updateProfile()" [disabled]="isLoading()">
-          @if (isLoading()) {
-            <span class="spinner-border spinner-border-sm me-1"></span>
-          } @else {
-            {{ 'RECEPTIONIST.SAVE_CHANGES' | translate }}
-          }
-        </button>
+    <div class="card card-bg border-0 mt-2" *ngIf="editPatientForm.documents">
+      <div class="card-body p-3">
+        <p class="section-label mb-2 fw-bold small">{{ 'RECEPTIONIST.REQUIRED_DOCS' | translate }}</p>
+        <div class="form-check mb-2">
+          <input class="form-check-input" type="checkbox" id="editDocConsent" [(ngModel)]="editPatientForm.documents!.medicalConsent">
+          <label class="form-check-label small" for="editDocConsent">{{ 'RECEPTIONIST.MEDICAL_CONSENT' | translate }}</label>
+        </div>
+        <div class="form-check mb-2">
+          <input class="form-check-input" type="checkbox" id="editDocWaiver" [(ngModel)]="editPatientForm.documents!.liabilityWaiver">
+          <label class="form-check-label small" for="editDocWaiver">{{ 'RECEPTIONIST.LIABILITY_WAIVER' | translate }}</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="editDocId" [(ngModel)]="editPatientForm.documents!.idCard">
+          <label class="form-check-label small" for="editDocId">{{ 'RECEPTIONIST.ID_CARD' | translate }}</label>
+        </div>
       </div>
     </div>
   </div>
-}
+
+  <ng-template pTemplate="footer">
+    <div class="modal-footer-actions" style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+      <button class="btn btn-outline-secondary btn-sm px-3" (click)="closeEditDrawer()">
+        {{ 'COMMON.CANCEL' | translate }}
+      </button>
+      <button class="btn btn-primary btn-sm px-3" (click)="updateProfile()" [disabled]="isLoading()">
+        @if (isLoading()) {
+          <span class="spinner-border spinner-border-sm me-1"></span>
+        } @else {
+          {{ 'RECEPTIONIST.SAVE_CHANGES' | translate }}
+        }
+      </button>
+    </div>
+  </ng-template>
+</p-dialog>

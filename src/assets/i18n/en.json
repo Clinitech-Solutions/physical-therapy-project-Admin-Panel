@@ -77,6 +77,12 @@
     "ALL_ROOMS": "All Rooms",
     "ROOM_1": "Room 1",
     "ROOM_3": "Room 3",
+    "ADD_ROOM": "Add Room",
+    "ROOM_NAME": "Room Name",
+    "CAPACITY": "Capacity",
+    "INITIAL_STATUS": "Initial Status",
+    "AVAILABLE": "Available",
+    "ROOM_ADDED_SUCCESS": "Room added successfully",
     
     "CONFIRMED": "Confirmed",
     "IN_PROGRESS": "In Progress",

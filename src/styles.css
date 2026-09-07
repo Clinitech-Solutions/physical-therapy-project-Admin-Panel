@@ -1689,3 +1689,233 @@ html.light .p-toast-message .p-toast-summary,
 html.light .p-toast-message .p-toast-detail {
   color: var(--text-primary) !important;
 }
+
+/* ── PRIMENG CLEAN MODAL STANDARD (.clean-modal) ──────────── */
+.p-dialog-mask {
+  background: var(--bg-overlay) !important;
+  backdrop-filter: blur(4px);
+}
+
+.p-dialog.clean-modal {
+  border-radius: 16px !important;
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: var(--shadow-overlay) !important;
+  overflow: hidden;
+}
+
+/* Modal Header: matches body background, seamless card feel */
+.p-dialog.clean-modal .p-dialog-header {
+  background: var(--bg-card) !important;
+  border-bottom: none !important;
+  padding: 1.25rem 1.5rem 0.5rem 1.5rem !important;
+  color: var(--text-primary) !important;
+}
+
+.p-dialog.clean-modal .p-dialog-title {
+  font-family: var(--font-display), var(--font-body), sans-serif !important;
+  font-size: 1.15rem !important;
+  font-weight: 600 !important;
+  color: var(--text-primary) !important;
+}
+
+/* Modal Close Button: subtle hover circle, no focus outline */
+.p-dialog.clean-modal .p-dialog-header-actions button,
+.p-dialog.clean-modal .p-dialog-close-button,
+.p-dialog.clean-modal .p-dialog-header-close {
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 50% !important;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  color: var(--text-muted) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: background-color var(--transition-fast), color var(--transition-fast) !important;
+}
+
+.p-dialog.clean-modal .p-dialog-header-actions button:hover,
+.p-dialog.clean-modal .p-dialog-close-button:hover,
+.p-dialog.clean-modal .p-dialog-header-close:hover {
+  background-color: rgba(148, 163, 184, 0.15) !important;
+  color: var(--text-primary) !important;
+}
+
+.p-dialog.clean-modal .p-dialog-header-actions button:focus,
+.p-dialog.clean-modal .p-dialog-close-button:focus,
+.p-dialog.clean-modal .p-dialog-header-close:focus,
+.p-dialog.clean-modal .p-dialog-header-actions button:focus-visible,
+.p-dialog.clean-modal .p-dialog-close-button:focus-visible,
+.p-dialog.clean-modal .p-dialog-header-close:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Modal Content: seamless background and padding */
+.p-dialog.clean-modal .p-dialog-content {
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  padding: 0.5rem 1.5rem 1rem 1.5rem !important;
+  overflow-y: visible !important;
+}
+
+/* Modal Footer: seamless background, no border-top, right-aligned flex */
+.p-dialog.clean-modal .p-dialog-footer {
+  background: var(--bg-card) !important;
+  border-top: none !important;
+  padding: 0.5rem 1.5rem 1.25rem 1.5rem !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+  align-items: center !important;
+  gap: 0.75rem !important;
+}
+
+/* ── Clean Modal Form Layout Utilities ────────────────────── */
+.clean-modal .modal-form-vertical,
+.clean-modal .modal-form-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.clean-modal .modal-form-grid,
+.clean-modal .form-row-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 480px) {
+  .clean-modal .modal-form-grid,
+  .clean-modal .form-row-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.clean-modal .form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Labels: small, bold, above inputs */
+.clean-modal .form-label,
+.clean-modal label {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 0.375rem;
+}
+
+/* Required red asterisk */
+.clean-modal .required-asterisk,
+.clean-modal label .text-danger {
+  color: var(--color-danger) !important;
+  font-weight: 700;
+  margin-left: 2px;
+}
+
+html[dir="rtl"] .clean-modal .required-asterisk,
+html[dir="rtl"] .clean-modal label .text-danger {
+  margin-left: 0;
+  margin-right: 2px;
+}
+
+/* Inputs & Selects inside modal */
+.clean-modal .form-control,
+.clean-modal .form-select {
+  background-color: var(--bg-page) !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--text-primary) !important;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  padding: 0.45rem 0.75rem;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.clean-modal .form-control:focus,
+.clean-modal .form-select:focus {
+  border-color: var(--mq-teal) !important;
+  box-shadow: 0 0 0 2px var(--mq-teal-dim) !important;
+  outline: none;
+}
+
+.clean-modal .form-control::placeholder {
+  color: var(--text-muted);
+  opacity: 0.8;
+}
+
+html.light .clean-modal .form-control,
+html.light .clean-modal .form-select {
+  background-color: #FFFFFF !important;
+}
+
+/* Modal Footer Buttons */
+.clean-modal .modal-footer-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+/* Ghost / Outlined Cancel Button */
+.clean-modal .btn-cancel,
+.clean-modal .btn-outline-secondary,
+.clean-modal .p-button.p-button-outlined,
+.clean-modal .p-button.p-button-text {
+  background: transparent !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--text-secondary) !important;
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+  font-size: 0.875rem;
+  padding: 0.45rem 1rem;
+  transition: all var(--transition-fast);
+}
+
+.clean-modal .btn-cancel:hover,
+.clean-modal .btn-outline-secondary:hover,
+.clean-modal .p-button.p-button-outlined:hover,
+.clean-modal .p-button.p-button-text:hover {
+  background: rgba(148, 163, 184, 0.1) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color-strong) !important;
+}
+
+html.light .clean-modal .btn-cancel:hover,
+html.light .clean-modal .btn-outline-secondary:hover {
+  background: rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Filled Primary Action Button */
+.clean-modal .btn-primary,
+.clean-modal .p-button.p-button-primary:not(.p-button-outlined):not(.p-button-text) {
+  background: var(--mq-teal) !important;
+  border-color: var(--mq-teal) !important;
+  color: #0A1628 !important;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 0.45rem 1.25rem;
+  transition: all var(--transition-fast);
+  box-shadow: 0 2px 8px var(--mq-teal-dim);
+}
+
+.clean-modal .btn-primary:hover,
+.clean-modal .p-button.p-button-primary:not(.p-button-outlined):not(.p-button-text):hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px var(--mq-teal-dim);
+}
+
+.clean-modal .btn-primary:disabled,
+.clean-modal .p-button.p-button-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}

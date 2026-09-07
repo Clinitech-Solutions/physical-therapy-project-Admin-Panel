@@ -293,38 +293,41 @@
 <p-dialog 
   [(visible)]="isQuickAddModalOpen" 
   [modal]="true" 
-  [header]="'RECEPTIONIST.ADD_PATIENT' | translate" 
-  [style]="{ width: '440px' }"
   [draggable]="false" 
-  [resizable]="false">
+  [resizable]="false" 
+  [closable]="true" 
+  [showHeader]="true" 
+  styleClass="clean-modal"
+  [style]="{ width: '450px' }"
+  [header]="'RECEPTIONIST.ADD_PATIENT' | translate">
   
-  <div class="d-flex flex-column gap-2 py-2">
+  <div class="modal-form-vertical">
     <div class="form-group">
-      <label class="form-label fw-semibold small mb-1">{{ 'RECEPTIONIST.FULL_NAME_EN' | translate }} <span class="text-danger">*</span></label>
-      <input type="text" class="form-control form-control-sm" [(ngModel)]="quickPatient.nameEn" placeholder="e.g. John Doe">
+      <label class="form-label">{{ 'RECEPTIONIST.FULL_NAME_EN' | translate }} <span class="required-asterisk">*</span></label>
+      <input type="text" class="form-control" [(ngModel)]="quickPatient.nameEn" placeholder="e.g. John Doe">
     </div>
 
     <div class="form-group">
-      <label class="form-label fw-semibold small mb-1">{{ 'RECEPTIONIST.FULL_NAME_AR' | translate }}</label>
-      <input type="text" class="form-control form-control-sm" [(ngModel)]="quickPatient.nameAr" placeholder="e.g. جون دو" dir="rtl">
+      <label class="form-label">{{ 'RECEPTIONIST.FULL_NAME_AR' | translate }}</label>
+      <input type="text" class="form-control" [(ngModel)]="quickPatient.nameAr" placeholder="e.g. جون دو" dir="rtl">
     </div>
 
     <div class="form-group">
-      <label class="form-label fw-semibold small mb-1">{{ 'RECEPTIONIST.PHONE' | translate }} <span class="text-danger">*</span></label>
-      <input type="tel" class="form-control form-control-sm" [(ngModel)]="quickPatient.phone" placeholder="+201012345678" dir="ltr">
+      <label class="form-label">{{ 'RECEPTIONIST.PHONE' | translate }} <span class="required-asterisk">*</span></label>
+      <input type="tel" class="form-control" [(ngModel)]="quickPatient.phone" placeholder="+201012345678" dir="ltr">
     </div>
 
-    <div class="row g-2">
-      <div class="col-6 form-group">
-        <label class="form-label fw-semibold small mb-1">{{ 'RECEPTIONIST.GENDER_TH' | translate }} <span class="text-danger">*</span></label>
-        <select class="form-select form-select-sm" [(ngModel)]="quickPatient.gender">
+    <div class="modal-form-grid">
+      <div class="form-group">
+        <label class="form-label">{{ 'RECEPTIONIST.GENDER_TH' | translate }} <span class="required-asterisk">*</span></label>
+        <select class="form-select" [(ngModel)]="quickPatient.gender">
           <option value="Male">{{ 'RECEPTIONIST.MALE' | translate }}</option>
           <option value="Female">{{ 'RECEPTIONIST.FEMALE' | translate }}</option>
         </select>
       </div>
-      <div class="col-6 form-group">
-        <label class="form-label fw-semibold small mb-1">{{ 'RECEPTIONIST.PAYMENT_TYPE' | translate }}</label>
-        <select class="form-select form-select-sm" [(ngModel)]="quickPatient.paymentType">
+      <div class="form-group">
+        <label class="form-label">{{ 'RECEPTIONIST.PAYMENT_TYPE' | translate }}</label>
+        <select class="form-select" [(ngModel)]="quickPatient.paymentType">
           <option value="Cash">{{ 'RECEPTIONIST.CASH' | translate }}</option>
           <option value="Online">{{ 'RECEPTIONIST.ONLINE_PAYMENTS' | translate }}</option>
           <option value="Insurance">{{ 'RECEPTIONIST.INSURANCE_PAYMENT' | translate }}</option>
@@ -334,11 +337,11 @@
   </div>
 
   <ng-template pTemplate="footer">
-    <div class="d-flex justify-content-end gap-2 pt-2">
-      <button class="btn btn-outline-secondary btn-sm px-3" (click)="closeQuickAddModal()">
+    <div class="modal-footer-actions">
+      <button class="btn btn-outline-secondary" (click)="closeQuickAddModal()">
         {{ 'COMMON.CANCEL' | translate }}
       </button>
-      <button class="btn btn-primary btn-sm px-3" (click)="saveQuickPatient()" [disabled]="isLoading()">
+      <button class="btn btn-primary" (click)="saveQuickPatient()" [disabled]="isLoading()">
         @if (isLoading()) {
           <span class="spinner-border spinner-border-sm me-1"></span>
         }
@@ -347,3 +350,4 @@
     </div>
   </ng-template>
 </p-dialog>
+

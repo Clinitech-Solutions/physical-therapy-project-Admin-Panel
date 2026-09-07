@@ -77,6 +77,12 @@
     "ALL_ROOMS": "جميع الغرف",
     "ROOM_1": "غرفة ١",
     "ROOM_3": "غرفة ٣",
+    "ADD_ROOM": "إضافة غرفة",
+    "ROOM_NAME": "اسم الغرفة",
+    "CAPACITY": "السعة",
+    "INITIAL_STATUS": "الحالة الأولية",
+    "AVAILABLE": "متاح",
+    "ROOM_ADDED_SUCCESS": "تمت إضافة الغرفة بنجاح",
     
     "CONFIRMED": "مؤكد",
     "IN_PROGRESS": "قيد التنفيذ",
