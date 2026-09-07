@@ -1,34 +1,183 @@
-.calendar-slot {
-  min-height: 80px;
-  border-bottom: 1px solid var(--bs-border-color);
+/* Compact Layout & Booking Form */
+.compact-booking-card {
+  border-radius: 10px;
+  background-color: var(--bs-card-bg, #ffffff);
+}
+
+.compact-booking-card .card-header {
+  padding: 0.5rem 1rem;
+}
+
+.compact-booking-card .card-body {
+  padding: 0.75rem 1rem;
+}
+
+.compact-booking-card .form-label {
+  font-size: 0.78rem;
+  margin-bottom: 0.2rem;
+}
+
+/* Timeline & Schedule Table */
+.timeline-scroll-area {
+  max-height: 520px;
+  overflow-y: auto;
+}
+
+.calendar-slot-row {
+  min-height: 64px;
+  border-bottom: 1px solid var(--bs-border-color, #e2e8f0);
+  transition: background-color 0.15s ease;
+}
+
+.calendar-slot-row:hover {
+  background-color: rgba(0, 0, 0, 0.015);
+}
+
+.time-badge-col {
+  width: 85px;
+  min-width: 85px;
+  font-size: 0.76rem;
+  font-family: var(--bs-font-monospace, monospace);
+  font-weight: 600;
+  color: var(--bs-secondary, #64748b);
+  border-right: 1px solid var(--bs-border-color, #e2e8f0);
   padding: 0.5rem;
-  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.01);
 }
 
-.calendar-slot:hover {
-  background-color: var(--bs-light);
+.slot-sessions-container {
+  padding: 0.35rem 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  flex-grow: 1;
 }
 
-.calendar-slot.empty:hover {
-  border: 1px dashed var(--brand-teal);
-  cursor: pointer;
+/* =========================================================
+   Distinct Visual States for Session Cards
+   ========================================================= */
+
+.session-card {
+  min-width: 220px;
+  max-width: 280px;
+  padding: 0.45rem 0.65rem;
+  border-radius: 8px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
-.calendar-slot.empty:hover::after {
-  content: '\eb0b'; /* tabler plus icon */
-  font-family: 'tabler-icons';
-  display: block;
-  text-align: center;
-  color: var(--brand-teal);
-  font-size: 1.5rem;
+/* 1. Completed State: Visually recedes, opacity 0.5, grayscale/muted, strike-through time */
+.session-card.status-completed {
   opacity: 0.5;
+  filter: grayscale(0.85);
+  background-color: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
+  border-left: 3px solid #94a3b8 !important;
 }
 
-.patient-chip {
-  font-size: 0.85rem;
-  padding: 0.25rem 0.5rem;
-  background-color: var(--bs-primary-bg-subtle);
-  color: var(--bs-primary);
-  border-radius: 4px;
-  margin-bottom: 4px;
+.session-card.status-completed .session-time {
+  text-decoration: line-through;
+  color: #64748b !important;
+}
+
+.session-card.status-completed .patient-name {
+  color: #475569;
+}
+
+.session-card.status-completed:hover {
+  opacity: 0.8;
+  filter: grayscale(0.2);
+}
+
+/* 2. In-Progress State: Make it pop! Thick active border, subtle color tint, soft box shadow */
+.session-card.status-in-progress {
+  opacity: 1;
+  border: 1px solid rgba(13, 110, 253, 0.35) !important;
+  border-left: 4px solid var(--bs-primary, #0d6efd) !important;
+  background-color: rgba(13, 110, 253, 0.08) !important;
+  box-shadow: 0 4px 14px rgba(13, 110, 253, 0.16) !important;
+}
+
+.session-card.status-in-progress .patient-name {
+  color: var(--bs-primary, #0d6efd);
+}
+
+.session-card.status-in-progress:hover {
+  box-shadow: 0 6px 18px rgba(13, 110, 253, 0.22) !important;
+  transform: translateY(-1px);
+}
+
+/* Pulsing live badge for In Progress */
+.session-card.status-in-progress .live-indicator {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: var(--bs-primary, #0d6efd);
+  animation: pulse-live 1.8s infinite ease-in-out;
+  margin-right: 4px;
+}
+
+@keyframes pulse-live {
+  0% {
+    transform: scale(0.9);
+    box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.7);
+  }
+  70% {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 6px rgba(13, 110, 253, 0);
+  }
+  100% {
+    transform: scale(0.9);
+    box-shadow: 0 0 0 0 rgba(13, 110, 253, 0);
+  }
+}
+
+/* 3. Upcoming (Pending & Confirmed): Standard clean card, fully opaque, standard borders */
+.session-card.status-confirmed {
+  opacity: 1;
+  background-color: var(--bs-card-bg, #ffffff);
+  border: 1px solid var(--bs-border-color, #e2e8f0);
+  border-left: 3px solid #10b981 !important;
+}
+
+.session-card.status-pending {
+  opacity: 1;
+  background-color: var(--bs-card-bg, #ffffff);
+  border: 1px solid var(--bs-border-color, #e2e8f0);
+  border-left: 3px solid #f59e0b !important;
+}
+
+.session-card.status-cancelled {
+  opacity: 0.4;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-left: 3px solid #ef4444 !important;
+}
+
+.session-card.status-confirmed:hover,
+.session-card.status-pending:hover {
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
+  transform: translateY(-1px);
+}
+
+/* Empty slot placeholder */
+.empty-slot-hint {
+  font-size: 0.75rem;
+  color: var(--bs-secondary, #94a3b8);
+  font-style: italic;
+}
+
+/* PrimeNG SelectButton override for compact schedule filter */
+:host ::ng-deep .schedule-filter-selectbutton .p-button {
+  padding: 0.25rem 0.65rem;
+  font-size: 0.76rem;
+  font-weight: 500;
 }
