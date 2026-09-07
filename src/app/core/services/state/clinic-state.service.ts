@@ -177,6 +177,75 @@ export class ClinicStateService {
     this.isLoading.set(false);
   }
 
+  /**
+   * Absence Policy:
+   * When a doctor is absent, the Senior covers 50% of that doctor's patients (same gender only).
+   * The remaining 50% are rescheduled (marked as 'Cancelled').
+   */
+  handleDoctorAbsence(absentDoctorId: string, seniorDoctorId: string): void {
+    const absentDoctor = this.doctorsSig().find(d => d.id === absentDoctorId);
+    const seniorDoctor = this.doctorsSig().find(d => d.id === seniorDoctorId);
+
+    if (!absentDoctor || !seniorDoctor) {
+      throw new Error('Both absent doctor and senior doctor must exist.');
+    }
+
+    if (absentDoctor.gender !== seniorDoctor.gender) {
+      throw new Error('Senior doctor gender must match the absent doctor to cover sessions.');
+    }
+
+    const now = new Date();
+    const todayYMD = now.toISOString().split('T')[0];
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const localYMD = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+
+    // Filter sessionsSig to find all 'Pending' or 'Confirmed' sessions scheduled for TODAY that belong to absentDoctorId
+    const currentSessions = this.sessionsSig();
+    const eligibleSessions = currentSessions.filter(s => {
+      if (s.doctorId !== absentDoctorId) return false;
+      if (s.status !== 'Pending' && s.status !== 'Confirmed') return false;
+      if (!s.scheduledAt) return false;
+      const datePart = s.scheduledAt.split('T')[0];
+      const sessionDate = new Date(s.scheduledAt);
+      const isSameDate = !isNaN(sessionDate.getTime()) &&
+        sessionDate.getFullYear() === now.getFullYear() &&
+        sessionDate.getMonth() === now.getMonth() &&
+        sessionDate.getDate() === now.getDate();
+      return isSameDate || datePart === todayYMD || datePart === localYMD;
+    });
+
+    if (eligibleSessions.length > 0) {
+      // Calculate 50% of these sessions (Math.ceil favors covering more if odd)
+      const coverCount = Math.ceil(eligibleSessions.length / 2);
+      const coveredSessions = eligibleSessions.slice(0, coverCount);
+      const cancelledSessions = eligibleSessions.slice(coverCount);
+
+      const coveredIds = new Set(coveredSessions.map(s => s.id));
+      const cancelledIds = new Set(cancelledSessions.map(s => s.id));
+      const cancelledRoomIds = new Set(cancelledSessions.map(s => s.roomId).filter(Boolean));
+
+      // Reassign first 50% to seniorDoctorId, cancel remaining 50%
+      this.sessionsSig.update(list => list.map(s => {
+        if (coveredIds.has(s.id)) {
+          return { ...s, doctorId: seniorDoctorId };
+        }
+        if (cancelledIds.has(s.id)) {
+          return { ...s, status: 'Cancelled' as SessionStatus };
+        }
+        return s;
+      }));
+
+      // Ensure room's doctorId is cleared if linked to a cancelled session
+      this.roomsSig.update(rooms => rooms.map(r => {
+        if (cancelledRoomIds.has(r.id) && r.doctorId === absentDoctorId) {
+          return { ...r, doctorId: null };
+        }
+        return r;
+      }));
+      this.saveRoomsToLocalStorage(this.roomsSig());
+    }
+  }
+
   // ==========================================
   // Booking Logic
   // ==========================================

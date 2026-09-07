@@ -278,7 +278,7 @@ export class BookingsComponent {
 
   // Timeline slots
   timeSlots = [
-    '09:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '01:00 PM', '02:00 PM'
+    '08:00 AM', '09:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '01:00 PM', '02:00 PM', '03:00 PM'
   ];
 
   formatTime(isoString: string) {
@@ -326,8 +326,16 @@ export class BookingsComponent {
 
     const grid: { time: string; sessions: Session[] }[] = this.timeSlots.map(t => ({ time: t, sessions: [] }));
     filtered.forEach(session => {
-      const timeStr = this.formatTime(session.scheduledAt);
-      const slot = grid.find(g => g.time === timeStr);
+      let slot = grid.find(g => g.time === this.formatTime(session.scheduledAt));
+      if (!slot) {
+        // Match to the corresponding hour bucket (e.g. 09:30 AM maps into 09:00 AM slot)
+        try {
+          const d = new Date(session.scheduledAt);
+          d.setMinutes(0, 0, 0);
+          const hourStr = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+          slot = grid.find(g => g.time === hourStr);
+        } catch {}
+      }
       if (slot) {
         slot.sessions.push(session);
       }
