@@ -46,6 +46,7 @@
     "DOCTOR": "Doctor",
     "ROOM": "Room",
     "ASSIGNED_TO": "Assigned To",
+    "NO_AVAILABLE_ROOMS": "No available rooms",
     "ENGLISH": "English",
     "ARABIC": "Arabic"
   },

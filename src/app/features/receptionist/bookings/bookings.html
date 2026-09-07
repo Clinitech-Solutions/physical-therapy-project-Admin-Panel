@@ -221,11 +221,15 @@
 
       <div class="form-group mb-3">
         <label class="form-label">{{ 'COMMON.ROOM' | translate }}</label>
-        <select class="form-select" [(ngModel)]="sessionForm.roomId">
-          @for(room of allRooms(); track room.id) {
-            <option [value]="room.id">{{ room.displayName }}</option>
-          }
-        </select>
+        <p-select 
+          [options]="clinicState.availableRooms()" 
+          [(ngModel)]="sessionForm.roomId" 
+          optionLabel="displayName" 
+          optionValue="id" 
+          [placeholder]="'COMMON.ROOM' | translate" 
+          emptyMessage="{{ 'COMMON.NO_AVAILABLE_ROOMS' | translate }}"
+          styleClass="w-100">
+        </p-select>
       </div>
 
       <div class="row g-3 mb-3">

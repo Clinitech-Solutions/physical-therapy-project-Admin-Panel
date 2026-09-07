@@ -46,6 +46,7 @@
     "DOCTOR": "الطبيب",
     "ROOM": "الغرفة",
     "ASSIGNED_TO": "مخصص لـ",
+    "NO_AVAILABLE_ROOMS": "لا توجد غرف متاحة",
     "ENGLISH": "إنجليزي",
     "ARABIC": "عربي"
   },

@@ -27,6 +27,7 @@ export class BookingsComponent {
   allPatients = this.clinicState.patients;
   allDoctors = this.clinicState.doctors;
   allRooms = this.clinicState.rooms;
+  availableRooms = this.clinicState.availableRooms;
 
   timeSlots = [
     '09:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '01:00 PM', '02:00 PM'
@@ -128,15 +129,19 @@ export class BookingsComponent {
 
     const mockIso = `2026-05-12T${this.sessionForm.time === '09:00 AM' ? '09:00:00' : '10:00:00'}`;
 
-    await this.clinicState.addSession({
-      patientId: this.sessionForm.patientId,
-      doctorId: this.sessionForm.doctorId,
-      roomId: this.sessionForm.roomId,
-      scheduledAt: mockIso,
-      type: 'Session' as SessionType
-    });
+    try {
+      await this.clinicState.addSession({
+        patientId: this.sessionForm.patientId,
+        doctorId: this.sessionForm.doctorId,
+        roomId: this.sessionForm.roomId,
+        scheduledAt: mockIso,
+        type: 'Session' as SessionType
+      });
 
-    this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Session booked successfully!' });
-    this.closeSessionDrawer();
+      this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Session booked successfully!' });
+      this.closeSessionDrawer();
+    } catch (e: any) {
+      this.messageService.add({ severity: 'error', summary: 'Booking Failed', detail: e.message || 'Room is not available for booking.' });
+    }
   }
 }

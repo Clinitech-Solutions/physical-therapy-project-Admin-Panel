@@ -72,8 +72,12 @@ export class Dashboard {
   }
 
   async checkIn(id: string) {
-    await this.clinicState.checkInPatient(id);
-    this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Patient checked in' });
+    try {
+      await this.clinicState.checkInPatient(id);
+      this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Patient checked in' });
+    } catch (e: any) {
+      this.messageService.add({ severity: 'error', summary: 'Check-in Failed', detail: e.message || 'Room is not available for booking.' });
+    }
   }
 
   async checkOut(id: string) {

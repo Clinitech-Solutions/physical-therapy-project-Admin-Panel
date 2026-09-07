@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, computed } from '@angular/core';
 import { Patient, NewPatient } from '../../models/patient.model';
 import { Doctor, DoctorAvailability, DoctorSlot } from '../../models/doctor.model';
 import { Room } from '../../models/room.model';
@@ -22,6 +22,30 @@ import {
   providedIn: 'root'
 })
 export class ClinicStateService {
+  // LocalStorage helper
+  private saveRoomsToLocalStorage(rooms: Room[]) {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('clinic_rooms', JSON.stringify(rooms));
+    }
+  }
+
+  private loadInitialRooms(): Room[] {
+    if (typeof localStorage !== 'undefined') {
+      const stored = localStorage.getItem('clinic_rooms');
+      if (stored) {
+        try {
+          return JSON.parse(stored);
+        } catch {
+          // Fallback if parsing fails
+        }
+      }
+      const initial = [...mockRooms];
+      this.saveRoomsToLocalStorage(initial);
+      return initial;
+    }
+    return [...mockRooms];
+  }
+
   // Global State Signals
   private patientsSig = signal<Patient[]>([]);
   public patients = this.patientsSig.asReadonly();
@@ -29,8 +53,9 @@ export class ClinicStateService {
   private doctorsSig = signal<Doctor[]>([]);
   public doctors = this.doctorsSig.asReadonly();
 
-  private roomsSig = signal<Room[]>([]);
+  private roomsSig = signal<Room[]>(this.loadInitialRooms());
   public rooms = this.roomsSig.asReadonly();
+  public availableRooms = computed(() => this.roomsSig().filter(r => r.status === 'Available' && r.currentLoad === 0));
 
   private sessionsSig = signal<Session[]>([]);
   public sessions = this.sessionsSig.asReadonly();
@@ -66,7 +91,9 @@ export class ClinicStateService {
     
     this.patientsSig.set([...mockPatients]);
     this.doctorsSig.set([...mockDoctors]);
-    this.roomsSig.set([...mockRooms]);
+    if (this.roomsSig().length === 0) {
+      this.roomsSig.set(this.loadInitialRooms());
+    }
     this.sessionsSig.set([...mockSessions]);
     this.waitlistSig.set([...mockWaitlist]);
     this.claimsSig.set([...mockInsuranceClaims]);
@@ -82,17 +109,22 @@ export class ClinicStateService {
   // ==========================================
 
   async checkInPatient(sessionId: string) {
-    this.isLoading.set(true);
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
     // 1. Find the session
     const sessions = this.sessionsSig();
     const sessionToUpdate = sessions.find(s => s.id === sessionId);
     
     if (!sessionToUpdate) {
-      this.isLoading.set(false);
       return;
     }
+
+    // Strict validation: target room must be Available and currentLoad === 0
+    const targetRoom = this.roomsSig().find(r => r.id === sessionToUpdate.roomId);
+    if (!targetRoom || targetRoom.status !== 'Available' || targetRoom.currentLoad > 0) {
+      throw new Error('Room is not available for booking.');
+    }
+
+    this.isLoading.set(true);
+    await new Promise(resolve => setTimeout(resolve, 300));
 
     // Update Session Status
     this.sessionsSig.update(list => list.map(s => s.id === sessionId ? { ...s, status: 'In Progress' } : s));
@@ -104,6 +136,7 @@ export class ClinicStateService {
       }
       return r;
     }));
+    this.saveRoomsToLocalStorage(this.roomsSig());
 
     // 3. Remove from Waitlist (if applicable)
     this.waitlistSig.update(list => list.filter(w => w.patientId !== sessionToUpdate.patientId));
@@ -129,6 +162,7 @@ export class ClinicStateService {
         }
         return r;
       }));
+      this.saveRoomsToLocalStorage(this.roomsSig());
     }
     
     this.isLoading.set(false);
@@ -153,6 +187,12 @@ export class ClinicStateService {
   }
 
   async addSession(sessionData: { patientId: string, doctorId: string, roomId: string, scheduledAt: string, type: SessionType }) {
+    // Strict validation: target room must be Available and currentLoad === 0
+    const targetRoom = this.roomsSig().find(r => r.id === sessionData.roomId);
+    if (!targetRoom || targetRoom.status !== 'Available' || targetRoom.currentLoad > 0) {
+      throw new Error('Room is not available for booking.');
+    }
+
     this.isLoading.set(true);
     await new Promise(resolve => setTimeout(resolve, 500));
 
@@ -172,9 +212,32 @@ export class ClinicStateService {
     this.isLoading.set(false);
   }
 
+  async bookSession(sessionData: { patientId: string, doctorId: string, roomId: string, scheduledAt: string, type: SessionType }) {
+    return this.addSession(sessionData);
+  }
+
   // ==========================================
   // Room Logic
   // ==========================================
+
+  async addNewRoom(roomData: Partial<Room> & { displayName: string } | Room) {
+    this.isLoading.set(true);
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    const newRoom: Room = {
+      id: ('id' in roomData && roomData.id) ? roomData.id : `room_${Date.now()}`,
+      displayName: roomData.displayName,
+      status: roomData.status || 'Available',
+      doctorId: roomData.doctorId ?? null,
+      currentLoad: roomData.currentLoad ?? 0,
+      capacity: roomData.capacity ?? 1
+    };
+
+    this.roomsSig.update(rooms => [...rooms, newRoom]);
+    this.saveRoomsToLocalStorage(this.roomsSig());
+    this.isLoading.set(false);
+    return newRoom;
+  }
 
   async reassignRoom(roomId: string, doctorId: string | null) {
     this.isLoading.set(true);
@@ -186,6 +249,7 @@ export class ClinicStateService {
       }
       return r;
     }));
+    this.saveRoomsToLocalStorage(this.roomsSig());
     this.isLoading.set(false);
   }
 
@@ -205,6 +269,7 @@ export class ClinicStateService {
       }
       return r;
     }));
+    this.saveRoomsToLocalStorage(this.roomsSig());
     this.isLoading.set(false);
   }
 
@@ -222,6 +287,7 @@ export class ClinicStateService {
       }
       return r;
     }));
+    this.saveRoomsToLocalStorage(this.roomsSig());
     this.isLoading.set(false);
   }
 
