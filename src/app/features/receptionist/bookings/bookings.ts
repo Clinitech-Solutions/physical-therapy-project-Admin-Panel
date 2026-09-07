@@ -73,13 +73,20 @@ export class BookingsComponent {
     return this.allPatients().find(p => p.id === this.selectedPatientId);
   }
 
-  // Doctor dropdown filtered by patient's gender match
+  /**
+   * Strict Gender Matching Rule:
+   * Male doctors treat male patients, and female doctors treat female patients.
+   * Only returns doctors whose gender matches the selected patient's gender.
+   */
   get filteredDoctors(): Doctor[] {
-    const patient = this.selectedPatient;
-    if (!patient || !patient.gender) {
-      return this.allDoctors();
+    if (!this.selectedPatientId) {
+      return [];
     }
-    return this.allDoctors().filter(doc => doc.gender === patient.gender);
+    const patientGender = this.clinicState.getPatientGender(this.selectedPatientId);
+    if (!patientGender) {
+      return [];
+    }
+    return this.allDoctors().filter(doc => doc.gender === patientGender);
   }
 
   // Patient selection change handler
@@ -88,12 +95,13 @@ export class BookingsComponent {
       this.selectedPatientId = patientId;
     }
 
-    // Business Rule: If patient is new, automatically set sessionType = 'Assessment'
+    // Business Rule 1: If patient is new, automatically set sessionType = 'Assessment'
     if (this.isNewPatient) {
       this.sessionType = 'Assessment';
     }
 
-    // Filter and validate selected doctor against patient gender
+    // Business Rule 2 (Gender Matching):
+    // When selectedPatientId changes, reset selectedDoctorId if it does not match patient's gender
     if (this.selectedDoctorId) {
       const isDocValid = this.filteredDoctors.some(d => d.id === this.selectedDoctorId);
       if (!isDocValid) {
@@ -102,7 +110,10 @@ export class BookingsComponent {
     }
   }
 
-  // Walk-in / Nearest Slot Handler
+  /**
+   * Walk-in / Nearest Slot Handler:
+   * Strictly searches within filteredDoctors (gender-matched candidates only).
+   */
   handleWalkInNearestSlot() {
     if (!this.selectedPatientId) {
       this.messageService.add({
@@ -113,8 +124,21 @@ export class BookingsComponent {
       return;
     }
 
+    // Strict Gender Matching: Must only search within filteredDoctors
+    const eligibleDoctors = this.filteredDoctors;
+    if (!eligibleDoctors || eligibleDoctors.length === 0) {
+      const patientGender = this.clinicState.getPatientGender(this.selectedPatientId);
+      this.messageService.add({
+        severity: 'error',
+        summary: 'No Matching Doctors',
+        detail: `No available ${patientGender ? patientGender.toLowerCase() : ''} doctors found to treat this patient.`
+      });
+      return;
+    }
+
     try {
-      const slot = this.clinicState.findNearestSlot(this.selectedPatientId);
+      // Find nearest slot strictly constrained to candidate filteredDoctors
+      const slot = this.clinicState.findNearestSlot(this.selectedPatientId, eligibleDoctors);
       this.selectedDoctorId = slot.doctorId;
       this.selectedRoomId = slot.roomId;
       this.scheduledDate = new Date(slot.scheduledAt);
@@ -126,13 +150,13 @@ export class BookingsComponent {
       this.messageService.add({
         severity: 'success',
         summary: 'Walk-In Slot Found',
-        detail: `Auto-assigned Dr. ${this.clinicState.getDoctorName(slot.doctorId)} in ${this.clinicState.getRoomName(slot.roomId)} at ${this.formatTime(slot.scheduledAt)}.`
+        detail: `Auto-assigned Dr. ${this.clinicState.getDoctorName(slot.doctorId)} (${this.clinicState.getDoctorGender(slot.doctorId)}) in ${this.clinicState.getRoomName(slot.roomId)} at ${this.formatTime(slot.scheduledAt)}.`
       });
     } catch (error: any) {
       this.messageService.add({
         severity: 'error',
         summary: 'Slot Search Failed',
-        detail: error.message || 'No suitable slot found.'
+        detail: error.message || 'No suitable slot found matching gender and load criteria.'
       });
     }
   }
@@ -156,6 +180,18 @@ export class BookingsComponent {
       return;
     }
 
+    // Business Rule Enforcement: Doctor MUST be from filteredDoctors (strict gender match)
+    const isDocGenderValid = this.filteredDoctors.some(d => d.id === this.selectedDoctorId);
+    if (!isDocGenderValid) {
+      const patientGender = this.clinicState.getPatientGender(this.selectedPatientId);
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Gender Mismatch',
+        detail: `Strict policy: Male doctors treat male patients, and female doctors treat female patients. Please select a ${patientGender?.toLowerCase()} doctor.`
+      });
+      return;
+    }
+
     // Enforce Assessment First rule
     const finalType: SessionType = this.isNewPatient ? 'Assessment' : this.sessionType;
 
@@ -175,7 +211,7 @@ export class BookingsComponent {
       this.messageService.add({
         severity: 'success',
         summary: 'Booking Successful',
-        detail: `${finalType} booked for ${this.clinicState.getPatientName(this.selectedPatientId)}!`
+        detail: `${finalType} booked for ${this.clinicState.getPatientName(this.selectedPatientId)} with Dr. ${this.clinicState.getDoctorName(this.selectedDoctorId)}!`
       });
 
       this.resetBookingForm();

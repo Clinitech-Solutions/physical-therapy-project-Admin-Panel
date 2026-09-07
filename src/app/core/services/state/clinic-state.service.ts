@@ -236,17 +236,16 @@ export class ClinicStateService {
     return !hasCompletedAssessment;
   }
 
-  findNearestSlot(patientId: string): { doctorId: string; roomId: string; scheduledAt: string } {
+  findNearestSlot(patientId: string, candidateDoctors?: Doctor[]): { doctorId: string; roomId: string; scheduledAt: string } {
     if (!patientId) {
       throw new Error('Please select a patient first.');
     }
 
     // a) Get patient's gender
-    const patient = this.patientsSig().find(p => p.id === patientId);
-    if (!patient) {
+    const patientGender = this.getPatientGender(patientId);
+    if (!patientGender) {
       throw new Error('Patient not found.');
     }
-    const patientGender = patient.gender;
 
     // Helper: calculate doctor's current load
     const getDoctorLoad = (doctorId: string): number => {
@@ -258,7 +257,9 @@ export class ClinicStateService {
     };
 
     // b) Find available doctor matching that gender who currently has currentLoad < 2
-    const matchingDoctors = this.doctorsSig().filter(d => {
+    // If candidateDoctors is provided, search strictly within candidates
+    const sourceDoctors = candidateDoctors && candidateDoctors.length > 0 ? candidateDoctors : this.doctorsSig();
+    const matchingDoctors = sourceDoctors.filter(d => {
       return d.gender === patientGender && getDoctorLoad(d.id) < 2;
     });
 
@@ -441,6 +442,12 @@ export class ClinicStateService {
     if (!id) return 'Unknown Patient';
     const p = this.patientsSig().find(x => x.id === id);
     return p ? p.nameEn : 'Unknown Patient';
+  }
+
+  getPatientGender(id: string | null): 'Male' | 'Female' | '' {
+    if (!id) return '';
+    const p = this.patientsSig().find(x => x.id === id);
+    return p ? p.gender : '';
   }
 
   getPatientAvatar(id: string | null): string {

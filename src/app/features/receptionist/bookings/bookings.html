@@ -110,9 +110,9 @@
             <label class="form-label mb-0 fw-semibold text-secondary">
               {{ 'COMMON.DOCTOR' | translate }} <span class="text-danger">*</span>
             </label>
-            @if (selectedPatient) {
+            @if (selectedPatientId) {
               <span class="badge bg-primary bg-opacity-10 text-primary small">
-                Match: {{ selectedPatient.gender }}
+                Match: {{ clinicState.getPatientGender(selectedPatientId) }}
               </span>
             }
           </div>
@@ -121,8 +121,9 @@
             [(ngModel)]="selectedDoctorId" 
             optionLabel="name" 
             optionValue="id" 
-            placeholder="Select Doctor..." 
-            emptyMessage="No doctors matching patient gender"
+            [placeholder]="selectedPatientId ? 'Select Doctor...' : 'Select Patient First'" 
+            [emptyMessage]="selectedPatientId ? 'No doctors matching patient gender' : 'Please select a patient first'"
+            [disabled]="!selectedPatientId"
             styleClass="w-100">
             <ng-template pTemplate="item" let-doc>
               <div class="d-flex justify-content-between align-items-center w-100">
