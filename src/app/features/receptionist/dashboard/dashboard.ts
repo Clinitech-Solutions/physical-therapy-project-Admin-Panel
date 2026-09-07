@@ -17,18 +17,11 @@ import { MessageService } from 'primeng/api';
 })
 export class Dashboard {
   langService = inject(LanguageService);
-
-  // KPIs
-  kpis = {
-    todaysSessions: 24,
-    presentDoctors: 6,
-    walkInsToday: 3,
-    pendingPayments: 5
-  };
-
   clinicState = inject(ClinicStateService);
   messageService = inject(MessageService);
   
+  todayDate = new Date();
+
   sessions = this.clinicState.sessions;
   allPatients = this.clinicState.patients;
   allDoctors = this.clinicState.doctors;
@@ -38,6 +31,53 @@ export class Dashboard {
   filterDoctor = signal<string>('');
   filterRoom = signal<string>('');
   searchPatient = signal<string>('');
+
+  /**
+   * Strictly filters clinicState.sessions() to only include sessions
+   * where the date part of scheduledAt matches today's date.
+   */
+  get todaySessions(): Session[] {
+    const todayYMD = this.todayDate.toISOString().split('T')[0];
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const localYMD = `${this.todayDate.getFullYear()}-${pad(this.todayDate.getMonth() + 1)}-${pad(this.todayDate.getDate())}`;
+
+    return this.sessions().filter(s => {
+      if (!s.scheduledAt) return false;
+      const sessionDatePart = s.scheduledAt.split('T')[0];
+      return sessionDatePart === todayYMD || sessionDatePart === localYMD;
+    });
+  }
+
+  /**
+   * Filtered today's sessions for the timeline table
+   */
+  get filteredTodaySessions(): Session[] {
+    const docFilter = this.filterDoctor().toLowerCase();
+    const roomFilter = this.filterRoom().toLowerCase();
+    const search = this.searchPatient().toLowerCase();
+
+    return this.todaySessions.filter(session => {
+      const docName = this.clinicState.getDoctorName(session.doctorId).toLowerCase();
+      const roomName = this.clinicState.getRoomName(session.roomId).toLowerCase();
+      const patientName = this.clinicState.getPatientName(session.patientId).toLowerCase();
+
+      const matchDoc = !docFilter || docName.includes(docFilter);
+      const matchRoom = !roomFilter || roomName.includes(roomFilter);
+      const matchPatient = !search || patientName.includes(search);
+
+      return matchDoc && matchRoom && matchPatient;
+    });
+  }
+
+  // Live KPI stats bound directly to state signals
+  get kpis() {
+    return {
+      todaysSessions: this.todaySessions.length,
+      presentDoctors: this.clinicState.doctors().length,
+      walkInsToday: this.todaySessions.filter(s => s.type === 'Assessment').length,
+      pendingPayments: this.clinicState.invoices().filter(i => i.status === 'Pending').length
+    };
+  }
 
   formatTime(isoString: string) {
     try {

@@ -69,7 +69,7 @@
                   {{ patient.paymentType }}
                 </span>
               </td>
-              <td class="text-muted">{{ patient.lastVisit }}</td>
+              <td class="text-muted">{{ patient.lastVisit | date:'dd MMM yyyy' }}</td>
               <td style="text-align:end" dir="ltr">
                 <div class="d-flex gap-1 justify-content-end align-items-center">
                   <button class="btn-action action-primary" [attr.data-tip]="'RECEPTIONIST.VIEW_PROFILE' | translate" (click)="viewPatient(patient)">

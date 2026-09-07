@@ -6,15 +6,15 @@
     </div>
   </div>
 
-  <!-- KPI Row -->
+  <!-- KPI Row (Bound Directly to State Signals) -->
   <div class="kpi-row">
     <div class="stat-card border-start-teal">
       <div class="stat-label">{{ 'RECEPTIONIST.TODAYS_SESSIONS' | translate }}</div>
-      <div class="stat-value text-teal">{{ kpis.todaysSessions }}</div>
+      <div class="stat-value text-teal">{{ todaySessions.length }}</div>
     </div>
     <div class="stat-card border-start-blue">
       <div class="stat-label">{{ 'RECEPTIONIST.PRESENT_DOCTORS' | translate }}</div>
-      <div class="stat-value text-blue">{{ kpis.presentDoctors }}</div>
+      <div class="stat-value text-blue">{{ clinicState.doctors().length }}</div>
     </div>
     <div class="stat-card border-start-amber">
       <div class="stat-label">{{ 'RECEPTIONIST.WALKINS' | translate }}</div>
@@ -26,7 +26,6 @@
     </div>
   </div>
 
-
   <!-- Daily Timeline -->
   <div class="table-panel">
     <!-- Sticky toolbar lives inside the scroll container -->
@@ -35,89 +34,96 @@
       <div class="d-flex gap-2 align-items-center">
         <div class="search-bar">
           <i class="bi bi-search"></i>
-          <input type="text" [placeholder]="'RECEPTIONIST.SEARCH_PLACEHOLDER' | translate" [(ngModel)]="searchPatient" />
+          <input type="text" [placeholder]="'RECEPTIONIST.SEARCH_PLACEHOLDER' | translate" [ngModel]="searchPatient()" (ngModelChange)="searchPatient.set($event)" />
         </div>
-        <select class="form-select form-select-sm" style="width:auto" [(ngModel)]="filterDoctor">
+        <select class="form-select form-select-sm" style="width:auto" [ngModel]="filterDoctor()" (ngModelChange)="filterDoctor.set($event)">
           <option value="">{{ 'RECEPTIONIST.ALL_DOCTORS' | translate }}</option>
-          <option value="Dr. Sarah">Dr. Sarah</option>
-          <option value="Dr. Omar">Dr. Omar</option>
-          <option value="Dr. Youssef">Dr. Youssef</option>
+          @for (doc of allDoctors(); track doc.id) {
+            <option [value]="doc.name">{{ doc.name }}</option>
+          }
         </select>
-        <select class="form-select form-select-sm" style="width:auto" [(ngModel)]="filterRoom">
+        <select class="form-select form-select-sm" style="width:auto" [ngModel]="filterRoom()" (ngModelChange)="filterRoom.set($event)">
           <option value="">{{ 'RECEPTIONIST.ALL_ROOMS' | translate }}</option>
-          <option value="Room 1">{{ 'RECEPTIONIST.ROOM_1' | translate }}</option>
-          <option value="Room 3">{{ 'RECEPTIONIST.ROOM_3' | translate }}</option>
+          @for (room of allRooms(); track room.id) {
+            <option [value]="room.displayName">{{ room.displayName }}</option>
+          }
         </select>
       </div>
     </div>
 
     <div class="table-scroll-area">
       <table>
-
-          <thead>
+        <thead>
+          <tr>
+            <th>{{ 'COMMON.TIME' | translate }}</th>
+            <th>{{ 'COMMON.PATIENT' | translate }}</th>
+            <th>{{ 'COMMON.DOCTOR' | translate }}</th>
+            <th>{{ 'COMMON.ROOM' | translate }}</th>
+            <th>{{ 'COMMON.STATUS' | translate }}</th>
+            <th style="text-align:end">{{ 'COMMON.ACTION' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for(session of filteredTodaySessions; track session.id) {
             <tr>
-              <th>{{ 'COMMON.TIME' | translate }}</th>
-              <th>{{ 'COMMON.PATIENT' | translate }}</th>
-              <th>{{ 'COMMON.DOCTOR' | translate }}</th>
-              <th>{{ 'COMMON.ROOM' | translate }}</th>
-              <th>{{ 'COMMON.STATUS' | translate }}</th>
-              <th style="text-align:end">{{ 'COMMON.ACTION' | translate }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for(session of sessions(); track session.id) {
-              <tr>
-                <td class="font-bebas" style="font-size:1rem">{{ formatTime(session.scheduledAt) }}</td>
-                <td>
-                  <div class="d-flex align-items-center gap-2">
-                    <div class="avatar avatar-sm">{{ clinicState.getPatientAvatar(session.patientId) }}</div>
-                    <span class="fw-semibold">{{ clinicState.getPatientName(session.patientId) }}</span>
-                    @if(session.packageAlert) {
-                      <span class="badge badge-warning" title="Insurance Package Alert">
-                        <i class="bi bi-exclamation-triangle-fill"></i> {{ session.packageAlert }}
-                      </span>
-                    }
-                  </div>
-                </td>
-                <td>{{ clinicState.getDoctorName(session.doctorId) }}</td>
-                <td><span class="badge badge-neutral">{{ clinicState.getRoomName(session.roomId) }}</span></td>
-                <td>
-                  <span class="badge" [ngClass]="{
-                    'badge-success': session.status === 'Confirmed' || session.status === 'Completed',
-                    'badge-info': session.status === 'In Progress' || session.status === 'Waiting',
-                    'badge-warning': session.status === 'Pending',
-                    'badge-error': session.status === 'Cancelled'
-                  }">
-                    @if(session.status === 'Confirmed') { {{ 'RECEPTIONIST.CONFIRMED' | translate }} }
-                    @if(session.status === 'In Progress') { {{ 'RECEPTIONIST.IN_PROGRESS' | translate }} }
-                    @if(session.status === 'Pending') { {{ 'RECEPTIONIST.PENDING' | translate }} }
-                    @if(session.status === 'Cancelled') { {{ 'RECEPTIONIST.CANCELLED' | translate }} }
-                    @if(session.status === 'Waiting') { {{ 'RECEPTIONIST.WAITING' | translate }} }
-                    @if(session.status === 'Completed') { {{ 'RECEPTIONIST.COMPLETED' | translate }} }
-                  </span>
-                </td>
-                <td style="text-align:end">
-                  <div class="d-flex gap-1 justify-content-end align-items-center">
-                    @if(session.status === 'Confirmed' || session.status === 'Pending') {
-                      <button class="btn-action action-primary" [attr.data-tip]="'RECEPTIONIST.CHECK_IN' | translate" (click)="checkIn(session.id)">
-                        <i class="bi bi-box-arrow-in-right"></i>
-                      </button>
-                    }
-                    @if(session.status === 'In Progress' || session.status === 'Waiting') {
-                      <button class="btn-action action-success" [attr.data-tip]="'RECEPTIONIST.CHECK_OUT' | translate" (click)="checkOut(session.id)">
-                        <i class="bi bi-box-arrow-right"></i>
-                      </button>
-                    }
-                    <button class="btn-action action-danger" [attr.data-tip]="'RECEPTIONIST.MARK_ABSENT' | translate" (click)="openAbsenceModal(clinicState.getDoctorName(session.doctorId))">
-                      <i class="bi bi-person-x"></i>
+              <td class="font-bebas" style="font-size:1rem">{{ formatTime(session.scheduledAt) }}</td>
+              <td>
+                <div class="d-flex align-items-center gap-2">
+                  <div class="avatar avatar-sm">{{ clinicState.getPatientAvatar(session.patientId) }}</div>
+                  <span class="fw-semibold">{{ clinicState.getPatientName(session.patientId) }}</span>
+                  @if(session.packageAlert) {
+                    <span class="badge badge-warning" title="Insurance Package Alert">
+                      <i class="bi bi-exclamation-triangle-fill"></i> {{ session.packageAlert }}
+                    </span>
+                  }
+                </div>
+              </td>
+              <td>{{ clinicState.getDoctorName(session.doctorId) }}</td>
+              <td><span class="badge badge-neutral">{{ clinicState.getRoomName(session.roomId) }}</span></td>
+              <td>
+                <span class="badge" [ngClass]="{
+                  'badge-success': session.status === 'Confirmed' || session.status === 'Completed',
+                  'badge-info': session.status === 'In Progress' || session.status === 'Waiting',
+                  'badge-warning': session.status === 'Pending',
+                  'badge-error': session.status === 'Cancelled'
+                }">
+                  @if(session.status === 'Confirmed') { {{ 'RECEPTIONIST.CONFIRMED' | translate }} }
+                  @if(session.status === 'In Progress') { {{ 'RECEPTIONIST.IN_PROGRESS' | translate }} }
+                  @if(session.status === 'Pending') { {{ 'RECEPTIONIST.PENDING' | translate }} }
+                  @if(session.status === 'Cancelled') { {{ 'RECEPTIONIST.CANCELLED' | translate }} }
+                  @if(session.status === 'Waiting') { {{ 'RECEPTIONIST.WAITING' | translate }} }
+                  @if(session.status === 'Completed') { {{ 'RECEPTIONIST.COMPLETED' | translate }} }
+                </span>
+              </td>
+              <td style="text-align:end">
+                <div class="d-flex gap-1 justify-content-end align-items-center">
+                  @if(session.status === 'Confirmed' || session.status === 'Pending') {
+                    <button class="btn-action action-primary" [attr.data-tip]="'RECEPTIONIST.CHECK_IN' | translate" (click)="checkIn(session.id)">
+                      <i class="bi bi-box-arrow-in-right"></i>
                     </button>
-                  </div>
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
+                  }
+                  @if(session.status === 'In Progress' || session.status === 'Waiting') {
+                    <button class="btn-action action-success" [attr.data-tip]="'RECEPTIONIST.CHECK_OUT' | translate" (click)="checkOut(session.id)">
+                      <i class="bi bi-box-arrow-right"></i>
+                    </button>
+                  }
+                  <button class="btn-action action-danger" [attr.data-tip]="'RECEPTIONIST.MARK_ABSENT' | translate" (click)="openAbsenceModal(clinicState.getDoctorName(session.doctorId))">
+                    <i class="bi bi-person-x"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+          @if (filteredTodaySessions.length === 0) {
+            <tr>
+              <td colspan="6" class="text-center py-4 text-muted">
+                No sessions scheduled for today matching your criteria.
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
 

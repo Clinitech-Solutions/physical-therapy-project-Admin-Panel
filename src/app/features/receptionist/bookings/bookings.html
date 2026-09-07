@@ -209,7 +209,7 @@
         <!-- Schedule Header with Status Filters & View Toggles -->
         <div class="table-toolbar px-3 py-2 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2 bg-light bg-opacity-50">
           <div class="d-flex align-items-center gap-3">
-            <h5 class="mb-0 font-clash fw-bold small text-uppercase tracking-wider">Today's Schedule (12 May 2026)</h5>
+            <h5 class="mb-0 font-clash fw-bold small text-uppercase tracking-wider">Today's Schedule ( {{ todayDate | date:'dd MMM yyyy' }} )</h5>
             
             <!-- Status Filter Bar (PrimeNG SelectButton) -->
             <p-selectbutton 

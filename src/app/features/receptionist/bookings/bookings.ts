@@ -289,13 +289,31 @@ export class BookingsComponent {
     }
   }
 
+  todayDate = new Date();
+
+  /**
+   * Strictly filters clinicState.sessions() to only include sessions
+   * where the date part of scheduledAt matches today's date.
+   */
+  get todaySessions(): Session[] {
+    const todayYMD = this.todayDate.toISOString().split('T')[0];
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const localYMD = `${this.todayDate.getFullYear()}-${pad(this.todayDate.getMonth() + 1)}-${pad(this.todayDate.getDate())}`;
+
+    return this.sessions().filter(s => {
+      if (!s.scheduledAt) return false;
+      const sessionDatePart = s.scheduledAt.split('T')[0];
+      return sessionDatePart === todayYMD || sessionDatePart === localYMD;
+    });
+  }
+
   /**
    * Schedule Filter:
-   * Filters the day's sessions based on selectedFilter.
+   * Filters today's sessions based on selectedFilter.
    * 'Upcoming' includes 'Pending' and 'Confirmed'.
    */
   get filteredSchedule(): { time: string; sessions: Session[] }[] {
-    const all = this.sessions();
+    const all = this.todaySessions;
     let filtered = all;
 
     if (this.selectedFilter === 'Upcoming') {
