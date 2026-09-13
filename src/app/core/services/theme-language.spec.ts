@@ -1,13 +1,16 @@
 import { TestBed } from '@angular/core/testing';
 
-import { ThemeLanguage } from './theme-language';
+import { ThemeLanguageService } from './theme-language';
+import { TranslateModule } from '@ngx-translate/core';
 
-describe('ThemeLanguage', () => {
-  let service: ThemeLanguage;
+describe('ThemeLanguageService', () => {
+  let service: ThemeLanguageService;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
-    service = TestBed.inject(ThemeLanguage);
+    TestBed.configureTestingModule({
+      imports: [TranslateModule.forRoot()]
+    });
+    service = TestBed.inject(ThemeLanguageService);
   });
 
   it('should be created', () => {

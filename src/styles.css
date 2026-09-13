@@ -758,7 +758,7 @@ html[dir="rtl"] h4 {
   /* Smooth inertia scroll on touch/trackpad */
   -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;
-  padding:0 20px;
+  padding:0 20px 10px;
 }
 
 .table-scroll-area:hover {

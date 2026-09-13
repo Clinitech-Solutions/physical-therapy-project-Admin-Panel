@@ -1,19 +1,22 @@
 import { ComponentFixture, TestBed } from "@angular/core/testing";
 
-import { AppLayout } from "./app-layout";
+import { AppLayoutComponent } from "./app-layout";
+import { provideRouter } from '@angular/router';
+import { TranslateModule } from '@ngx-translate/core';
 
-describe("AppLayout", () => {
-  let component: AppLayout;
-  let fixture: ComponentFixture<AppLayout>;
+describe("AppLayoutComponent", () => {
+  let component: AppLayoutComponent;
+  let fixture: ComponentFixture<AppLayoutComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [AppLayout],
+      imports: [AppLayoutComponent, TranslateModule.forRoot()],
+      providers: [provideRouter([])]
     }).compileComponents();
 
-    fixture = TestBed.createComponent(AppLayout);
+    fixture = TestBed.createComponent(AppLayoutComponent);
     component = fixture.componentInstance;
-    await fixture.whenStable();
+    fixture.detectChanges();
   });
 
   it("should create", () => {

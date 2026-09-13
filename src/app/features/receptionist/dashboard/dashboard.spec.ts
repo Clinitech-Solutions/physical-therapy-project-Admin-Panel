@@ -50,7 +50,7 @@ describe('Receptionist DashboardComponent Reactive Signals Suite', () => {
       
       // All returned sessions must match today
       todaySessions.forEach(s => {
-        expect(s.scheduledAt.startsWith(today)).toBe(true);
+        expect(s.scheduledAt?.startsWith(today)).toBe(true);
       });
     });
 

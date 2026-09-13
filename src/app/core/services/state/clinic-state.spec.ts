@@ -83,7 +83,7 @@ describe('ClinicStateService Business Rules & Date Filtering Unit Tests', () => 
 
     it('should strictly exclude historical sessions when filtering by today', () => {
       const today = new Date().toISOString().split('T')[0];
-      const todaySessions = service.sessions().filter(s => s.scheduledAt.startsWith(today));
+      const todaySessions = service.sessions().filter(s => s.scheduledAt?.startsWith(today));
 
       // None of the today's sessions should have id starting with 'hist_'
       const leakedHistory = todaySessions.filter(s => s.id.startsWith('hist_'));
@@ -545,6 +545,45 @@ describe('ClinicStateService Business Rules & Date Filtering Unit Tests', () => 
 
       // collectionRateToday = (1000 / 1550) * 100 = 65%
       expect(service.collectionRateToday()).toBe(Math.round((1000 / 1550) * 100));
+    });
+  });
+
+  describe('Treatment Plan & Check-In/Out Timestamps', () => {
+    it('should stamp checkInTime when checking in a patient', async () => {
+      // Find a pending/confirmed session, e.g. session '3'
+      const sessionBefore = service.sessions().find(s => s.id === '3');
+      expect(sessionBefore).toBeDefined();
+
+      await service.checkInPatient('3');
+      const sessionAfter = service.sessions().find(s => s.id === '3');
+      expect(sessionAfter?.status).toBe('In Progress');
+      expect(sessionAfter?.checkInTime).toBeDefined();
+      expect(new Date(sessionAfter!.checkInTime!).getTime()).not.toBeNaN();
+    });
+
+    it('should stamp checkOutTime when checking out a patient', async () => {
+      // Session '1' is In Progress. Make sure invoice is paid first
+      const invoice = service.invoices().find(inv => inv.sessionId === '1');
+      if (invoice) {
+        await service.processPayment(invoice.id);
+      }
+
+      await service.checkOutPatient('1');
+      const sessionAfter = service.sessions().find(s => s.id === '1');
+      expect(sessionAfter?.status).toBe('Completed');
+      expect(sessionAfter?.checkOutTime).toBeDefined();
+      expect(new Date(sessionAfter!.checkOutTime!).getTime()).not.toBeNaN();
+    });
+
+    it('should calculate getPatientProgressBadge correctly', () => {
+      // Patient '1' (Ahmed Fathy) has 10 total sessions
+      // Session '1' has sessionNumber: 3
+      const badge = service.getPatientProgressBadge('1', '1');
+      expect(badge).toBe('Session 3 of 10');
+
+      // Session '7' has sessionNumber: 2
+      const badge2 = service.getPatientProgressBadge('1', '7');
+      expect(badge2).toBe('Session 2 of 10');
     });
   });
 });
