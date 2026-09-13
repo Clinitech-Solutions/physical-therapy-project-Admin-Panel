@@ -1,9 +1,7 @@
-import { Component, signal, inject } from "@angular/core";
+import { Component, inject } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { TranslateModule } from '@ngx-translate/core';
 import { FormsModule } from '@angular/forms';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { DialogModule } from 'primeng/dialog';
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 import { MessageService } from 'primeng/api';
@@ -25,11 +23,10 @@ export interface InsuranceProvider {
 @Component({
   selector: "app-receptionist-insurance",
   standalone: true,
-  imports: [CommonModule, TranslateModule, FormsModule, DialogModule, CardModule, ButtonModule],
+  imports: [CommonModule, TranslateModule, FormsModule, CardModule, ButtonModule],
   templateUrl: "./insurance.html"
 })
 export class InsuranceComponent {
-  private sanitizer = inject(DomSanitizer);
   messageService = inject(MessageService);
 
   providers: InsuranceProvider[] = [
@@ -40,7 +37,7 @@ export class InsuranceComponent {
       code: 'BUPA-EG',
       logoIcon: 'bi-shield-shaded',
       themeColor: '#0079C8',
-      portalUrl: 'https://www.axaglobalhealthcare.com/en/',
+      portalUrl: 'https://www.bupa.com.eg/',
       taglineKey: 'RECEPTIONIST.PORTAL_BUPA_DESC',
       hotline: '16111',
       networkTypeKey: 'RECEPTIONIST.NETWORK_GOLD_CLASSIC',
@@ -53,7 +50,7 @@ export class InsuranceComponent {
       code: 'AXA-EGY',
       logoIcon: 'bi-heart-pulse-fill',
       themeColor: '#00008F',
-      portalUrl: 'https://example.com/axa-portal',
+      portalUrl: 'https://axa.com.eg/',
       taglineKey: 'RECEPTIONIST.PORTAL_AXA_DESC',
       hotline: '16363',
       networkTypeKey: 'RECEPTIONIST.NETWORK_SMART_CARE',
@@ -66,7 +63,7 @@ export class InsuranceComponent {
       code: 'METLIFE-MEA',
       logoIcon: 'bi-hospital-fill',
       themeColor: '#0090DA',
-      portalUrl: 'https://example.com/metlife-portal',
+      portalUrl: 'https://www.metlife.com.eg/',
       taglineKey: 'RECEPTIONIST.PORTAL_METLIFE_DESC',
       hotline: '19798',
       networkTypeKey: 'RECEPTIONIST.NETWORK_EXECUTIVE',
@@ -79,7 +76,7 @@ export class InsuranceComponent {
       code: 'ALLIANZ-EG',
       logoIcon: 'bi-award-fill',
       themeColor: '#003781',
-      portalUrl: 'https://example.com/allianz-portal',
+      portalUrl: 'https://www.allianz.com.eg/',
       taglineKey: 'RECEPTIONIST.PORTAL_ALLIANZ_DESC',
       hotline: '19909',
       networkTypeKey: 'RECEPTIONIST.NETWORK_COMPREHENSIVE',
@@ -87,22 +84,8 @@ export class InsuranceComponent {
     }
   ];
 
-  isPortalModalOpen = signal(false);
-  activeProvider = signal<InsuranceProvider | null>(null);
-  activeSanitizedUrl = signal<SafeResourceUrl | null>(null);
-
-  openPortal(provider: InsuranceProvider) {
-    this.activeProvider.set(provider);
-    this.activeSanitizedUrl.set(
-      this.sanitizer.bypassSecurityTrustResourceUrl(provider.portalUrl)
-    );
-    this.isPortalModalOpen.set(true);
-  }
-
-  closePortal() {
-    this.isPortalModalOpen.set(false);
-    this.activeProvider.set(null);
-    this.activeSanitizedUrl.set(null);
+  openPortal(url: string) {
+    window.open(url, '_blank');
   }
 }
 

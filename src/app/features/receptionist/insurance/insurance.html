@@ -55,7 +55,7 @@
         </div>
 
         <div class="portal-card-footer">
-          <button class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2" (click)="openPortal(provider)">
+          <button class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2" (click)="openPortal(provider.portalUrl)">
             <i class="bi bi-box-arrow-up-right"></i>
             <span>{{ 'RECEPTIONIST.OPEN_PORTAL' | translate }}</span>
           </button>
@@ -64,56 +64,3 @@
     }
   </div>
 </div>
-
-<!-- Insurance Portal Iframe Modal (90vw x 90vh) -->
-<p-dialog 
-  [(visible)]="isPortalModalOpen" 
-  [modal]="true" 
-  [draggable]="false" 
-  [resizable]="false" 
-  [closable]="true" 
-  [showHeader]="true" 
-  styleClass="clean-modal portal-dialog"
-  [style]="{ width: '90vw', height: '90vh' }">
-
-  <ng-template pTemplate="header">
-    <div class="d-flex align-items-center gap-2">
-      <span class="fw-bold">{{ activeProvider()?.brandName || activeProvider()?.name }}</span>
-      <span class="text-muted">·</span>
-      <span class="badge badge-info">{{ 'RECEPTIONIST.PORTAL_MODAL_TITLE' | translate }}</span>
-    </div>
-  </ng-template>
-
-  <div class="portal-iframe-container">
-    <!-- Portal Navigation & Security Bar -->
-    <div class="portal-iframe-toolbar">
-      <div class="d-flex align-items-center gap-2">
-        <span class="badge badge-success d-flex align-items-center gap-1">
-          <i class="bi bi-lock-fill"></i> <span>{{ 'RECEPTIONIST.SSL_SECURE' | translate }}</span>
-        </span>
-        <span class="text-muted small font-monospace d-none d-md-inline" dir="ltr">
-          {{ activeProvider()?.portalUrl }}
-        </span>
-      </div>
-
-      <div class="d-flex align-items-center gap-2">
-        <a [href]="activeProvider()?.portalUrl" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1">
-          <i class="bi bi-box-arrow-up-right"></i>
-          <span>{{ 'RECEPTIONIST.OPEN_EXTERNAL' | translate }}</span>
-        </a>
-      </div>
-    </div>
-
-    <!-- Live Sanitized Iframe -->
-    @if(activeSanitizedUrl()) {
-      <iframe 
-        [src]="activeSanitizedUrl()!" 
-        class="portal-iframe" 
-        [title]="activeProvider()?.name || 'Insurance Portal'"
-        allow="fullscreen; payment">
-      </iframe>
-    }
-  </div>
-</p-dialog>
-
-

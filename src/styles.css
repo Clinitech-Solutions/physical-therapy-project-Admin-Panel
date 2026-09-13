@@ -1920,21 +1920,7 @@ html.light .clean-modal .btn-outline-secondary:hover {
   box-shadow: none;
 }
 
-/* ── INSURANCE PORTALS HUB & IFRAME MODAL ──────────── */
-.p-dialog.clean-modal.portal-dialog {
-  display: flex !important;
-  flex-direction: column !important;
-}
-
-.p-dialog.clean-modal.portal-dialog .p-dialog-content {
-  padding: 0 !important;
-  height: calc(90vh - 65px) !important;
-  max-height: calc(90vh - 65px) !important;
-  overflow: hidden !important;
-  display: flex !important;
-  flex-direction: column !important;
-}
-
+/* ── INSURANCE PORTALS HUB ─────────────────────────── */
 .insurance-portal-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -1987,35 +1973,4 @@ html.light .clean-modal .btn-outline-secondary:hover {
   font-size: 1.5rem;
   color: #ffffff;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-}
-
-.portal-iframe-container {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  background: #ffffff;
-  position: relative;
-}
-
-.portal-iframe-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.6rem 1.25rem;
-  background: var(--bg-panel, #f8fafc);
-  border-bottom: 1px solid var(--border-color);
-  font-size: 0.85rem;
-}
-
-html.dark .portal-iframe-toolbar {
-  background: #1e293b;
-  color: #f1f5f9;
-}
-
-.portal-iframe {
-  width: 100%;
-  flex: 1;
-  border: none;
-  background: #ffffff;
 }
