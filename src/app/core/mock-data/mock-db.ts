@@ -129,7 +129,7 @@ export const mockInvoices: Invoice[] = [
   { id: 'INV-1004', sessionId: '4', patientId: '4', amount: 500, currency: 'EGP', status: 'Pending', type: 'Session', createdAt: `${today}T12:00:00Z` },
   { id: 'INV-1005', sessionId: '5', patientId: '5', amount: 500, currency: 'EGP', status: 'Pending', type: 'Assessment', createdAt: `${today}T13:30:00Z` },
   { id: 'INV-1006', sessionId: '6', patientId: '6', amount: 500, currency: 'EGP', status: 'Pending', type: 'Assessment', createdAt: `${today}T14:00:00Z` },
-  { id: 'INV-1007', sessionId: '7', patientId: '1', amount: 500, currency: 'EGP', status: 'Paid', type: 'Session', createdAt: `${today}T08:00:00Z` }
+  { id: 'INV-1007', sessionId: '7', patientId: '1', amount: 500, currency: 'EGP', status: 'Pending', type: 'Session', createdAt: `${today}T08:00:00Z` }
 ];
 
 export const mockDoctorAvailability: DoctorAvailability[] = [

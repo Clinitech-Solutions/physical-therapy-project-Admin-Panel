@@ -247,7 +247,7 @@
     "SESSION_PROGRESS": "Treatment Progress",
     "TOTAL_SESSIONS": "Total Sessions",
     "COMPLETED_SESSIONS": "Completed Sessions",
-    "SESSION_NUMBER": "Session #",
+    "SESSION_NUMBER": "#",
     "CHECK_IN_TIME": "Check-In",
     "CHECK_OUT_TIME": "Check-Out",
     "PAYMENT_STATUS": "Payment Status",

@@ -1,12 +1,12 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import '@angular/compiler';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { Injector, runInInjectionContext } from '@angular/core';
 import { PatientProfileComponent } from './patient-profile.component';
 import { ClinicStateService } from '../../../core/services/state/clinic-state.service';
-import { TranslateModule } from '@ngx-translate/core';
 import { Patient } from '../../../core/models/patient.model';
 
-describe('PatientProfileComponent', () => {
+describe('PatientProfileComponent Suite', () => {
   let component: PatientProfileComponent;
-  let fixture: ComponentFixture<PatientProfileComponent>;
   let clinicState: ClinicStateService;
 
   const mockTestPatient: Patient = {
@@ -23,20 +23,18 @@ describe('PatientProfileComponent', () => {
   };
 
   beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [
-        PatientProfileComponent,
-        TranslateModule.forRoot()
-      ],
-      providers: [ClinicStateService]
-    }).compileComponents();
+    clinicState = new ClinicStateService();
+    await new Promise(resolve => setTimeout(resolve, 600));
 
-    fixture = TestBed.createComponent(PatientProfileComponent);
-    component = fixture.componentInstance;
-    clinicState = TestBed.inject(ClinicStateService);
+    const injector = Injector.create({
+      providers: [
+        { provide: ClinicStateService, useValue: clinicState }
+      ]
+    });
+
+    component = runInInjectionContext(injector, () => new PatientProfileComponent());
     component.patient = mockTestPatient;
     component.visible = true;
-    fixture.detectChanges();
   });
 
   it('should create the component', () => {
@@ -64,9 +62,9 @@ describe('PatientProfileComponent', () => {
     expect(sessions[9].sessionNumber).toBe(10);
   });
 
-  it('should display "Not Yet" for sessions without checkInTime or checkOutTime', () => {
-    expect(component.formatTime(undefined)).toBe('Not Yet');
-    expect(component.formatTime('')).toBe('Not Yet');
+  it('should return null for formatTime when checkInTime or checkOutTime is missing', () => {
+    expect(component.formatTime(undefined)).toBeNull();
+    expect(component.formatTime('')).toBeNull();
   });
 
   it('should dynamically calculate payment status using invoice status', () => {

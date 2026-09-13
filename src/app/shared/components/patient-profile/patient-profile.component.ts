@@ -143,26 +143,31 @@ export class PatientProfileComponent {
     }
   }
 
-  formatTime(isoString?: string): string {
-    if (!isoString) return 'Not Yet';
+  formatTime(isoString?: string): string | null {
+    if (!isoString) return null;
     try {
       const date = new Date(isoString);
-      if (isNaN(date.getTime())) return 'Not Yet';
+      if (isNaN(date.getTime())) return null;
       return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     } catch {
-      return 'Not Yet';
+      return null;
     }
   }
 
-  formatDate(isoString?: string): string {
-    if (!isoString) return '-';
+  formatDate(isoString?: string): string | null {
+    if (!isoString) return null;
     try {
       const date = new Date(isoString);
-      if (isNaN(date.getTime())) return '-';
+      if (isNaN(date.getTime())) return null;
       return date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
     } catch {
-      return '-';
+      return null;
     }
+  }
+
+  onVisibleChange(val: boolean) {
+    this.visible = val;
+    this.visibleChange.emit(val);
   }
 
   closeModal() {

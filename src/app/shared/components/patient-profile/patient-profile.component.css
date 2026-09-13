@@ -8,9 +8,22 @@
 }
 
 .treatment-meta-box {
-  min-width: 280px;
-  background: var(--bg-surface, rgba(0, 0, 0, 0.02));
-  border-color: var(--border-color, #e2e8f0) !important;
+  min-width: 300px;
+  background-color: var(--surface-50, #f8fafc);
+  border: 1px solid var(--surface-200, #e2e8f0) !important;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.future-pending-row {
+  opacity: 0.65;
+  background-color: #fdfdfd !important;
+  transition: opacity 0.2s ease, background-color 0.2s ease;
+}
+
+.future-pending-row:hover {
+  opacity: 0.95;
+  background-color: #f9fafb !important;
 }
 
 .patient-sessions-table th {

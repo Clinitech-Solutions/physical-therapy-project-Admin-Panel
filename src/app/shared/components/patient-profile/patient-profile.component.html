@@ -1,5 +1,6 @@
 <p-dialog
-  [(visible)]="visible"
+  [visible]="visible"
+  (visibleChange)="onVisibleChange($event)"
   (onHide)="closeModal()"
   [modal]="true"
   appendTo="body"
@@ -37,23 +38,24 @@
         </div>
 
         <!-- Primary Doctor & Progress Overview -->
-        <div class="treatment-meta-box p-2 px-3 rounded border">
-          <div class="d-flex align-items-center justify-content-between gap-3">
-            <span class="small text-muted fw-semibold">
-              <i class="bi bi-person-badge me-1 text-primary"></i>{{ 'RECEPTIONIST.PRIMARY_DOCTOR' | translate }}:
+        <div class="treatment-meta-box p-3 rounded-3 border">
+          <div class="d-flex align-items-center justify-content-between gap-3 mb-2">
+            <span class="small text-muted fw-semibold d-flex align-items-center gap-1">
+              <i class="bi bi-person-badge text-primary"></i>
+              {{ 'RECEPTIONIST.PRIMARY_DOCTOR' | translate }}:
             </span>
             <span class="fw-bold text-primary small">{{ primaryDoctorName }}</span>
           </div>
 
-          <div class="mt-2">
+          <div>
             <div class="d-flex justify-content-between align-items-center small mb-1">
               <span class="text-muted fw-semibold">{{ 'RECEPTIONIST.SESSION_PROGRESS' | translate }}</span>
-              <span class="fw-bold">{{ completedSessionsCount }} / {{ totalSessions }} ({{ progressPercentage }}%)</span>
+              <span class="fw-bold text-700">{{ completedSessionsCount }} / {{ totalSessions }} ({{ progressPercentage }}%)</span>
             </div>
             <p-progressBar
               [value]="progressPercentage"
               [showValue]="false"
-              [style]="{ height: '6px', borderRadius: '4px' }">
+              [style]="{ height: '8px', borderRadius: '6px' }">
             </p-progressBar>
           </div>
         </div>
@@ -92,11 +94,9 @@
         </ng-template>
 
         <ng-template pTemplate="body" let-session let-i="rowIndex">
-          <tr>
+          <tr [ngClass]="{ 'future-pending-row': session.status === 'Pending' }">
             <td>
-              <span class="badge bg-primary bg-opacity-10 text-primary font-monospace fw-bold px-2 py-1">
-                #{{ session.sessionNumber || (i + 1) }}
-              </span>
+              <span class="font-bold text-700">#{{ session.sessionNumber || (i + 1) }}</span>
             </td>
             <td>
               <div class="d-flex align-items-center gap-2">
@@ -105,17 +105,25 @@
               </div>
             </td>
             <td>
-              <span class="text-body small">{{ formatDate(session.scheduledAt) }}</span>
+              @if (formatDate(session.scheduledAt); as dateStr) {
+                <span class="text-700 text-sm">{{ dateStr }}</span>
+              } @else {
+                <span class="text-400 text-muted">—</span>
+              }
             </td>
             <td>
-              <span class="small font-monospace" [ngClass]="session.checkInTime ? 'text-success fw-semibold' : 'text-muted'">
-                {{ session.checkInTime ? formatTime(session.checkInTime) : ('RECEPTIONIST.NOT_YET' | translate) }}
-              </span>
+              @if (session.checkInTime) {
+                <span class="text-700 font-monospace text-sm">{{ formatTime(session.checkInTime) }}</span>
+              } @else {
+                <span class="text-400 text-muted">—</span>
+              }
             </td>
             <td>
-              <span class="small font-monospace" [ngClass]="session.checkOutTime ? 'text-success fw-semibold' : 'text-muted'">
-                {{ session.checkOutTime ? formatTime(session.checkOutTime) : ('RECEPTIONIST.NOT_YET' | translate) }}
-              </span>
+              @if (session.checkOutTime) {
+                <span class="text-700 font-monospace text-sm">{{ formatTime(session.checkOutTime) }}</span>
+              } @else {
+                <span class="text-400 text-muted">—</span>
+              }
             </td>
             <td>
               @let payment = getPaymentInfo(session.id);
