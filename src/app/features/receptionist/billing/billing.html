@@ -89,8 +89,7 @@
                   icon="bi bi-credit-card"
                   severity="success" 
                   styleClass="p-button-success p-button-sm" 
-                  (onClick)="payInvoice(invoice.id)"
-                  [loading]="clinicState.isProcessingPayment()">
+                  (onClick)="openPaymentModal(invoice.id)">
                 </p-button>
               }
             </td>
@@ -107,3 +106,54 @@
     </div>
   </div>
 </div>
+
+<!-- Payment Method Modal (Standard Clean Modal) -->
+<p-dialog 
+  [(visible)]="showPaymentModal" 
+  [modal]="true" 
+  appendTo="body"
+  [draggable]="false" 
+  [resizable]="false" 
+  [closable]="true" 
+  [showHeader]="true" 
+  styleClass="clean-modal"
+  [style]="{ width: '400px' }"
+  header="Process Payment">
+
+  <div class="modal-form-vertical py-2">
+    <div class="form-group mb-3">
+      <label class="form-label mb-2">
+        Payment Method <span class="required-asterisk text-danger">*</span>
+      </label>
+      <p-dropdown 
+        [options]="paymentMethods" 
+        [(ngModel)]="selectedPaymentMethod" 
+        placeholder="Select Payment Method"
+        appendTo="body"
+        styleClass="w-100 p-select-sm">
+      </p-dropdown>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="d-flex justify-content-end gap-2 modal-footer-actions">
+      <button 
+        type="button" 
+        class="btn btn-outline-secondary btn-cancel" 
+        (click)="showPaymentModal = false">
+        Cancel
+      </button>
+      <button 
+        type="button" 
+        class="btn btn-primary" 
+        (click)="confirmPayment()"
+        [disabled]="clinicState.isProcessingPayment()">
+        @if (clinicState.isProcessingPayment()) {
+          <span class="spinner-border spinner-border-sm me-1"></span> Processing...
+        } @else {
+          Confirm Payment
+        }
+      </button>
+    </div>
+  </ng-template>
+</p-dialog>

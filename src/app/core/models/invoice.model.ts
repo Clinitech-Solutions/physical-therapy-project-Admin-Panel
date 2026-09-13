@@ -8,4 +8,5 @@ export interface Invoice {
   status: InvoiceStatus;
   type: string;
   createdAt: string; // ISO 8601
+  paymentMethod?: string;
 }

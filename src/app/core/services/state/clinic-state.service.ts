@@ -351,6 +351,24 @@ export class ClinicStateService {
 
     this.sessionsSig.update(sessions => [...sessions, newSession]);
     this.waitlistSig.update(list => list.filter(item => item.patientId !== sessionData.patientId));
+
+    // Auto-generate invoice for this session
+    let invoiceAmount = 500;
+    if (patient?.paymentType === 'Insurance' && patient.insuranceDetails?.copayPercentage != null) {
+      invoiceAmount = patient.insuranceDetails.copayPercentage;
+    }
+
+    const newInvoice: Invoice = {
+      id: `INV-${Date.now().toString().slice(-4)}`,
+      patientId: sessionData.patientId,
+      amount: invoiceAmount,
+      currency: 'EGP',
+      status: 'Pending',
+      type: sessionData.type,
+      createdAt: new Date().toISOString()
+    };
+
+    this.invoicesSig.update(invs => [newInvoice, ...invs]);
     this.isLoading.set(false);
   }
 
@@ -552,11 +570,11 @@ export class ClinicStateService {
   // Billing Logic
   // ==========================================
 
-  async processPayment(invoiceId: string) {
+  async processPayment(invoiceId: string, method?: string) {
     this.isProcessingPayment.set(true);
     await new Promise(resolve => setTimeout(resolve, 800));
     this.invoicesSig.update(invs =>
-      invs.map(inv => inv.id === invoiceId ? { ...inv, status: 'Paid' } : inv)
+      invs.map(inv => inv.id === invoiceId ? { ...inv, status: 'Paid', paymentMethod: method || 'Cash' } : inv)
     );
     this.isProcessingPayment.set(false);
   }
