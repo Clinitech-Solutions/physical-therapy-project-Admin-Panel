@@ -117,24 +117,30 @@ export class ClinicStateService {
     const sessionToUpdate = sessions.find(s => s.id === sessionId);
     
     if (!sessionToUpdate) {
-      return;
+      throw new Error('Session not found.');
     }
 
-    // Strict validation: target room must be Available and currentLoad === 0
-    const targetRoom = this.roomsSig().find(r => r.id === sessionToUpdate.roomId);
+    // Try to find target room: use session's roomId if available, otherwise find an available room
+    let targetRoom = sessionToUpdate.roomId ? this.roomsSig().find(r => r.id === sessionToUpdate.roomId) : undefined;
     if (!targetRoom || targetRoom.status !== 'Available' || targetRoom.currentLoad > 0) {
-      throw new Error('Room is not available for booking.');
+      const openRooms = this.availableRooms();
+      if (openRooms.length === 0) {
+        throw new Error('No available rooms found for check-in.');
+      }
+      targetRoom = openRooms[0];
     }
 
     this.isLoading.set(true);
     await new Promise(resolve => setTimeout(resolve, 300));
 
-    // Update Session Status
-    this.sessionsSig.update(list => list.map(s => s.id === sessionId ? { ...s, status: 'In Progress' } : s));
+    const assignedRoomId = targetRoom.id;
 
-    // 2. Update Room Status (assigned doctor from session while occupied)
+    // Update Session Status and assign room
+    this.sessionsSig.update(list => list.map(s => s.id === sessionId ? { ...s, status: 'In Progress', roomId: assignedRoomId } : s));
+
+    // 2. Update Room Status (mark Occupied, load 1, and assign doctor from session)
     this.roomsSig.update(list => list.map(r => {
-      if (r.id === sessionToUpdate.roomId) {
+      if (r.id === assignedRoomId) {
         return { ...r, currentLoad: 1, status: 'Occupied', doctorId: sessionToUpdate.doctorId };
       }
       return r;
@@ -157,15 +163,16 @@ export class ClinicStateService {
     if (sessionToUpdate) {
       this.sessionsSig.update(list => list.map(s => s.id === sessionId ? { ...s, status: 'Completed' } : s));
 
-      // Decrease Room Load and explicitly clear doctorId when room becomes Available
-      this.roomsSig.update(list => list.map(r => {
-        if (r.id === sessionToUpdate.roomId) {
-          const newLoad = Math.max(0, r.currentLoad - 1);
-          return { ...r, currentLoad: newLoad, status: 'Available', doctorId: null };
-        }
-        return r;
-      }));
-      this.saveRoomsToLocalStorage(this.roomsSig());
+      // Reset Room Status to Available, clear doctorId, and reset load to 0
+      if (sessionToUpdate.roomId) {
+        this.roomsSig.update(list => list.map(r => {
+          if (r.id === sessionToUpdate.roomId) {
+            return { ...r, currentLoad: 0, status: 'Available', doctorId: null };
+          }
+          return r;
+        }));
+        this.saveRoomsToLocalStorage(this.roomsSig());
+      }
     }
     
     this.isLoading.set(false);
@@ -173,8 +180,10 @@ export class ClinicStateService {
 
   /**
    * Absence Policy:
-   * When a doctor is absent, the Senior covers 50% of that doctor's patients (same gender only).
-   * The remaining 50% are rescheduled (marked as 'Cancelled').
+   * When a doctor is absent:
+   * 1. The Senior covers 50% (Math.ceil) of that doctor's eligible sessions today (same gender only).
+   * 2. The remaining 50% are redistributed among the other available doctors of the same gender (assigned by lowest load).
+   * 3. Fallback: ONLY if otherDoctors is empty (no other matching doctors exist), change remaining sessions to 'Cancelled' and release their rooms.
    */
   handleDoctorAbsence(absentDoctorId: string, seniorDoctorId: string): void {
     const absentDoctor = this.doctorsSig().find(d => d.id === absentDoctorId);
@@ -211,17 +220,67 @@ export class ClinicStateService {
     if (eligibleSessions.length > 0) {
       // Calculate 50% of these sessions (Math.ceil favors covering more if odd)
       const coverCount = Math.ceil(eligibleSessions.length / 2);
-      const coveredSessions = eligibleSessions.slice(0, coverCount);
-      const cancelledSessions = eligibleSessions.slice(coverCount);
+      const seniorSessions = eligibleSessions.slice(0, coverCount);
+      const remainingSessions = eligibleSessions.slice(coverCount);
 
-      const coveredIds = new Set(coveredSessions.map(s => s.id));
-      const cancelledIds = new Set(cancelledSessions.map(s => s.id));
-      const cancelledRoomIds = new Set(cancelledSessions.map(s => s.roomId).filter(Boolean));
+      // Find other doctors of the SAME gender, excluding absent doctor and senior doctor
+      const otherDoctors = this.doctorsSig().filter(
+        d => d.gender === absentDoctor.gender && d.id !== absentDoctorId && d.id !== seniorDoctorId
+      );
 
-      // Reassign first 50% to seniorDoctorId, cancel remaining 50%
+      // Helper to calculate doctor load
+      const getDoctorLoad = (doctorId: string): number => {
+        const avail = this.doctorAvailabilitySig().find(a => a.doctorId === doctorId);
+        if (avail !== undefined) {
+          return avail.currentLoad;
+        }
+        return this.sessionsSig().filter(s => s.doctorId === doctorId && s.status === 'In Progress').length;
+      };
+
+      const reassignments = new Map<string, string>(); // sessionId -> assigned doctorId
+      const cancelledIds = new Set<string>();
+      const cancelledRoomIds = new Set<string>();
+
+      // 1. Assign first 50% to seniorDoctorId
+      seniorSessions.forEach(s => {
+        reassignments.set(s.id, seniorDoctorId);
+      });
+
+      // 2. For remaining 50%: redistribute to otherDoctors or fallback to Cancelled
+      if (otherDoctors.length > 0) {
+        // Track running loads for otherDoctors to distribute to lowest load
+        const runningLoads = new Map<string, number>();
+        otherDoctors.forEach(d => {
+          runningLoads.set(d.id, getDoctorLoad(d.id));
+        });
+
+        remainingSessions.forEach(session => {
+          let lowestDoc = otherDoctors[0];
+          let minLoad = runningLoads.get(lowestDoc.id) ?? 0;
+          for (const doc of otherDoctors) {
+            const load = runningLoads.get(doc.id) ?? 0;
+            if (load < minLoad) {
+              minLoad = load;
+              lowestDoc = doc;
+            }
+          }
+          reassignments.set(session.id, lowestDoc.id);
+          runningLoads.set(lowestDoc.id, minLoad + 1);
+        });
+      } else {
+        // Fallback: ONLY if otherDoctors is empty, cancel remaining sessions
+        remainingSessions.forEach(session => {
+          cancelledIds.add(session.id);
+          if (session.roomId) {
+            cancelledRoomIds.add(session.roomId);
+          }
+        });
+      }
+
+      // Update sessions in state
       this.sessionsSig.update(list => list.map(s => {
-        if (coveredIds.has(s.id)) {
-          return { ...s, doctorId: seniorDoctorId };
+        if (reassignments.has(s.id)) {
+          return { ...s, doctorId: reassignments.get(s.id)! };
         }
         if (cancelledIds.has(s.id)) {
           return { ...s, status: 'Cancelled' as SessionStatus };
@@ -229,14 +288,16 @@ export class ClinicStateService {
         return s;
       }));
 
-      // Ensure room's doctorId is cleared if linked to a cancelled session
-      this.roomsSig.update(rooms => rooms.map(r => {
-        if (cancelledRoomIds.has(r.id) && r.doctorId === absentDoctorId) {
-          return { ...r, doctorId: null };
-        }
-        return r;
-      }));
-      this.saveRoomsToLocalStorage(this.roomsSig());
+      // Fallback: release rooms if any sessions were cancelled
+      if (cancelledRoomIds.size > 0) {
+        this.roomsSig.update(rooms => rooms.map(r => {
+          if (cancelledRoomIds.has(r.id)) {
+            return { ...r, status: 'Available' as const, currentLoad: 0, doctorId: null };
+          }
+          return r;
+        }));
+        this.saveRoomsToLocalStorage(this.roomsSig());
+      }
     }
   }
 
@@ -262,6 +323,10 @@ export class ClinicStateService {
     const patient = this.patientsSig().find(p => p.id === sessionData.patientId);
     if (patient && patient.paymentType === 'Insurance' && patient.insuranceDetails?.status !== 'Approved') {
       throw new Error('Insurance approval is pending. Cannot book sessions.');
+    }
+
+    if (this.isPatientNew(sessionData.patientId) && sessionData.type !== 'Assessment') {
+      throw new Error('New patients must complete an Assessment session first.');
     }
 
     // Strict validation: target room must be Available and currentLoad === 0
@@ -335,11 +400,13 @@ export class ClinicStateService {
 
     // b) Find available doctor matching that gender who currently has currentLoad < 2
     // If candidateDoctors is provided, search strictly within candidates
-    const sourceDoctors = candidateDoctors && candidateDoctors.length > 0 ? candidateDoctors : this.doctorsSig();
-    const matchingDoctors = sourceDoctors.filter(d => {
-      return d.gender === patientGender && getDoctorLoad(d.id) < 2;
-    });
+    const sourceDoctors = candidateDoctors !== undefined ? candidateDoctors : this.doctorsSig();
+    const doctorsOfGender = sourceDoctors.filter(d => d.gender === patientGender);
+    if (doctorsOfGender.length === 0) {
+      throw new Error(`No available ${patientGender.toLowerCase()} doctor found to treat this patient.`);
+    }
 
+    const matchingDoctors = doctorsOfGender.filter(d => getDoctorLoad(d.id) < 2);
     if (matchingDoctors.length === 0) {
       throw new Error(`No available ${patientGender.toLowerCase()} doctor found with current load under 2.`);
     }

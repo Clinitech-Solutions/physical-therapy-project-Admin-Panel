@@ -186,10 +186,99 @@ describe('BookingsComponent Logic Unit Tests', () => {
 
       expect(messageAdded).toBeTruthy();
       expect(messageAdded.severity).toBe('success');
-      expect(messageAdded.detail).toBe('Absence recorded. 50% of sessions reassigned, remainder cancelled.');
+      expect(messageAdded.detail).toBe('Absence recorded. 50% of sessions reassigned to Senior, remainder distributed to available doctors.');
       expect(component.showAbsenceModal).toBe(false);
       expect(component.absentDoctorId).toBeNull();
       expect(component.coveringSeniorId).toBeNull();
+    });
+
+    it('should show error toast if confirmAbsence is called with invalid doctors', () => {
+      component.absentDoctorId = 'doc_1'; // Female
+      component.coveringSeniorId = 'doc_2'; // Male
+
+      let messageAdded: any = null;
+      messageService.add = (msg: any) => {
+        messageAdded = msg;
+      };
+
+      component.confirmAbsence();
+
+      expect(messageAdded).toBeTruthy();
+      expect(messageAdded.severity).toBe('error');
+      expect(messageAdded.summary).toBe('Absence Error');
+    });
+  });
+
+  describe('Insurance & Booking Gates (The Gates)', () => {
+    it('should block booking and show error toast when Insurance patient has Pending status (Patient 7)', async () => {
+      component.onPatientChange('7'); // Patient 7: Insurance pending
+      expect(component.isInsurancePending).toBe(true);
+
+      let messageAdded: any = null;
+      messageService.add = (msg: any) => {
+        messageAdded = msg;
+      };
+
+      // Walk-in attempt
+      component.handleWalkInNearestSlot();
+      expect(messageAdded).toBeTruthy();
+      expect(messageAdded.severity).toBe('error');
+      expect(messageAdded.detail).toBe('Insurance approval is pending. Cannot book sessions.');
+
+      // Submit booking attempt
+      messageAdded = null;
+      component.selectedDoctorId = 'doc_2';
+      component.selectedRoomId = 'room_1';
+      component.scheduledDate = new Date();
+
+      await component.submitBooking();
+      expect(messageAdded).toBeTruthy();
+      expect(messageAdded.severity).toBe('error');
+      expect(messageAdded.detail).toBe('Insurance approval is pending. Cannot book sessions.');
+    });
+
+    it('should allow booking for Approved Insurance patient (Patient 2 - Mona Zaki)', async () => {
+      component.onPatientChange('2'); // Patient 2: Female, Insurance Approved
+      expect(component.isInsurancePending).toBe(false);
+      expect(component.isNewPatient).toBe(false);
+
+      // Choose female doctor and available room
+      component.sessionType = 'Session';
+      component.selectedDoctorId = 'doc_1'; // Dr. Sarah (Female)
+      const openRoom = component.availableRooms()[0];
+      component.selectedRoomId = openRoom.id;
+      component.scheduledDate = new Date('2026-09-15T14:00:00');
+
+      let messageAdded: any = null;
+      messageService.add = (msg: any) => {
+        messageAdded = msg;
+      };
+
+      await component.submitBooking();
+      expect(messageAdded).toBeTruthy();
+      expect(messageAdded.severity).toBe('success');
+      expect(messageAdded.summary).toBe('Booking Successful');
+    });
+
+    it('should allow old patient to book standard Session', async () => {
+      component.onPatientChange('1'); // Patient 1: Male, Cash, Existing
+      expect(component.isNewPatient).toBe(false);
+
+      component.sessionType = 'Session';
+      component.selectedDoctorId = 'doc_2'; // Dr. Omar (Male)
+      const openRoom = component.availableRooms()[0];
+      component.selectedRoomId = openRoom.id;
+      component.scheduledDate = new Date('2026-09-15T15:00:00');
+
+      let messageAdded: any = null;
+      messageService.add = (msg: any) => {
+        messageAdded = msg;
+      };
+
+      await component.submitBooking();
+      expect(messageAdded).toBeTruthy();
+      expect(messageAdded.severity).toBe('success');
+      expect(messageAdded.detail).toContain('Session booked');
     });
   });
 });

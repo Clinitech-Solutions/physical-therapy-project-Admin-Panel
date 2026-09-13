@@ -20,6 +20,11 @@
             <i class="bi bi-shield-check me-1"></i> Assessment First: Initial Assessment Required
           </span>
         }
+        @if (isInsurancePending) {
+          <span class="badge bg-danger bg-opacity-10 text-danger border border-danger px-2 py-1 rounded-pill" style="font-size: 0.72rem;">
+            <i class="bi bi-exclamation-octagon-fill me-1"></i> Insurance Approval Pending: Booking Blocked
+          </span>
+        }
         <p-button icon="pi pi-user-minus" label="Report Absence" severity="danger" [outlined]="true" (onClick)="showAbsenceModal = true"></p-button>
       </div>
     </div>
@@ -188,7 +193,7 @@
             type="button" 
             class="btn btn-warning btn-sm fw-semibold px-3 d-flex align-items-center shadow-sm" 
             (click)="handleWalkInNearestSlot()"
-            [disabled]="!selectedPatientId">
+            [disabled]="!selectedPatientId || isInsurancePending">
             <i class="bi bi-lightning-charge-fill me-1"></i> Find Nearest Slot (Walk-in)
           </button>
           
@@ -196,7 +201,7 @@
             type="button" 
             class="btn btn-primary btn-sm fw-semibold px-4 d-flex align-items-center shadow-sm" 
             (click)="submitBooking()"
-            [disabled]="isLoading() || !selectedPatientId || !selectedDoctorId || !selectedRoomId || !scheduledDate">
+            [disabled]="isLoading() || !selectedPatientId || !selectedDoctorId || !selectedRoomId || !scheduledDate || isInsurancePending">
             @if (isLoading()) {
               <span class="spinner-border spinner-border-sm me-1"></span>
               {{ 'RECEPTIONIST.PROCESSING' | translate }}
@@ -363,6 +368,7 @@
 <p-dialog 
   [(visible)]="showAbsenceModal" 
   [modal]="true" 
+  appendTo="body"
   [draggable]="false" 
   [resizable]="false" 
   [closable]="true" 

@@ -126,7 +126,7 @@ export class BookingsComponent {
       this.messageService.add({
         severity: 'success',
         summary: 'Absence Recorded',
-        detail: 'Absence recorded. 50% of sessions reassigned, remainder cancelled.'
+        detail: 'Absence recorded. 50% of sessions reassigned to Senior, remainder distributed to available doctors.'
       });
       this.closeAbsenceModal();
     } catch (error: any) {
@@ -151,6 +151,10 @@ export class BookingsComponent {
 
   get selectedPatient(): Patient | undefined {
     return this.allPatients().find(p => p.id === this.selectedPatientId);
+  }
+
+  get isInsurancePending(): boolean {
+    return this.selectedPatient?.paymentType === 'Insurance' && this.selectedPatient?.insuranceDetails?.status !== 'Approved';
   }
 
   /**
@@ -195,6 +199,15 @@ export class BookingsComponent {
       return;
     }
 
+    if (this.isInsurancePending) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Insurance Pending',
+        detail: 'Insurance approval is pending. Cannot book sessions.'
+      });
+      return;
+    }
+
     const eligibleDoctors = this.filteredDoctors;
     if (!eligibleDoctors || eligibleDoctors.length === 0) {
       const patientGender = this.clinicState.getPatientGender(this.selectedPatientId);
@@ -233,6 +246,14 @@ export class BookingsComponent {
   async submitBooking() {
     if (!this.selectedPatientId) {
       this.messageService.add({ severity: 'error', summary: 'Validation Error', detail: 'Please select a patient.' });
+      return;
+    }
+    if (this.isInsurancePending) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Insurance Pending',
+        detail: 'Insurance approval is pending. Cannot book sessions.'
+      });
       return;
     }
     if (!this.selectedDoctorId) {

@@ -145,8 +145,8 @@ describe('ClinicStateService Business Rules & Date Filtering Unit Tests', () => 
       expect(room2?.doctorId).toBeNull();
     });
 
-    it('should properly split even number of sessions (e.g. 2 sessions -> 1 covered, 1 cancelled)', () => {
-      // Male doctors: doc_4 (absent) and doc_2 (senior)
+    it('should properly split even number of sessions (e.g. 2 sessions -> 1 covered by senior, 1 redistributed to other doctor)', () => {
+      // Male doctors: doc_4 (absent) and doc_2 (senior). doc_5 is available
       const today = new Date().toISOString().split('T')[0];
 
       const testSessions = [
@@ -166,8 +166,9 @@ describe('ClinicStateService Business Rules & Date Filtering Unit Tests', () => 
       expect(s1?.doctorId).toBe('doc_2');
       expect(s1?.status).toBe('Confirmed');
 
-      // Second 50% (1) cancelled
-      expect(s2?.status).toBe('Cancelled');
+      // Second 50% (1) redistributed to other doctor of same gender (doc_5)
+      expect(s2?.doctorId).toBe('doc_5');
+      expect(s2?.status).toBe('Pending');
     });
 
     it('should ignore In Progress or Completed sessions when handling absence', () => {
@@ -236,6 +237,227 @@ describe('ClinicStateService Business Rules & Date Filtering Unit Tests', () => 
     it('should allow booking for non-insurance patients (Cash, Online)', async () => {
       const slot = service.findNearestSlot('5');
       expect(slot).toBeDefined();
+    });
+
+    it('should strictly throw error when a new patient attempts to book a standard Session instead of Assessment', async () => {
+      // Patient 5 is a new patient
+      expect(service.isPatientNew('5')).toBe(true);
+
+      const openRoom = service.availableRooms()[0];
+      await expect(service.addSession({
+        patientId: '5',
+        doctorId: 'doc_2',
+        roomId: openRoom.id,
+        scheduledAt: '2026-09-14T11:00:00',
+        type: 'Session'
+      })).rejects.toThrow('New patients must complete an Assessment session first.');
+    });
+
+    it('should allow a new patient to book an Assessment session', async () => {
+      expect(service.isPatientNew('5')).toBe(true);
+
+      const openRoom = service.availableRooms()[0];
+      const initialCount = service.sessions().length;
+      await service.addSession({
+        patientId: '5',
+        doctorId: 'doc_2',
+        roomId: openRoom.id,
+        scheduledAt: '2026-09-14T11:00:00',
+        type: 'Assessment'
+      });
+      expect(service.sessions().length).toBe(initialCount + 1);
+    });
+
+    it('should allow an existing/old patient to book a standard Session', async () => {
+      // Patient 1 is an existing patient
+      expect(service.isPatientNew('1')).toBe(false);
+
+      const openRoom = service.availableRooms()[0];
+      const initialCount = service.sessions().length;
+      await service.addSession({
+        patientId: '1',
+        doctorId: 'doc_2',
+        roomId: openRoom.id,
+        scheduledAt: '2026-09-14T12:00:00',
+        type: 'Session'
+      });
+      expect(service.sessions().length).toBe(initialCount + 1);
+    });
+  });
+
+  describe('Gender Matching & Slot Finding Edge Cases', () => {
+    it('should throw clear error if candidateDoctors has no doctors of the matching gender', () => {
+      // Patient 5 is Male. Candidate doctors list contains only female doctors.
+      const femaleOnlyDoctors = service.doctors().filter(d => d.gender === 'Female');
+      expect(() => service.findNearestSlot('5', femaleOnlyDoctors))
+        .toThrow('No available male doctor found to treat this patient.');
+    });
+
+    it('should throw clear error if all doctors of the matching gender have currentLoad >= 2', () => {
+      // Temporarily mark all Male doctors with high load in doctorAvailability
+      (service as any).doctorAvailabilitySig.set([
+        { doctorId: 'doc_2', currentLoad: 2, maxLoad: 3 },
+        { doctorId: 'doc_4', currentLoad: 2, maxLoad: 3 },
+        { doctorId: 'doc_5', currentLoad: 3, maxLoad: 3 },
+      ]);
+
+      expect(() => service.findNearestSlot('5'))
+        .toThrow('No available male doctor found with current load under 2.');
+    });
+  });
+
+  describe('Session Lifecycle & Room Synchronization', () => {
+    it('should successfully check in a patient: marks room Occupied, currentLoad 1, assigns doctorId, sets session In Progress', async () => {
+      // Ensure room_1 is Available with currentLoad 0
+      (service as any).roomsSig.update((rooms: any[]) => rooms.map(r => r.id === 'room_1' ? { ...r, status: 'Available', currentLoad: 0, doctorId: null } : r));
+
+      const today = new Date().toISOString().split('T')[0];
+      const newSession = {
+        id: 'test_checkin_1',
+        patientId: '1',
+        doctorId: 'doc_2',
+        roomId: 'room_1',
+        scheduledAt: `${today}T10:00:00`,
+        status: 'Confirmed' as const,
+        type: 'Session' as const
+      };
+      (service as any).sessionsSig.update((list: any[]) => [...list, newSession]);
+
+      await service.checkInPatient('test_checkin_1');
+
+      const updatedSession = service.sessions().find(s => s.id === 'test_checkin_1');
+      expect(updatedSession?.status).toBe('In Progress');
+
+      const room = service.rooms().find(r => r.id === 'room_1');
+      expect(room?.status).toBe('Occupied');
+      expect(room?.currentLoad).toBe(1);
+      expect(room?.doctorId).toBe('doc_2');
+    });
+
+    it('should successfully check out a patient: sets session Completed, resets room to Available, currentLoad 0, clears doctorId', async () => {
+      // Ensure room_1 is Occupied by doc_2
+      (service as any).roomsSig.update((rooms: any[]) => rooms.map(r => r.id === 'room_1' ? { ...r, status: 'Occupied', currentLoad: 1, doctorId: 'doc_2' } : r));
+
+      const today = new Date().toISOString().split('T')[0];
+      const inProgressSession = {
+        id: 'test_checkout_1',
+        patientId: '1',
+        doctorId: 'doc_2',
+        roomId: 'room_1',
+        scheduledAt: `${today}T10:00:00`,
+        status: 'In Progress' as const,
+        type: 'Session' as const
+      };
+      (service as any).sessionsSig.update((list: any[]) => [...list, inProgressSession]);
+
+      await service.checkOutPatient('test_checkout_1');
+
+      const updatedSession = service.sessions().find(s => s.id === 'test_checkout_1');
+      expect(updatedSession?.status).toBe('Completed');
+
+      const room = service.rooms().find(r => r.id === 'room_1');
+      expect(room?.status).toBe('Available');
+      expect(room?.currentLoad).toBe(0);
+      expect(room?.doctorId).toBeNull();
+    });
+
+    it('should throw an error on check-in if 0 rooms are Available', async () => {
+      // Set all rooms to Occupied or Maintenance
+      (service as any).roomsSig.update((rooms: any[]) => rooms.map(r => ({ ...r, status: 'Occupied', currentLoad: 1 })));
+
+      const newSession = {
+        id: 'test_no_room',
+        patientId: '1',
+        doctorId: 'doc_2',
+        roomId: 'room_1',
+        scheduledAt: new Date().toISOString(),
+        status: 'Confirmed' as const,
+        type: 'Session' as const
+      };
+      (service as any).sessionsSig.update((list: any[]) => [...list, newSession]);
+
+      await expect(service.checkInPatient('test_no_room'))
+        .rejects.toThrow('No available rooms found for check-in.');
+    });
+  });
+
+  describe('Doctor Absence: 5-Session Redistribution to Senior and Other Doctors', () => {
+    it('SUCCESS: 50% Redistribution. If a doctor has 5 pending sessions, exactly 3 (Math.ceil) are reassigned to the Senior (doc_2), and 2 to the other available doctor (doc_5) with no cancellations', () => {
+      const today = new Date().toISOString().split('T')[0];
+
+      // Prepare 5 sessions for doc_4 (Male):
+      const fiveSessions = [
+        { id: 's1', scheduledAt: `${today}T09:00:00`, patientId: '1', doctorId: 'doc_4', roomId: 'room_1', status: 'Pending' as const, type: 'Session' as const },
+        { id: 's2', scheduledAt: `${today}T10:00:00`, patientId: '3', doctorId: 'doc_4', roomId: 'room_2', status: 'Confirmed' as const, type: 'Session' as const },
+        { id: 's3', scheduledAt: `${today}T11:00:00`, patientId: '5', doctorId: 'doc_4', roomId: 'room_3', status: 'Pending' as const, type: 'Assessment' as const },
+        { id: 's4', scheduledAt: `${today}T12:00:00`, patientId: '1', doctorId: 'doc_4', roomId: 'room_4', status: 'Confirmed' as const, type: 'Session' as const },
+        { id: 's5', scheduledAt: `${today}T13:00:00`, patientId: '3', doctorId: 'doc_4', roomId: 'room_5', status: 'Pending' as const, type: 'Session' as const },
+      ];
+
+      const otherSessions = service.sessions().filter(s => s.doctorId !== 'doc_4');
+      (service as any).sessionsSig.set([...otherSessions, ...fiveSessions]);
+
+      // Call handleDoctorAbsence: doc_4 absent, doc_2 senior (both Male). doc_5 is the other Male doctor.
+      service.handleDoctorAbsence('doc_4', 'doc_2');
+
+      const updated = service.sessions().filter(s => ['s1', 's2', 's3', 's4', 's5'].includes(s.id));
+
+      // Exactly 3 (Math.ceil(5/2)) reassigned to senior doc_2
+      const seniorReassigned = updated.filter(s => s.doctorId === 'doc_2');
+      expect(seniorReassigned.length).toBe(3);
+      expect(seniorReassigned.map(s => s.id)).toEqual(['s1', 's2', 's3']);
+
+      // Remaining 2 reassigned to other available doctor of same gender (doc_5)
+      const otherReassigned = updated.filter(s => s.doctorId === 'doc_5');
+      expect(otherReassigned.length).toBe(2);
+      expect(otherReassigned.map(s => s.id)).toEqual(['s4', 's5']);
+
+      // Ensure NO sessions are marked as 'Cancelled'
+      const cancelled = updated.filter(s => s.status === 'Cancelled');
+      expect(cancelled.length).toBe(0);
+    });
+
+    it('FALLBACK: When no other doctors of same gender exist, remaining sessions are marked as Cancelled and their rooms released', () => {
+      // Female doctors in mock-db: only doc_1 and doc_3 exist (otherDoctors is empty)
+      const today = new Date().toISOString().split('T')[0];
+
+      const femaleSessions = [
+        { id: 'f1', scheduledAt: `${today}T09:00:00`, patientId: '2', doctorId: 'doc_1', roomId: 'room_2', status: 'Confirmed' as const, type: 'Session' as const },
+        { id: 'f2', scheduledAt: `${today}T10:00:00`, patientId: '4', doctorId: 'doc_1', roomId: 'room_5', status: 'Pending' as const, type: 'Session' as const },
+        { id: 'f3', scheduledAt: `${today}T11:00:00`, patientId: '6', doctorId: 'doc_1', roomId: 'room_4', status: 'Confirmed' as const, type: 'Assessment' as const },
+      ];
+
+      // Pre-set room_4 as Occupied with doc_1 to verify room release
+      (service as any).roomsSig.update((rooms: any[]) => rooms.map(r => {
+        if (r.id === 'room_4') {
+          return { ...r, status: 'Occupied', currentLoad: 1, doctorId: 'doc_1' };
+        }
+        return r;
+      }));
+
+      const otherSessions = service.sessions().filter(s => s.doctorId !== 'doc_1');
+      (service as any).sessionsSig.set([...otherSessions, ...femaleSessions]);
+
+      // Call handleDoctorAbsence: doc_1 absent, doc_3 senior. otherDoctors for Female is empty.
+      service.handleDoctorAbsence('doc_1', 'doc_3');
+
+      const updated = service.sessions().filter(s => ['f1', 'f2', 'f3'].includes(s.id));
+
+      // Math.ceil(3/2) = 2 to senior doc_3
+      const seniorReassigned = updated.filter(s => s.doctorId === 'doc_3');
+      expect(seniorReassigned.length).toBe(2);
+      expect(seniorReassigned.map(s => s.id)).toEqual(['f1', 'f2']);
+
+      // Remaining 1 Cancelled due to empty otherDoctors
+      const cancelled = updated.filter(s => s.status === 'Cancelled');
+      expect(cancelled.length).toBe(1);
+      expect(cancelled[0].id).toBe('f3');
+
+      // Room linked to cancelled session (room_4) is released
+      const room4 = service.rooms().find(r => r.id === 'room_4');
+      expect(room4?.status).toBe('Available');
+      expect(room4?.currentLoad).toBe(0);
+      expect(room4?.doctorId).toBeNull();
     });
   });
 });
