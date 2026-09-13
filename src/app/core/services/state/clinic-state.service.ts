@@ -189,7 +189,7 @@ export class ClinicStateService {
     const assignedRoomId = targetRoom.id;
 
     // Update Session Status and assign room
-    this.sessionsSig.update(list => list.map(s => s.id === sessionId ? { ...s, status: 'In Progress', roomId: assignedRoomId } : s));
+    this.sessionsSig.update(list => list.map(s => s.id === sessionId ? { ...s, status: 'In Progress', roomId: assignedRoomId, checkInTime: new Date().toISOString() } : s));
 
     // 2. Update Room Status (mark Occupied, load 1, and assign doctor from session)
     this.roomsSig.update(list => list.map(r => {
@@ -219,7 +219,7 @@ export class ClinicStateService {
     const sessionToUpdate = sessions.find(s => s.id === sessionId);
     
     if (sessionToUpdate) {
-      this.sessionsSig.update(list => list.map(s => s.id === sessionId ? { ...s, status: 'Completed' } : s));
+      this.sessionsSig.update(list => list.map(s => s.id === sessionId ? { ...s, status: 'Completed', checkOutTime: new Date().toISOString() } : s));
 
       // Reset Room Status to Available, clear doctorId, and reset load to 0
       if (sessionToUpdate.roomId) {
@@ -667,51 +667,88 @@ export class ClinicStateService {
   // UI Helper Methods (ID to Name Resolution)
   // ==========================================
 
-  getPatientName(id: string | null): string {
+  getPatientName(id?: string | null): string {
     if (!id) return 'Unknown Patient';
     const p = this.patientsSig().find(x => x.id === id);
     return p ? p.nameEn : 'Unknown Patient';
   }
 
-  getPatientGender(id: string | null): 'Male' | 'Female' | '' {
+  getPatientGender(id?: string | null): 'Male' | 'Female' | '' {
     if (!id) return '';
     const p = this.patientsSig().find(x => x.id === id);
     return p ? p.gender : '';
   }
 
-  getPatientAvatar(id: string | null): string {
+  getPatientAvatar(id?: string | null): string {
     if (!id) return '';
     const p = this.patientsSig().find(x => x.id === id);
     return p ? p.avatar : '';
   }
 
-  getPatientPhone(id: string | null): string {
+  getPatientPhone(id?: string | null): string {
     if (!id) return '';
     const p = this.patientsSig().find(x => x.id === id);
     return p ? p.phone : '';
   }
 
-  getDoctorName(id: string | null): string {
+  getDoctorName(id?: string | null): string {
     if (!id) return 'Unassigned';
     const d = this.doctorsSig().find(x => x.id === id);
     return d ? d.name : 'Unassigned';
   }
 
-  getDoctorGender(id: string | null): string {
+  getDoctorGender(id?: string | null): string {
     if (!id) return '';
     const d = this.doctorsSig().find(x => x.id === id);
     return d ? d.gender : '';
   }
 
-  getRoomName(id: string | null): string {
+  getRoomName(id?: string | null): string {
     if (!id) return 'No Room';
     const r = this.roomsSig().find(x => x.id === id);
     return r ? r.displayName : 'No Room';
   }
 
-  getRoomCapacity(id: string | null): number {
+  getRoomCapacity(id?: string | null): number {
     if (!id) return 0;
     const r = this.roomsSig().find(x => x.id === id);
     return r ? r.capacity : 0;
+  }
+
+  getPatientProgressBadge(patientId: string, sessionId: string): string {
+    const patient = this.patientsSig().find(p => p.id === patientId);
+    const session = this.sessionsSig().find(s => s.id === sessionId);
+
+    const totalSessions = patient?.treatmentPlan?.totalSessions || patient?.insuranceDetails?.approvedSessions;
+    const sessionNum = session?.sessionNumber;
+
+    if (sessionNum && totalSessions) {
+      return `Session ${sessionNum} of ${totalSessions}`;
+    }
+
+    if (session?.packageAlert) {
+      return session.packageAlert;
+    }
+
+    if (totalSessions) {
+      return `Session 1 of ${totalSessions}`;
+    }
+
+    return '';
+  }
+
+  getPatientById(id: string | null): Patient | undefined {
+    if (!id) return undefined;
+    return this.patientsSig().find(p => p.id === id);
+  }
+
+  getSessionsByPatientId(patientId: string): Session[] {
+    return this.sessionsSig()
+      .filter(s => s.patientId === patientId)
+      .sort((a, b) => (a.sessionNumber || 0) - (b.sessionNumber || 0));
+  }
+
+  getSessionInvoice(sessionId: string): Invoice | undefined {
+    return this.invoicesSig().find(inv => inv.sessionId === sessionId);
   }
 }

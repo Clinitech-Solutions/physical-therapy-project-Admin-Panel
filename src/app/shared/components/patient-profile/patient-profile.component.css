@@ -1,0 +1,20 @@
+:host ::ng-deep .patient-profile-modal .p-dialog-content {
+  padding: 1.25rem 1.5rem 1.5rem 1.5rem;
+}
+
+:host ::ng-deep .patient-profile-modal .p-dialog-header {
+  padding: 1.25rem 1.5rem 1rem 1.5rem;
+  border-bottom: 1px solid var(--border-color, #e2e8f0);
+}
+
+.treatment-meta-box {
+  min-width: 280px;
+  background: var(--bg-surface, rgba(0, 0, 0, 0.02));
+  border-color: var(--border-color, #e2e8f0) !important;
+}
+
+.patient-sessions-table th {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}

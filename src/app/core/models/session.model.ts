@@ -3,11 +3,14 @@ export type SessionType = 'Session' | 'Assessment';
 
 export interface Session {
   id: string;
-  scheduledAt: string; // ISO 8601 format
+  scheduledAt?: string; // ISO 8601 format
   patientId: string;
   doctorId: string;
-  roomId: string;
+  roomId?: string;
   status: SessionStatus;
   type: SessionType;
   packageAlert?: string;
+  sessionNumber?: number;
+  checkInTime?: string;
+  checkOutTime?: string;
 }

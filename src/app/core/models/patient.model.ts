@@ -24,6 +24,10 @@ export interface Patient {
     idCard: boolean;
   };
   insuranceDetails?: InsuranceDetails;
+  treatmentPlan?: {
+    totalSessions: number;
+    primaryDoctorId: string;
+  };
 }
 
 export interface NewPatient {

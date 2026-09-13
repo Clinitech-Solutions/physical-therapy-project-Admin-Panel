@@ -13,6 +13,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { Session, SessionType } from '../../../core/models/session.model';
 import { Doctor } from '../../../core/models/doctor.model';
 import { Patient } from '../../../core/models/patient.model';
+import { PatientProfileComponent } from '../../../shared/components/patient-profile/patient-profile.component';
 
 @Component({
   selector: "app-receptionist-bookings",
@@ -26,7 +27,8 @@ import { Patient } from '../../../core/models/patient.model';
     DialogModule,
     SelectButtonModule,
     ButtonModule,
-    TooltipModule
+    TooltipModule,
+    PatientProfileComponent
   ],
   templateUrl: "./bookings.html",
   styleUrls: ["./bookings.css"]
@@ -44,6 +46,15 @@ export class BookingsComponent {
   allDoctors = this.clinicState.doctors;
   allRooms = this.clinicState.rooms;
   availableRooms = this.clinicState.availableRooms;
+
+  // Patient Profile Modal
+  selectedProfilePatientId = signal<string | null>(null);
+  showProfileModal = signal<boolean>(false);
+
+  openPatientProfile(patientId: string) {
+    this.selectedProfilePatientId.set(patientId);
+    this.showProfileModal.set(true);
+  }
 
   // Unified Booking State Variables
   selectedPatientId: string = '';
@@ -375,7 +386,8 @@ export class BookingsComponent {
     '08:00 AM', '09:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '01:00 PM', '02:00 PM', '03:00 PM'
   ];
 
-  formatTime(isoString: string) {
+  formatTime(isoString?: string) {
+    if (!isoString) return '-';
     try {
       return new Date(isoString).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
     } catch {
@@ -420,6 +432,7 @@ export class BookingsComponent {
 
     const grid: { time: string; sessions: Session[] }[] = this.timeSlots.map(t => ({ time: t, sessions: [] }));
     filtered.forEach(session => {
+      if (!session.scheduledAt) return;
       let slot = grid.find(g => g.time === this.formatTime(session.scheduledAt));
       if (!slot) {
         // Match to the corresponding hour bucket (e.g. 09:30 AM maps into 09:00 AM slot)

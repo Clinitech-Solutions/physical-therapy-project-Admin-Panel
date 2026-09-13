@@ -15,7 +15,18 @@ const pastDate = pastDateObj.toISOString().split('T')[0];
 
 export const mockPatients: Patient[] = [
   // --- مرضى قدامى (لهم تاريخ تقييم سابق) ---
-  { id: '1', nameEn: 'Ahmed Fathy', nameAr: 'أحمد فتحي', avatar: 'AF', gender: 'Male', phone: '+201012345671', paymentType: 'Cash', lastVisit: `${pastDate}T00:00:00Z`, documents: { medicalConsent: true, liabilityWaiver: true, idCard: true } },
+  { 
+    id: '1', 
+    nameEn: 'Ahmed Fathy', 
+    nameAr: 'أحمد فتحي', 
+    avatar: 'AF', 
+    gender: 'Male', 
+    phone: '+201012345671', 
+    paymentType: 'Cash', 
+    lastVisit: `${pastDate}T00:00:00Z`, 
+    documents: { medicalConsent: true, liabilityWaiver: true, idCard: true },
+    treatmentPlan: { totalSessions: 10, primaryDoctorId: 'doc_2' }
+  },
   { 
     id: '2', 
     nameEn: 'Mona Zaki', 
@@ -68,7 +79,7 @@ export const mockSessions: Session[] = [
   // ==========================================
   // 1. التاريخ القديم (Assessment History) - لا تظهر في جدول اليوم
   // ==========================================
-  { id: 'hist_1', scheduledAt: `${pastDate}T10:00:00`, patientId: '1', doctorId: 'doc_4', roomId: 'room_1', status: 'Completed', type: 'Assessment' },
+  { id: 'hist_1', scheduledAt: `${pastDate}T10:00:00`, patientId: '1', doctorId: 'doc_4', roomId: 'room_1', status: 'Completed', type: 'Assessment', sessionNumber: 1, checkInTime: `${pastDate}T09:55:00Z`, checkOutTime: `${pastDate}T10:45:00Z` },
   { id: 'hist_2', scheduledAt: `${pastDate}T11:00:00`, patientId: '2', doctorId: 'doc_3', roomId: 'room_2', status: 'Completed', type: 'Assessment' },
   { id: 'hist_3', scheduledAt: `${pastDate}T12:00:00`, patientId: '3', doctorId: 'doc_5', roomId: 'room_3', status: 'Completed', type: 'Assessment' },
   { id: 'hist_4', scheduledAt: `${pastDate}T13:00:00`, patientId: '4', doctorId: 'doc_1', roomId: 'room_5', status: 'Completed', type: 'Assessment' },
@@ -78,7 +89,7 @@ export const mockSessions: Session[] = [
   // ==========================================
 
   // جلسات جارية الآن (تطابق مع الغرف المشغولة 1 و 2)
-  { id: '1', scheduledAt: `${today}T09:00:00`, patientId: '1', doctorId: 'doc_2', roomId: 'room_1', status: 'In Progress', type: 'Session', packageAlert: 'Session 3 of 10' },
+  { id: '1', scheduledAt: `${today}T09:00:00`, patientId: '1', doctorId: 'doc_2', roomId: 'room_1', status: 'In Progress', type: 'Session', sessionNumber: 3, checkInTime: `${today}T08:58:00Z` },
   { id: '2', scheduledAt: `${today}T09:30:00`, patientId: '2', doctorId: 'doc_1', roomId: 'room_2', status: 'In Progress', type: 'Session', packageAlert: 'Session 1 of 5' },
 
   // جلسات قادمة لمرضى قدامى (Sessions)
@@ -90,12 +101,23 @@ export const mockSessions: Session[] = [
   { id: '6', scheduledAt: `${today}T14:00:00`, patientId: '6', doctorId: 'doc_1', roomId: 'room_5', status: 'Pending', type: 'Assessment' },
 
   // جلسة انتهت اليوم صباحاً
-  { id: '7', scheduledAt: `${today}T08:00:00`, patientId: '1', doctorId: 'doc_2', roomId: 'room_3', status: 'Completed', type: 'Session' },
+  { id: '7', scheduledAt: `${today}T08:00:00`, patientId: '1', doctorId: 'doc_2', roomId: 'room_3', status: 'Completed', type: 'Session', sessionNumber: 2, checkInTime: `${today}T07:55:00Z`, checkOutTime: `${today}T08:50:00Z` },
+
+  // ==========================================
+  // 3. جلسات مستقبلية (Placeholder Sessions للمريض أحمد فتحي حتى الجلسة 10)
+  // ==========================================
+  { id: 'p1_s4', patientId: '1', doctorId: 'doc_2', status: 'Pending', type: 'Session', sessionNumber: 4 },
+  { id: 'p1_s5', patientId: '1', doctorId: 'doc_2', status: 'Pending', type: 'Session', sessionNumber: 5 },
+  { id: 'p1_s6', patientId: '1', doctorId: 'doc_2', status: 'Pending', type: 'Session', sessionNumber: 6 },
+  { id: 'p1_s7', patientId: '1', doctorId: 'doc_2', status: 'Pending', type: 'Session', sessionNumber: 7 },
+  { id: 'p1_s8', patientId: '1', doctorId: 'doc_2', status: 'Pending', type: 'Session', sessionNumber: 8 },
+  { id: 'p1_s9', patientId: '1', doctorId: 'doc_2', status: 'Pending', type: 'Session', sessionNumber: 9 },
+  { id: 'p1_s10', patientId: '1', doctorId: 'doc_2', status: 'Pending', type: 'Session', sessionNumber: 10 },
 ];
 
 export const mockInvoices: Invoice[] = [
   // فواتير الجلسات التاريخية (Historical Sessions)
-  { id: 'INV-H01', sessionId: 'hist_1', patientId: '1', amount: 500, currency: 'EGP', status: 'Pending', type: 'Assessment', createdAt: `${pastDate}T10:00:00Z` },
+  { id: 'INV-H01', sessionId: 'hist_1', patientId: '1', amount: 500, currency: 'EGP', status: 'Paid', type: 'Assessment', createdAt: `${pastDate}T10:00:00Z` },
   { id: 'INV-H02', sessionId: 'hist_2', patientId: '2', amount: 20, currency: 'EGP', status: 'Pending', type: 'Assessment', createdAt: `${pastDate}T11:00:00Z` },
   { id: 'INV-H03', sessionId: 'hist_3', patientId: '3', amount: 500, currency: 'EGP', status: 'Pending', type: 'Assessment', createdAt: `${pastDate}T12:00:00Z` },
   { id: 'INV-H04', sessionId: 'hist_4', patientId: '4', amount: 500, currency: 'EGP', status: 'Pending', type: 'Assessment', createdAt: `${pastDate}T13:00:00Z` },
@@ -107,7 +129,7 @@ export const mockInvoices: Invoice[] = [
   { id: 'INV-1004', sessionId: '4', patientId: '4', amount: 500, currency: 'EGP', status: 'Pending', type: 'Session', createdAt: `${today}T12:00:00Z` },
   { id: 'INV-1005', sessionId: '5', patientId: '5', amount: 500, currency: 'EGP', status: 'Pending', type: 'Assessment', createdAt: `${today}T13:30:00Z` },
   { id: 'INV-1006', sessionId: '6', patientId: '6', amount: 500, currency: 'EGP', status: 'Pending', type: 'Assessment', createdAt: `${today}T14:00:00Z` },
-  { id: 'INV-1007', sessionId: '7', patientId: '1', amount: 500, currency: 'EGP', status: 'Pending', type: 'Session', createdAt: `${today}T08:00:00Z` }
+  { id: 'INV-1007', sessionId: '7', patientId: '1', amount: 500, currency: 'EGP', status: 'Paid', type: 'Session', createdAt: `${today}T08:00:00Z` }
 ];
 
 export const mockDoctorAvailability: DoctorAvailability[] = [

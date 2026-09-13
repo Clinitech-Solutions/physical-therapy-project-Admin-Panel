@@ -84,10 +84,12 @@
             <td>
               <div class="d-flex align-items-center gap-2">
                 <div class="avatar avatar-sm">{{ clinicState.getPatientAvatar(session.patientId) }}</div>
-                <span class="fw-semibold">{{ clinicState.getPatientName(session.patientId) }}</span>
-                @if(session.packageAlert) {
-                <span class="badge badge-warning" title="Insurance Package Alert">
-                  <i class="bi bi-exclamation-triangle-fill"></i> {{ session.packageAlert }}
+                <span class="fw-semibold text-primary-hover" role="button" (click)="openPatientProfile(session.patientId)" style="cursor: pointer;">
+                  {{ clinicState.getPatientName(session.patientId) }}
+                </span>
+                @if(clinicState.getPatientProgressBadge(session.patientId, session.id)) {
+                <span class="badge badge-warning" role="button" (click)="openPatientProfile(session.patientId)" style="cursor: pointer;" title="Treatment Progress">
+                  <i class="bi bi-clock-history"></i> {{ clinicState.getPatientProgressBadge(session.patientId, session.id) }}
                 </span>
                 }
               </div>
@@ -210,3 +212,10 @@
   </div>
 </div>
 }
+
+<!-- Patient Profile Modal -->
+<app-patient-profile
+  [visible]="showProfileModal()"
+  (visibleChange)="showProfileModal.set($event)"
+  [patientId]="selectedProfilePatientId()">
+</app-patient-profile>

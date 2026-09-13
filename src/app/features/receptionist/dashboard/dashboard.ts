@@ -10,11 +10,12 @@ import { MessageService } from 'primeng/api';
 import { ProgressBar } from 'primeng/progressbar';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
+import { PatientProfileComponent } from '../../../shared/components/patient-profile/patient-profile.component';
 
 @Component({
   selector: "app-receptionist-dashboard",
   standalone: true,
-  imports: [CommonModule, TranslateModule, FormsModule, ProgressBar, ButtonModule, TooltipModule],
+  imports: [CommonModule, TranslateModule, FormsModule, ProgressBar, ButtonModule, TooltipModule, PatientProfileComponent],
   templateUrl: "./dashboard.html",
   styleUrl: "./dashboard.css",
 })
@@ -39,6 +40,15 @@ export class Dashboard {
   filterDoctor = signal<string>('');
   filterRoom = signal<string>('');
   searchPatient = signal<string>('');
+
+  // Patient Profile Modal
+  selectedProfilePatientId = signal<string | null>(null);
+  showProfileModal = signal<boolean>(false);
+
+  openPatientProfile(patientId: string) {
+    this.selectedProfilePatientId.set(patientId);
+    this.showProfileModal.set(true);
+  }
 
   /**
    * Real-time computed signal: Filter clinicState.sessions() where date matches today
@@ -114,7 +124,8 @@ export class Dashboard {
     };
   }
 
-  formatTime(isoString: string) {
+  formatTime(isoString?: string) {
+    if (!isoString) return '-';
     try {
       return new Date(isoString).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
     } catch {

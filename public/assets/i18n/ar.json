@@ -240,7 +240,21 @@
     "MARK_OCCUPIED": "تعيين كمشغول",
     "MARK_MAINTENANCE": "تعيين كصيانة",
     "ASSIGN": "تعيين",
-    "DATE": "التاريخ"
+    "DATE": "التاريخ",
+    "PATIENT_PROFILE": "ملف المريض وخطة العلاج",
+    "TREATMENT_PLAN": "خطة العلاج",
+    "PRIMARY_DOCTOR": "الطبيب المعالج",
+    "SESSION_PROGRESS": "تقدم الجلسات",
+    "TOTAL_SESSIONS": "إجمالي الجلسات",
+    "COMPLETED_SESSIONS": "الجلسات المكتملة",
+    "SESSION_NUMBER": "رقم الجلسة",
+    "CHECK_IN_TIME": "وقت الحضور",
+    "CHECK_OUT_TIME": "وقت الانصراف",
+    "PAYMENT_STATUS": "حالة الدفع",
+    "SESSION_STATUS": "حالة الجلسة",
+    "NOT_YET": "ليس بعد",
+    "UNBILLED": "غير مفوتر",
+    "NO_SESSIONS_FOUND": "لا توجد جلسات مسجلة لهذا المريض."
   },
   "CEO": {
     "DASHBOARD_TITLE": "نظرة عامة تنفيذية",

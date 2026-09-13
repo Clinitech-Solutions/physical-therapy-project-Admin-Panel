@@ -225,8 +225,13 @@
                       @if (session.status === 'In Progress') {
                       <span class="live-indicator"></span>
                       }
-                      <span class="patient-name fw-semibold small text-truncate">{{
+                      <span class="patient-name fw-semibold small text-truncate" role="button" (click)="openPatientProfile(session.patientId); $event.stopPropagation()" style="cursor: pointer;">{{
                         clinicState.getPatientName(session.patientId) }}</span>
+                      @if(clinicState.getPatientProgressBadge(session.patientId, session.id)) {
+                      <span class="badge badge-warning ms-1" style="font-size: 0.65rem;" role="button" (click)="openPatientProfile(session.patientId); $event.stopPropagation()" style="cursor: pointer;" title="Treatment Progress">
+                        {{ clinicState.getPatientProgressBadge(session.patientId, session.id) }}
+                      </span>
+                      }
                     </div>
                     <span class="badge" [ngClass]="{
                           'badge-warning': session.status === 'Confirmed',
@@ -421,3 +426,10 @@
     </div>
   </ng-template>
 </p-dialog>
+
+<!-- Patient Profile Modal -->
+<app-patient-profile
+  [visible]="showProfileModal()"
+  (visibleChange)="showProfileModal.set($event)"
+  [patientId]="selectedProfilePatientId()">
+</app-patient-profile>

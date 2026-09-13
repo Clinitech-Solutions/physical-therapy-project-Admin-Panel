@@ -7,11 +7,12 @@ import { ClinicStateService } from '../../../core/services/state/clinic-state.se
 import { Patient, NewPatient, PaymentMethod, InsuranceDetails } from '../../../core/models/patient.model';
 import { MessageService } from 'primeng/api';
 import { DialogModule } from 'primeng/dialog';
+import { PatientProfileComponent } from '../../../shared/components/patient-profile/patient-profile.component';
 
 @Component({
   selector: "app-receptionist-patients",
   standalone: true,
-  imports: [CommonModule, TranslateModule, FormsModule, DialogModule],
+  imports: [CommonModule, TranslateModule, FormsModule, DialogModule, PatientProfileComponent],
   templateUrl: "./patients.html",
 })
 export class PatientsComponent {
@@ -51,6 +52,8 @@ export class PatientsComponent {
   showDrawer = signal(false); // Add Patient
   showViewDrawer = signal(false);
   showEditDrawer = signal(false);
+  showProfileModal = signal(false);
+  selectedProfilePatient = signal<Patient | null>(null);
 
   get isAddModalOpen(): boolean {
     return this.showDrawer();
@@ -111,7 +114,8 @@ export class PatientsComponent {
 
   viewPatient(patient: Patient) {
     this.selectedPatient.set(patient);
-    this.showViewDrawer.set(true);
+    this.selectedProfilePatient.set(patient);
+    this.showProfileModal.set(true);
   }
 
   closeViewDrawer() {

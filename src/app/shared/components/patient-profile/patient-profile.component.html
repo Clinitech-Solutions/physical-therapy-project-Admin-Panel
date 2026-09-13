@@ -1,0 +1,146 @@
+<p-dialog
+  [(visible)]="visible"
+  (onHide)="closeModal()"
+  [modal]="true"
+  appendTo="body"
+  [draggable]="false"
+  [resizable]="false"
+  [closable]="true"
+  styleClass="clean-modal patient-profile-modal"
+  [style]="{ width: '920px', maxWidth: '95vw' }">
+
+  <!-- Custom Header -->
+  <ng-template pTemplate="header">
+    @if (currentPatient; as p) {
+    <div class="patient-profile-header w-100">
+      <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 w-100 pe-4">
+        <!-- Patient Info Card -->
+        <div class="d-flex align-items-center gap-3">
+          <div class="avatar avatar-lg shadow-sm border border-2 border-primary-subtle">
+            {{ p.avatar }}
+          </div>
+          <div>
+            <div class="d-flex align-items-center gap-2">
+              <h4 class="mb-0 fw-bold font-clash text-body">{{ p.nameEn }}</h4>
+              <span class="badge badge-neutral" dir="rtl">{{ p.nameAr }}</span>
+            </div>
+            <div class="d-flex flex-wrap align-items-center gap-3 mt-1 text-muted small">
+              <span dir="ltr"><i class="bi bi-telephone me-1 text-primary"></i>{{ p.phone }}</span>
+              <span><i class="bi bi-gender-ambiguous me-1"></i>{{ p.gender }}</span>
+              <span class="badge" [ngClass]="{
+                'badge-success': p.paymentType === 'Cash',
+                'badge-info': p.paymentType === 'Insurance',
+                'badge-warning': p.paymentType === 'Online'
+              }">{{ p.paymentType }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Primary Doctor & Progress Overview -->
+        <div class="treatment-meta-box p-2 px-3 rounded border">
+          <div class="d-flex align-items-center justify-content-between gap-3">
+            <span class="small text-muted fw-semibold">
+              <i class="bi bi-person-badge me-1 text-primary"></i>{{ 'RECEPTIONIST.PRIMARY_DOCTOR' | translate }}:
+            </span>
+            <span class="fw-bold text-primary small">{{ primaryDoctorName }}</span>
+          </div>
+
+          <div class="mt-2">
+            <div class="d-flex justify-content-between align-items-center small mb-1">
+              <span class="text-muted fw-semibold">{{ 'RECEPTIONIST.SESSION_PROGRESS' | translate }}</span>
+              <span class="fw-bold">{{ completedSessionsCount }} / {{ totalSessions }} ({{ progressPercentage }}%)</span>
+            </div>
+            <p-progressBar
+              [value]="progressPercentage"
+              [showValue]="false"
+              [style]="{ height: '6px', borderRadius: '4px' }">
+            </p-progressBar>
+          </div>
+        </div>
+      </div>
+    </div>
+    }
+  </ng-template>
+
+  <!-- Body: PrimeNG Table of Sessions -->
+  <div class="patient-profile-body pt-2">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h6 class="mb-0 fw-bold d-flex align-items-center gap-2">
+        <i class="bi bi-calendar2-check text-primary"></i>
+        {{ 'RECEPTIONIST.TREATMENT_PLAN' | translate }} ({{ sessions.length }} {{ 'RECEPTIONIST.TOTAL_SESSIONS' | translate }})
+      </h6>
+      <span class="badge badge-neutral small">
+        {{ 'RECEPTIONIST.COMPLETED_SESSIONS' | translate }}: {{ completedSessionsCount }}
+      </span>
+    </div>
+
+    <div class="table-responsive rounded border shadow-none">
+      <p-table
+        [value]="sessions"
+        [responsiveLayout]="'scroll'"
+        styleClass="p-datatable-striped p-datatable-sm align-middle">
+        <ng-template pTemplate="header">
+          <tr>
+            <th style="width: 70px;">{{ 'RECEPTIONIST.SESSION_NUMBER' | translate }}</th>
+            <th>{{ 'COMMON.DOCTOR' | translate }}</th>
+            <th>{{ 'COMMON.DATE' | translate }}</th>
+            <th>{{ 'RECEPTIONIST.CHECK_IN_TIME' | translate }}</th>
+            <th>{{ 'RECEPTIONIST.CHECK_OUT_TIME' | translate }}</th>
+            <th>{{ 'RECEPTIONIST.PAYMENT_STATUS' | translate }}</th>
+            <th style="text-align: end;">{{ 'RECEPTIONIST.SESSION_STATUS' | translate }}</th>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-session let-i="rowIndex">
+          <tr>
+            <td>
+              <span class="badge bg-primary bg-opacity-10 text-primary font-monospace fw-bold px-2 py-1">
+                #{{ session.sessionNumber || (i + 1) }}
+              </span>
+            </td>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-person-heart text-secondary"></i>
+                <span class="fw-semibold">{{ getDoctorDisplayName(session.doctorId) }}</span>
+              </div>
+            </td>
+            <td>
+              <span class="text-body small">{{ formatDate(session.scheduledAt) }}</span>
+            </td>
+            <td>
+              <span class="small font-monospace" [ngClass]="session.checkInTime ? 'text-success fw-semibold' : 'text-muted'">
+                {{ session.checkInTime ? formatTime(session.checkInTime) : ('RECEPTIONIST.NOT_YET' | translate) }}
+              </span>
+            </td>
+            <td>
+              <span class="small font-monospace" [ngClass]="session.checkOutTime ? 'text-success fw-semibold' : 'text-muted'">
+                {{ session.checkOutTime ? formatTime(session.checkOutTime) : ('RECEPTIONIST.NOT_YET' | translate) }}
+              </span>
+            </td>
+            <td>
+              @let payment = getPaymentInfo(session.id);
+              <p-tag
+                [value]="payment.label | translate"
+                [severity]="payment.severity">
+              </p-tag>
+            </td>
+            <td style="text-align: end;">
+              <p-tag
+                [value]="session.status"
+                [severity]="getSessionStatusSeverity(session.status)">
+              </p-tag>
+            </td>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="7" class="text-center py-4 text-muted">
+              {{ 'RECEPTIONIST.NO_SESSIONS_FOUND' | translate }}
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  </div>
+</p-dialog>

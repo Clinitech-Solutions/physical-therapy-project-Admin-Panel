@@ -240,7 +240,21 @@
     "MARK_OCCUPIED": "Mark Occupied",
     "MARK_MAINTENANCE": "Mark Maintenance",
     "ASSIGN": "Assign",
-    "DATE": "Date"
+    "DATE": "Date",
+    "PATIENT_PROFILE": "Patient Profile & Treatment Plan",
+    "TREATMENT_PLAN": "Treatment Plan",
+    "PRIMARY_DOCTOR": "Primary Doctor",
+    "SESSION_PROGRESS": "Treatment Progress",
+    "TOTAL_SESSIONS": "Total Sessions",
+    "COMPLETED_SESSIONS": "Completed Sessions",
+    "SESSION_NUMBER": "Session #",
+    "CHECK_IN_TIME": "Check-In",
+    "CHECK_OUT_TIME": "Check-Out",
+    "PAYMENT_STATUS": "Payment Status",
+    "SESSION_STATUS": "Session Status",
+    "NOT_YET": "Not Yet",
+    "UNBILLED": "Unbilled",
+    "NO_SESSIONS_FOUND": "No sessions found for this patient."
   },
   "CEO": {
     "DASHBOARD_TITLE": "Executive Overview",
