@@ -42,15 +42,8 @@
         </div>
 
         <div class="portal-card-body">
-          <p class="text-muted small mb-2">{{ provider.taglineKey | translate }}</p>
 
-          <div class="d-flex justify-content-between align-items-center p-2 rounded bg-body-tertiary">
-            <span class="text-muted small d-inline-flex align-items-center gap-1">
-              <i class="bi bi-diagram-3 text-secondary"></i>
-              <span>{{ 'RECEPTIONIST.NETWORK' | translate }}:</span>
-            </span>
-            <span class="fw-semibold small text-end ms-2">{{ provider.networkTypeKey | translate }}</span>
-          </div>
+        
 
           <div class="d-flex justify-content-between align-items-center p-2 rounded bg-body-tertiary">
             <span class="text-muted small d-inline-flex align-items-center gap-1">
@@ -58,17 +51,6 @@
               <span>{{ 'RECEPTIONIST.HOTLINE' | translate }}:</span>
             </span>
             <span class="fw-bold small text-primary text-end ms-2" dir="ltr">{{ provider.hotline }}</span>
-          </div>
-
-          <div class="mt-1">
-            <span class="section-label small fw-bold d-block mb-2">{{ 'RECEPTIONIST.PORTAL_FEATURES' | translate }}</span>
-            <div class="d-flex flex-wrap gap-1">
-              @for(feat of provider.featuresKeys; track feat) {
-                <span class="badge badge-info" style="font-size: 11px;">
-                  <i class="bi bi-check2 me-1"></i><span>{{ feat | translate }}</span>
-                </span>
-              }
-            </div>
           </div>
         </div>
 

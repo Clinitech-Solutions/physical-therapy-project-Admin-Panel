@@ -40,7 +40,7 @@ export class InsuranceComponent {
       code: 'BUPA-EG',
       logoIcon: 'bi-shield-shaded',
       themeColor: '#0079C8',
-      portalUrl: 'https://example.com/bupa-portal',
+      portalUrl: 'https://www.axaglobalhealthcare.com/en/',
       taglineKey: 'RECEPTIONIST.PORTAL_BUPA_DESC',
       hotline: '16111',
       networkTypeKey: 'RECEPTIONIST.NETWORK_GOLD_CLASSIC',
