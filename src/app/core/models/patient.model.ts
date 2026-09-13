@@ -1,6 +1,14 @@
 export type Gender = 'Male' | 'Female';
 export type PaymentMethod = 'Cash' | 'Online' | 'Insurance' | 'Card' | 'InstaPay';
 
+export interface InsuranceDetails {
+  company: string;
+  status: 'Pending' | 'Approved';
+  copayPercentage?: number;
+  approvedSessions?: number;
+  memberId?: string;
+}
+
 export interface Patient {
   id: string;
   nameEn: string;
@@ -15,6 +23,7 @@ export interface Patient {
     liabilityWaiver: boolean;
     idCard: boolean;
   };
+  insuranceDetails?: InsuranceDetails;
 }
 
 export interface NewPatient {
@@ -25,9 +34,11 @@ export interface NewPatient {
   dob: string;
   paymentType: PaymentMethod;
   insuranceCompany: string;
+  insuranceDetails?: InsuranceDetails;
   docs: {
     medicalConsent: boolean;
     liabilityWaiver: boolean;
     idCard: boolean;
   };
 }
+

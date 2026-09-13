@@ -6,122 +6,118 @@
     </div>
   </div>
 
-  <div class="table-panel">
-    <div class="table-scroll-area">
-      <table>
-        <thead>
-          <tr>
-            <th>{{ 'COMMON.PATIENT' | translate }}</th>
-            <th>{{ 'RECEPTIONIST.COMPANY' | translate }}</th>
-            <th>{{ 'COMMON.STATUS' | translate }}</th>
-            <th>{{ 'RECEPTIONIST.CO_PAY' | translate }}</th>
-            <th style="text-align:end">{{ 'COMMON.ACTION' | translate }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for(patient of patients(); track patient.id) {
-            <tr>
-              <td class="fw-semibold">{{ clinicState.getPatientName(patient.patientId) }}</td>
-              <td>
-                <span class="badge border text-body">{{ patient.company }}</span>
-              </td>
-              <td>
-                <span class="badge" [ngClass]="{
-                  'badge-info': patient.status === 'Documents Pending' || patient.status === 'Submitted',
-                  'badge-warning': patient.status === 'Under Review',
-                  'badge-success': patient.status === 'Approved'
-                }">
-                  @if(patient.status === 'Documents Pending') { {{ 'RECEPTIONIST.DOCUMENTS_PENDING' | translate }} }
-                  @if(patient.status === 'Submitted') { {{ 'RECEPTIONIST.SUBMITTED' | translate }} }
-                  @if(patient.status === 'Under Review') { {{ 'RECEPTIONIST.UNDER_REVIEW' | translate }} }
-                  @if(patient.status === 'Approved') { {{ 'RECEPTIONIST.APPROVED' | translate }} }
-                </span>
-              </td>
-              <td>
-                @if(patient.copay !== null) {
-                  <span class="fw-bold">{{ patient.copay }}%</span>
-                } @else {
-                  <span class="text-muted">-</span>
-                }
-              </td>
-              <td style="text-align:end" dir="ltr">
-                <button class="btn-action action-primary" [attr.data-tip]="'RECEPTIONIST.MANAGE' | translate" (click)="openDrawer(patient)">
-                  <i class="bi bi-pencil"></i>
-                </button>
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
+  <!-- Business Rule Highlight: Insurance Workflow Gate -->
+  <div class="card card-bg border mb-4 p-3 rounded d-flex flex-row align-items-center gap-3">
+    <div class="avatar avatar-md bg-info-subtle text-info d-flex align-items-center justify-content-center" style="min-width: 44px; height: 44px; font-size: 1.3rem;">
+      <i class="bi bi-shield-lock-fill"></i>
     </div>
+    <div class="flex-1">
+      <div class="fw-bold small text-info text-uppercase mb-1 d-flex align-items-center gap-2">
+        <i class="bi bi-info-circle"></i> {{ 'RECEPTIONIST.INSURANCE_GATE_TITLE' | translate }}
+      </div>
+      <p class="mb-0 text-muted small">
+        {{ 'RECEPTIONIST.INSURANCE_GATE_SUB' | translate }}
+      </p>
+    </div>
+  </div>
+
+  <!-- Insurance Portals Grid -->
+  <div class="insurance-portal-grid">
+    @for(provider of providers; track provider.id) {
+      <div class="portal-card">
+        <div class="portal-card-header">
+          <div class="d-flex align-items-center gap-3">
+            <div class="portal-brand-avatar" [style.background]="provider.themeColor">
+              <i class="bi" [ngClass]="provider.logoIcon"></i>
+            </div>
+            <div>
+              <h5 class="fw-bold mb-0 text-body">{{ provider.name }}</h5>
+              <span class="badge border text-muted" style="font-size: 10px;">{{ provider.code }}</span>
+            </div>
+          </div>
+          <span class="badge badge-success d-flex align-items-center gap-1">
+            <span class="p-tag-icon bi bi-circle-fill" style="font-size: 6px;"></span>
+            {{ 'RECEPTIONIST.PORTAL_ACTIVE' | translate }}
+          </span>
+        </div>
+
+        <div class="portal-card-body">
+          <p class="text-muted small mb-1">{{ provider.taglineKey | translate }}</p>
+
+          <div class="d-flex justify-content-between align-items-center p-2 rounded bg-body-tertiary">
+            <span class="text-muted small">{{ 'RECEPTIONIST.NETWORK' | translate }}</span>
+            <span class="fw-semibold small">{{ provider.networkTypeKey | translate }}</span>
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center p-2 rounded bg-body-tertiary">
+            <span class="text-muted small">{{ 'RECEPTIONIST.HOTLINE' | translate }}</span>
+            <span class="fw-bold small text-primary" dir="ltr">{{ provider.hotline }}</span>
+          </div>
+
+          <div>
+            <span class="section-label small fw-bold d-block mb-2">{{ 'RECEPTIONIST.PORTAL_FEATURES' | translate }}</span>
+            <div class="d-flex flex-wrap gap-1">
+              @for(feat of provider.featuresKeys; track feat) {
+                <span class="badge badge-info" style="font-size: 11px;">
+                  <i class="bi bi-check2 me-1"></i>{{ feat | translate }}
+                </span>
+              }
+            </div>
+          </div>
+        </div>
+
+        <div class="portal-card-footer">
+          <button class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2" (click)="openPortal(provider)">
+            <i class="bi bi-box-arrow-up-right"></i>
+            <span>{{ 'RECEPTIONIST.OPEN_PORTAL' | translate }}</span>
+          </button>
+        </div>
+      </div>
+    }
   </div>
 </div>
 
-<!-- Manage Insurance Drawer -->
-@if(showDrawer()) {
-  <div class="modal-backdrop fade show" (click)="closeDrawer()"></div>
-  <div class="drawer drawer-compact fade-in" style="width:420px; z-index:1055; position:fixed; top:0; right:0; height:100%; overflow-y:auto;">
-    <div class="drawer-header d-flex justify-content-between align-items-center">
-      <h5 class="mb-0">{{ 'RECEPTIONIST.MANAGE_INSURANCE' | translate }}: {{ clinicState.getPatientName(selectedPatient?.patientId) }}</h5>
-      <button class="btn-close" (click)="closeDrawer()"></button>
-    </div>
-    
-    <div class="drawer-body">
-      <!-- Status tracker -->
-      <div class="mb-3 pb-3 border-bottom">
-        <p class="section-label mb-2">{{ 'RECEPTIONIST.CURRENT_STATUS' | translate }}</p>
-        <span class="badge badge-info fs-6 px-3 py-2">{{ selectedPatient?.status }}</span>
+<!-- Insurance Portal Iframe Modal (90vw x 90vh) -->
+<p-dialog 
+  [(visible)]="isPortalModalOpen" 
+  [modal]="true" 
+  [draggable]="false" 
+  [resizable]="false" 
+  [closable]="true" 
+  [showHeader]="true" 
+  styleClass="clean-modal portal-dialog"
+  [style]="{ width: '90vw', height: '90vh' }"
+  [header]="(activeProvider()?.brandName || activeProvider()?.name || '') + ' - ' + ('RECEPTIONIST.PORTAL_MODAL_TITLE' | translate)">
+
+  <div class="portal-iframe-container">
+    <!-- Portal Navigation & Security Bar -->
+    <div class="portal-iframe-toolbar">
+      <div class="d-flex align-items-center gap-2">
+        <span class="badge badge-success d-flex align-items-center gap-1">
+          <i class="bi bi-lock-fill"></i> SSL Secure
+        </span>
+        <span class="text-muted small font-monospace d-none d-md-inline" dir="ltr">
+          {{ activeProvider()?.portalUrl }}
+        </span>
       </div>
 
-      <div class="form-group mb-3">
-        <label class="form-label">{{ 'RECEPTIONIST.UPLOAD_DOCS' | translate }}</label>
-        <div class="border border-dashed rounded p-3 text-center card-bg cursor-pointer">
-          <i class="bi bi-cloud-arrow-up fs-2 text-primary mb-2 d-block"></i>
-          <span class="text-muted">{{ 'RECEPTIONIST.DRAG_DROP' | translate }}</span>
-        </div>
-      </div>
-
-      <div class="form-group mb-3">
-        <label class="form-label">{{ 'RECEPTIONIST.INSURANCE_COMPANY' | translate }}</label>
-        <select class="form-select" [(ngModel)]="insuranceCompany">
-          <option value="Bupa">Bupa</option>
-          <option value="AXA">AXA</option>
-          <option value="MetLife">MetLife</option>
-        </select>
-      </div>
-
-      <div class="form-group mb-3">
-        <label class="form-label">{{ 'RECEPTIONIST.PACKAGE' | translate }}</label>
-        <select class="form-select" [(ngModel)]="package">
-          <option value="">{{ 'RECEPTIONIST.SELECT_PACKAGE' | translate }}</option>
-          <option value="Gold">{{ 'RECEPTIONIST.GOLD_NETWORK' | translate }}</option>
-          <option value="Silver">{{ 'RECEPTIONIST.SILVER_NETWORK' | translate }}</option>
-        </select>
-      </div>
-
-      @if(selectedPatient?.status === 'Approved' || selectedPatient?.status === 'Under Review') {
-        <div class="form-group mb-3 fade-in">
-          <label class="form-label">{{ 'RECEPTIONIST.RECORD_COPAY' | translate }}</label>
-          <div class="input-group">
-            <input type="number" class="form-control border-end-0" [(ngModel)]="copayInput">
-            <span class="input-group-text card-bg">%</span>
-          </div>
-          <button class="btn btn-success w-100 mt-3" (click)="saveCopay()">{{ 'RECEPTIONIST.SAVE_COPAY' | translate }}</button>
-        </div>
-      }
-    </div>
-    
-    <div class="drawer-footer">
-      <div class="d-flex gap-2">
-        <button class="btn btn-outline-secondary flex-1" (click)="closeDrawer()">{{ 'RECEPTIONIST.CANCEL' | translate }}</button>
-        <button class="btn btn-primary flex-1" (click)="submitToInsurer()" [disabled]="isProcessing()">
-          @if (isProcessing()) {
-            <span class="spinner-border spinner-border-sm me-1"></span> {{ 'RECEPTIONIST.PROCESSING' | translate }}
-          } @else {
-            {{ 'RECEPTIONIST.SUBMIT_TO_INSURER' | translate }}
-          }
-        </button>
+      <div class="d-flex align-items-center gap-2">
+        <a [href]="activeProvider()?.portalUrl" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1">
+          <i class="bi bi-box-arrow-up-right"></i>
+          <span>{{ 'RECEPTIONIST.OPEN_EXTERNAL' | translate }}</span>
+        </a>
       </div>
     </div>
+
+    <!-- Live Sanitized Iframe -->
+    @if(activeSanitizedUrl()) {
+      <iframe 
+        [src]="activeSanitizedUrl()!" 
+        class="portal-iframe" 
+        [title]="activeProvider()?.name || 'Insurance Portal'"
+        allow="fullscreen; payment">
+      </iframe>
+    }
   </div>
-}
+</p-dialog>
+

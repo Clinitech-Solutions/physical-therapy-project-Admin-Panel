@@ -3,7 +3,6 @@ import { Patient, NewPatient } from '../../models/patient.model';
 import { Doctor, DoctorAvailability, DoctorSlot } from '../../models/doctor.model';
 import { Room } from '../../models/room.model';
 import { Session, SessionStatus, SessionType } from '../../models/session.model';
-import { InsuranceClaim } from '../../models/insurance.model';
 import { Invoice } from '../../models/invoice.model';
 import { WaitlistItem } from '../../models/waitlist.model';
 import { 
@@ -11,7 +10,6 @@ import {
   mockDoctors, 
   mockRooms, 
   mockSessions, 
-  mockInsuranceClaims, 
   mockInvoices, 
   mockWaitlist, 
   mockDoctorAvailability, 
@@ -72,9 +70,6 @@ export class ClinicStateService {
   private waitlistSig = signal<WaitlistItem[]>([]);
   public waitlist = this.waitlistSig.asReadonly();
 
-  private claimsSig = signal<InsuranceClaim[]>([]);
-  public claims = this.claimsSig.asReadonly();
-
   private invoicesSig = signal<Invoice[]>([]);
   public invoices = this.invoicesSig.asReadonly();
 
@@ -105,7 +100,6 @@ export class ClinicStateService {
     }
     this.sessionsSig.set([...mockSessions]);
     this.waitlistSig.set([...mockWaitlist]);
-    this.claimsSig.set([...mockInsuranceClaims]);
     this.invoicesSig.set([...mockInvoices]);
     this.doctorAvailabilitySig.set([...mockDoctorAvailability]);
     this.doctorSlotsSig.set([...mockDoctorSlots]);
@@ -265,6 +259,11 @@ export class ClinicStateService {
   }
 
   async addSession(sessionData: { patientId: string, doctorId: string, roomId: string, scheduledAt: string, type: SessionType }) {
+    const patient = this.patientsSig().find(p => p.id === sessionData.patientId);
+    if (patient && patient.paymentType === 'Insurance' && patient.insuranceDetails?.status !== 'Approved') {
+      throw new Error('Insurance approval is pending. Cannot book sessions.');
+    }
+
     // Strict validation: target room must be Available and currentLoad === 0
     const targetRoom = this.roomsSig().find(r => r.id === sessionData.roomId);
     if (!targetRoom || targetRoom.status !== 'Available' || targetRoom.currentLoad > 0) {
@@ -291,6 +290,10 @@ export class ClinicStateService {
   }
 
   async bookSession(sessionData: { patientId: string, doctorId: string, roomId: string, scheduledAt: string, type: SessionType }) {
+    const patient = this.patientsSig().find(p => p.id === sessionData.patientId);
+    if (patient && patient.paymentType === 'Insurance' && patient.insuranceDetails?.status !== 'Approved') {
+      throw new Error('Insurance approval is pending. Cannot book sessions.');
+    }
     return this.addSession(sessionData);
   }
 
@@ -308,6 +311,11 @@ export class ClinicStateService {
   findNearestSlot(patientId: string, candidateDoctors?: Doctor[]): { doctorId: string; roomId: string; scheduledAt: string } {
     if (!patientId) {
       throw new Error('Please select a patient first.');
+    }
+
+    const patient = this.patientsSig().find(p => p.id === patientId);
+    if (patient && patient.paymentType === 'Insurance' && patient.insuranceDetails?.status !== 'Approved') {
+      throw new Error('Insurance approval is pending. Cannot book sessions.');
     }
 
     // a) Get patient's gender
@@ -455,7 +463,8 @@ export class ClinicStateService {
       phone: newPatient.phone,
       paymentType: newPatient.paymentType as 'Cash' | 'Online' | 'Insurance',
       lastVisit: new Date().toISOString(),
-      documents: { ...newPatient.docs }
+      documents: { ...newPatient.docs },
+      insuranceDetails: newPatient.paymentType === 'Insurance' ? newPatient.insuranceDetails : undefined
     };
 
     this.patientsSig.update(patients => [created, ...patients]);
@@ -473,26 +482,8 @@ export class ClinicStateService {
   }
 
   // ==========================================
-  // Insurance & Billing Logic
+  // Billing Logic
   // ==========================================
-
-  async submitClaim(id: string) {
-    this.isLoading.set(true);
-    await new Promise(resolve => setTimeout(resolve, 800));
-    this.claimsSig.update(claims =>
-      claims.map(c => c.id === id ? { ...c, status: 'Submitted', missingDocs: [] } : c)
-    );
-    this.isLoading.set(false);
-  }
-
-  async saveCopay(id: string, copayAmount: number) {
-    this.isLoading.set(true);
-    await new Promise(resolve => setTimeout(resolve, 600));
-    this.claimsSig.update(claims =>
-      claims.map(c => c.id === id ? { ...c, copay: copayAmount, status: 'Approved' } : c)
-    );
-    this.isLoading.set(false);
-  }
 
   async processPayment(invoiceId: string) {
     this.isProcessingPayment.set(true);

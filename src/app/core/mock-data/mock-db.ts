@@ -1,7 +1,6 @@
 import { Patient } from '../models/patient.model';
 import { Session } from '../models/session.model';
 import { Room } from '../models/room.model';
-import { InsuranceClaim } from '../models/insurance.model';
 import { Invoice } from '../models/invoice.model';
 import { Doctor, DoctorSlot, DoctorAvailability } from '../models/doctor.model';
 import { WaitlistItem } from '../models/waitlist.model';
@@ -17,13 +16,36 @@ const pastDate = pastDateObj.toISOString().split('T')[0];
 export const mockPatients: Patient[] = [
   // --- مرضى قدامى (لهم تاريخ تقييم سابق) ---
   { id: '1', nameEn: 'Ahmed Fathy', nameAr: 'أحمد فتحي', avatar: 'AF', gender: 'Male', phone: '+201012345671', paymentType: 'Cash', lastVisit: `${pastDate}T00:00:00Z`, documents: { medicalConsent: true, liabilityWaiver: true, idCard: true } },
-  { id: '2', nameEn: 'Mona Zaki', nameAr: 'منى زكي', avatar: 'MZ', gender: 'Female', phone: '+201112345672', paymentType: 'Insurance', lastVisit: `${pastDate}T00:00:00Z`, documents: { medicalConsent: true, liabilityWaiver: true, idCard: true } },
+  { 
+    id: '2', 
+    nameEn: 'Mona Zaki', 
+    nameAr: 'منى زكي', 
+    avatar: 'MZ', 
+    gender: 'Female', 
+    phone: '+201112345672', 
+    paymentType: 'Insurance', 
+    lastVisit: `${pastDate}T00:00:00Z`, 
+    documents: { medicalConsent: true, liabilityWaiver: true, idCard: true },
+    insuranceDetails: { company: 'Bupa', status: 'Approved', copayPercentage: 20, approvedSessions: 10, memberId: 'BUP-772910' }
+  },
   { id: '3', nameEn: 'Omar Hassan', nameAr: 'عمر حسن', avatar: 'OH', gender: 'Male', phone: '+201212345673', paymentType: 'Online', lastVisit: `${pastDate}T00:00:00Z`, documents: { medicalConsent: true, liabilityWaiver: false, idCard: true } },
   { id: '4', nameEn: 'Laila Tarek', nameAr: 'ليلى طارق', avatar: 'LT', gender: 'Female', phone: '+201222333444', paymentType: 'Cash', lastVisit: `${pastDate}T00:00:00Z`, documents: { medicalConsent: true, liabilityWaiver: true, idCard: true } },
 
   // --- مرضى جدد (أول زيارة لهم اليوم) ---
   { id: '5', nameEn: 'Youssef Ali', nameAr: 'يوسف علي', avatar: 'YA', gender: 'Male', phone: '+201112223345', paymentType: 'Cash', lastVisit: `${today}T00:00:00Z`, documents: { medicalConsent: false, liabilityWaiver: false, idCard: false } },
-  { id: '6', nameEn: 'Sara Mahmoud', nameAr: 'سارة محمود', avatar: 'SM', gender: 'Female', phone: '+201011122236', paymentType: 'Online', lastVisit: `${today}T00:00:00Z`, documents: { medicalConsent: false, liabilityWaiver: true, idCard: false } }
+  { id: '6', nameEn: 'Sara Mahmoud', nameAr: 'سارة محمود', avatar: 'SM', gender: 'Female', phone: '+201011122236', paymentType: 'Online', lastVisit: `${today}T00:00:00Z`, documents: { medicalConsent: false, liabilityWaiver: true, idCard: false } },
+  { 
+    id: '7', 
+    nameEn: 'Karim Nabil', 
+    nameAr: 'كريم نبيل', 
+    avatar: 'KN', 
+    gender: 'Male', 
+    phone: '+201200112233', 
+    paymentType: 'Insurance', 
+    lastVisit: `${today}T00:00:00Z`, 
+    documents: { medicalConsent: true, liabilityWaiver: false, idCard: true },
+    insuranceDetails: { company: 'AXA', status: 'Pending', memberId: 'AXA-88412' }
+  }
 ];
 
 export const mockDoctors: Doctor[] = [
@@ -69,10 +91,6 @@ export const mockSessions: Session[] = [
 
   // جلسة انتهت اليوم صباحاً
   { id: '7', scheduledAt: `${today}T08:00:00`, patientId: '1', doctorId: 'doc_2', roomId: 'room_3', status: 'Completed', type: 'Session' },
-];
-
-export const mockInsuranceClaims: InsuranceClaim[] = [
-  { id: '1', patientId: '2', company: 'Bupa', status: 'Approved', copay: 20, missingDocs: [] }
 ];
 
 export const mockInvoices: Invoice[] = [

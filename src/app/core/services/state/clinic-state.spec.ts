@@ -193,4 +193,50 @@ describe('ClinicStateService Business Rules & Date Filtering Unit Tests', () => 
       expect(s2?.status).toBe('Completed');
     });
   });
+
+  describe('Business Rule: Insurance Workflow Gate', () => {
+    it('should strictly throw error when finding slot for Insurance patient whose approval is pending (Patient 7)', () => {
+      expect(() => service.findNearestSlot('7')).toThrow('Insurance approval is pending. Cannot book sessions.');
+    });
+
+    it('should strictly throw error when calling addSession or bookSession for pending Insurance patient', async () => {
+      await expect(service.addSession({
+        patientId: '7',
+        doctorId: 'doc_2',
+        roomId: 'room_3',
+        scheduledAt: '2026-09-14T10:00:00',
+        type: 'Session'
+      })).rejects.toThrow('Insurance approval is pending. Cannot book sessions.');
+
+      await expect(service.bookSession({
+        patientId: '7',
+        doctorId: 'doc_2',
+        roomId: 'room_3',
+        scheduledAt: '2026-09-14T10:00:00',
+        type: 'Session'
+      })).rejects.toThrow('Insurance approval is pending. Cannot book sessions.');
+    });
+
+    it('should allow finding slot and booking for Approved Insurance patient (Patient 2 - Mona Zaki)', async () => {
+      const slot = service.findNearestSlot('2');
+      expect(slot).toBeDefined();
+      expect(service.getDoctorGender(slot.doctorId)).toBe('Female');
+
+      const initialCount = service.sessions().length;
+      await service.addSession({
+        patientId: '2',
+        doctorId: slot.doctorId,
+        roomId: slot.roomId,
+        scheduledAt: slot.scheduledAt,
+        type: 'Session'
+      });
+      expect(service.sessions().length).toBe(initialCount + 1);
+    });
+
+    it('should allow booking for non-insurance patients (Cash, Online)', async () => {
+      const slot = service.findNearestSlot('5');
+      expect(slot).toBeDefined();
+    });
+  });
 });
+
