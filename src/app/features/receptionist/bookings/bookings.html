@@ -297,7 +297,7 @@
                           </button>
                         </div>
                       } @else if (session.status === 'Confirmed' || session.status === 'Pending') {
-                        <div class="mt-1 pt-1 border-top border-opacity-10 d-flex justify-content-end">
+                        <div class="mt-1 pt-1 border-top border-opacity-10 d-flex justify-content-end align-items-center gap-1">
                           <button 
                             type="button" 
                             class="btn btn-sm btn-outline-primary py-0 px-2 d-flex align-items-center gap-1"
@@ -305,6 +305,14 @@
                             (click)="checkInSession(session.id); $event.stopPropagation()">
                             <i class="bi bi-box-arrow-in-right"></i> {{ 'RECEPTIONIST.CHECK_IN' | translate }}
                           </button>
+                          <p-button 
+                            *ngIf="session.status === 'Pending' || session.status === 'Confirmed' || session.status === 'Waiting'"
+                            icon="bi bi-person-x" 
+                            styleClass="btn-tinted-danger" 
+                            [pTooltip]="'RECEPTIONIST.MARK_ABSENT' | translate" 
+                            tooltipPosition="top" 
+                            (onClick)="markPatientAbsent(session.id); $event.stopPropagation()">
+                          </p-button>
                         </div>
                       }
                     </div>

@@ -9,6 +9,7 @@ import { DatePickerModule } from 'primeng/datepicker';
 import { DialogModule } from 'primeng/dialog';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { ButtonModule } from 'primeng/button';
+import { TooltipModule } from 'primeng/tooltip';
 import { Session, SessionType } from '../../../core/models/session.model';
 import { Doctor } from '../../../core/models/doctor.model';
 import { Patient } from '../../../core/models/patient.model';
@@ -24,7 +25,8 @@ import { Patient } from '../../../core/models/patient.model';
     DatePickerModule, 
     DialogModule,
     SelectButtonModule,
-    ButtonModule
+    ButtonModule,
+    TooltipModule
   ],
   templateUrl: "./bookings.html",
   styleUrls: ["./bookings.css"]
@@ -496,6 +498,23 @@ export class BookingsComponent {
   // Alias for backward compatibility
   async checkOutPatient(sessionId: string) {
     return this.checkoutSession(sessionId);
+  }
+
+  markPatientAbsent(sessionId: string) {
+    try {
+      this.clinicState.markPatientAbsent(sessionId);
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Success',
+        detail: 'Patient marked as absent and session cancelled.'
+      });
+    } catch (error: any) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: error.message || 'Failed to mark patient absent.'
+      });
+    }
   }
 }
 

@@ -1,0 +1,23 @@
+:host ::ng-deep .btn-tinted-danger {
+    background-color: #fee2e2 !important; /* Light red/pink background */
+    color: #ef4444 !important; /* Dark red icon */
+    border: none !important;
+    border-radius: 8px !important;
+    width: 32px !important;
+    height: 32px !important;
+    padding: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: background-color 0.2s;
+}
+
+:host ::ng-deep .btn-tinted-danger:hover {
+    background-color: #fca5a5 !important; /* Slightly darker on hover */
+}
+
+:host ::ng-deep .btn-tinted-danger .p-button-icon,
+:host ::ng-deep .btn-tinted-danger i {
+    color: #ef4444 !important;
+    font-size: 1rem !important;
+}

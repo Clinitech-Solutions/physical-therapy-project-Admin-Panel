@@ -117,11 +117,14 @@
                       <i class="bi bi-box-arrow-right"></i>
                     </button>
                   }
-                  @if(session.status !== 'Cancelled' && session.status !== 'Completed') {
-                    <button class="btn-action action-danger" [attr.data-tip]="'RECEPTIONIST.MARK_ABSENT' | translate" (click)="markPatientAbsent(session.id)">
-                      <i class="bi bi-person-x"></i>
-                    </button>
-                  }
+                  <p-button 
+                    *ngIf="session.status === 'Pending' || session.status === 'Confirmed' || session.status === 'Waiting'"
+                    icon="bi bi-person-x" 
+                    styleClass="btn-tinted-danger" 
+                    [pTooltip]="'RECEPTIONIST.MARK_ABSENT' | translate" 
+                    tooltipPosition="top" 
+                    (onClick)="markPatientAbsent(session.id)">
+                  </p-button>
                 </div>
               </td>
             </tr>

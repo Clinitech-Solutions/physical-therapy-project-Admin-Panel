@@ -8,11 +8,13 @@ import { ClinicStateService } from '../../../core/services/state/clinic-state.se
 import { Session } from '../../../core/models/session.model';
 import { MessageService } from 'primeng/api';
 import { ProgressBar } from 'primeng/progressbar';
+import { ButtonModule } from 'primeng/button';
+import { TooltipModule } from 'primeng/tooltip';
 
 @Component({
   selector: "app-receptionist-dashboard",
   standalone: true,
-  imports: [CommonModule, TranslateModule, FormsModule, ProgressBar],
+  imports: [CommonModule, TranslateModule, FormsModule, ProgressBar, ButtonModule, TooltipModule],
   templateUrl: "./dashboard.html",
   styleUrl: "./dashboard.css",
 })
