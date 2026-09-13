@@ -102,6 +102,7 @@
     "REASSIGN": "إعادة تعيين",
     "CONFIRM_COVERAGE": "تأكيد التغطية",
     "PROCESSING": "جاري المعالجة...",
+    "CANCEL": "إلغاء",
     
     "ADD_PATIENT": "إضافة مريض",
     "GENDER_TH": "الجنس",

@@ -67,8 +67,8 @@
     "BOOKINGS_SUB": "Manage the daily schedule",
     
     "TODAYS_SESSIONS": "TODAY'S SESSIONS",
-    "COMPLETED_SESSIONS": "COMPLETED SESSIONS",
-    "TODAY_REVENUE": "TODAY'S REVENUE",
+    "COMPLETED_SESSIONS": "Completed Sessions",
+    "TODAY_REVENUE": "Today's Revenue",
     "PRESENT_DOCTORS": "PRESENT DOCTORS",
     "WALKINS": "WALK-INS",
     "PENDING_PAYMENTS": "PENDING PAYMENTS",
@@ -102,6 +102,7 @@
     "REASSIGN": "Reassign",
     "CONFIRM_COVERAGE": "Confirm Coverage",
     "PROCESSING": "Processing...",
+    "CANCEL": "Cancel",
     
     "ADD_PATIENT": "Add Patient",
     "GENDER_TH": "Gender",
