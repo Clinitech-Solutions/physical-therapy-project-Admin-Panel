@@ -16,8 +16,25 @@
   background: var(--bg-card);
 }
 
+.table-scroll-area {
+  overflow-x: visible !important;
+  padding: 0 !important;
+}
+
+/* Prevent Unnecessary X-Overflow in the Table Wrapper */
+:host ::ng-deep .p-datatable-wrapper {
+  overflow-x: clip !important; /* Better than hidden, prevents layout shifts */
+}
+
+/* Ensure the table itself strictly stays within bounds */
+:host ::ng-deep .p-datatable table {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
 :host ::ng-deep .p-datatable {
   background: transparent;
+  margin: 10px  ;
 }
 
 :host ::ng-deep .p-datatable .p-datatable-thead > tr > th {
@@ -44,7 +61,7 @@
 
 :host ::ng-deep .p-datatable .p-datatable-tbody > tr > td {
   padding: 0.85rem 1.25rem;
-  vertical-align: middle;
+  /* vertical-align: middle; */
 }
 
 :host ::ng-deep .p-tag {
