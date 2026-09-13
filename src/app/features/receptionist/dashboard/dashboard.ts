@@ -165,6 +165,23 @@ export class Dashboard {
       });
     }
   }
+
+  markPatientAbsent(sessionId: string) {
+    try {
+      this.clinicState.markPatientAbsent(sessionId);
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Success',
+        detail: 'Patient marked as absent and session cancelled.'
+      });
+    } catch (error: any) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: error.message || 'Failed to mark patient absent.'
+      });
+    }
+  }
 }
 
 export { Dashboard as DashboardComponent };

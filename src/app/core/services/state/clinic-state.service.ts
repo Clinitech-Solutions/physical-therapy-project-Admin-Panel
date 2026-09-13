@@ -236,6 +236,31 @@ export class ClinicStateService {
     this.isLoading.set(false);
   }
 
+  markPatientAbsent(sessionId: string): void {
+    const sessionToUpdate = this.sessionsSig().find(s => s.id === sessionId);
+    if (!sessionToUpdate) {
+      throw new Error('Session not found.');
+    }
+
+    // 1. Update session status to 'Cancelled'
+    this.sessionsSig.update(list =>
+      list.map(s => s.id === sessionId ? { ...s, status: 'Cancelled' as SessionStatus } : s)
+    );
+
+    // 2. If the session was holding a room (e.g. In Progress or has roomId assigned), release the room
+    if (sessionToUpdate.roomId) {
+      this.roomsSig.update(rooms =>
+        rooms.map(r => {
+          if (r.id === sessionToUpdate.roomId) {
+            return { ...r, status: 'Available' as const, currentLoad: 0, doctorId: null };
+          }
+          return r;
+        })
+      );
+      this.saveRoomsToLocalStorage(this.roomsSig());
+    }
+  }
+
   /**
    * Absence Policy:
    * When a doctor is absent:
