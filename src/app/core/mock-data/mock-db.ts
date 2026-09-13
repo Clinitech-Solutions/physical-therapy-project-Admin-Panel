@@ -94,8 +94,20 @@ export const mockSessions: Session[] = [
 ];
 
 export const mockInvoices: Invoice[] = [
-  { id: 'INV-1001', patientId: '1', amount: 350, currency: 'EGP', status: 'Paid', type: 'Session', createdAt: `${today}T00:00:00Z` },
-  { id: 'INV-1002', patientId: '6', amount: 500, currency: 'EGP', status: 'Pending', type: 'Assessment', createdAt: `${today}T00:00:00Z` }
+  // فواتير الجلسات التاريخية (Historical Sessions)
+  { id: 'INV-H01', sessionId: 'hist_1', patientId: '1', amount: 500, currency: 'EGP', status: 'Pending', type: 'Assessment', createdAt: `${pastDate}T10:00:00Z` },
+  { id: 'INV-H02', sessionId: 'hist_2', patientId: '2', amount: 20, currency: 'EGP', status: 'Pending', type: 'Assessment', createdAt: `${pastDate}T11:00:00Z` },
+  { id: 'INV-H03', sessionId: 'hist_3', patientId: '3', amount: 500, currency: 'EGP', status: 'Pending', type: 'Assessment', createdAt: `${pastDate}T12:00:00Z` },
+  { id: 'INV-H04', sessionId: 'hist_4', patientId: '4', amount: 500, currency: 'EGP', status: 'Pending', type: 'Assessment', createdAt: `${pastDate}T13:00:00Z` },
+
+  // فواتير جلسات اليوم (Today's Scheduled Sessions)
+  { id: 'INV-1001', sessionId: '1', patientId: '1', amount: 500, currency: 'EGP', status: 'Pending', type: 'Session', createdAt: `${today}T09:00:00Z` },
+  { id: 'INV-1002', sessionId: '2', patientId: '2', amount: 20, currency: 'EGP', status: 'Pending', type: 'Session', createdAt: `${today}T09:30:00Z` },
+  { id: 'INV-1003', sessionId: '3', patientId: '3', amount: 500, currency: 'EGP', status: 'Pending', type: 'Session', createdAt: `${today}T11:00:00Z` },
+  { id: 'INV-1004', sessionId: '4', patientId: '4', amount: 500, currency: 'EGP', status: 'Pending', type: 'Session', createdAt: `${today}T12:00:00Z` },
+  { id: 'INV-1005', sessionId: '5', patientId: '5', amount: 500, currency: 'EGP', status: 'Pending', type: 'Assessment', createdAt: `${today}T13:30:00Z` },
+  { id: 'INV-1006', sessionId: '6', patientId: '6', amount: 500, currency: 'EGP', status: 'Pending', type: 'Assessment', createdAt: `${today}T14:00:00Z` },
+  { id: 'INV-1007', sessionId: '7', patientId: '1', amount: 500, currency: 'EGP', status: 'Pending', type: 'Session', createdAt: `${today}T08:00:00Z` }
 ];
 
 export const mockDoctorAvailability: DoctorAvailability[] = [

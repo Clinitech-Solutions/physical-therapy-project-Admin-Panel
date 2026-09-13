@@ -131,6 +131,7 @@ describe('Receptionist BillingComponent Reactive Signals & Payment Suite', () =>
       expect(clinicState.invoices().length).toBe(initialInvoiceCount + 1);
       const latestInvoice = clinicState.invoices()[0];
       expect(latestInvoice.patientId).toBe('1');
+      expect(latestInvoice.sessionId).toBeTruthy();
       expect(latestInvoice.status).toBe('Pending');
       expect(latestInvoice.amount).toBe(500); // Default amount
       expect(latestInvoice.currency).toBe('EGP');
@@ -154,6 +155,7 @@ describe('Receptionist BillingComponent Reactive Signals & Payment Suite', () =>
       expect(clinicState.invoices().length).toBe(initialInvoiceCount + 1);
       const latestInvoice = clinicState.invoices()[0];
       expect(latestInvoice.patientId).toBe('2');
+      expect(latestInvoice.sessionId).toBeTruthy();
       expect(latestInvoice.status).toBe('Pending');
       expect(latestInvoice.amount).toBe(20); // copayPercentage value
     });

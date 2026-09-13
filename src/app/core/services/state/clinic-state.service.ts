@@ -360,6 +360,7 @@ export class ClinicStateService {
 
     const newInvoice: Invoice = {
       id: `INV-${Date.now().toString().slice(-4)}`,
+      sessionId: newSession.id,
       patientId: sessionData.patientId,
       amount: invoiceAmount,
       currency: 'EGP',

@@ -97,10 +97,10 @@ describe('Receptionist DashboardComponent Reactive Signals Suite', () => {
       const today = new Date().toISOString().split('T')[0];
       const initialRevenue = dashboard.todayRevenue();
       
-      // Mock data has INV-1001 with amount 350 Paid today
-      expect(initialRevenue).toBe(350);
+      // All mock invoices initially start as Pending, so initial revenue is 0
+      expect(initialRevenue).toBe(0);
 
-      // Add another paid invoice created today
+      // Add a paid invoice created today
       const newPaidInvoice: Invoice = {
         id: 'INV-TEST',
         patientId: '2',
@@ -114,7 +114,7 @@ describe('Receptionist DashboardComponent Reactive Signals Suite', () => {
       (clinicState as any).invoicesSig.update((list: Invoice[]) => [...list, newPaidInvoice]);
 
       // Reactive computed signal updates immediately
-      expect(dashboard.todayRevenue()).toBe(initialRevenue + 450);
+      expect(dashboard.todayRevenue()).toBe(450);
     });
   });
 
