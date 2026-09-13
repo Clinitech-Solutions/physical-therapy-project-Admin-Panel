@@ -7,11 +7,12 @@ import { LanguageService } from '../../../core/services/language';
 import { MessageService } from 'primeng/api';
 import { ThemeToggle } from '../../../shared/components/theme-toggle/theme-toggle';
 import { LanguageSelector } from '../../../shared/components/language-selector/language-selector';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, ThemeToggle, LanguageSelector],
+  imports: [CommonModule, ThemeToggle, LanguageSelector, TranslateModule],
   templateUrl: './login.html',
   styleUrl: './login.css',
 })

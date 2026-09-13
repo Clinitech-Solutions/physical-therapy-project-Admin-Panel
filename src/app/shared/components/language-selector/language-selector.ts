@@ -12,7 +12,7 @@ import { TranslateModule } from '@ngx-translate/core';
     <div class="lang-selector-container">
       <button class="btn btn-ghost lang-btn" (click)="toggleDropdown()">
         <i class="bi bi-globe2"></i>
-        <span>{{ 'COMMON.ENGLISH' | translate }}</span>
+        <span>{{ (langService.currentLang() === 'ar' ? 'COMMON.ARABIC' : 'COMMON.ENGLISH') | translate }}</span>
         <i class="bi bi-chevron-down" style="font-size: 10px; margin-inline-start: 4px;"></i>
       </button>
 

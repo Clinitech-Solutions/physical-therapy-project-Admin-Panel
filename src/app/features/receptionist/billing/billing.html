@@ -95,7 +95,7 @@
             <th>{{ 'COMMON.PATIENT' | translate }}</th>
             <th>{{ 'RECEPTIONIST.AMOUNT' | translate }}</th>
             <th>{{ 'RECEPTIONIST.TYPE' | translate }}</th>
-            <th>{{ 'RECEPTIONIST.DATE' | translate }}</th>
+            <th>{{ 'COMMON.DATE' | translate }}</th>
             <th>{{ 'COMMON.STATUS' | translate }}</th>
             <th style="text-align:end">{{ 'COMMON.ACTION' | translate }}</th>
           </tr>
@@ -103,22 +103,21 @@
         <ng-template pTemplate="body" let-invoice>
           <tr>
             <td>
-              <span class="font-mono fw-semibold">{{ invoice.id }}</span>
-            </td>
-            <td class="fw-semibold">
-              <div class="d-flex align-items-center gap-2">
-                <div class="avatar avatar-sm">{{ clinicState.getPatientAvatar(invoice.patientId) }}</div>
-                <span>{{ clinicState.getPatientName(invoice.patientId) }}</span>
-              </div>
-            </td>
-            <td class="fw-bold text-teal">
-              {{ invoice.amount | currency:'EGP' }}
+              <span class="font-bebas text-secondary" style="letter-spacing: 0.5px;">{{ invoice.id }}</span>
             </td>
             <td>
-              <span class="badge badge-neutral">{{ invoice.type }}</span>
+              <span class="fw-semibold text-body">{{ clinicState.getPatientName(invoice.patientId) }}</span>
             </td>
             <td>
-              {{ invoice.createdAt | date:'dd MMM yyyy, hh:mm a' }}
+              <span class="fw-bold text-success">{{ invoice.amount | currency:'EGP' }}</span>
+            </td>
+            <td>
+              <span class="badge border" [ngClass]="invoice.type === 'Assessment' ? 'border-primary text-primary' : 'border-info text-info'">
+                {{ invoice.type }}
+              </span>
+            </td>
+            <td>
+              <span class="text-secondary small">{{ invoice.date }}</span>
             </td>
             <td>
               <p-tag 
@@ -129,7 +128,7 @@
             <td style="text-align:end">
               @if (invoice.status === 'Pending' || invoice.status === 'Partial') {
                 <p-button 
-                  label="Process Payment" 
+                  [label]="'RECEPTIONIST.PROCESS_PAYMENT' | translate" 
                   icon="bi bi-credit-card"
                   severity="success" 
                   styleClass="p-button-success p-button-sm" 
@@ -162,17 +161,17 @@
   [showHeader]="true" 
   styleClass="clean-modal"
   [style]="{ width: '400px' }"
-  header="Process Payment">
+  [header]="'RECEPTIONIST.PROCESS_PAYMENT' | translate">
 
   <div class="modal-form-vertical py-2">
     <div class="form-group mb-3">
       <label class="form-label mb-2">
-        Payment Method <span class="required-asterisk text-danger">*</span>
+        {{ 'RECEPTIONIST.PAYMENT_METHOD' | translate }} <span class="required-asterisk text-danger">*</span>
       </label>
       <p-dropdown 
         [options]="paymentMethods" 
         [(ngModel)]="selectedPaymentMethod" 
-        placeholder="Select Payment Method"
+        [placeholder]="'RECEPTIONIST.PAYMENT_METHOD' | translate"
         appendTo="body"
         styleClass="w-100 p-select-sm">
       </p-dropdown>
@@ -185,7 +184,7 @@
         type="button" 
         class="btn btn-outline-secondary btn-cancel" 
         (click)="showPaymentModal = false">
-        Cancel
+        {{ 'COMMON.CANCEL' | translate }}
       </button>
       <button 
         type="button" 
@@ -193,9 +192,9 @@
         (click)="confirmPayment()"
         [disabled]="clinicState.isProcessingPayment()">
         @if (clinicState.isProcessingPayment()) {
-          <span class="spinner-border spinner-border-sm me-1"></span> Processing...
+          <span class="spinner-border spinner-border-sm me-1"></span> {{ 'RECEPTIONIST.PROCESSING' | translate }}
         } @else {
-          Confirm Payment
+          {{ 'RECEPTIONIST.PROCESS_PAYMENT' | translate }}
         }
       </button>
     </div>

@@ -48,7 +48,8 @@
     "ASSIGNED_TO": "Assigned To",
     "NO_AVAILABLE_ROOMS": "No available rooms",
     "ENGLISH": "English",
-    "ARABIC": "Arabic"
+    "ARABIC": "Arabic",
+    "START": "Start"
   },
   "RECEPTIONIST": {
     "DASHBOARD_TITLE": "Receptionist Dashboard",
@@ -238,6 +239,47 @@
     "MARK_AVAILABLE": "Mark Available",
     "MARK_OCCUPIED": "Mark Occupied",
     "MARK_MAINTENANCE": "Mark Maintenance",
-    "ASSIGN": "Assign"
+    "ASSIGN": "Assign",
+    "DATE": "Date"
+  },
+  "CEO": {
+    "DASHBOARD_TITLE": "Executive Overview",
+    "DASHBOARD_SUB": "Clinic performance and high-level analytics",
+    "EXPORT_REPORT": "Export Report",
+    "TODAYS_REVENUE": "Today's Revenue",
+    "VS_YESTERDAY": "vs yesterday",
+    "ACTIVE_PATIENTS": "Active Patients",
+    "NEW_TODAY": "new today",
+    "SESSIONS_TODAY": "Sessions Today",
+    "ATTENDANCE": "attendance",
+    "PENDING_PAYMENTS": "Pending Payments",
+    "INSURANCE_DELAYS": "Insurance delays",
+    "REVENUE_TREND": "Revenue Trend",
+    "RECENT_ACTIVITY": "Recent Activity",
+    "BOOKED_SESSION": "booked a session",
+    "MINS_AGO_2": "2 mins ago",
+    "COMPLETED_ASSESSMENT": "completed assessment",
+    "MINS_AGO_15": "15 mins ago",
+    "MARKED_ABSENT": "marked absent",
+    "HOUR_AGO_1": "1 hour ago"
+  },
+  "DOCTOR": {
+    "DASHBOARD_TITLE": "Doctor Schedule",
+    "DASHBOARD_SUB": "Today's assigned sessions & treatments",
+    "ROOM_1": "Room 1",
+    "ROOM_3": "Room 3",
+    "SESSION_4_10": "Session 4/10",
+    "SESSION_8_12": "Session 8/12",
+    "START_SESSION": "Start Session",
+    "AVAILABLE_SLOT": "Available Slot",
+    "ASSESSMENT": "Assessment"
+  },
+  "SENIOR": {
+    "DASHBOARD_TITLE": "Senior Therapist Dashboard",
+    "DASHBOARD_SUB": "Intake assessment oversight & capacity view",
+    "TODAYS_TASKS": "Today's Tasks",
+    "ASSESSMENTS_4": "Assessments (4)",
+    "REASSESSMENTS_2": "Re-assessments (2)",
+    "LIVE_VIEW_CAPACITY": "Live Capacity View"
   }
 }

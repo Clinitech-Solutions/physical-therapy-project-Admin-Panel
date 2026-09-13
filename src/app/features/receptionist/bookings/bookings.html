@@ -25,7 +25,7 @@
             <i class="bi bi-exclamation-octagon-fill me-1"></i> Insurance Approval Pending: Booking Blocked
           </span>
         }
-        <p-button icon="pi pi-user-minus" label="Report Absence" severity="danger" [outlined]="true" (onClick)="showAbsenceModal = true"></p-button>
+        <p-button icon="pi pi-user-minus" [label]="'RECEPTIONIST.MARK_ABSENT' | translate" severity="danger" [outlined]="true" (onClick)="showAbsenceModal = true"></p-button>
       </div>
     </div>
 
@@ -53,7 +53,7 @@
               optionValue="id" 
               [filter]="true" 
               filterBy="nameEn,phone" 
-              placeholder="Search / Select Patient..." 
+              [placeholder]="'RECEPTIONIST.SEARCH_PLACEHOLDER' | translate" 
               appendTo="body"
               styleClass="w-100 p-select-sm">
               
@@ -104,7 +104,7 @@
             optionLabel="label" 
             optionValue="value" 
             [disabled]="isNewPatient" 
-            placeholder="Type" 
+            [placeholder]="'RECEPTIONIST.TYPE' | translate" 
             appendTo="body"
             styleClass="w-100 p-select-sm">
           </p-select>
@@ -151,7 +151,7 @@
             [(ngModel)]="selectedRoomId" 
             optionLabel="displayName" 
             optionValue="id" 
-            placeholder="Select Room..." 
+            [placeholder]="'COMMON.ROOM' | translate" 
             emptyMessage="{{ 'COMMON.NO_AVAILABLE_ROOMS' | translate }}"
             appendTo="body"
             styleClass="w-100 p-select-sm">
@@ -463,13 +463,13 @@
   <ng-template pTemplate="footer">
     <div class="modal-footer-actions">
       <p-button 
-        label="Cancel" 
+        [label]="'COMMON.CANCEL' | translate" 
         [outlined]="true" 
         severity="secondary" 
         (onClick)="closeAbsenceModal()">
       </p-button>
       <p-button 
-        label="Confirm & Reassign" 
+        [label]="'RECEPTIONIST.CONFIRM_COVERAGE' | translate" 
         severity="danger" 
         (onClick)="confirmAbsence()" 
         [disabled]="!absentDoctorId || !coveringSeniorId">

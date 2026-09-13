@@ -10,7 +10,7 @@ import { providePrimeNG } from 'primeng/config';
 import Aura from '@primeuix/themes/aura';
 
 export function HttpLoaderFactory(http: HttpClient) {
-  return new TranslateHttpLoader(http, './assets/i18n/', '.json?v=' + Date.now());
+  return new TranslateHttpLoader(http, '/assets/i18n/', '.json?v=' + Date.now());
 }
 
 export const appConfig: ApplicationConfig = {

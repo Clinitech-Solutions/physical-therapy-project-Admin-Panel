@@ -46,8 +46,10 @@
     "DOCTOR": "الطبيب",
     "ROOM": "الغرفة",
     "ASSIGNED_TO": "مخصص لـ",
+    "NO_AVAILABLE_ROOMS": "لا توجد غرف متاحة",
     "ENGLISH": "إنجليزي",
-    "ARABIC": "عربي"
+    "ARABIC": "عربي",
+    "START": "بدء"
   },
   "RECEPTIONIST": {
     "DASHBOARD_TITLE": "لوحة الاستقبال",
@@ -55,7 +57,7 @@
     "PATIENTS_TITLE": "سجل المرضى",
     "PATIENTS_SUB": "إدارة جميع المرضى المسجلين",
     "INSURANCE_TITLE": "بوابات شركات التأمين",
-    "INSURANCE_SUB": "الوصول لبوابات مزودي التأمين والتحقق من الموافقات المسبقة ونسب التحمل",
+    "INSURANCE_SUB": "الوصول لبوابات مزودي التأمين والتحقق من الموافقات ونسب التحمل",
     "BILLING_TITLE": "الفواتير والحسابات",
     "BILLING_SUB": "تحصيل المدفوعات وعرض السجل",
     "ROOMS_TITLE": "إدارة الغرف",
@@ -66,6 +68,13 @@
     "BOOKINGS_SUB": "إدارة الجدول اليومي",
     
     "TODAYS_SESSIONS": "جلسات اليوم",
+    "COMPLETED_SESSIONS": "الجلسات المكتملة",
+    "TODAY_REVENUE": "إيرادات اليوم",
+    "TOTAL_TODAY_REVENUE": "إجمالي اليوم (المحصل / المتوقع)",
+    "CASH_COLLECTED": "المحصل نقداً",
+    "DIGITAL_COLLECTED": "فيزا والمحافظ الإلكترونية",
+    "PENDING_COLLECTION": "المعلق تحصيله",
+    "COLLECTION_RATE": "نسبة التحصيل",
     "PRESENT_DOCTORS": "الأطباء المتواجدون",
     "WALKINS": "بدون موعد",
     "PENDING_PAYMENTS": "المدفوعات المعلقة",
@@ -76,6 +85,12 @@
     "ALL_ROOMS": "جميع الغرف",
     "ROOM_1": "غرفة ١",
     "ROOM_3": "غرفة ٣",
+    "ADD_ROOM": "إضافة غرفة",
+    "ROOM_NAME": "اسم الغرفة",
+    "CAPACITY": "السعة",
+    "INITIAL_STATUS": "الحالة الأولية",
+    "AVAILABLE": "متاح",
+    "ROOM_ADDED_SUCCESS": "تمت إضافة الغرفة بنجاح",
     
     "CONFIRMED": "مؤكد",
     "IN_PROGRESS": "قيد التنفيذ",
@@ -93,6 +108,7 @@
     "REASSIGN": "إعادة تعيين",
     "CONFIRM_COVERAGE": "تأكيد التغطية",
     "PROCESSING": "جاري المعالجة...",
+    "CANCEL": "إلغاء",
     
     "ADD_PATIENT": "إضافة مريض",
     "GENDER_TH": "الجنس",
@@ -153,7 +169,7 @@
     "FEATURE_GLOBAL_CARD": "تحقق البطاقات العالمية",
     "FEATURE_BALANCE_CHECK": "التحقق من رصيد الجلسات",
     "FEATURE_PAPERLESS": "فوترة لا ورقية",
-
+    
     "COMPANY": "الشركة",
     "CO_PAY": "نسبة التحمل",
     "DOCUMENTS_PENDING": "المستندات معلقة",
@@ -223,6 +239,47 @@
     "MARK_AVAILABLE": "تعيين كمتاح",
     "MARK_OCCUPIED": "تعيين كمشغول",
     "MARK_MAINTENANCE": "تعيين كصيانة",
-    "ASSIGN": "تعيين"
+    "ASSIGN": "تعيين",
+    "DATE": "التاريخ"
+  },
+  "CEO": {
+    "DASHBOARD_TITLE": "نظرة عامة تنفيذية",
+    "DASHBOARD_SUB": "أداء العيادة والتحليلات العامة",
+    "EXPORT_REPORT": "تصدير التقرير",
+    "TODAYS_REVENUE": "إيرادات اليوم",
+    "VS_YESTERDAY": "مقارنة بالأمس",
+    "ACTIVE_PATIENTS": "المرضى النشطون",
+    "NEW_TODAY": "جدد اليوم",
+    "SESSIONS_TODAY": "جلسات اليوم",
+    "ATTENDANCE": "نسبة الحضور",
+    "PENDING_PAYMENTS": "المدفوعات المعلقة",
+    "INSURANCE_DELAYS": "تأخيرات التأمين",
+    "REVENUE_TREND": "مؤشر الإيرادات",
+    "RECENT_ACTIVITY": "النشاط الأخير",
+    "BOOKED_SESSION": "قام بحجز جلسة",
+    "MINS_AGO_2": "منذ دقيقتين",
+    "COMPLETED_ASSESSMENT": "أتم التقييم",
+    "MINS_AGO_15": "منذ ١٥ دقيقة",
+    "MARKED_ABSENT": "سُجل غائباً",
+    "HOUR_AGO_1": "منذ ساعة"
+  },
+  "DOCTOR": {
+    "DASHBOARD_TITLE": "جدول الطبيب",
+    "DASHBOARD_SUB": "الجلسات والعلاجات المخصصة اليوم",
+    "ROOM_1": "غرفة ١",
+    "ROOM_3": "غرفة ٣",
+    "SESSION_4_10": "جلسة ٤ من ١٠",
+    "SESSION_8_12": "جلسة ٨ من ١٢",
+    "START_SESSION": "بدء الجلسة",
+    "AVAILABLE_SLOT": "فترة متاحة",
+    "ASSESSMENT": "تقييم"
+  },
+  "SENIOR": {
+    "DASHBOARD_TITLE": "لوحة الأخصائي الأول",
+    "DASHBOARD_SUB": "الإشراف على التقييم الأولي وسعة العيادة",
+    "TODAYS_TASKS": "مهام اليوم",
+    "ASSESSMENTS_4": "التقييمات (٤)",
+    "REASSESSMENTS_2": "إعادة التقييم (٢)",
+    "LIVE_VIEW_CAPACITY": "عرض السعة المباشر"
   }
 }
