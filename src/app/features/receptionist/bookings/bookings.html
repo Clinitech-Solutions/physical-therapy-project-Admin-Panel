@@ -46,6 +46,7 @@
               [filter]="true" 
               filterBy="nameEn,phone" 
               placeholder="Search / Select Patient..." 
+              appendTo="body"
               styleClass="w-100 p-select-sm">
               
               <ng-template pTemplate="selectedItem" let-patient>
@@ -96,6 +97,7 @@
             optionValue="value" 
             [disabled]="isNewPatient" 
             placeholder="Type" 
+            appendTo="body"
             styleClass="w-100 p-select-sm">
           </p-select>
         </div>
@@ -120,6 +122,7 @@
             [placeholder]="selectedPatientId ? 'Select Doctor...' : 'Select Patient First'" 
             [emptyMessage]="selectedPatientId ? 'No matching doctors' : 'Select patient first'"
             [disabled]="!selectedPatientId"
+            appendTo="body"
             styleClass="w-100 p-select-sm">
             <ng-template pTemplate="item" let-doc>
               <div class="d-flex justify-content-between align-items-center w-100">
@@ -142,6 +145,7 @@
             optionValue="id" 
             placeholder="Select Room..." 
             emptyMessage="{{ 'COMMON.NO_AVAILABLE_ROOMS' | translate }}"
+            appendTo="body"
             styleClass="w-100 p-select-sm">
             <ng-template pTemplate="item" let-room>
               <div class="d-flex justify-content-between align-items-center w-100">
@@ -293,6 +297,7 @@
 <p-dialog 
   [(visible)]="isQuickAddModalOpen" 
   [modal]="true" 
+  appendTo="body"
   [draggable]="false" 
   [resizable]="false" 
   [closable]="true" 

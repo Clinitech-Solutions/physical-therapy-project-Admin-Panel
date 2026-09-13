@@ -21,7 +21,8 @@ export const appConfig: ApplicationConfig = {
     providePrimeNG({
       theme: {
         preset: Aura
-      }
+      },
+      overlayAppendTo: 'body'
     }),
     MessageService,
     importProvidersFrom(
