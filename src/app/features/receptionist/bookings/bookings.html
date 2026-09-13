@@ -16,16 +16,19 @@
       </div>
       <div class="d-flex align-items-center gap-2">
         @if (selectedPatientId && isNewPatient) {
-          <span class="badge bg-warning bg-opacity-10 text-warning border border-warning px-2 py-1 rounded-pill" style="font-size: 0.72rem;">
-            <i class="bi bi-shield-check me-1"></i> Assessment First: Initial Assessment Required
-          </span>
+        <span class="badge bg-warning bg-opacity-10 text-warning border border-warning px-2 py-1 rounded-pill"
+          style="font-size: 0.72rem;">
+          <i class="bi bi-shield-check me-1"></i> Assessment First: Initial Assessment Required
+        </span>
         }
         @if (isInsurancePending) {
-          <span class="badge bg-danger bg-opacity-10 text-danger border border-danger px-2 py-1 rounded-pill" style="font-size: 0.72rem;">
-            <i class="bi bi-exclamation-octagon-fill me-1"></i> Insurance Approval Pending: Booking Blocked
-          </span>
+        <span class="badge bg-danger bg-opacity-10 text-danger border border-danger px-2 py-1 rounded-pill"
+          style="font-size: 0.72rem;">
+          <i class="bi bi-exclamation-octagon-fill me-1"></i> Insurance Approval Pending: Booking Blocked
+        </span>
         }
-        <p-button icon="pi pi-user-minus" [label]="'RECEPTIONIST.MARK_ABSENT' | translate" severity="danger" [outlined]="true" (onClick)="showAbsenceModal = true"></p-button>
+        <p-button icon="pi pi-user-minus" [label]="'RECEPTIONIST.MARK_ABSENT' | translate" severity="danger"
+          [outlined]="true" (onClick)="showAbsenceModal = true"></p-button>
       </div>
     </div>
 
@@ -37,45 +40,42 @@
             <label class="form-label mb-0 fw-semibold text-secondary small">
               {{ 'COMMON.PATIENT' | translate }} <span class="text-danger">*</span>
             </label>
-            <button 
-              type="button" 
-              class="btn btn-sm btn-link text-primary p-0 text-decoration-none fw-semibold" 
-              style="font-size: 0.75rem;"
-              (click)="openQuickAddModal()">
+            <button type="button" class="btn btn-sm btn-link text-primary p-0 text-decoration-none fw-semibold"
+              style="font-size: 0.75rem;" (click)="openQuickAddModal()">
               <i class="bi bi-person-plus-fill"></i> + Add Patient
             </button>
           </div>
           <div class="d-flex gap-1">
-            <p-select 
-              [options]="allPatients()" 
-              [(ngModel)]="selectedPatientId" 
-              (ngModelChange)="onPatientChange($event)"
-              optionValue="id" 
-              [filter]="true" 
-              filterBy="nameEn,phone" 
-              [placeholder]="'RECEPTIONIST.SEARCH_PLACEHOLDER' | translate" 
-              appendTo="body"
+            <p-select [options]="allPatients()" [(ngModel)]="selectedPatientId"
+              (ngModelChange)="onPatientChange($event)" optionValue="id" [filter]="true" filterBy="nameEn,phone"
+              [placeholder]="'RECEPTIONIST.SEARCH_PLACEHOLDER' | translate" appendTo="body"
               styleClass="w-100 p-select-sm">
-              
+
               <ng-template pTemplate="selectedItem" let-patient>
                 <div class="d-flex align-items-center gap-2" *ngIf="patient">
-                  <div class="avatar avatar-xs bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width:20px;height:20px;font-size:10px">
+                  <div
+                    class="avatar avatar-xs bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
+                    style="width:20px;height:20px;font-size:10px">
                     {{ patient.avatar }}
                   </div>
                   <span class="fw-medium small">{{ patient.nameEn }}</span>
-                  <span class="badge bg-secondary bg-opacity-10 text-secondary" style="font-size: 0.65rem;">{{ patient.gender }}</span>
+                  <span class="badge bg-secondary bg-opacity-10 text-secondary" style="font-size: 0.65rem;">{{
+                    patient.gender }}</span>
                 </div>
               </ng-template>
-              
+
               <ng-template pTemplate="item" let-patient>
                 <div class="d-flex align-items-center gap-2 py-1">
-                  <div class="avatar avatar-xs bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width:24px;height:24px;font-size:10px">
+                  <div
+                    class="avatar avatar-xs bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
+                    style="width:24px;height:24px;font-size:10px">
                     {{ patient.avatar }}
                   </div>
                   <div class="d-flex flex-column">
                     <div class="fw-semibold small">
                       {{ patient.nameEn }}
-                      <span class="badge bg-secondary bg-opacity-10 text-secondary ms-1" style="font-size: 0.65rem;">{{ patient.gender }}</span>
+                      <span class="badge bg-secondary bg-opacity-10 text-secondary ms-1" style="font-size: 0.65rem;">{{
+                        patient.gender }}</span>
                     </div>
                     <span class="text-muted" style="font-size: 0.72rem">{{ patient.phone }}</span>
                   </div>
@@ -83,11 +83,8 @@
               </ng-template>
             </p-select>
 
-            <button 
-              type="button" 
-              class="btn btn-outline-primary btn-sm px-2 d-flex align-items-center" 
-              (click)="openQuickAddModal()" 
-              title="Add New Patient">
+            <button type="button" class="btn btn-outline-primary btn-sm px-2 d-flex align-items-center"
+              (click)="openQuickAddModal()" title="Add New Patient">
               <i class="bi bi-plus-lg"></i>
             </button>
           </div>
@@ -98,14 +95,8 @@
           <label class="form-label mb-1 fw-semibold text-secondary small">
             {{ 'RECEPTIONIST.TYPE' | translate }} <span class="text-danger">*</span>
           </label>
-          <p-select 
-            [options]="sessionTypeOptions" 
-            [(ngModel)]="sessionType" 
-            optionLabel="label" 
-            optionValue="value" 
-            [disabled]="isNewPatient" 
-            [placeholder]="'RECEPTIONIST.TYPE' | translate" 
-            appendTo="body"
+          <p-select [options]="sessionTypeOptions" [(ngModel)]="sessionType" optionLabel="label" optionValue="value"
+            [disabled]="isNewPatient" [placeholder]="'RECEPTIONIST.TYPE' | translate" appendTo="body"
             styleClass="w-100 p-select-sm">
           </p-select>
         </div>
@@ -117,25 +108,20 @@
               {{ 'COMMON.DOCTOR' | translate }} <span class="text-danger">*</span>
             </label>
             @if (selectedPatientId) {
-              <span class="badge bg-primary bg-opacity-10 text-primary" style="font-size: 0.65rem;">
-                {{ clinicState.getPatientGender(selectedPatientId) }}
-              </span>
+            <span class="badge bg-primary bg-opacity-10 text-primary" style="font-size: 0.65rem;">
+              {{ clinicState.getPatientGender(selectedPatientId) }}
+            </span>
             }
           </div>
-          <p-select 
-            [options]="filteredDoctors" 
-            [(ngModel)]="selectedDoctorId" 
-            optionLabel="name" 
-            optionValue="id" 
-            [placeholder]="selectedPatientId ? 'Select Doctor...' : 'Select Patient First'" 
+          <p-select [options]="filteredDoctors" [(ngModel)]="selectedDoctorId" optionLabel="name" optionValue="id"
+            [placeholder]="selectedPatientId ? 'Select Doctor...' : 'Select Patient First'"
             [emptyMessage]="selectedPatientId ? 'No matching doctors' : 'Select patient first'"
-            [disabled]="!selectedPatientId"
-            appendTo="body"
-            styleClass="w-100 p-select-sm">
+            [disabled]="!selectedPatientId" appendTo="body" styleClass="w-100 p-select-sm">
             <ng-template pTemplate="item" let-doc>
               <div class="d-flex justify-content-between align-items-center w-100">
                 <span class="small">{{ doc.name }}</span>
-                <span class="badge bg-secondary bg-opacity-10 text-secondary" style="font-size: 0.65rem;">{{ doc.gender }}</span>
+                <span class="badge bg-secondary bg-opacity-10 text-secondary" style="font-size: 0.65rem;">{{ doc.gender
+                  }}</span>
               </div>
             </ng-template>
           </p-select>
@@ -146,15 +132,9 @@
           <label class="form-label mb-1 fw-semibold text-secondary small">
             {{ 'COMMON.ROOM' | translate }} <span class="text-danger">*</span>
           </label>
-          <p-select 
-            [options]="availableRooms()" 
-            [(ngModel)]="selectedRoomId" 
-            optionLabel="displayName" 
-            optionValue="id" 
-            [placeholder]="'COMMON.ROOM' | translate" 
-            emptyMessage="{{ 'COMMON.NO_AVAILABLE_ROOMS' | translate }}"
-            appendTo="body"
-            styleClass="w-100 p-select-sm">
+          <p-select [options]="availableRooms()" [(ngModel)]="selectedRoomId" optionLabel="displayName" optionValue="id"
+            [placeholder]="'COMMON.ROOM' | translate" emptyMessage="{{ 'COMMON.NO_AVAILABLE_ROOMS' | translate }}"
+            appendTo="body" styleClass="w-100 p-select-sm">
             <ng-template pTemplate="item" let-room>
               <div class="d-flex justify-content-between align-items-center w-100">
                 <span class="small"><i class="bi bi-door-open me-1 text-primary"></i>{{ room.displayName }}</span>
@@ -169,44 +149,30 @@
           <label class="form-label mb-1 fw-semibold text-secondary small">
             {{ 'COMMON.DATE' | translate }} & {{ 'COMMON.TIME' | translate }} <span class="text-danger">*</span>
           </label>
-          <p-datepicker 
-            [(ngModel)]="scheduledDate" 
-            [showTime]="true" 
-            hourFormat="12" 
-            [showIcon]="true" 
-            placeholder="Date & Time" 
-            appendTo="body" 
-            styleClass="w-100 p-datepicker-sm">
+          <p-datepicker [(ngModel)]="scheduledDate" [showTime]="true" hourFormat="12" [showIcon]="true"
+            placeholder="Date & Time" appendTo="body" styleClass="w-100 p-datepicker-sm">
           </p-datepicker>
         </div>
 
         <!-- Action Buttons Bar (Aligned right & compact) -->
         <div class="col-12 d-flex justify-content-end align-items-center gap-2 pt-2 border-top mt-2">
-          <button 
-            type="button" 
-            class="btn btn-outline-secondary btn-sm px-3" 
-            (click)="resetBookingForm()">
+          <button type="button" class="btn btn-outline-secondary btn-sm px-3" (click)="resetBookingForm()">
             Reset
           </button>
-          
-          <button 
-            type="button" 
-            class="btn btn-warning btn-sm fw-semibold px-3 d-flex align-items-center shadow-sm" 
-            (click)="handleWalkInNearestSlot()"
-            [disabled]="!selectedPatientId || isInsurancePending">
+
+          <button type="button" class="btn btn-warning btn-sm fw-semibold px-3 d-flex align-items-center shadow-sm"
+            (click)="handleWalkInNearestSlot()" [disabled]="!selectedPatientId || isInsurancePending">
             <i class="bi bi-lightning-charge-fill me-1"></i> Find Nearest Slot (Walk-in)
           </button>
-          
-          <button 
-            type="button" 
-            class="btn btn-primary btn-sm fw-semibold px-4 d-flex align-items-center shadow-sm" 
+
+          <button type="button" class="btn btn-primary btn-sm fw-semibold px-4 d-flex align-items-center shadow-sm"
             (click)="submitBooking()"
             [disabled]="isLoading() || !selectedPatientId || !selectedDoctorId || !selectedRoomId || !scheduledDate || isInsurancePending">
             @if (isLoading()) {
-              <span class="spinner-border spinner-border-sm me-1"></span>
-              {{ 'RECEPTIONIST.PROCESSING' | translate }}
+            <span class="spinner-border spinner-border-sm me-1"></span>
+            {{ 'RECEPTIONIST.PROCESSING' | translate }}
             } @else {
-              <i class="bi bi-calendar-check me-1"></i> {{ 'RECEPTIONIST.BOOK_SESSION' | translate }}
+            <i class="bi bi-calendar-check me-1"></i> {{ 'RECEPTIONIST.BOOK_SESSION' | translate }}
             }
           </button>
         </div>
@@ -219,20 +185,18 @@
     <div class="col-12">
       <div class="table-panel border rounded-3 bg-card shadow-sm overflow-hidden">
         <!-- Schedule Header with Status Filters & View Toggles -->
-        <div class="table-toolbar px-3 py-2 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2 bg-light bg-opacity-50">
+        <div
+          class="table-toolbar px-3 py-2 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2 bg-light bg-opacity-50">
           <div class="d-flex align-items-center gap-3">
-            <h5 class="mb-0 font-clash fw-bold small text-uppercase tracking-wider">Today's Schedule ( {{ todayDate | date:'dd MMM yyyy' }} )</h5>
-            
+            <h5 class="mb-0 font-clash fw-bold small text-uppercase tracking-wider">Today's Schedule ( {{ todayDate |
+              date:'dd MMM yyyy' }} )</h5>
+
             <!-- Status Filter Bar (PrimeNG SelectButton) -->
-            <p-selectbutton 
-              [options]="filterOptions" 
-              [(ngModel)]="selectedFilter" 
-              optionLabel="label" 
-              optionValue="value" 
-              styleClass="schedule-filter-selectbutton">
+            <p-selectbutton [options]="filterOptions" [(ngModel)]="selectedFilter" optionLabel="label"
+              optionValue="value" styleClass="schedule-filter-selectbutton">
             </p-selectbutton>
           </div>
-          
+
           <div class="d-flex align-items-center gap-2">
             <div class="btn-group btn-group-sm">
               <button class="btn btn-primary btn-sm px-3">{{ 'RECEPTIONIST.DAY' | translate }}</button>
@@ -240,89 +204,91 @@
             </div>
           </div>
         </div>
-        
+
         <!-- Timeline Rows -->
         <div class="timeline-scroll-area p-0">
           <div class="d-flex flex-column">
             @for(slot of filteredSchedule; track slot.time) {
-              <div class="d-flex calendar-slot-row">
-                <!-- Time Column -->
-                <div class="time-badge-col">
-                  {{ slot.time }}
-                </div>
+            <div class="d-flex calendar-slot-row">
+              <!-- Time Column -->
+              <div class="time-badge-col">
+                {{ slot.time }}
+              </div>
 
-                <!-- Session Cards Container -->
-                <div class="slot-sessions-container">
-                  @for(session of slot.sessions; track session.id) {
-                    <!-- Distinct Visual States: status-completed, status-in-progress, status-pending, status-confirmed -->
-                    <div class="session-card" [ngClass]="getStatusClass(session.status)">
-                      <div class="d-flex justify-content-between align-items-center mb-1">
-                        <div class="d-flex align-items-center text-truncate pe-1">
-                          @if (session.status === 'In Progress') {
-                            <span class="live-indicator"></span>
-                          }
-                          <span class="patient-name fw-semibold small text-truncate">{{ clinicState.getPatientName(session.patientId) }}</span>
-                        </div>
-                        <span class="badge" [ngClass]="{
+              <!-- Session Cards Container -->
+              <div class="slot-sessions-container">
+                @for(session of slot.sessions; track session.id) {
+                <!-- Distinct Visual States: status-completed, status-in-progress, status-pending, status-confirmed -->
+                <div class="session-card" [ngClass]="getStatusClass(session.status)">
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <div class="d-flex align-items-center text-truncate pe-1">
+                      @if (session.status === 'In Progress') {
+                      <span class="live-indicator"></span>
+                      }
+                      <span class="patient-name fw-semibold small text-truncate">{{
+                        clinicState.getPatientName(session.patientId) }}</span>
+                    </div>
+                    <span class="badge" [ngClass]="{
                           'badge-warning': session.status === 'Confirmed',
                           'badge-info': session.status === 'In Progress',
                           'badge-success': session.status === 'Completed',
                           'badge-neutral': session.status === 'Pending',
                           'badge-error': session.status === 'Cancelled'
                         }" style="font-size: 0.65rem;">
-                          {{ session.status }}
-                        </span>
-                      </div>
-                      
-                      <div class="d-flex justify-content-between align-items-center text-muted" style="font-size: 0.72rem;">
-                        <span><i class="bi bi-person me-1"></i>{{ clinicState.getDoctorName(session.doctorId) }}</span>
-                        <span><i class="bi bi-door-open me-1"></i>{{ clinicState.getRoomName(session.roomId) }}</span>
-                      </div>
+                      {{ session.status }}
+                    </span>
+                  </div>
 
-                      <div class="d-flex justify-content-between align-items-center mt-1 pt-1 border-top border-opacity-10" style="font-size: 0.68rem;">
-                        <span class="badge bg-secondary bg-opacity-10 text-secondary py-0 px-1">{{ session.type }}</span>
-                        <span class="session-time font-monospace text-muted">
-                          <i class="bi bi-clock me-1"></i>{{ formatTime(session.scheduledAt) }}
-                        </span>
-                      </div>
+                  <div class="d-flex justify-content-between align-items-center text-muted" style="font-size: 0.72rem;">
+                    <span><i class="bi bi-person me-1"></i>{{ clinicState.getDoctorName(session.doctorId) }}</span>
+                    <span><i class="bi bi-door-open me-1"></i>{{ clinicState.getRoomName(session.roomId) }}</span>
+                  </div>
 
-                      @if (session.status === 'In Progress') {
-                        <div class="mt-1 pt-1 border-top border-opacity-10 d-flex justify-content-end">
-                          <button 
-                            type="button" 
-                            class="btn btn-sm btn-outline-success py-0 px-2 d-flex align-items-center gap-1"
-                            style="font-size: 0.7rem; height: 24px;"
-                            (click)="checkoutSession(session.id); $event.stopPropagation()">
-                            <i class="bi bi-box-arrow-right"></i> {{ 'RECEPTIONIST.CHECK_OUT' | translate }}
-                          </button>
-                        </div>
-                      } @else if (session.status === 'Confirmed' || session.status === 'Pending') {
-                        <div class="mt-1 pt-1 border-top border-opacity-10 d-flex justify-content-end align-items-center gap-1">
-                          <button 
-                            type="button" 
-                            class="btn btn-sm btn-outline-primary py-0 px-2 d-flex align-items-center gap-1"
-                            style="font-size: 0.7rem; height: 24px;"
-                            (click)="checkInSession(session.id); $event.stopPropagation()">
-                            <i class="bi bi-box-arrow-in-right"></i> {{ 'RECEPTIONIST.CHECK_IN' | translate }}
-                          </button>
-                          <p-button 
-                            *ngIf="session.status === 'Pending' || session.status === 'Confirmed' || session.status === 'Waiting'"
-                            icon="bi bi-person-x" 
-                            styleClass="btn-tinted-danger" 
-                            [pTooltip]="'RECEPTIONIST.MARK_ABSENT' | translate" 
-                            tooltipPosition="top" 
-                            (onClick)="markPatientAbsent(session.id); $event.stopPropagation()">
-                          </p-button>
-                        </div>
-                      }
-                    </div>
-                  }
+                  <div class="d-flex justify-content-between align-items-center mt-1 pt-1 border-top border-opacity-10"
+                    style="font-size: 0.68rem;">
+                    <span class="badge bg-secondary bg-opacity-10 text-secondary py-0 px-1">{{ session.type }}</span>
+                    <span class="session-time font-monospace text-muted">
+                      <i class="bi bi-clock me-1"></i>{{ formatTime(session.scheduledAt) }}
+                    </span>
+                  </div>
 
-                  @if (slot.sessions.length === 0) {
-                    <span class="empty-slot-hint ps-2">No {{ selectedFilter !== 'All' ? selectedFilter.toLowerCase() : '' }} sessions scheduled</span>
+                  @if (session.status === 'In Progress') {
+                  <div class="mt-1 pt-1 border-top border-opacity-10 d-flex justify-content-end">
+                    <button type="button"
+                      class="btn btn-sm btn-outline-success py-0 px-2 d-flex align-items-center gap-1"
+                      style="font-size: 0.7rem; height: 24px;"
+                      (click)="checkoutSession(session.id); $event.stopPropagation()">
+                      <i class="bi bi-box-arrow-right"></i> {{ 'RECEPTIONIST.CHECK_OUT' | translate }}
+                    </button>
+                  </div>
+                  } @else if (session.status === 'Confirmed' || session.status === 'Pending') {
+                  <div
+                    class="mt-1 pt-1 border-top border-opacity-10 d-flex justify-content-end align-items-center gap-1">
+                    <button type="button"
+                      class="btn btn-sm btn-outline-primary py-0 px-2 d-flex align-items-center gap-1"
+                      style="font-size: 0.7rem; height: 24px;"
+                      (click)="checkInSession(session.id); $event.stopPropagation()">
+                      <i class="bi bi-box-arrow-in-right"></i> {{ 'RECEPTIONIST.CHECK_IN' | translate }}
+                    </button>
+                    <p-button
+                      *ngIf="session.status === 'Pending' || session.status === 'Confirmed' || session.status === 'Waiting'"
+                      icon="bi bi-person-x" styleClass="btn-tinted-danger"
+                      pTooltip="{{ 'RECEPTIONIST.MARK_ABSENT' | translate }}"
+                      tooltipPosition="top"
+                      tooltipStyleClass="custom-tooltip"
+                      (onClick)="markPatientAbsent(session.id); $event.stopPropagation()">
+                    </p-button>
+                  </div>
                   }
                 </div>
+                }
+
+                @if (slot.sessions.length === 0) {
+                <span class="empty-slot-hint ps-2">No {{ selectedFilter !== 'All' ? selectedFilter.toLowerCase() : '' }}
+                  sessions scheduled</span>
+                }
               </div>
+            </div>
             }
           </div>
         </div>
@@ -332,21 +298,14 @@
 </div>
 
 <!-- Quick Add Patient Modal (Dialog) -->
-<p-dialog 
-  [(visible)]="isQuickAddModalOpen" 
-  [modal]="true" 
-  appendTo="body"
-  [draggable]="false" 
-  [resizable]="false" 
-  [closable]="true" 
-  [showHeader]="true" 
-  styleClass="clean-modal"
-  [style]="{ width: '450px' }"
+<p-dialog [(visible)]="isQuickAddModalOpen" [modal]="true" appendTo="body" [draggable]="false" [resizable]="false"
+  [closable]="true" [showHeader]="true" styleClass="clean-modal" [style]="{ width: '450px' }"
   [header]="'RECEPTIONIST.ADD_PATIENT' | translate">
-  
+
   <div class="modal-form-vertical">
     <div class="form-group">
-      <label class="form-label">{{ 'RECEPTIONIST.FULL_NAME_EN' | translate }} <span class="required-asterisk">*</span></label>
+      <label class="form-label">{{ 'RECEPTIONIST.FULL_NAME_EN' | translate }} <span
+          class="required-asterisk">*</span></label>
       <input type="text" class="form-control" [(ngModel)]="quickPatient.nameEn" placeholder="e.g. John Doe">
     </div>
 
@@ -362,7 +321,8 @@
 
     <div class="modal-form-grid">
       <div class="form-group">
-        <label class="form-label">{{ 'RECEPTIONIST.GENDER_TH' | translate }} <span class="required-asterisk">*</span></label>
+        <label class="form-label">{{ 'RECEPTIONIST.GENDER_TH' | translate }} <span
+            class="required-asterisk">*</span></label>
         <select class="form-select" [(ngModel)]="quickPatient.gender">
           <option value="Male">{{ 'RECEPTIONIST.MALE' | translate }}</option>
           <option value="Female">{{ 'RECEPTIONIST.FEMALE' | translate }}</option>
@@ -386,7 +346,7 @@
       </button>
       <button class="btn btn-primary" (click)="saveQuickPatient()" [disabled]="isLoading()">
         @if (isLoading()) {
-          <span class="spinner-border spinner-border-sm me-1"></span>
+        <span class="spinner-border spinner-border-sm me-1"></span>
         }
         Save & Select
       </button>
@@ -395,16 +355,8 @@
 </p-dialog>
 
 <!-- Report Doctor Absence Modal -->
-<p-dialog 
-  [(visible)]="showAbsenceModal" 
-  [modal]="true" 
-  appendTo="body"
-  [draggable]="false" 
-  [resizable]="false" 
-  [closable]="true" 
-  styleClass="clean-modal" 
-  [style]="{width: '450px'}" 
-  header="Report Doctor Absence"
+<p-dialog [(visible)]="showAbsenceModal" [modal]="true" appendTo="body" [draggable]="false" [resizable]="false"
+  [closable]="true" styleClass="clean-modal" [style]="{width: '450px'}" header="Report Doctor Absence"
   (onHide)="closeAbsenceModal()">
 
   <div style="display: flex; flex-direction: column; gap: 1rem;">
@@ -413,19 +365,14 @@
       <label class="form-label mb-1 fw-semibold text-secondary small">
         Absent Doctor <span class="text-danger">*</span>
       </label>
-      <p-select 
-        [options]="allDoctors()" 
-        [(ngModel)]="absentDoctorId" 
-        (ngModelChange)="onAbsentDoctorChange()"
-        optionLabel="name" 
-        optionValue="id" 
-        placeholder="Select Absent Doctor..." 
-        appendTo="body"
+      <p-select [options]="allDoctors()" [(ngModel)]="absentDoctorId" (ngModelChange)="onAbsentDoctorChange()"
+        optionLabel="name" optionValue="id" placeholder="Select Absent Doctor..." appendTo="body"
         styleClass="w-100 p-select-sm">
         <ng-template pTemplate="item" let-doc>
           <div class="d-flex justify-content-between align-items-center w-100">
             <span>{{ doc.name }}</span>
-            <span class="badge bg-secondary bg-opacity-10 text-secondary" style="font-size: 0.65rem;">{{ doc.gender }}</span>
+            <span class="badge bg-secondary bg-opacity-10 text-secondary" style="font-size: 0.65rem;">{{ doc.gender
+              }}</span>
           </div>
         </ng-template>
       </p-select>
@@ -438,51 +385,39 @@
           Covering Senior <span class="text-danger">*</span>
         </label>
         @if (absentDoctorId && getDoctorGender(absentDoctorId)) {
-          <span class="badge bg-primary bg-opacity-10 text-primary" style="font-size: 0.65rem;">
-            Same Gender: {{ getDoctorGender(absentDoctorId) }}
-          </span>
+        <span class="badge bg-primary bg-opacity-10 text-primary" style="font-size: 0.65rem;">
+          Same Gender: {{ getDoctorGender(absentDoctorId) }}
+        </span>
         }
       </div>
-      <p-select 
-        [options]="coveringSeniors" 
-        [(ngModel)]="coveringSeniorId" 
-        optionLabel="name" 
-        optionValue="id" 
-        [placeholder]="absentDoctorId ? 'Select Covering Senior...' : 'Select Absent Doctor First'" 
+      <p-select [options]="coveringSeniors" [(ngModel)]="coveringSeniorId" optionLabel="name" optionValue="id"
+        [placeholder]="absentDoctorId ? 'Select Covering Senior...' : 'Select Absent Doctor First'"
         [emptyMessage]="absentDoctorId ? 'No matching doctors with same gender' : 'Select absent doctor first'"
-        [disabled]="!absentDoctorId || coveringSeniors.length === 0"
-        appendTo="body"
-        styleClass="w-100 p-select-sm">
+        [disabled]="!absentDoctorId || coveringSeniors.length === 0" appendTo="body" styleClass="w-100 p-select-sm">
         <ng-template pTemplate="item" let-doc>
           <div class="d-flex justify-content-between align-items-center w-100">
             <span>{{ doc.name }}</span>
-            <span class="badge bg-secondary bg-opacity-10 text-secondary" style="font-size: 0.65rem;">{{ doc.gender }}</span>
+            <span class="badge bg-secondary bg-opacity-10 text-secondary" style="font-size: 0.65rem;">{{ doc.gender
+              }}</span>
           </div>
         </ng-template>
       </p-select>
       @if (absentDoctorId && coveringSeniors.length === 0) {
-        <small class="text-danger mt-1 d-block" style="font-size: 0.72rem;">
-          No other doctors available with the same gender ({{ getDoctorGender(absentDoctorId) }}).
-        </small>
+      <small class="text-danger mt-1 d-block" style="font-size: 0.72rem;">
+        No other doctors available with the same gender ({{ getDoctorGender(absentDoctorId) }}).
+      </small>
       }
     </div>
   </div>
 
   <ng-template pTemplate="footer">
     <div class="modal-footer-actions">
-      <p-button 
-        [label]="'COMMON.CANCEL' | translate" 
-        [outlined]="true" 
-        severity="secondary" 
+      <p-button [label]="'COMMON.CANCEL' | translate" [outlined]="true" severity="secondary"
         (onClick)="closeAbsenceModal()">
       </p-button>
-      <p-button 
-        [label]="'RECEPTIONIST.CONFIRM_COVERAGE' | translate" 
-        severity="danger" 
-        (onClick)="confirmAbsence()" 
+      <p-button [label]="'RECEPTIONIST.CONFIRM_COVERAGE' | translate" severity="danger" (onClick)="confirmAbsence()"
         [disabled]="!absentDoctorId || !coveringSeniorId">
       </p-button>
     </div>
   </ng-template>
 </p-dialog>
-

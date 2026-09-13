@@ -561,6 +561,28 @@ html[dir="rtl"] h4 {
   opacity: 1;
 }
 
+/* Custom PrimeNG Tooltip strictly matching Check-In data-tip styling */
+.p-tooltip.custom-tooltip {
+  z-index: 1000 !important;
+}
+
+.p-tooltip.custom-tooltip .p-tooltip-text {
+  background: var(--bg-elevated) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--radius-sm) !important;
+  padding: 4px 8px !important;
+  font-size: var(--text-xs) !important;
+  font-family: var(--font-body) !important;
+  white-space: nowrap !important;
+  box-shadow: var(--shadow-elevated) !important;
+  line-height: normal !important;
+}
+
+.p-tooltip.custom-tooltip .p-tooltip-arrow {
+  display: none !important;
+}
+
 /* ── FORM ELEMENTS ────────────────────────────────────────── */
 .form-group {
   display: flex;
@@ -1998,4 +2020,4 @@ html.light .clean-modal .btn-outline-secondary:hover {
   font-size: 1.5rem;
   color: #ffffff;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-}
+}
