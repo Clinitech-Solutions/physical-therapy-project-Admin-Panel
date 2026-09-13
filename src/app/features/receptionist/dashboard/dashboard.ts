@@ -1,4 +1,4 @@
-import { Component, inject, signal } from "@angular/core";
+import { Component, inject, signal, computed } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { LanguageService } from "../../../core/services/language";
 import { TranslateModule } from '@ngx-translate/core';
@@ -33,30 +33,73 @@ export class Dashboard {
   searchPatient = signal<string>('');
 
   /**
-   * Strictly filters clinicState.sessions() to only include sessions
-   * where the date part of scheduledAt matches today's date.
+   * Real-time computed signal: Filter clinicState.sessions() where date matches today
    */
-  get todaySessions(): Session[] {
-    const todayYMD = this.todayDate.toISOString().split('T')[0];
+  todaySessions = computed(() => {
+    const today = new Date();
+    const todayYMD = today.toISOString().split('T')[0];
     const pad = (n: number) => n.toString().padStart(2, '0');
-    const localYMD = `${this.todayDate.getFullYear()}-${pad(this.todayDate.getMonth() + 1)}-${pad(this.todayDate.getDate())}`;
+    const localYMD = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
 
-    return this.sessions().filter(s => {
+    return this.clinicState.sessions().filter(s => {
       if (!s.scheduledAt) return false;
+      const sessionDate = new Date(s.scheduledAt);
+      const isSameDay = !isNaN(sessionDate.getTime()) &&
+        sessionDate.getFullYear() === today.getFullYear() &&
+        sessionDate.getMonth() === today.getMonth() &&
+        sessionDate.getDate() === today.getDate();
       const sessionDatePart = s.scheduledAt.split('T')[0];
-      return sessionDatePart === todayYMD || sessionDatePart === localYMD;
+      return isSameDay || sessionDatePart === todayYMD || sessionDatePart === localYMD;
     });
-  }
+  });
 
   /**
-   * Filtered today's sessions for the timeline table
+   * Real-time computed signal: Count of todaySessions where status is 'Completed'
    */
-  get filteredTodaySessions(): Session[] {
+  completedSessionsCount = computed(() =>
+    this.todaySessions().filter(s => s.status === 'Completed').length
+  );
+
+  /**
+   * Real-time computed signal: Count of clinicState.invoices() where status is 'Pending'
+   */
+  pendingPaymentsCount = computed(() =>
+    this.clinicState.invoices().filter(i => i.status === 'Pending').length
+  );
+
+  /**
+   * Real-time computed signal: Sum the amount of all clinicState.invoices()
+   * where status is 'Paid' AND the createdAt date matches today
+   */
+  todayRevenue = computed(() => {
+    const today = new Date();
+    const todayYMD = today.toISOString().split('T')[0];
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const localYMD = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+
+    return this.clinicState.invoices()
+      .filter(inv => {
+        if (inv.status !== 'Paid' || !inv.createdAt) return false;
+        const invDate = new Date(inv.createdAt);
+        const isSameDay = !isNaN(invDate.getTime()) &&
+          invDate.getFullYear() === today.getFullYear() &&
+          invDate.getMonth() === today.getMonth() &&
+          invDate.getDate() === today.getDate();
+        const invDatePart = inv.createdAt.split('T')[0];
+        return isSameDay || invDatePart === todayYMD || invDatePart === localYMD;
+      })
+      .reduce((sum, inv) => sum + (inv.amount || 0), 0);
+  });
+
+  /**
+   * Filtered today's sessions for the timeline table (reactive computed signal)
+   */
+  filteredTodaySessions = computed(() => {
     const docFilter = this.filterDoctor().toLowerCase();
     const roomFilter = this.filterRoom().toLowerCase();
     const search = this.searchPatient().toLowerCase();
 
-    return this.todaySessions.filter(session => {
+    return this.todaySessions().filter(session => {
       const docName = this.clinicState.getDoctorName(session.doctorId).toLowerCase();
       const roomName = this.clinicState.getRoomName(session.roomId).toLowerCase();
       const patientName = this.clinicState.getPatientName(session.patientId).toLowerCase();
@@ -67,15 +110,17 @@ export class Dashboard {
 
       return matchDoc && matchRoom && matchPatient;
     });
-  }
+  });
 
   // Live KPI stats bound directly to state signals
   get kpis() {
     return {
-      todaysSessions: this.todaySessions.length,
+      todaysSessions: this.todaySessions().length,
+      completedSessions: this.completedSessionsCount(),
       presentDoctors: this.clinicState.doctors().length,
-      walkInsToday: this.todaySessions.filter(s => s.type === 'Assessment').length,
-      pendingPayments: this.clinicState.invoices().filter(i => i.status === 'Pending').length
+      walkInsToday: this.todaySessions().filter(s => s.type === 'Assessment').length,
+      pendingPayments: this.pendingPaymentsCount(),
+      todayRevenue: this.todayRevenue()
     };
   }
 
@@ -125,3 +170,6 @@ export class Dashboard {
     this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Patient checked out' });
   }
 }
+
+export { Dashboard as DashboardComponent };
+

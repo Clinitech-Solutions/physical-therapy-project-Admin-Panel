@@ -10,19 +10,19 @@
   <div class="kpi-row">
     <div class="stat-card border-start-teal">
       <div class="stat-label">{{ 'RECEPTIONIST.TODAYS_SESSIONS' | translate }}</div>
-      <div class="stat-value text-teal">{{ todaySessions.length }}</div>
+      <div class="stat-value text-teal">{{ todaySessions().length }}</div>
     </div>
     <div class="stat-card border-start-blue">
-      <div class="stat-label">{{ 'RECEPTIONIST.PRESENT_DOCTORS' | translate }}</div>
-      <div class="stat-value text-blue">{{ clinicState.doctors().length }}</div>
+      <div class="stat-label">{{ 'RECEPTIONIST.COMPLETED_SESSIONS' | translate }}</div>
+      <div class="stat-value text-blue">{{ completedSessionsCount() }}</div>
     </div>
     <div class="stat-card border-start-amber">
-      <div class="stat-label">{{ 'RECEPTIONIST.WALKINS' | translate }}</div>
-      <div class="stat-value text-amber">{{ kpis.walkInsToday }}</div>
-    </div>
-    <div class="stat-card border-start-red">
       <div class="stat-label">{{ 'RECEPTIONIST.PENDING_PAYMENTS' | translate }}</div>
-      <div class="stat-value text-red">{{ kpis.pendingPayments }}</div>
+      <div class="stat-value text-amber">{{ pendingPaymentsCount() }}</div>
+    </div>
+    <div class="stat-card border-start-teal">
+      <div class="stat-label">{{ 'RECEPTIONIST.TODAY_REVENUE' | translate }}</div>
+      <div class="stat-value text-teal">{{ todayRevenue() | currency:'EGP' }}</div>
     </div>
   </div>
 
@@ -64,7 +64,7 @@
           </tr>
         </thead>
         <tbody>
-          @for(session of filteredTodaySessions; track session.id) {
+          @for(session of filteredTodaySessions(); track session.id) {
             <tr>
               <td class="font-bebas" style="font-size:1rem">{{ formatTime(session.scheduledAt) }}</td>
               <td>
@@ -114,7 +114,7 @@
               </td>
             </tr>
           }
-          @if (filteredTodaySessions.length === 0) {
+          @if (filteredTodaySessions().length === 0) {
             <tr>
               <td colspan="6" class="text-center py-4 text-muted">
                 No sessions scheduled for today matching your criteria.

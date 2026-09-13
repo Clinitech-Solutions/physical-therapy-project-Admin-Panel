@@ -67,6 +67,8 @@
     "BOOKINGS_SUB": "إدارة الجدول اليومي",
     
     "TODAYS_SESSIONS": "جلسات اليوم",
+    "COMPLETED_SESSIONS": "الجلسات المكتملة",
+    "TODAY_REVENUE": "إيرادات اليوم",
     "PRESENT_DOCTORS": "الأطباء المتواجدون",
     "WALKINS": "بدون موعد",
     "PENDING_PAYMENTS": "المدفوعات المعلقة",

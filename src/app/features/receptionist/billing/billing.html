@@ -6,19 +6,21 @@
     </div>
   </div>
 
+  <!-- Real-time Dynamic Summary KPI Row -->
   <div class="row g-4 mb-4">
     <div class="col-md-4">
-      <div class="card h-100">
+      <div class="card h-100 border-start border-4 border-success">
         <div class="card-body d-flex flex-column justify-content-center h-100">
-          <h3 class="mb-0">EGP 12,450</h3>
+          <div class="text-secondary small fw-semibold text-uppercase mb-1">{{ 'RECEPTIONIST.TODAY_REVENUE' | translate }}</div>
+          <h3 class="mb-0 text-success">{{ totalRevenue() | currency:'EGP' }}</h3>
         </div>
       </div>
     </div>
     <div class="col-md-4">
       <div class="card h-100 border-start border-4 border-warning">
         <div class="card-body">
-          <div class="text-secondary small fw-semibold text-uppercase mb-1">{{ 'RECEPTIONIST.CASH_PAYMENTS' | translate }}</div>
-          <h4 class="text-warning mb-0">EGP 3,200</h4>
+          <div class="text-secondary small fw-semibold text-uppercase mb-1">{{ 'RECEPTIONIST.PENDING_PAYMENTS' | translate }}</div>
+          <h4 class="text-warning mb-0">{{ pendingPaymentsTotal() | currency:'EGP' }}</h4>
         </div>
       </div>
     </div>
@@ -26,108 +28,82 @@
       <div class="card h-100 border-start border-4 border-primary">
         <div class="card-body">
           <div class="text-secondary small fw-semibold text-uppercase mb-1">{{ 'RECEPTIONIST.ONLINE_PAYMENTS' | translate }}</div>
-          <h4 class="text-primary mb-0">EGP 5,000</h4>
+          <h4 class="text-primary mb-0">{{ onlinePayments() | currency:'EGP' }}</h4>
         </div>
       </div>
     </div>
   </div>
 
+  <!-- Real-Time PrimeNG Invoices Table -->
   <div class="table-panel">
+    <div class="table-toolbar d-flex justify-content-between align-items-center">
+      <h4 class="mb-0">{{ 'RECEPTIONIST.BILLING_TITLE' | translate }}</h4>
+      <span class="badge badge-neutral">{{ invoices().length }} Invoices</span>
+    </div>
     <div class="table-scroll-area">
-      <table>
-        <thead>
+      <p-table 
+        [value]="invoices()" 
+        [responsiveLayout]="'scroll'" 
+        styleClass="p-datatable-striped w-100">
+        <ng-template pTemplate="header">
           <tr>
             <th>{{ 'RECEPTIONIST.INVOICE_ID' | translate }}</th>
             <th>{{ 'COMMON.PATIENT' | translate }}</th>
+            <th>{{ 'RECEPTIONIST.AMOUNT' | translate }}</th>
             <th>{{ 'RECEPTIONIST.TYPE' | translate }}</th>
             <th>{{ 'RECEPTIONIST.DATE' | translate }}</th>
-            <th>{{ 'RECEPTIONIST.AMOUNT' | translate }}</th>
             <th>{{ 'COMMON.STATUS' | translate }}</th>
             <th style="text-align:end">{{ 'COMMON.ACTION' | translate }}</th>
           </tr>
-        </thead>
-        <tbody>
-          @for (invoice of invoices(); track invoice.id) {
-            <tr>
-              <td>{{ invoice.id }}</td>
-              <td class="fw-semibold">{{ clinicState.getPatientName(invoice.patientId) }}</td>
-              <td>{{ invoice.type }}</td>
-              <td>{{ formatDate(invoice.createdAt) }}</td>
-              <td class="fw-bold">{{ invoice.currency || 'EGP' }} {{ invoice.amount }}</td>
-              <td>
-                <span class="badge" [ngClass]="{
-                  'badge-warning': invoice.status === 'Pending',
-                  'badge-success': invoice.status === 'Paid',
-                  'badge-info': invoice.status === 'Partial'
-                }">{{ invoice.status }}</span>
-              </td>
-              <td style="text-align:end" dir="ltr">
-                <div class="d-flex gap-1 justify-content-end align-items-center">
-                  @if (invoice.status !== 'Paid') {
-                    <button class="btn-action action-primary" [attr.data-tip]="'RECEPTIONIST.COLLECT' | translate" (click)="openDrawer(invoice)">
-                      <i class="bi bi-wallet2"></i>
-                    </button>
-                  } @else {
-                    <button class="btn-action action-success" [attr.data-tip]="'RECEPTIONIST.PRINT' | translate">
-                      <i class="bi bi-printer"></i>
-                    </button>
-                  }
-                </div>
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
+        </ng-template>
+        <ng-template pTemplate="body" let-invoice>
+          <tr>
+            <td>
+              <span class="font-mono fw-semibold">{{ invoice.id }}</span>
+            </td>
+            <td class="fw-semibold">
+              <div class="d-flex align-items-center gap-2">
+                <div class="avatar avatar-sm">{{ clinicState.getPatientAvatar(invoice.patientId) }}</div>
+                <span>{{ clinicState.getPatientName(invoice.patientId) }}</span>
+              </div>
+            </td>
+            <td class="fw-bold text-teal">
+              {{ invoice.amount | currency:'EGP' }}
+            </td>
+            <td>
+              <span class="badge badge-neutral">{{ invoice.type }}</span>
+            </td>
+            <td>
+              {{ invoice.createdAt | date:'dd MMM yyyy, hh:mm a' }}
+            </td>
+            <td>
+              <p-tag 
+                [value]="invoice.status" 
+                [severity]="getStatusSeverity(invoice.status)">
+              </p-tag>
+            </td>
+            <td style="text-align:end">
+              @if (invoice.status === 'Pending' || invoice.status === 'Partial') {
+                <p-button 
+                  label="Process Payment" 
+                  icon="bi bi-credit-card"
+                  severity="success" 
+                  styleClass="p-button-success p-button-sm" 
+                  (onClick)="payInvoice(invoice.id)"
+                  [loading]="clinicState.isProcessingPayment()">
+                </p-button>
+              }
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="7" class="text-center py-4 text-muted">
+              No invoices found.
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
     </div>
   </div>
 </div>
-
-<!-- Payment Drawer Overlay -->
-@if (showDrawer()) {
-  <div class="modal-backdrop fade show" (click)="closeDrawer()"></div>
-  <div class="drawer drawer-compact fade-in" style="width:420px; z-index:1055; position:fixed; top:0; right:0; height:100%; overflow-y:auto;">
-    <div class="drawer-header d-flex justify-content-between align-items-center">
-      <h5 class="mb-0 font-clash">{{ 'RECEPTIONIST.COLLECT_PAYMENT' | translate }}</h5>
-      <button class="btn-close" (click)="closeDrawer()"></button>
-    </div>
-    <div class="drawer-body">
-      <div class="mb-3">
-        <label class="form-label text-secondary small">{{ 'COMMON.PATIENT' | translate }}</label>
-        <div class="fw-semibold">{{ clinicState.getPatientName(selectedInvoice?.patientId) }}</div>
-      </div>
-      <div class="mb-4">
-        <label class="form-label text-secondary small">{{ 'RECEPTIONIST.AMOUNT_DUE' | translate }}</label>
-        <h4 class="text-primary mb-0">{{ selectedInvoice?.currency || 'EGP' }} {{ selectedInvoice?.amount }}</h4>
-      </div>
-      
-      <div class="form-group mb-3">
-        <label class="form-label">{{ 'RECEPTIONIST.AMOUNT_COLLECTED' | translate }}</label>
-        <div class="input-group">
-          <span class="input-group-text card-bg border-end-0">{{ 'RECEPTIONIST.EGP' | translate }}</span>
-          <input type="number" class="form-control border-start-0 card-bg" [(ngModel)]="amountCollected">
-        </div>
-      </div>
-
-      <div class="form-group mb-3">
-        <label class="form-label">{{ 'RECEPTIONIST.PAYMENT_METHOD' | translate }}</label>
-        <div class="d-flex gap-2">
-          <button class="btn flex-grow-1" [ngClass]="paymentMethod === 'Cash' ? 'btn-primary' : 'btn-outline-primary'" (click)="paymentMethod = 'Cash'">{{ 'RECEPTIONIST.CASH' | translate }}</button>
-          <button class="btn flex-grow-1" [ngClass]="paymentMethod === 'Card' ? 'btn-primary' : 'btn-outline-primary'" (click)="paymentMethod = 'Card'">{{ 'RECEPTIONIST.CARD' | translate }}</button>
-          <button class="btn flex-grow-1" [ngClass]="paymentMethod === 'InstaPay' ? 'btn-primary' : 'btn-outline-primary'" (click)="paymentMethod = 'InstaPay'">{{ 'RECEPTIONIST.INSTAPAY' | translate }}</button>
-        </div>
-      </div>
-    </div>
-    <div class="drawer-footer">
-      <div class="d-flex gap-2">
-        <button class="btn btn-outline-secondary flex-1" (click)="closeDrawer()">{{ 'RECEPTIONIST.CANCEL' | translate }}</button>
-        <button class="btn btn-primary flex-1" (click)="processPayment()" [disabled]="isProcessing()">
-          @if (isProcessing()) {
-            <span class="spinner-border spinner-border-sm me-1"></span> {{ 'RECEPTIONIST.PROCESSING' | translate }}
-          } @else {
-            {{ 'RECEPTIONIST.PROCESS_PAYMENT' | translate }}
-          }
-        </button>
-      </div>
-    </div>
-  </div>
-}
