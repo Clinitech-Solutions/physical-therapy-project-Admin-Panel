@@ -507,5 +507,45 @@ describe('ClinicStateService Business Rules & Date Filtering Unit Tests', () => 
       expect(room4?.doctorId).toBeNull();
     });
   });
+
+  describe('Centralized Financial & Revenue Computed Signals', () => {
+    it('should compute todayInvoices, expectedTodayRevenue, collectedTodayRevenue, and breakdown accurately', async () => {
+      const today = new Date().toISOString().split('T')[0];
+      const pastDate = '2025-01-01';
+
+      const testInvoices = [
+        { id: 'inv_cash_paid', patientId: '1', amount: 500, currency: 'EGP', status: 'Paid' as const, paymentMethod: 'Cash', createdAt: `${today}T10:00:00Z` },
+        { id: 'inv_card_paid', patientId: '2', amount: 300, currency: 'EGP', status: 'Paid' as const, paymentMethod: 'Credit Card', createdAt: `${today}T11:00:00Z` },
+        { id: 'inv_wallet_paid', patientId: '3', amount: 200, currency: 'EGP', status: 'Paid' as const, paymentMethod: 'E-Wallet', createdAt: `${today}T12:00:00Z` },
+        { id: 'inv_pending', patientId: '4', amount: 400, currency: 'EGP', status: 'Pending' as const, createdAt: `${today}T13:00:00Z` },
+        { id: 'inv_partial', patientId: '5', amount: 150, currency: 'EGP', status: 'Partial' as const, createdAt: `${today}T14:00:00Z` },
+        // Past invoice should not be included in today's calculations
+        { id: 'inv_past_paid', patientId: '6', amount: 1000, currency: 'EGP', status: 'Paid' as const, paymentMethod: 'Cash', createdAt: `${pastDate}T10:00:00Z` }
+      ];
+
+      (service as any).invoicesSig.set(testInvoices);
+
+      // todayInvoices filters only today's invoices
+      expect(service.todayInvoices().length).toBe(5);
+
+      // expectedTodayRevenue = sum of all today's invoices (500 + 300 + 200 + 400 + 150 = 1550)
+      expect(service.expectedTodayRevenue()).toBe(1550);
+
+      // collectedTodayRevenue = sum of Paid invoices (500 + 300 + 200 = 1000)
+      expect(service.collectedTodayRevenue()).toBe(1000);
+
+      // pendingTodayRevenue = Pending + Partial (400 + 150 = 550)
+      expect(service.pendingTodayRevenue()).toBe(550);
+
+      // cashCollectedToday = 500
+      expect(service.cashCollectedToday()).toBe(500);
+
+      // digitalCollectedToday = Credit Card (300) + E-Wallet (200) = 500
+      expect(service.digitalCollectedToday()).toBe(500);
+
+      // collectionRateToday = (1000 / 1550) * 100 = 65%
+      expect(service.collectionRateToday()).toBe(Math.round((1000 / 1550) * 100));
+    });
+  });
 });
 

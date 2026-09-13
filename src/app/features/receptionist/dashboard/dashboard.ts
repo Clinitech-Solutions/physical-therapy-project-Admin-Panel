@@ -7,11 +7,12 @@ import { FormsModule } from '@angular/forms';
 import { ClinicStateService } from '../../../core/services/state/clinic-state.service';
 import { Session } from '../../../core/models/session.model';
 import { MessageService } from 'primeng/api';
+import { ProgressBar } from 'primeng/progressbar';
 
 @Component({
   selector: "app-receptionist-dashboard",
   standalone: true,
-  imports: [CommonModule, TranslateModule, FormsModule],
+  imports: [CommonModule, TranslateModule, FormsModule, ProgressBar],
   templateUrl: "./dashboard.html",
   styleUrl: "./dashboard.css",
 })
@@ -21,6 +22,11 @@ export class Dashboard {
   messageService = inject(MessageService);
   
   todayDate = new Date();
+
+  // Financial signals from ClinicStateService
+  expectedTodayRevenue = this.clinicState.expectedTodayRevenue;
+  collectedTodayRevenue = this.clinicState.collectedTodayRevenue;
+  collectionRateToday = this.clinicState.collectionRateToday;
 
   sessions = this.clinicState.sessions;
   allPatients = this.clinicState.patients;
@@ -71,25 +77,7 @@ export class Dashboard {
    * Real-time computed signal: Sum the amount of all clinicState.invoices()
    * where status is 'Paid' AND the createdAt date matches today
    */
-  todayRevenue = computed(() => {
-    const today = new Date();
-    const todayYMD = today.toISOString().split('T')[0];
-    const pad = (n: number) => n.toString().padStart(2, '0');
-    const localYMD = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
-
-    return this.clinicState.invoices()
-      .filter(inv => {
-        if (inv.status !== 'Paid' || !inv.createdAt) return false;
-        const invDate = new Date(inv.createdAt);
-        const isSameDay = !isNaN(invDate.getTime()) &&
-          invDate.getFullYear() === today.getFullYear() &&
-          invDate.getMonth() === today.getMonth() &&
-          invDate.getDate() === today.getDate();
-        const invDatePart = inv.createdAt.split('T')[0];
-        return isSameDay || invDatePart === todayYMD || invDatePart === localYMD;
-      })
-      .reduce((sum, inv) => sum + (inv.amount || 0), 0);
-  });
+  todayRevenue = computed(() => this.collectedTodayRevenue());
 
   /**
    * Filtered today's sessions for the timeline table (reactive computed signal)

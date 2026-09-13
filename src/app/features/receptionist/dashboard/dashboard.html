@@ -21,8 +21,18 @@
       <div class="stat-value text-amber">{{ pendingPaymentsCount() }}</div>
     </div>
     <div class="stat-card border-start-teal">
-      <div class="stat-label">{{ 'RECEPTIONIST.TODAY_REVENUE' | translate }}</div>
-      <div class="stat-value text-teal">{{ todayRevenue() | currency:'EGP' }}</div>
+      <div class="stat-label">{{ 'RECEPTIONIST.TOTAL_TODAY_REVENUE' | translate }}</div>
+      <div class="stat-value text-teal d-flex align-items-baseline gap-1" style="font-size: 1.15rem;">
+        <span>{{ collectedTodayRevenue() | currency:'EGP' }}</span>
+        <span class="text-secondary small fw-normal" style="font-size: 0.8rem;">/ {{ expectedTodayRevenue() | currency:'EGP' }}</span>
+      </div>
+      <div class="mt-2 w-100">
+        <div class="d-flex justify-content-between align-items-center mb-1 text-muted" style="font-size: 0.7rem;">
+          <span>{{ 'RECEPTIONIST.COLLECTION_RATE' | translate }}</span>
+          <span class="fw-semibold">{{ collectionRateToday() }}%</span>
+        </div>
+        <p-progressBar [value]="collectionRateToday()" [showValue]="false" [style]="{ height: '4px' }"></p-progressBar>
+      </div>
     </div>
   </div>
 

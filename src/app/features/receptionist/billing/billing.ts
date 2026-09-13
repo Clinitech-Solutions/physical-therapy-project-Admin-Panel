@@ -58,6 +58,8 @@ export class DropdownComponent implements ControlValueAccessor {
   }
 }
 
+import { ProgressBar } from 'primeng/progressbar';
+
 @Component({
   selector: "app-receptionist-billing",
   standalone: true,
@@ -70,6 +72,7 @@ export class DropdownComponent implements ControlValueAccessor {
     ButtonModule,
     DialogModule,
     SelectModule,
+    ProgressBar,
     DropdownComponent
   ],
   templateUrl: "./billing.html",
@@ -88,7 +91,15 @@ export class BillingComponent {
   // 100% Real-time computed signal reading strictly from ClinicStateService
   invoices = computed(() => this.clinicState.invoices());
 
-  // Real-time computed summary signals for KPI metrics
+  // Centralized Financial Signals from ClinicStateService
+  expectedTodayRevenue = this.clinicState.expectedTodayRevenue;
+  collectedTodayRevenue = this.clinicState.collectedTodayRevenue;
+  pendingTodayRevenue = this.clinicState.pendingTodayRevenue;
+  cashCollectedToday = this.clinicState.cashCollectedToday;
+  digitalCollectedToday = this.clinicState.digitalCollectedToday;
+  collectionRateToday = this.clinicState.collectionRateToday;
+
+  // Real-time computed summary signals for KPI metrics (backward compatible)
   totalRevenue = computed(() =>
     this.invoices()
       .filter(inv => inv.status === 'Paid')

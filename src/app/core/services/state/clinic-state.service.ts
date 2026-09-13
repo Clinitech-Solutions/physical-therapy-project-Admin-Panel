@@ -73,6 +73,59 @@ export class ClinicStateService {
   private invoicesSig = signal<Invoice[]>([]);
   public invoices = this.invoicesSig.asReadonly();
 
+  // Financial & Revenue Computed Signals
+  public todayInvoices = computed(() => {
+    const today = new Date();
+    const todayYMD = today.toISOString().split('T')[0];
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const localYMD = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+
+    return this.invoicesSig().filter(inv => {
+      if (!inv.createdAt) return false;
+      const invDate = new Date(inv.createdAt);
+      const isSameDay = !isNaN(invDate.getTime()) &&
+        invDate.getFullYear() === today.getFullYear() &&
+        invDate.getMonth() === today.getMonth() &&
+        invDate.getDate() === today.getDate();
+      const invDatePart = inv.createdAt.split('T')[0];
+      return isSameDay || invDatePart === todayYMD || invDatePart === localYMD;
+    });
+  });
+
+  public expectedTodayRevenue = computed(() =>
+    this.todayInvoices().reduce((sum, inv) => sum + (inv.amount || 0), 0)
+  );
+
+  public collectedTodayRevenue = computed(() =>
+    this.todayInvoices()
+      .filter(inv => inv.status === 'Paid')
+      .reduce((sum, inv) => sum + (inv.amount || 0), 0)
+  );
+
+  public pendingTodayRevenue = computed(() =>
+    this.todayInvoices()
+      .filter(inv => inv.status === 'Pending' || inv.status === 'Partial')
+      .reduce((sum, inv) => sum + (inv.amount || 0), 0)
+  );
+
+  public cashCollectedToday = computed(() =>
+    this.todayInvoices()
+      .filter(inv => inv.status === 'Paid' && inv.paymentMethod === 'Cash')
+      .reduce((sum, inv) => sum + (inv.amount || 0), 0)
+  );
+
+  public digitalCollectedToday = computed(() =>
+    this.todayInvoices()
+      .filter(inv => inv.status === 'Paid' && (inv.paymentMethod === 'Credit Card' || inv.paymentMethod === 'E-Wallet'))
+      .reduce((sum, inv) => sum + (inv.amount || 0), 0)
+  );
+
+  public collectionRateToday = computed(() => {
+    const expected = this.expectedTodayRevenue();
+    if (expected === 0) return 0;
+    return Math.round((this.collectedTodayRevenue() / expected) * 100);
+  });
+
   private doctorAvailabilitySig = signal<DoctorAvailability[]>([]);
   public doctorAvailability = this.doctorAvailabilitySig.asReadonly();
 
