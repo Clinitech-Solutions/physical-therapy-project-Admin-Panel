@@ -226,6 +226,21 @@ describe('Receptionist & ClinicState E2E Integration Suite', () => {
         }
       ]);
 
+      // Mock invoice with status: 'Paid' so check-out is permitted
+      (clinicState as any).invoicesSig.update((list: any[]) => [
+        ...list,
+        {
+          id: 'INV_lifecycle_checkout_paid',
+          sessionId: sessionId,
+          patientId: '1',
+          amount: 500,
+          currency: 'EGP',
+          status: 'Paid',
+          type: 'Session',
+          createdAt: `${today}T09:00:00Z`
+        }
+      ]);
+
       await clinicState.checkOutPatient(sessionId);
 
       const session = clinicState.sessions().find(s => s.id === sessionId);
@@ -235,6 +250,96 @@ describe('Receptionist & ClinicState E2E Integration Suite', () => {
       expect(room?.status).toBe('Available');
       expect(room?.currentLoad).toBe(0);
       expect(room?.doctorId).toBeNull();
+    });
+
+    it('EDGE CASE / FAIL: Attempting to Check-out with an unpaid invoice throws an error', async () => {
+      const today = new Date().toISOString().split('T')[0];
+      const sessionId = 'lifecycle_unpaid_checkout';
+      (clinicState as any).sessionsSig.update((list: any[]) => [
+        ...list,
+        {
+          id: sessionId,
+          patientId: '1',
+          doctorId: 'doc_2',
+          roomId: 'room_1',
+          scheduledAt: `${today}T09:00:00`,
+          status: 'In Progress',
+          type: 'Session'
+        }
+      ]);
+
+      // Mock invoice with status: 'Pending' (Unpaid)
+      (clinicState as any).invoicesSig.update((list: any[]) => [
+        ...list,
+        {
+          id: 'INV_lifecycle_unpaid',
+          sessionId: sessionId,
+          patientId: '1',
+          amount: 500,
+          currency: 'EGP',
+          status: 'Pending',
+          type: 'Session',
+          createdAt: `${today}T09:00:00Z`
+        }
+      ]);
+
+      await expect(clinicState.checkOutPatient(sessionId))
+        .rejects.toThrow('Cannot check out: The invoice for this session has not been paid yet.');
+    });
+
+    it('SUCCESS: Processing payment unlocks check-out and properly completes session in synchronized state', async () => {
+      const today = new Date().toISOString().split('T')[0];
+      const sessionId = 'lifecycle_pay_then_checkout';
+      const invoiceId = 'INV_pay_then_checkout';
+
+      (clinicState as any).sessionsSig.update((list: any[]) => [
+        ...list,
+        {
+          id: sessionId,
+          patientId: '1',
+          doctorId: 'doc_2',
+          roomId: 'room_1',
+          scheduledAt: `${today}T09:00:00`,
+          status: 'In Progress',
+          type: 'Session'
+        }
+      ]);
+
+      (clinicState as any).invoicesSig.update((list: any[]) => [
+        ...list,
+        {
+          id: invoiceId,
+          sessionId: sessionId,
+          patientId: '1',
+          amount: 500,
+          currency: 'EGP',
+          status: 'Pending',
+          type: 'Session',
+          createdAt: `${today}T09:00:00Z`
+        }
+      ]);
+
+      // 1. Initial attempt to check out throws unpaid error
+      await expect(clinicState.checkOutPatient(sessionId))
+        .rejects.toThrow('Cannot check out: The invoice for this session has not been paid yet.');
+
+      // 2. Process payment in Billing
+      await clinicState.processPayment(invoiceId, 'Credit Card');
+
+      // Verify invoice state updated immutably
+      const paidInvoice = clinicState.invoices().find(inv => inv.id === invoiceId);
+      expect(paidInvoice?.status).toBe('Paid');
+      expect(paidInvoice?.paymentMethod).toBe('Credit Card');
+
+      // 3. Check-out now succeeds
+      await clinicState.checkOutPatient(sessionId);
+
+      const session = clinicState.sessions().find(s => s.id === sessionId);
+      expect(session?.status).toBe('Completed');
+
+      const room = clinicState.rooms().find(r => r.id === 'room_1');
+      expect(room?.status).toBe('Available');
+      expect(room?.currentLoad).toBe(0);
     });
 
     it('EDGE CASE / FAIL: Attempting to Check-in when 0 rooms are "Available" throws an error', async () => {

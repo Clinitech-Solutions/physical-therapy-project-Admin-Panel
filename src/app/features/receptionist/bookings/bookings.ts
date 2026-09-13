@@ -460,4 +460,42 @@ export class BookingsComponent {
         return 'status-confirmed';
     }
   }
+
+  /**
+   * Check-in patient action
+   */
+  async checkInSession(sessionId: string) {
+    try {
+      await this.clinicState.checkInPatient(sessionId);
+      this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Patient checked in' });
+    } catch (error: any) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Check-in Error',
+        detail: error?.message || 'Check-in failed'
+      });
+    }
+  }
+
+  /**
+   * Check-out patient action with payment gate error handling
+   */
+  async checkoutSession(sessionId: string) {
+    try {
+      await this.clinicState.checkOutPatient(sessionId);
+      this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Patient checked out' });
+    } catch (error: any) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Check-out Blocked',
+        detail: error.message
+      });
+    }
+  }
+
+  // Alias for backward compatibility
+  async checkOutPatient(sessionId: string) {
+    return this.checkoutSession(sessionId);
+  }
 }
+

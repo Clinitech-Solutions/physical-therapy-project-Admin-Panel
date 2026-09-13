@@ -350,6 +350,21 @@ describe('ClinicStateService Business Rules & Date Filtering Unit Tests', () => 
       };
       (service as any).sessionsSig.update((list: any[]) => [...list, inProgressSession]);
 
+      // Mock invoice with status: 'Paid' so check-out is permitted
+      (service as any).invoicesSig.update((list: any[]) => [
+        ...list,
+        {
+          id: 'INV_checkout_test_paid',
+          sessionId: 'test_checkout_1',
+          patientId: '1',
+          amount: 500,
+          currency: 'EGP',
+          status: 'Paid',
+          type: 'Session',
+          createdAt: `${today}T10:00:00Z`
+        }
+      ]);
+
       await service.checkOutPatient('test_checkout_1');
 
       const updatedSession = service.sessions().find(s => s.id === 'test_checkout_1');
@@ -359,6 +374,38 @@ describe('ClinicStateService Business Rules & Date Filtering Unit Tests', () => 
       expect(room?.status).toBe('Available');
       expect(room?.currentLoad).toBe(0);
       expect(room?.doctorId).toBeNull();
+    });
+
+    it('EDGE CASE / FAIL: Attempting to Check-out with an unpaid invoice throws an error', async () => {
+      const today = new Date().toISOString().split('T')[0];
+      const inProgressSession = {
+        id: 'test_checkout_unpaid',
+        patientId: '1',
+        doctorId: 'doc_2',
+        roomId: 'room_1',
+        scheduledAt: `${today}T10:00:00`,
+        status: 'In Progress' as const,
+        type: 'Session' as const
+      };
+      (service as any).sessionsSig.update((list: any[]) => [...list, inProgressSession]);
+
+      // Mock invoice with status: 'Pending' (Unpaid)
+      (service as any).invoicesSig.update((list: any[]) => [
+        ...list,
+        {
+          id: 'INV_checkout_unpaid',
+          sessionId: 'test_checkout_unpaid',
+          patientId: '1',
+          amount: 500,
+          currency: 'EGP',
+          status: 'Pending',
+          type: 'Session',
+          createdAt: `${today}T10:00:00Z`
+        }
+      ]);
+
+      await expect(service.checkOutPatient('test_checkout_unpaid'))
+        .rejects.toThrow('Cannot check out: The invoice for this session has not been paid yet.');
     });
 
     it('should throw an error on check-in if 0 rooms are Available', async () => {

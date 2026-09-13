@@ -285,6 +285,28 @@
                           <i class="bi bi-clock me-1"></i>{{ formatTime(session.scheduledAt) }}
                         </span>
                       </div>
+
+                      @if (session.status === 'In Progress') {
+                        <div class="mt-1 pt-1 border-top border-opacity-10 d-flex justify-content-end">
+                          <button 
+                            type="button" 
+                            class="btn btn-sm btn-outline-success py-0 px-2 d-flex align-items-center gap-1"
+                            style="font-size: 0.7rem; height: 24px;"
+                            (click)="checkoutSession(session.id); $event.stopPropagation()">
+                            <i class="bi bi-box-arrow-right"></i> {{ 'RECEPTIONIST.CHECK_OUT' | translate }}
+                          </button>
+                        </div>
+                      } @else if (session.status === 'Confirmed' || session.status === 'Pending') {
+                        <div class="mt-1 pt-1 border-top border-opacity-10 d-flex justify-content-end">
+                          <button 
+                            type="button" 
+                            class="btn btn-sm btn-outline-primary py-0 px-2 d-flex align-items-center gap-1"
+                            style="font-size: 0.7rem; height: 24px;"
+                            (click)="checkInSession(session.id); $event.stopPropagation()">
+                            <i class="bi bi-box-arrow-in-right"></i> {{ 'RECEPTIONIST.CHECK_IN' | translate }}
+                          </button>
+                        </div>
+                      }
                     </div>
                   }
 

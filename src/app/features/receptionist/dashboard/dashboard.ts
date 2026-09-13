@@ -166,8 +166,16 @@ export class Dashboard {
   }
 
   async checkOut(id: string) {
-    await this.clinicState.checkOutPatient(id);
-    this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Patient checked out' });
+    try {
+      await this.clinicState.checkOutPatient(id);
+      this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Patient checked out' });
+    } catch (error: any) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Check-out Blocked',
+        detail: error.message
+      });
+    }
   }
 }
 

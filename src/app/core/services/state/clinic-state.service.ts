@@ -154,6 +154,11 @@ export class ClinicStateService {
   }
 
   async checkOutPatient(sessionId: string) {
+    const invoice = this.invoicesSig().find(inv => inv.sessionId === sessionId);
+    if (invoice && invoice.status !== 'Paid') {
+      throw new Error('Cannot check out: The invoice for this session has not been paid yet.');
+    }
+
     this.isLoading.set(true);
     await new Promise(resolve => setTimeout(resolve, 300));
     
@@ -574,8 +579,8 @@ export class ClinicStateService {
   async processPayment(invoiceId: string, method?: string) {
     this.isProcessingPayment.set(true);
     await new Promise(resolve => setTimeout(resolve, 800));
-    this.invoicesSig.update(invs =>
-      invs.map(inv => inv.id === invoiceId ? { ...inv, status: 'Paid', paymentMethod: method || 'Cash' } : inv)
+    this.invoicesSig.update(invoices => 
+      invoices.map(inv => inv.id === invoiceId ? { ...inv, status: 'Paid', paymentMethod: method || 'Cash' } : inv)
     );
     this.isProcessingPayment.set(false);
   }
