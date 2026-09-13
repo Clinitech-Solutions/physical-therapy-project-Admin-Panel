@@ -14,11 +14,14 @@
         <i class="bi bi-calendar2-plus text-primary"></i>
         <span class="font-clash fw-bold small">Session Booking & Walk-In</span>
       </div>
-      @if (selectedPatientId && isNewPatient) {
-        <span class="badge bg-warning bg-opacity-10 text-warning border border-warning px-2 py-1 rounded-pill" style="font-size: 0.72rem;">
-          <i class="bi bi-shield-check me-1"></i> Assessment First: Initial Assessment Required
-        </span>
-      }
+      <div class="d-flex align-items-center gap-2">
+        @if (selectedPatientId && isNewPatient) {
+          <span class="badge bg-warning bg-opacity-10 text-warning border border-warning px-2 py-1 rounded-pill" style="font-size: 0.72rem;">
+            <i class="bi bi-shield-check me-1"></i> Assessment First: Initial Assessment Required
+          </span>
+        }
+        <p-button icon="pi pi-user-minus" label="Report Absence" severity="danger" [outlined]="true" (onClick)="showAbsenceModal = true"></p-button>
+      </div>
     </div>
 
     <div class="card-body p-3">
@@ -352,6 +355,97 @@
         }
         Save & Select
       </button>
+    </div>
+  </ng-template>
+</p-dialog>
+
+<!-- Report Doctor Absence Modal -->
+<p-dialog 
+  [(visible)]="showAbsenceModal" 
+  [modal]="true" 
+  [draggable]="false" 
+  [resizable]="false" 
+  [closable]="true" 
+  styleClass="clean-modal" 
+  [style]="{width: '450px'}" 
+  header="Report Doctor Absence"
+  (onHide)="closeAbsenceModal()">
+
+  <div style="display: flex; flex-direction: column; gap: 1rem;">
+    <!-- a) Dropdown for "Absent Doctor" (options = all doctors) -->
+    <div class="form-group">
+      <label class="form-label mb-1 fw-semibold text-secondary small">
+        Absent Doctor <span class="text-danger">*</span>
+      </label>
+      <p-select 
+        [options]="allDoctors()" 
+        [(ngModel)]="absentDoctorId" 
+        (ngModelChange)="onAbsentDoctorChange()"
+        optionLabel="name" 
+        optionValue="id" 
+        placeholder="Select Absent Doctor..." 
+        appendTo="body"
+        styleClass="w-100 p-select-sm">
+        <ng-template pTemplate="item" let-doc>
+          <div class="d-flex justify-content-between align-items-center w-100">
+            <span>{{ doc.name }}</span>
+            <span class="badge bg-secondary bg-opacity-10 text-secondary" style="font-size: 0.65rem;">{{ doc.gender }}</span>
+          </div>
+        </ng-template>
+      </p-select>
+    </div>
+
+    <!-- b) Dropdown for "Covering Senior" (strictly filtered to same gender) -->
+    <div class="form-group">
+      <div class="d-flex justify-content-between align-items-center mb-1">
+        <label class="form-label mb-0 fw-semibold text-secondary small">
+          Covering Senior <span class="text-danger">*</span>
+        </label>
+        @if (absentDoctorId && getDoctorGender(absentDoctorId)) {
+          <span class="badge bg-primary bg-opacity-10 text-primary" style="font-size: 0.65rem;">
+            Same Gender: {{ getDoctorGender(absentDoctorId) }}
+          </span>
+        }
+      </div>
+      <p-select 
+        [options]="coveringSeniors" 
+        [(ngModel)]="coveringSeniorId" 
+        optionLabel="name" 
+        optionValue="id" 
+        [placeholder]="absentDoctorId ? 'Select Covering Senior...' : 'Select Absent Doctor First'" 
+        [emptyMessage]="absentDoctorId ? 'No matching doctors with same gender' : 'Select absent doctor first'"
+        [disabled]="!absentDoctorId || coveringSeniors.length === 0"
+        appendTo="body"
+        styleClass="w-100 p-select-sm">
+        <ng-template pTemplate="item" let-doc>
+          <div class="d-flex justify-content-between align-items-center w-100">
+            <span>{{ doc.name }}</span>
+            <span class="badge bg-secondary bg-opacity-10 text-secondary" style="font-size: 0.65rem;">{{ doc.gender }}</span>
+          </div>
+        </ng-template>
+      </p-select>
+      @if (absentDoctorId && coveringSeniors.length === 0) {
+        <small class="text-danger mt-1 d-block" style="font-size: 0.72rem;">
+          No other doctors available with the same gender ({{ getDoctorGender(absentDoctorId) }}).
+        </small>
+      }
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="modal-footer-actions">
+      <p-button 
+        label="Cancel" 
+        [outlined]="true" 
+        severity="secondary" 
+        (onClick)="closeAbsenceModal()">
+      </p-button>
+      <p-button 
+        label="Confirm & Reassign" 
+        severity="danger" 
+        (onClick)="confirmAbsence()" 
+        [disabled]="!absentDoctorId || !coveringSeniorId">
+      </p-button>
     </div>
   </ng-template>
 </p-dialog>

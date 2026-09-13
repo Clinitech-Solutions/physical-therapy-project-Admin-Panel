@@ -8,6 +8,7 @@ import { SelectModule } from 'primeng/select';
 import { DatePickerModule } from 'primeng/datepicker';
 import { DialogModule } from 'primeng/dialog';
 import { SelectButtonModule } from 'primeng/selectbutton';
+import { ButtonModule } from 'primeng/button';
 import { Session, SessionType } from '../../../core/models/session.model';
 import { Doctor } from '../../../core/models/doctor.model';
 import { Patient } from '../../../core/models/patient.model';
@@ -22,7 +23,8 @@ import { Patient } from '../../../core/models/patient.model';
     SelectModule, 
     DatePickerModule, 
     DialogModule,
-    SelectButtonModule
+    SelectButtonModule,
+    ButtonModule
   ],
   templateUrl: "./bookings.html",
   styleUrls: ["./bookings.css"]
@@ -72,6 +74,75 @@ export class BookingsComponent {
     gender: 'Male' as 'Male' | 'Female',
     paymentType: 'Cash' as 'Cash' | 'Online' | 'Insurance'
   };
+
+  // Doctor Absence Reporting State
+  showAbsenceModal = false;
+  absentDoctorId: string | null = null;
+  coveringSeniorId: string | null = null;
+
+  getDoctorGender(doctorId: string | null): string {
+    return this.clinicState.getDoctorGender(doctorId);
+  }
+
+  /**
+   * Covering Senior options:
+   * Strictly filtered to doctors with the SAME GENDER as the selected absent doctor,
+   * excluding the absent doctor themselves.
+   */
+  get coveringSeniors(): Doctor[] {
+    if (!this.absentDoctorId) {
+      return [];
+    }
+    const absentGender = this.getDoctorGender(this.absentDoctorId);
+    if (!absentGender) {
+      return [];
+    }
+    return this.allDoctors().filter(
+      doc => doc.id !== this.absentDoctorId && doc.gender === absentGender
+    );
+  }
+
+  onAbsentDoctorChange() {
+    if (this.coveringSeniorId) {
+      const isValid = this.coveringSeniors.some(d => d.id === this.coveringSeniorId);
+      if (!isValid) {
+        this.coveringSeniorId = null;
+      }
+    }
+  }
+
+  confirmAbsence() {
+    if (!this.absentDoctorId || !this.coveringSeniorId) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Incomplete Selection',
+        detail: 'Please select both an absent doctor and a covering senior doctor.'
+      });
+      return;
+    }
+
+    try {
+      this.clinicState.handleDoctorAbsence(this.absentDoctorId, this.coveringSeniorId);
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Absence Recorded',
+        detail: 'Absence recorded. 50% of sessions reassigned, remainder cancelled.'
+      });
+      this.closeAbsenceModal();
+    } catch (error: any) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Absence Error',
+        detail: error?.message || 'Failed to record doctor absence.'
+      });
+    }
+  }
+
+  closeAbsenceModal() {
+    this.showAbsenceModal = false;
+    this.absentDoctorId = null;
+    this.coveringSeniorId = null;
+  }
 
   // Assessment First check
   get isNewPatient(): boolean {

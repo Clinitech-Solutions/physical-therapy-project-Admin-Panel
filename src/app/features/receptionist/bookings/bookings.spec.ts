@@ -128,4 +128,68 @@ describe('BookingsComponent Logic Unit Tests', () => {
       expect(component.getStatusClass('Cancelled')).toBe('status-cancelled');
     });
   });
+
+  describe('Doctor Absence Reporting & Reassignment', () => {
+    it('should return empty coveringSeniors when absentDoctorId is null', () => {
+      component.absentDoctorId = null;
+      expect(component.coveringSeniors).toEqual([]);
+    });
+
+    it('should filter coveringSeniors to same gender excluding the absent doctor (Female case)', () => {
+      // doc_1 is Female (Dr. Sarah)
+      component.absentDoctorId = 'doc_1';
+      const seniors = component.coveringSeniors;
+      expect(seniors.length).toBeGreaterThan(0);
+      seniors.forEach(senior => {
+        expect(senior.id).not.toBe('doc_1');
+        expect(senior.gender).toBe('Female');
+      });
+      // In mock DB, Dr. Noha (doc_3) is Female
+      expect(seniors.some(s => s.id === 'doc_3')).toBe(true);
+    });
+
+    it('should filter coveringSeniors to same gender excluding the absent doctor (Male case)', () => {
+      // doc_2 is Male (Dr. Omar)
+      component.absentDoctorId = 'doc_2';
+      const seniors = component.coveringSeniors;
+      expect(seniors.length).toBeGreaterThan(0);
+      seniors.forEach(senior => {
+        expect(senior.id).not.toBe('doc_2');
+        expect(senior.gender).toBe('Male');
+      });
+      expect(seniors.some(s => s.id === 'doc_2')).toBe(false);
+      expect(seniors.some(s => s.id === 'doc_4')).toBe(true);
+      expect(seniors.some(s => s.id === 'doc_5')).toBe(true);
+    });
+
+    it('should reset coveringSeniorId if it becomes invalid when absent doctor changes', () => {
+      component.absentDoctorId = 'doc_2'; // Male
+      component.coveringSeniorId = 'doc_4'; // Male
+      expect(component.coveringSeniorId).toBe('doc_4');
+
+      component.absentDoctorId = 'doc_1'; // Female
+      component.onAbsentDoctorChange();
+      expect(component.coveringSeniorId).toBeNull();
+    });
+
+    it('should call handleDoctorAbsence, display success toast, and reset modal on confirmAbsence', () => {
+      component.showAbsenceModal = true;
+      component.absentDoctorId = 'doc_1';
+      component.coveringSeniorId = 'doc_3';
+
+      let messageAdded: any = null;
+      messageService.add = (msg: any) => {
+        messageAdded = msg;
+      };
+
+      component.confirmAbsence();
+
+      expect(messageAdded).toBeTruthy();
+      expect(messageAdded.severity).toBe('success');
+      expect(messageAdded.detail).toBe('Absence recorded. 50% of sessions reassigned, remainder cancelled.');
+      expect(component.showAbsenceModal).toBe(false);
+      expect(component.absentDoctorId).toBeNull();
+      expect(component.coveringSeniorId).toBeNull();
+    });
+  });
 });
