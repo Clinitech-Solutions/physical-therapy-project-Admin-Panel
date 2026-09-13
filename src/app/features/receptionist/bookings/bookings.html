@@ -227,9 +227,9 @@
                       }
                       <span class="patient-name fw-semibold small text-truncate" role="button" (click)="openPatientProfile(session.patientId); $event.stopPropagation()" style="cursor: pointer;">{{
                         clinicState.getPatientName(session.patientId) }}</span>
-                      @if(clinicState.getPatientProgressBadge(session.patientId, session.id)) {
+                      @if(clinicState.getSessionBadge(session)) {
                       <span class="badge badge-warning ms-1" style="font-size: 0.65rem;" role="button" (click)="openPatientProfile(session.patientId); $event.stopPropagation()" style="cursor: pointer;" title="Treatment Progress">
-                        {{ clinicState.getPatientProgressBadge(session.patientId, session.id) }}
+                        {{ clinicState.getSessionBadge(session) }}
                       </span>
                       }
                     </div>

@@ -715,25 +715,40 @@ export class ClinicStateService {
     return r ? r.capacity : 0;
   }
 
+  getSessionBadge(session: Session): string {
+    if (!session) return '';
+    const patient = this.patientsSig().find(p => p.id === session.patientId);
+    if (!patient) return session.packageAlert || '';
+
+    const total = patient.treatmentPlan?.totalSessions || patient.insuranceDetails?.approvedSessions;
+    if (!total) return session.packageAlert || '';
+
+    // If session has an explicit sessionNumber, use it. Otherwise, find its index among patient sessions.
+    let sessionNum = session.sessionNumber;
+    if (!sessionNum) {
+      const patientSessions = this.sessionsSig()
+        .filter(s => s.patientId === session.patientId)
+        .sort((a, b) => {
+          const timeA = a.scheduledAt ? new Date(a.scheduledAt).getTime() : 0;
+          const timeB = b.scheduledAt ? new Date(b.scheduledAt).getTime() : 0;
+          return timeA - timeB;
+        });
+      const index = patientSessions.findIndex(s => s.id === session.id);
+      sessionNum = index !== -1 ? index + 1 : 1;
+    }
+
+    return `Session ${sessionNum} of ${total}`;
+  }
+
   getPatientProgressBadge(patientId: string, sessionId: string): string {
-    const patient = this.patientsSig().find(p => p.id === patientId);
     const session = this.sessionsSig().find(s => s.id === sessionId);
-
-    const totalSessions = patient?.treatmentPlan?.totalSessions || patient?.insuranceDetails?.approvedSessions;
-    const sessionNum = session?.sessionNumber;
-
-    if (sessionNum && totalSessions) {
-      return `Session ${sessionNum} of ${totalSessions}`;
+    if (session) {
+      return this.getSessionBadge(session);
     }
-
-    if (session?.packageAlert) {
-      return session.packageAlert;
+    const patient = this.patientsSig().find(p => p.id === patientId);
+    if (patient?.treatmentPlan?.totalSessions) {
+      return `Session 1 of ${patient.treatmentPlan.totalSessions}`;
     }
-
-    if (totalSessions) {
-      return `Session 1 of ${totalSessions}`;
-    }
-
     return '';
   }
 

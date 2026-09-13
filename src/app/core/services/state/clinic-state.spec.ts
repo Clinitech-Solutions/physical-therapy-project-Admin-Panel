@@ -585,6 +585,18 @@ describe('ClinicStateService Business Rules & Date Filtering Unit Tests', () => 
       const badge2 = service.getPatientProgressBadge('1', '7');
       expect(badge2).toBe('Session 2 of 10');
     });
+
+    it('should calculate getSessionBadge correctly from session object', () => {
+      const session1 = service.sessions().find(s => s.id === '1');
+      expect(session1).toBeDefined();
+      const badge = service.getSessionBadge(session1!);
+      expect(badge).toBe('Session 3 of 10');
+
+      const session7 = service.sessions().find(s => s.id === '7');
+      expect(session7).toBeDefined();
+      const badge2 = service.getSessionBadge(session7!);
+      expect(badge2).toBe('Session 2 of 10');
+    });
   });
 });
 

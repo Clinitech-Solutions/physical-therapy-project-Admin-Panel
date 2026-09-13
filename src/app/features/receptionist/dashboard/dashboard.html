@@ -87,9 +87,9 @@
                 <span class="fw-semibold text-primary-hover" role="button" (click)="openPatientProfile(session.patientId)" style="cursor: pointer;">
                   {{ clinicState.getPatientName(session.patientId) }}
                 </span>
-                @if(clinicState.getPatientProgressBadge(session.patientId, session.id)) {
+                @if(clinicState.getSessionBadge(session)) {
                 <span class="badge badge-warning" role="button" (click)="openPatientProfile(session.patientId)" style="cursor: pointer;" title="Treatment Progress">
-                  <i class="bi bi-clock-history"></i> {{ clinicState.getPatientProgressBadge(session.patientId, session.id) }}
+                  <i class="bi bi-clock-history"></i> {{ clinicState.getSessionBadge(session) }}
                 </span>
                 }
               </div>
