@@ -13,7 +13,7 @@
     </div>
     <div class="flex-1">
       <div class="fw-bold small text-info text-uppercase mb-1 d-flex align-items-center gap-2">
-        <i class="bi bi-info-circle"></i> {{ 'RECEPTIONIST.INSURANCE_GATE_TITLE' | translate }}
+        <i class="bi bi-info-circle"></i> <span>{{ 'RECEPTIONIST.INSURANCE_GATE_TITLE' | translate }}</span>
       </div>
       <p class="mb-0 text-muted small">
         {{ 'RECEPTIONIST.INSURANCE_GATE_SUB' | translate }}
@@ -32,34 +32,40 @@
             </div>
             <div>
               <h5 class="fw-bold mb-0 text-body">{{ provider.name }}</h5>
-              <span class="badge border text-muted" style="font-size: 10px;">{{ provider.code }}</span>
+              <span class="badge border text-muted mt-1" style="font-size: 10px;">{{ provider.code }}</span>
             </div>
           </div>
           <span class="badge badge-success d-flex align-items-center gap-1">
             <span class="p-tag-icon bi bi-circle-fill" style="font-size: 6px;"></span>
-            {{ 'RECEPTIONIST.PORTAL_ACTIVE' | translate }}
+            <span>{{ 'RECEPTIONIST.PORTAL_ACTIVE' | translate }}</span>
           </span>
         </div>
 
         <div class="portal-card-body">
-          <p class="text-muted small mb-1">{{ provider.taglineKey | translate }}</p>
+          <p class="text-muted small mb-2">{{ provider.taglineKey | translate }}</p>
 
           <div class="d-flex justify-content-between align-items-center p-2 rounded bg-body-tertiary">
-            <span class="text-muted small">{{ 'RECEPTIONIST.NETWORK' | translate }}</span>
-            <span class="fw-semibold small">{{ provider.networkTypeKey | translate }}</span>
+            <span class="text-muted small d-inline-flex align-items-center gap-1">
+              <i class="bi bi-diagram-3 text-secondary"></i>
+              <span>{{ 'RECEPTIONIST.NETWORK' | translate }}:</span>
+            </span>
+            <span class="fw-semibold small text-end ms-2">{{ provider.networkTypeKey | translate }}</span>
           </div>
 
           <div class="d-flex justify-content-between align-items-center p-2 rounded bg-body-tertiary">
-            <span class="text-muted small">{{ 'RECEPTIONIST.HOTLINE' | translate }}</span>
-            <span class="fw-bold small text-primary" dir="ltr">{{ provider.hotline }}</span>
+            <span class="text-muted small d-inline-flex align-items-center gap-1">
+              <i class="bi bi-telephone text-secondary"></i>
+              <span>{{ 'RECEPTIONIST.HOTLINE' | translate }}:</span>
+            </span>
+            <span class="fw-bold small text-primary text-end ms-2" dir="ltr">{{ provider.hotline }}</span>
           </div>
 
-          <div>
+          <div class="mt-1">
             <span class="section-label small fw-bold d-block mb-2">{{ 'RECEPTIONIST.PORTAL_FEATURES' | translate }}</span>
             <div class="d-flex flex-wrap gap-1">
               @for(feat of provider.featuresKeys; track feat) {
                 <span class="badge badge-info" style="font-size: 11px;">
-                  <i class="bi bi-check2 me-1"></i>{{ feat | translate }}
+                  <i class="bi bi-check2 me-1"></i><span>{{ feat | translate }}</span>
                 </span>
               }
             </div>
@@ -86,15 +92,22 @@
   [closable]="true" 
   [showHeader]="true" 
   styleClass="clean-modal portal-dialog"
-  [style]="{ width: '90vw', height: '90vh' }"
-  [header]="(activeProvider()?.brandName || activeProvider()?.name || '') + ' - ' + ('RECEPTIONIST.PORTAL_MODAL_TITLE' | translate)">
+  [style]="{ width: '90vw', height: '90vh' }">
+
+  <ng-template pTemplate="header">
+    <div class="d-flex align-items-center gap-2">
+      <span class="fw-bold">{{ activeProvider()?.brandName || activeProvider()?.name }}</span>
+      <span class="text-muted">·</span>
+      <span class="badge badge-info">{{ 'RECEPTIONIST.PORTAL_MODAL_TITLE' | translate }}</span>
+    </div>
+  </ng-template>
 
   <div class="portal-iframe-container">
     <!-- Portal Navigation & Security Bar -->
     <div class="portal-iframe-toolbar">
       <div class="d-flex align-items-center gap-2">
         <span class="badge badge-success d-flex align-items-center gap-1">
-          <i class="bi bi-lock-fill"></i> SSL Secure
+          <i class="bi bi-lock-fill"></i> <span>{{ 'RECEPTIONIST.SSL_SECURE' | translate }}</span>
         </span>
         <span class="text-muted small font-monospace d-none d-md-inline" dir="ltr">
           {{ activeProvider()?.portalUrl }}
@@ -120,4 +133,5 @@
     }
   </div>
 </p-dialog>
+
 
