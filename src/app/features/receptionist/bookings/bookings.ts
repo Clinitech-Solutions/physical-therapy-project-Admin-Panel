@@ -62,6 +62,7 @@ export class BookingsComponent {
   selectedRoomId: string = '';
   sessionType: SessionType = 'Assessment';
   scheduledDate: Date | null = new Date();
+  isFreeAssessment: boolean = false;
 
   // Status Filter State for Schedule
   selectedFilter: 'All' | 'Upcoming' | 'In Progress' | 'Completed' = 'All';
@@ -163,7 +164,7 @@ export class BookingsComponent {
   }
 
   get selectedPatient(): Patient | undefined {
-    return this.allPatients().find(p => p.id === this.selectedPatientId);
+    return this.clinicState.getPatientById(this.selectedPatientId);
   }
 
   get isInsurancePending(): boolean {
@@ -304,7 +305,8 @@ export class BookingsComponent {
         doctorId: this.selectedDoctorId,
         roomId: this.selectedRoomId,
         scheduledAt: scheduledIso,
-        type: finalType
+        type: finalType,
+        isFreeAssessment: finalType === 'Assessment' && this.isFreeAssessment
       });
 
       this.messageService.add({
@@ -329,6 +331,7 @@ export class BookingsComponent {
     this.selectedRoomId = '';
     this.sessionType = 'Assessment';
     this.scheduledDate = new Date();
+    this.isFreeAssessment = false;
   }
 
   openQuickAddModal() {

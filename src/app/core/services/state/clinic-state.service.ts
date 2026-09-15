@@ -672,12 +672,55 @@ export class ClinicStateService {
   // Billing Logic
   // ==========================================
 
-  async processPayment(invoiceId: string, method?: string) {
+  /**
+   * Processes a manual payment against an invoice.
+   * Supports partial payments: accumulates paidAmount, sets status to
+   * 'Partial' when remainingBalance > 0, 'Paid' when fully settled.
+   * Also syncs the patient's financial plan totalPaidSoFar / remainingDebt.
+   */
+  async processPayment(invoiceId: string, amountCollected: number, method: string): Promise<void> {
     this.isProcessingPayment.set(true);
     await new Promise(resolve => setTimeout(resolve, 800));
-    this.invoicesSig.update(invoices => 
-      invoices.map(inv => inv.id === invoiceId ? { ...inv, status: 'Paid', paymentMethod: method || 'Cash' } : inv)
-    );
+
+    let linkedPatientId: string | null = null;
+
+    this.invoicesSig.update(invoices => invoices.map(inv => {
+      if (inv.id !== invoiceId) return inv;
+
+      linkedPatientId = inv.patientId;
+
+      const previouslyPaid = inv.paidAmount ?? 0;
+      const newPaidAmount   = previouslyPaid + amountCollected;
+      const invoiceTotal    = inv.netAmount ?? inv.amount;
+      const newRemaining    = Math.max(0, invoiceTotal - newPaidAmount);
+      const newStatus       = newRemaining <= 0 ? 'Paid' : 'Partial';
+
+      return {
+        ...inv,
+        paidAmount:       newPaidAmount,
+        remainingBalance: newRemaining,
+        status:           newStatus as import('../../models/invoice.model').InvoiceStatus,
+        paymentMethod:    method
+      };
+    }));
+
+    // Sync patient financial plan if the invoice is linked to a patient
+    if (linkedPatientId) {
+      this.patientsSig.update(list => list.map(p => {
+        if (p.id !== linkedPatientId) return p;
+        const plan = p.financialPlan ?? p.treatmentPlan?.financialPlan;
+        if (!plan) return p;
+        const updatedPlan = {
+          ...plan,
+          totalPaidSoFar: (plan.totalPaidSoFar ?? 0) + amountCollected,
+          remainingDebt:  Math.max(0, (plan.remainingDebt ?? 0) - amountCollected)
+        };
+        return p.financialPlan
+          ? { ...p, financialPlan: updatedPlan }
+          : { ...p, treatmentPlan: { ...p.treatmentPlan!, financialPlan: updatedPlan } };
+      }));
+    }
+
     this.isProcessingPayment.set(false);
   }
 
@@ -783,5 +826,57 @@ export class ClinicStateService {
 
   getSessionInvoice(sessionId: string): Invoice | undefined {
     return this.invoicesSig().find(inv => inv.sessionId === sessionId);
+  }
+
+  /**
+   * Collects a partial or full installment payment against a patient's financial plan
+   * (Package or Upfront-Copay). Updates totalPaidSoFar / remainingDebt on the plan
+   * and creates an Installment receipt invoice in the ledger.
+   */
+  async collectInstallment(patientId: string, amount: number, paymentMethod: string): Promise<void> {
+    this.isLoading.set(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // 1. Resolve the canonical financial plan (top-level or nested under treatmentPlan)
+    const patient = this.patientsSig().find(p => p.id === patientId);
+    const plan = patient?.financialPlan ?? patient?.treatmentPlan?.financialPlan;
+
+    if (patient && plan) {
+      const updatedPlan = {
+        ...plan,
+        totalPaidSoFar: (plan.totalPaidSoFar ?? 0) + amount,
+        remainingDebt:  Math.max(0, (plan.remainingDebt ?? 0) - amount)
+      };
+
+      // Apply the plan back to wherever it lived (top-level vs treatmentPlan)
+      this.patientsSig.update(list => list.map(p => {
+        if (p.id !== patientId) return p;
+        return p.financialPlan
+          ? { ...p, financialPlan: updatedPlan }
+          : { ...p, treatmentPlan: { ...p.treatmentPlan!, financialPlan: updatedPlan } };
+      }));
+    }
+
+    // 2. Generate an Installment receipt invoice (not tied to a specific session)
+    const receipt: Invoice = {
+      id:            `INV-INST-${Date.now().toString().slice(-6)}`,
+      sessionId:     'installment',
+      patientId:     patientId,
+      amount:        amount,
+      currency:      'EGP',
+      status:        'Paid',
+      type:          'Installment',
+      paymentMethod: paymentMethod,
+      createdAt:     new Date().toISOString()
+    };
+
+    this.invoicesSig.update(invs => [receipt, ...invs]);
+    this.isLoading.set(false);
+  }
+
+  /** Look up a single invoice by ID */
+  getInvoiceById(id: string | null): Invoice | undefined {
+    if (!id) return undefined;
+    return this.invoicesSig().find(inv => inv.id === id);
   }
 }

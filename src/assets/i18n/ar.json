@@ -141,7 +141,14 @@
     "AMOUNT_PAID_NOW": "المبلغ المدفوع الآن",
     "REMAINING_DEBT": "المتبقي / المديونية",
     "PRICE_PER_SESSION": "سعر الجلسة",
+    "FREE_ASSESSMENT": "تقييم مجاني",
+    "SESSION_COVERED": "الجلسة مغطاة",
+    "WAIVED": "مُعفى",
+    "DEBT_GATE_TITLE": "تحصيل الديون المستحقة",
+    "AMOUNT_TO_COLLECT": "المبلغ المطلوب تحصيله",
+    "COLLECT_AND_CHECK_IN": "تحصيل وتسجيل الدخول",
     
+
     "ALL_COMPANIES": "جميع الشركات",
     "INSURANCE_DETAILS": "تفاصيل التأمين",
     "STATUS_PENDING": "قيد المراجعة",

@@ -7,7 +7,7 @@ export interface Invoice {
   amount: number;
   currency: string;
   status: InvoiceStatus;
-  type: string;
+  type: 'Session' | 'Assessment' | 'Installment';
   createdAt: string; // ISO 8601
   paymentMethod?: string;
   subtotal?: number;

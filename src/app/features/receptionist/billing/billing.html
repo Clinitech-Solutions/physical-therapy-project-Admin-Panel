@@ -94,6 +94,8 @@
             <th>{{ 'RECEPTIONIST.INVOICE_ID' | translate }}</th>
             <th>{{ 'COMMON.PATIENT' | translate }}</th>
             <th>{{ 'RECEPTIONIST.AMOUNT' | translate }}</th>
+            <th>{{ 'RECEPTIONIST.PAID' | translate }}</th>
+            <th>{{ 'RECEPTIONIST.REMAINING' | translate }}</th>
             <th>{{ 'RECEPTIONIST.TYPE' | translate }}</th>
             <th>{{ 'COMMON.DATE' | translate }}</th>
             <th>{{ 'COMMON.STATUS' | translate }}</th>
@@ -110,6 +112,12 @@
             </td>
             <td>
               <span class="fw-bold text-success">{{ invoice.amount | currency:'EGP' }}</span>
+            </td>
+            <td>
+              <span class="fw-semibold text-body">{{ (invoice.paidAmount || 0) | currency:'EGP' }}</span>
+            </td>
+            <td>
+              <span class="fw-semibold text-danger">{{ (invoice.remainingBalance !== undefined ? invoice.remainingBalance : invoice.amount) | currency:'EGP' }}</span>
             </td>
             <td>
               <span class="badge border" [ngClass]="invoice.type === 'Assessment' ? 'border-primary text-primary' : 'border-info text-info'">
@@ -140,7 +148,7 @@
         </ng-template>
         <ng-template pTemplate="emptymessage">
           <tr>
-            <td colspan="7" class="text-center py-4 text-muted">
+            <td colspan="9" class="text-center py-4 text-muted">
               No invoices found.
             </td>
           </tr>
@@ -164,6 +172,12 @@
   [header]="'RECEPTIONIST.PROCESS_PAYMENT' | translate">
 
   <div class="modal-form-vertical py-2">
+    <div class="form-group mb-3">
+      <label class="form-label mb-2">
+        {{ 'AMOUNT_TO_COLLECT' | translate }} <span class="required-asterisk text-danger">*</span>
+      </label>
+      <p-inputNumber [(ngModel)]="amountToCollect" mode="currency" currency="EGP" styleClass="w-100" class="w-full d-block"></p-inputNumber>
+    </div>
     <div class="form-group mb-3">
       <label class="form-label mb-2">
         {{ 'RECEPTIONIST.PAYMENT_METHOD' | translate }} <span class="required-asterisk text-danger">*</span>

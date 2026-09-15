@@ -58,6 +58,7 @@ export class DropdownComponent implements ControlValueAccessor {
   }
 }
 
+import { InputNumberModule } from 'primeng/inputnumber';
 import { ProgressBar } from 'primeng/progressbar';
 
 @Component({
@@ -72,6 +73,7 @@ import { ProgressBar } from 'primeng/progressbar';
     ButtonModule,
     DialogModule,
     SelectModule,
+    InputNumberModule,
     ProgressBar,
     DropdownComponent
   ],
@@ -86,7 +88,8 @@ export class BillingComponent {
   showPaymentModal = false;
   selectedInvoiceId: string | null = null;
   selectedPaymentMethod = 'Cash';
-  paymentMethods = ['Cash', 'Credit Card', 'E-Wallet'];
+  amountToCollect: number = 0;
+  paymentMethods = ['Cash', 'Credit Card', 'E-Wallet', 'InstaPay'];
   
   // 100% Real-time computed signal reading strictly from ClinicStateService
   invoices = computed(() => this.clinicState.invoices());
@@ -125,11 +128,17 @@ export class BillingComponent {
   );
 
   /**
-   * Opens the payment method modal for the chosen invoice
+   * Opens the payment modal for the chosen invoice.
+   * Pre-fills amountToCollect with the outstanding remainingBalance (or full amount if not yet partially paid).
    */
   openPaymentModal(invoiceId: string) {
     this.selectedInvoiceId = invoiceId;
     this.selectedPaymentMethod = 'Cash';
+
+    // Pre-fill with what is still owed
+    const invoice = this.clinicState.getInvoiceById(invoiceId);
+    this.amountToCollect = invoice?.remainingBalance ?? invoice?.amount ?? 0;
+
     this.showPaymentModal = true;
   }
 
@@ -141,22 +150,39 @@ export class BillingComponent {
   }
 
   /**
-   * Confirms payment with the selected payment method:
-   * - Calls clinicState.processPayment(invoiceId, method)
-   * - Closes the modal
-   * - Shows a success toast: 'Payment processed successfully'
+   * Confirms manual payment:
+   * - Validates amountToCollect > 0
+   * - Calls clinicState.processPayment(invoiceId, amount, method)
+   * - Closes modal and shows success/error toast
    */
   async confirmPayment(): Promise<void> {
     if (!this.selectedInvoiceId) return;
 
+    if (!this.amountToCollect || this.amountToCollect <= 0) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Invalid Amount',
+        detail: 'Please enter a valid amount to collect.'
+      });
+      return;
+    }
+
     try {
-      await this.clinicState.processPayment(this.selectedInvoiceId, this.selectedPaymentMethod);
+      const collected = this.amountToCollect;
+      const method    = this.selectedPaymentMethod;
+
+      await this.clinicState.processPayment(
+        this.selectedInvoiceId,
+        collected,
+        method
+      );
       this.showPaymentModal = false;
       this.selectedInvoiceId = null;
+      this.amountToCollect = 0;
       this.messageService.add({
         severity: 'success',
-        summary: 'Success',
-        detail: 'Payment processed successfully'
+        summary: 'Payment Recorded',
+        detail: `${collected.toLocaleString()} EGP collected via ${method}`
       });
     } catch (error: any) {
       this.messageService.add({
@@ -169,20 +195,17 @@ export class BillingComponent {
 
   /**
    * Helper mapping invoice status to PrimeNG tag severity:
-   * - Paid -> 'success' (Green)
-   * - Pending -> 'warn' (Orange / Warning)
-   * - Partial -> 'info' (Blue)
+   * - Paid    -> 'success' (Green)
+   * - Pending -> 'warn'    (Orange / Warning)
+   * - Partial -> 'info'    (Blue)
+   * - Waived  -> 'secondary'
    */
   getStatusSeverity(status: string): 'success' | 'warn' | 'info' | 'secondary' {
     switch (status) {
-      case 'Paid':
-        return 'success';
-      case 'Pending':
-        return 'warn';
-      case 'Partial':
-        return 'info';
-      default:
-        return 'secondary';
+      case 'Paid':    return 'success';
+      case 'Pending': return 'warn';
+      case 'Partial': return 'info';
+      default:        return 'secondary';
     }
   }
 }

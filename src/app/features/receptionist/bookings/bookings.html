@@ -101,6 +101,29 @@
           </p-select>
         </div>
 
+        <!-- Free Assessment Toggle (Visible only when type = Assessment) -->
+        @if (sessionType === 'Assessment') {
+          <div class="col-lg-2 col-md-3 d-flex flex-column justify-content-end">
+            <div class="d-flex align-items-center gap-2 p-2 rounded border"
+                 [ngClass]="isFreeAssessment ? 'border-warning bg-warning bg-opacity-10' : 'border-secondary bg-body'"
+                 style="cursor: pointer; transition: all 0.2s ease; height: 38px;"
+                 (click)="isFreeAssessment = !isFreeAssessment">
+              <div class="form-check form-switch mb-0 me-1">
+                <input class="form-check-input" type="checkbox" role="switch"
+                       id="freeAssessToggle"
+                       [(ngModel)]="isFreeAssessment"
+                       (click)="$event.stopPropagation()">
+              </div>
+              <label for="freeAssessToggle" class="form-check-label small fw-semibold mb-0"
+                     [ngClass]="isFreeAssessment ? 'text-warning' : 'text-secondary'"
+                     style="cursor: pointer; white-space: nowrap;">
+                <i class="bi bi-gift-fill me-1"></i>
+                {{ 'RECEPTIONIST.FREE_ASSESSMENT' | translate }}
+              </label>
+            </div>
+          </div>
+        }
+
         <!-- Doctor Dropdown (Strict Gender Matching) -->
         <div class="col-lg-2 col-md-3">
           <div class="d-flex justify-content-between align-items-center mb-1">
@@ -153,6 +176,65 @@
             placeholder="Date & Time" appendTo="body" styleClass="w-100 p-datepicker-sm">
           </p-datepicker>
         </div>
+
+        <!-- Financial Context Strip: Shown whenever a patient with a financial plan is selected -->
+        @if (selectedPatient?.financialPlan) {
+          <div class="col-12">
+            <div class="d-flex flex-wrap align-items-center gap-2 px-2 py-2 rounded border"
+                 [ngClass]="(selectedPatient?.financialPlan?.remainingDebt ?? 0) > 0
+                   ? 'border-warning bg-warning bg-opacity-10'
+                   : 'border-success bg-success bg-opacity-10'"
+                 style="font-size: 0.78rem;">
+              <i class="bi bi-wallet2 fw-bold"
+                 [ngClass]="(selectedPatient?.financialPlan?.remainingDebt ?? 0) > 0 ? 'text-warning' : 'text-success'"></i>
+              <span class="fw-semibold text-body">{{ 'RECEPTIONIST.FINANCIAL_AGREEMENT' | translate }}:</span>
+              <!-- Payment Mode Badge -->
+              <span class="badge bg-primary bg-opacity-10 text-primary">
+                {{ selectedPatient?.financialPlan?.paymentMode }}
+              </span>
+              <!-- Package / Upfront-Copay details -->
+              @if (selectedPatient?.financialPlan?.paymentMode !== 'Per-Session') {
+                <span class="text-muted">
+                  {{ 'RECEPTIONIST.TOTAL_AMOUNT' | translate }}:
+                  <strong>{{ selectedPatient?.financialPlan?.totalAgreedAmount | number:'1.0-0' }} EGP</strong>
+                </span>
+                <span class="vr"></span>
+                <span class="text-muted">
+                  {{ 'RECEPTIONIST.AMOUNT_PAID_NOW' | translate }}:
+                  <strong>{{ selectedPatient?.financialPlan?.totalPaidSoFar | number:'1.0-0' }} EGP</strong>
+                </span>
+                <span class="vr"></span>
+                <span class="badge"
+                      [ngClass]="(selectedPatient?.financialPlan?.remainingDebt ?? 0) > 0 ? 'badge-warning' : 'badge-success'">
+                  <i class="bi me-1"
+                     [ngClass]="(selectedPatient?.financialPlan?.remainingDebt ?? 0) > 0 ? 'bi-exclamation-diamond' : 'bi-check-circle'"></i>
+                  {{ 'RECEPTIONIST.REMAINING_DEBT' | translate }}:
+                  {{ selectedPatient?.financialPlan?.remainingDebt | number:'1.0-0' }} EGP
+                </span>
+                <!-- Session billing notice for Package/Upfront-Copay -->
+                @if ((selectedPatient?.financialPlan?.remainingDebt ?? 0) === 0) {
+                  <span class="badge badge-success ms-1">
+                    <i class="bi bi-check2-all me-1"></i>
+                    {{ 'RECEPTIONIST.SESSION_COVERED' | translate }}
+                  </span>
+                }
+              } @else {
+                <!-- Per-Session price -->
+                <span class="text-muted">
+                  {{ 'RECEPTIONIST.PRICE_PER_SESSION' | translate }}:
+                  <strong>{{ selectedPatient?.financialPlan?.sessionPrice | number:'1.0-0' }} EGP</strong>
+                </span>
+              }
+              <!-- Free Assessment notice -->
+              @if (isFreeAssessment && sessionType === 'Assessment') {
+                <span class="badge badge-warning ms-auto">
+                  <i class="bi bi-gift-fill me-1"></i>{{ 'RECEPTIONIST.FREE_ASSESSMENT' | translate }}
+                  — {{ 'RECEPTIONIST.WAIVED' | translate }}
+                </span>
+              }
+            </div>
+          </div>
+        }
 
         <!-- Action Buttons Bar (Aligned right & compact) -->
         <div class="col-12 d-flex justify-content-end align-items-center gap-2 pt-2 border-top mt-2">

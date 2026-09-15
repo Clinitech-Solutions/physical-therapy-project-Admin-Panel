@@ -10,12 +10,14 @@ import { MessageService } from 'primeng/api';
 import { ProgressBar } from 'primeng/progressbar';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
+import { DialogModule } from 'primeng/dialog';
+import { InputNumberModule } from 'primeng/inputnumber';
 import { PatientProfileComponent } from '../../../shared/components/patient-profile/patient-profile.component';
 
 @Component({
   selector: "app-receptionist-dashboard",
   standalone: true,
-  imports: [CommonModule, TranslateModule, FormsModule, ProgressBar, ButtonModule, TooltipModule, PatientProfileComponent],
+  imports: [CommonModule, TranslateModule, FormsModule, ProgressBar, ButtonModule, TooltipModule, DialogModule, InputNumberModule, PatientProfileComponent],
   templateUrl: "./dashboard.html",
   styleUrl: "./dashboard.css",
 })
@@ -155,6 +157,41 @@ export class Dashboard {
       this.closeAbsenceModal();
       this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Doctor marked absent' });
     }, 1000);
+  }
+
+  // Debt Gate State
+  showDebtModal = false;
+  debtSessionId: string | null = null;
+  debtAmountToCollect = 0;
+  pendingDebtTotal = 0;
+
+  onCheckInClick(session: Session) {
+    const patient = this.clinicState.getPatientById(session.patientId);
+    const debt = patient?.financialPlan?.remainingDebt || 0;
+    if (debt > 0) {
+      this.pendingDebtTotal = debt;
+      this.debtAmountToCollect = debt;
+      this.debtSessionId = session.id;
+      this.showDebtModal = true;
+    } else {
+      this.checkIn(session.id);
+    }
+  }
+
+  async confirmDebtPayment(collect: boolean) {
+    if (collect && this.debtAmountToCollect > 0 && this.debtSessionId) {
+      const session = this.clinicState.sessions().find(s => s.id === this.debtSessionId);
+      if (session) {
+        await this.clinicState.collectInstallment(session.patientId, this.debtAmountToCollect, 'Cash');
+      }
+    }
+    if (this.debtSessionId) {
+      this.checkIn(this.debtSessionId);
+    }
+    this.showDebtModal = false;
+    this.debtSessionId = null;
+    this.debtAmountToCollect = 0;
+    this.pendingDebtTotal = 0;
   }
 
   async checkIn(id: string) {

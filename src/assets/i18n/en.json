@@ -141,7 +141,14 @@
     "AMOUNT_PAID_NOW": "Amount Paid Now",
     "REMAINING_DEBT": "Remaining Debt",
     "PRICE_PER_SESSION": "Price Per Session",
+    "FREE_ASSESSMENT": "Free Assessment",
+    "SESSION_COVERED": "Session Covered",
+    "WAIVED": "Waived",
+    "DEBT_GATE_TITLE": "Outstanding Debt Collection",
+    "AMOUNT_TO_COLLECT": "Amount to Collect",
+    "COLLECT_AND_CHECK_IN": "Collect & Check-In",
     
+
     "ALL_COMPANIES": "All Companies",
     "INSURANCE_DETAILS": "Insurance Details",
     "STATUS_PENDING": "Pending Approval",

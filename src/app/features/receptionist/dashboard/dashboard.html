@@ -115,7 +115,7 @@
               <div class="d-flex gap-1 justify-content-end align-items-center">
                 @if(session.status === 'Confirmed' || session.status === 'Pending') {
                 <button class="btn-action action-primary" [attr.data-tip]="'RECEPTIONIST.CHECK_IN' | translate"
-                  (click)="checkIn(session.id)">
+                  (click)="onCheckInClick(session)">
                   <i class="bi bi-box-arrow-in-right"></i>
                 </button>
                 }
@@ -212,6 +212,54 @@
   </div>
 </div>
 }
+
+<!-- Debt Gate Modal -->
+<p-dialog 
+  [(visible)]="showDebtModal" 
+  [modal]="true" 
+  appendTo="body"
+  [draggable]="false" 
+  [resizable]="false" 
+  [closable]="false" 
+  [showHeader]="true" 
+  styleClass="clean-modal"
+  [style]="{ width: '400px' }"
+  [header]="'DEBT_GATE_TITLE' | translate">
+
+  <div class="modal-form-vertical py-2">
+    <div class="alert alert-warning d-flex align-items-center mb-3">
+      <i class="bi bi-exclamation-triangle-fill fs-4 me-2"></i>
+      <div>
+        <div class="fw-bold">{{ 'RECEPTIONIST.REMAINING_DEBT' | translate }}</div>
+        <div class="fs-5">{{ pendingDebtTotal | currency:'EGP' }}</div>
+      </div>
+    </div>
+    <div class="form-group mb-3">
+      <label class="form-label mb-2">
+        {{ 'AMOUNT_TO_COLLECT' | translate }}
+      </label>
+      <p-inputNumber [(ngModel)]="debtAmountToCollect" mode="currency" currency="EGP" styleClass="w-100" class="w-full d-block"></p-inputNumber>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="d-flex justify-content-end gap-2 modal-footer-actions">
+      <button 
+        type="button" 
+        class="btn btn-outline-secondary btn-cancel" 
+        (click)="confirmDebtPayment(false)">
+        Check-In Only
+      </button>
+      <button 
+        type="button" 
+        class="btn btn-primary" 
+        (click)="confirmDebtPayment(true)">
+        {{ 'COLLECT_AND_CHECK_IN' | translate }}
+      </button>
+    </div>
+  </ng-template>
+</p-dialog>
+
 
 <!-- Patient Profile Modal -->
 <app-patient-profile
