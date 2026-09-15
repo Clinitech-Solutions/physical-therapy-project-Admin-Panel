@@ -119,7 +119,31 @@ describe('Receptionist BillingComponent Reactive Signals & Payment Suite', () =>
       const initialInvoiceCount = clinicState.invoices().length;
       const openRoom = clinicState.availableRooms()[0];
 
-      // Patient 1 is Ahmed Fathy (Cash)
+      // Patient 4 is Laila Tarek (Cash, no prepaid package)
+      await clinicState.addSession({
+        patientId: '4',
+        doctorId: 'doc_1',
+        roomId: openRoom.id,
+        scheduledAt: new Date().toISOString(),
+        type: 'Session' as SessionType
+      });
+
+      expect(clinicState.invoices().length).toBe(initialInvoiceCount + 1);
+      const latestInvoice = clinicState.invoices()[0];
+      expect(latestInvoice.patientId).toBe('4');
+      expect(latestInvoice.sessionId).toBeTruthy();
+      expect(latestInvoice.status).toBe('Pending');
+      expect(latestInvoice.amount).toBe(500); // Default amount
+      expect(latestInvoice.currency).toBe('EGP');
+      expect(latestInvoice.type).toBe('Session');
+      expect(latestInvoice.id.startsWith('INV-')).toBe(true);
+    });
+
+    it('should automatically generate covered Paid invoice for Package patient', async () => {
+      const initialInvoiceCount = clinicState.invoices().length;
+      const openRoom = clinicState.availableRooms()[0];
+
+      // Patient 1 is Ahmed Fathy (Package)
       await clinicState.addSession({
         patientId: '1',
         doctorId: 'doc_2',
@@ -132,18 +156,15 @@ describe('Receptionist BillingComponent Reactive Signals & Payment Suite', () =>
       const latestInvoice = clinicState.invoices()[0];
       expect(latestInvoice.patientId).toBe('1');
       expect(latestInvoice.sessionId).toBeTruthy();
-      expect(latestInvoice.status).toBe('Pending');
-      expect(latestInvoice.amount).toBe(500); // Default amount
-      expect(latestInvoice.currency).toBe('EGP');
-      expect(latestInvoice.type).toBe('Session');
-      expect(latestInvoice.id.startsWith('INV-')).toBe(true);
+      expect(latestInvoice.status).toBe('Paid');
+      expect(latestInvoice.amount).toBe(0); // Covered by package
     });
 
-    it('should automatically generate invoice with copay amount for insurance patient', async () => {
+    it('should automatically generate covered Paid invoice for upfront copay insurance patient', async () => {
       const initialInvoiceCount = clinicState.invoices().length;
       const openRoom = clinicState.availableRooms()[0];
 
-      // Patient 2 is Mona Zaki (Insurance, copayPercentage = 20, status = Approved)
+      // Patient 2 is Mona Zaki (Insurance, Upfront-Copay)
       await clinicState.addSession({
         patientId: '2',
         doctorId: 'doc_1',
@@ -156,8 +177,26 @@ describe('Receptionist BillingComponent Reactive Signals & Payment Suite', () =>
       const latestInvoice = clinicState.invoices()[0];
       expect(latestInvoice.patientId).toBe('2');
       expect(latestInvoice.sessionId).toBeTruthy();
-      expect(latestInvoice.status).toBe('Pending');
-      expect(latestInvoice.amount).toBe(20); // copayPercentage value
+      expect(latestInvoice.status).toBe('Paid');
+      expect(latestInvoice.amount).toBe(0); // Covered by upfront copay
+    });
+
+    it('should generate Waived invoice with 0 amount for free assessment', async () => {
+      const openRoom = clinicState.availableRooms()[0];
+
+      // Patient 5 is Youssef Ali (New patient -> Assessment)
+      await clinicState.addSession({
+        patientId: '5',
+        doctorId: 'doc_2',
+        roomId: openRoom.id,
+        scheduledAt: new Date().toISOString(),
+        type: 'Assessment' as SessionType,
+        isFreeAssessment: true
+      });
+
+      const latestInvoice = clinicState.invoices()[0];
+      expect(latestInvoice.status).toBe('Waived');
+      expect(latestInvoice.amount).toBe(0);
     });
   });
 

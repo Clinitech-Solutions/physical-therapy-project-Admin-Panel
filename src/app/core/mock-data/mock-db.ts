@@ -27,7 +27,12 @@ export const mockPatients: Patient[] = [
     paymentType: 'Cash', 
     lastVisit: `${pastDate}T00:00:00Z`, 
     documents: { medicalConsent: true, liabilityWaiver: true, idCard: true },
-    treatmentPlan: { totalSessions: 10, primaryDoctorId: 'doc_2' }
+    treatmentPlan: { 
+      totalSessions: 10, 
+      primaryDoctorId: 'doc_2',
+      financialPlan: { paymentMode: 'Package', totalAgreedAmount: 4000, totalPaidSoFar: 2000, remainingDebt: 2000 }
+    },
+    financialPlan: { paymentMode: 'Package', totalAgreedAmount: 4000, totalPaidSoFar: 2000, remainingDebt: 2000 }
   },
   { 
     id: '2', 
@@ -41,7 +46,13 @@ export const mockPatients: Patient[] = [
     paymentType: 'Insurance', 
     lastVisit: `${pastDate}T00:00:00Z`, 
     documents: { medicalConsent: true, liabilityWaiver: true, idCard: true },
-    insuranceDetails: { company: 'Bupa', status: 'Approved', copayPercentage: 20, approvedSessions: 10, memberId: 'BUP-772910', employer: 'Vodafone Egypt' }
+    insuranceDetails: { company: 'Bupa', status: 'Approved', copayPercentage: 20, approvedSessions: 10, memberId: 'BUP-772910', employer: 'Vodafone Egypt' },
+    treatmentPlan: {
+      totalSessions: 10,
+      primaryDoctorId: 'doc_1',
+      financialPlan: { paymentMode: 'Upfront-Copay', totalAgreedAmount: 1000, totalPaidSoFar: 1000, remainingDebt: 0 }
+    },
+    financialPlan: { paymentMode: 'Upfront-Copay', totalAgreedAmount: 1000, totalPaidSoFar: 1000, remainingDebt: 0 }
   },
   { id: '3', nameEn: 'Omar Hassan', nameAr: 'عمر حسن', avatar: 'OH', gender: 'Male', phone: '+201212345673', address: 'Dokki, Giza', occupation: 'Accountant', paymentType: 'Online', lastVisit: `${pastDate}T00:00:00Z`, documents: { medicalConsent: true, liabilityWaiver: false, idCard: true } },
   { id: '4', nameEn: 'Laila Tarek', nameAr: 'ليلى طارق', avatar: 'LT', gender: 'Female', phone: '+201222333444', address: 'Nasr City, Cairo', occupation: 'Architect', paymentType: 'Cash', lastVisit: `${pastDate}T00:00:00Z`, documents: { medicalConsent: true, liabilityWaiver: true, idCard: true } },

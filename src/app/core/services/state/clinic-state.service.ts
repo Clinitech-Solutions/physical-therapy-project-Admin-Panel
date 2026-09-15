@@ -402,7 +402,7 @@ export class ClinicStateService {
     this.isSearching.set(false);
   }
 
-  async addSession(sessionData: { patientId: string, doctorId: string, roomId: string, scheduledAt: string, type: SessionType }) {
+  async addSession(sessionData: { patientId: string, doctorId: string, roomId: string, scheduledAt: string, type: SessionType, isFreeAssessment?: boolean }) {
     const patient = this.patientsSig().find(p => p.id === sessionData.patientId);
     if (patient && patient.paymentType === 'Insurance' && patient.insuranceDetails?.status !== 'Approved') {
       throw new Error('Insurance approval is pending. Cannot book sessions.');
@@ -435,9 +435,24 @@ export class ClinicStateService {
     this.sessionsSig.update(sessions => [...sessions, newSession]);
     this.waitlistSig.update(list => list.filter(item => item.patientId !== sessionData.patientId));
 
-    // Auto-generate invoice for this session
-    let invoiceAmount = 500;
-    if (patient?.paymentType === 'Insurance' && patient.insuranceDetails?.copayPercentage != null) {
+    // Auto-generate invoice for this session based on Financial Plan
+    let invoiceAmount = 500; // Default fallback
+    let invoiceStatus: Invoice['status'] = 'Pending';
+
+    const financialPlan = patient?.financialPlan || patient?.treatmentPlan?.financialPlan;
+    if (sessionData.type === 'Assessment' && sessionData.isFreeAssessment) {
+      invoiceAmount = 0;
+      invoiceStatus = 'Waived';
+    } else if (financialPlan) {
+      const plan = financialPlan;
+      if (plan.paymentMode === 'Package' || plan.paymentMode === 'Upfront-Copay') {
+        // Session is covered by the prepaid package
+        invoiceAmount = 0; 
+        invoiceStatus = 'Paid'; 
+      } else if (plan.paymentMode === 'Per-Session') {
+        invoiceAmount = plan.sessionPrice || 500;
+      }
+    } else if (patient?.paymentType === 'Insurance' && patient.insuranceDetails?.copayPercentage != null) {
       invoiceAmount = patient.insuranceDetails.copayPercentage;
     }
 
@@ -447,7 +462,7 @@ export class ClinicStateService {
       patientId: sessionData.patientId,
       amount: invoiceAmount,
       currency: 'EGP',
-      status: 'Pending',
+      status: invoiceStatus,
       type: sessionData.type,
       createdAt: new Date().toISOString()
     };
@@ -456,7 +471,7 @@ export class ClinicStateService {
     this.isLoading.set(false);
   }
 
-  async bookSession(sessionData: { patientId: string, doctorId: string, roomId: string, scheduledAt: string, type: SessionType }) {
+  async bookSession(sessionData: { patientId: string, doctorId: string, roomId: string, scheduledAt: string, type: SessionType, isFreeAssessment?: boolean }) {
     const patient = this.patientsSig().find(p => p.id === sessionData.patientId);
     if (patient && patient.paymentType === 'Insurance' && patient.insuranceDetails?.status !== 'Approved') {
       throw new Error('Insurance approval is pending. Cannot book sessions.');
@@ -635,7 +650,8 @@ export class ClinicStateService {
       paymentType: newPatient.paymentType as 'Cash' | 'Online' | 'Insurance',
       lastVisit: new Date().toISOString(),
       documents: { ...newPatient.docs },
-      insuranceDetails: newPatient.paymentType === 'Insurance' ? newPatient.insuranceDetails : undefined
+      insuranceDetails: newPatient.paymentType === 'Insurance' ? newPatient.insuranceDetails : undefined,
+      financialPlan: newPatient.financialPlan
     };
 
     this.patientsSig.update(patients => [created, ...patients]);

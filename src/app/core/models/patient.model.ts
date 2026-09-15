@@ -10,6 +10,16 @@ export interface InsuranceDetails {
   employer?: string;
 }
 
+export interface FinancialPlan {
+  paymentMode: 'Per-Session' | 'Package' | 'Upfront-Copay'; 
+  totalAgreedAmount?: number; // Total package price or Total Copay for all sessions
+  discount?: number;
+  netAmount?: number;
+  totalPaidSoFar?: number;
+  remainingDebt?: number;
+  sessionPrice?: number; // Used if 'Per-Session'
+}
+
 export interface Patient {
   id: string;
   nameEn: string;
@@ -27,9 +37,11 @@ export interface Patient {
     idCard: boolean;
   };
   insuranceDetails?: InsuranceDetails;
+  financialPlan?: FinancialPlan;
   treatmentPlan?: {
     totalSessions: number;
     primaryDoctorId: string;
+    financialPlan?: FinancialPlan;
   };
 }
 
@@ -44,6 +56,7 @@ export interface NewPatient {
   paymentType: PaymentMethod;
   insuranceCompany: string;
   insuranceDetails?: InsuranceDetails;
+  financialPlan?: FinancialPlan;
   docs: {
     medicalConsent: boolean;
     liabilityWaiver: boolean;
