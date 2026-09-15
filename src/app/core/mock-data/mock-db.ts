@@ -22,6 +22,8 @@ export const mockPatients: Patient[] = [
     avatar: 'AF', 
     gender: 'Male', 
     phone: '+201012345671', 
+    address: 'Maadi, Cairo',
+    occupation: 'Software Engineer',
     paymentType: 'Cash', 
     lastVisit: `${pastDate}T00:00:00Z`, 
     documents: { medicalConsent: true, liabilityWaiver: true, idCard: true },
@@ -34,17 +36,19 @@ export const mockPatients: Patient[] = [
     avatar: 'MZ', 
     gender: 'Female', 
     phone: '+201112345672', 
+    address: 'Zayed City, Giza',
+    occupation: 'Marketing Director',
     paymentType: 'Insurance', 
     lastVisit: `${pastDate}T00:00:00Z`, 
     documents: { medicalConsent: true, liabilityWaiver: true, idCard: true },
-    insuranceDetails: { company: 'Bupa', status: 'Approved', copayPercentage: 20, approvedSessions: 10, memberId: 'BUP-772910' }
+    insuranceDetails: { company: 'Bupa', status: 'Approved', copayPercentage: 20, approvedSessions: 10, memberId: 'BUP-772910', employer: 'Vodafone Egypt' }
   },
-  { id: '3', nameEn: 'Omar Hassan', nameAr: 'عمر حسن', avatar: 'OH', gender: 'Male', phone: '+201212345673', paymentType: 'Online', lastVisit: `${pastDate}T00:00:00Z`, documents: { medicalConsent: true, liabilityWaiver: false, idCard: true } },
-  { id: '4', nameEn: 'Laila Tarek', nameAr: 'ليلى طارق', avatar: 'LT', gender: 'Female', phone: '+201222333444', paymentType: 'Cash', lastVisit: `${pastDate}T00:00:00Z`, documents: { medicalConsent: true, liabilityWaiver: true, idCard: true } },
+  { id: '3', nameEn: 'Omar Hassan', nameAr: 'عمر حسن', avatar: 'OH', gender: 'Male', phone: '+201212345673', address: 'Dokki, Giza', occupation: 'Accountant', paymentType: 'Online', lastVisit: `${pastDate}T00:00:00Z`, documents: { medicalConsent: true, liabilityWaiver: false, idCard: true } },
+  { id: '4', nameEn: 'Laila Tarek', nameAr: 'ليلى طارق', avatar: 'LT', gender: 'Female', phone: '+201222333444', address: 'Nasr City, Cairo', occupation: 'Architect', paymentType: 'Cash', lastVisit: `${pastDate}T00:00:00Z`, documents: { medicalConsent: true, liabilityWaiver: true, idCard: true } },
 
   // --- مرضى جدد (أول زيارة لهم اليوم) ---
-  { id: '5', nameEn: 'Youssef Ali', nameAr: 'يوسف علي', avatar: 'YA', gender: 'Male', phone: '+201112223345', paymentType: 'Cash', lastVisit: `${today}T00:00:00Z`, documents: { medicalConsent: false, liabilityWaiver: false, idCard: false } },
-  { id: '6', nameEn: 'Sara Mahmoud', nameAr: 'سارة محمود', avatar: 'SM', gender: 'Female', phone: '+201011122236', paymentType: 'Online', lastVisit: `${today}T00:00:00Z`, documents: { medicalConsent: false, liabilityWaiver: true, idCard: false } },
+  { id: '5', nameEn: 'Youssef Ali', nameAr: 'يوسف علي', avatar: 'YA', gender: 'Male', phone: '+201112223345', address: 'New Cairo, Cairo', occupation: 'Civil Engineer', paymentType: 'Cash', lastVisit: `${today}T00:00:00Z`, documents: { medicalConsent: false, liabilityWaiver: false, idCard: false } },
+  { id: '6', nameEn: 'Sara Mahmoud', nameAr: 'سارة محمود', avatar: 'SM', gender: 'Female', phone: '+201011122236', address: 'Heliopolis, Cairo', occupation: 'Teacher', paymentType: 'Online', lastVisit: `${today}T00:00:00Z`, documents: { medicalConsent: false, liabilityWaiver: true, idCard: false } },
   { 
     id: '7', 
     nameEn: 'Karim Nabil', 
@@ -52,10 +56,12 @@ export const mockPatients: Patient[] = [
     avatar: 'KN', 
     gender: 'Male', 
     phone: '+201200112233', 
+    address: 'Mohandessin, Giza',
+    occupation: 'Financial Analyst',
     paymentType: 'Insurance', 
     lastVisit: `${today}T00:00:00Z`, 
     documents: { medicalConsent: true, liabilityWaiver: false, idCard: true },
-    insuranceDetails: { company: 'AXA', status: 'Pending', memberId: 'AXA-88412' }
+    insuranceDetails: { company: 'AXA', status: 'Pending', memberId: 'AXA-88412', employer: 'CIB Bank' }
   }
 ];
 

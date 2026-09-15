@@ -70,6 +70,12 @@
                     </div>
                     <div class="d-flex gap-2 mt-1 align-items-center">
                       <span class="text-muted" style="font-size:var(--text-xs)">#{{ patient.id }}</span>
+                      @if(patient.occupation) {
+                        <span class="text-muted" style="font-size:var(--text-xs)"><i class="bi bi-briefcase"></i> {{ patient.occupation }}</span>
+                      }
+                      @if(patient.address) {
+                        <span class="text-muted" style="font-size:var(--text-xs)"><i class="bi bi-geo-alt"></i> {{ patient.address }}</span>
+                      }
                       @if(!patient.documents.medicalConsent || !patient.documents.liabilityWaiver || !patient.documents.idCard) {
                         <span class="badge badge-error" [title]="'RECEPTIONIST.NEEDS_PAPERWORK' | translate">
                           <i class="bi bi-file-earmark-x"></i>
@@ -88,6 +94,9 @@
                 @if(patient.paymentType === 'Insurance' && patient.insuranceDetails) {
                   <div class="d-flex align-items-center gap-1 mt-1">
                     <span class="badge border text-body" style="font-size: 10px;">{{ patient.insuranceDetails.company }}</span>
+                    @if(patient.insuranceDetails.employer) {
+                      <span class="badge border text-secondary" style="font-size: 10px;" [title]="'RECEPTIONIST.EMPLOYER' | translate">{{ patient.insuranceDetails.employer }}</span>
+                    }
                     <span class="badge" [ngClass]="patient.insuranceDetails.status === 'Approved' ? 'badge-success' : 'badge-warning'" style="font-size: 10px;">
                       {{ patient.insuranceDetails.status === 'Approved' ? ('RECEPTIONIST.STATUS_APPROVED' | translate) : ('RECEPTIONIST.STATUS_PENDING' | translate) }}
                     </span>
@@ -185,6 +194,21 @@
       </div>
     </div>
 
+    <div class="modal-form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+      <div class="form-group">
+        <label class="form-label fw-bold small mb-1">
+          {{ 'RECEPTIONIST.ADDRESS' | translate }}
+        </label>
+        <input type="text" class="form-control form-control-sm" placeholder="e.g. Maadi, Cairo" [(ngModel)]="newPatient.address">
+      </div>
+      <div class="form-group">
+        <label class="form-label fw-bold small mb-1">
+          {{ 'RECEPTIONIST.OCCUPATION' | translate }}
+        </label>
+        <input type="text" class="form-control form-control-sm" placeholder="e.g. Software Engineer" [(ngModel)]="newPatient.occupation">
+      </div>
+    </div>
+
     <!-- Conditional Insurance Fields for Add Modal -->
     @if(newPatient.paymentType === 'Insurance' && newPatient.insuranceDetails) {
       <div class="card card-bg border p-3 rounded fade-in">
@@ -213,6 +237,13 @@
               <option value="Approved">{{ 'RECEPTIONIST.STATUS_APPROVED' | translate }}</option>
             </select>
           </div>
+        </div>
+
+        <div class="form-group mt-2">
+          <label class="form-label fw-bold small mb-1">
+            {{ 'RECEPTIONIST.EMPLOYER' | translate }}
+          </label>
+          <input type="text" class="form-control form-control-sm" placeholder="e.g. Vodafone Egypt" [(ngModel)]="newPatient.insuranceDetails.employer">
         </div>
 
         @if(newPatient.insuranceDetails.status === 'Approved') {
@@ -339,6 +370,21 @@
       </select>
     </div>
 
+    <div class="modal-form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+      <div class="form-group">
+        <label class="form-label fw-bold small mb-1">
+          {{ 'RECEPTIONIST.ADDRESS' | translate }}
+        </label>
+        <input type="text" class="form-control form-control-sm" placeholder="e.g. Maadi, Cairo" [(ngModel)]="editPatientForm.address">
+      </div>
+      <div class="form-group">
+        <label class="form-label fw-bold small mb-1">
+          {{ 'RECEPTIONIST.OCCUPATION' | translate }}
+        </label>
+        <input type="text" class="form-control form-control-sm" placeholder="e.g. Software Engineer" [(ngModel)]="editPatientForm.occupation">
+      </div>
+    </div>
+
     <!-- Conditional Insurance Fields for Edit Modal -->
     @if(editPatientForm.paymentType === 'Insurance' && editPatientForm.insuranceDetails) {
       <div class="card card-bg border p-3 rounded fade-in">
@@ -367,6 +413,13 @@
               <option value="Approved">{{ 'RECEPTIONIST.STATUS_APPROVED' | translate }}</option>
             </select>
           </div>
+        </div>
+
+        <div class="form-group mt-2">
+          <label class="form-label fw-bold small mb-1">
+            {{ 'RECEPTIONIST.EMPLOYER' | translate }}
+          </label>
+          <input type="text" class="form-control form-control-sm" placeholder="e.g. Vodafone Egypt" [(ngModel)]="editPatientForm.insuranceDetails.employer">
         </div>
 
         @if(editPatientForm.insuranceDetails.status === 'Approved') {

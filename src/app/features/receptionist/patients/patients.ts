@@ -1,7 +1,7 @@
 import { Component, signal, computed, inject } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { TranslateModule } from '@ngx-translate/core';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormBuilder } from '@angular/forms';
 
 import { ClinicStateService } from '../../../core/services/state/clinic-state.service';
 import { Patient, NewPatient, PaymentMethod, InsuranceDetails } from '../../../core/models/patient.model';
@@ -12,12 +12,39 @@ import { PatientProfileComponent } from '../../../shared/components/patient-prof
 @Component({
   selector: "app-receptionist-patients",
   standalone: true,
-  imports: [CommonModule, TranslateModule, FormsModule, DialogModule, PatientProfileComponent],
+  imports: [CommonModule, TranslateModule, FormsModule, ReactiveFormsModule, DialogModule, PatientProfileComponent],
   templateUrl: "./patients.html",
 })
 export class PatientsComponent {
   clinicState = inject(ClinicStateService);
   messageService = inject(MessageService);
+  private fb = inject(FormBuilder);
+
+  // Main patientForm builder (Reactive Forms)
+  patientForm = this.fb.group({
+    nameEn: [''],
+    nameAr: [''],
+    phone: [''],
+    gender: ['Male'],
+    dob: [''],
+    address: [''],
+    occupation: [''],
+    paymentType: ['Cash'],
+    insuranceCompany: ['Bupa'],
+    insuranceDetails: this.fb.group({
+      company: ['Bupa'],
+      status: ['Pending'],
+      copayPercentage: [20],
+      approvedSessions: [10],
+      memberId: [''],
+      employer: ['']
+    }),
+    docs: this.fb.group({
+      medicalConsent: [false],
+      liabilityWaiver: [false],
+      idCard: [false]
+    })
+  });
   
   // Search & Filter
   searchQuery = signal('');
@@ -82,6 +109,8 @@ export class PatientsComponent {
       phone: '',
       gender: 'Male',
       dob: '',
+      address: '',
+      occupation: '',
       paymentType: 'Cash',
       insuranceCompany: 'Bupa',
       insuranceDetails: {
@@ -89,7 +118,8 @@ export class PatientsComponent {
         status: 'Pending',
         copayPercentage: 20,
         approvedSessions: 10,
-        memberId: ''
+        memberId: '',
+        employer: ''
       },
       docs: {
         medicalConsent: false,
@@ -131,7 +161,7 @@ export class PatientsComponent {
       documents: { ...patient.documents },
       insuranceDetails: patient.insuranceDetails 
         ? { ...patient.insuranceDetails } 
-        : { company: 'Bupa', status: 'Pending', copayPercentage: 20, approvedSessions: 10, memberId: '' }
+        : { company: 'Bupa', status: 'Pending', copayPercentage: 20, approvedSessions: 10, memberId: '', employer: '' }
     };
     this.showEditDrawer.set(true);
   }

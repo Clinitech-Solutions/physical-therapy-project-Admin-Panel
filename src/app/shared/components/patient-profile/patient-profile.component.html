@@ -33,6 +33,15 @@
                 'badge-info': p.paymentType === 'Insurance',
                 'badge-warning': p.paymentType === 'Online'
               }">{{ p.paymentType }}</span>
+              @if (p.occupation) {
+                <span><i class="bi bi-briefcase me-1 text-primary"></i>{{ p.occupation }}</span>
+              }
+              @if (p.address) {
+                <span><i class="bi bi-geo-alt me-1 text-primary"></i>{{ p.address }}</span>
+              }
+              @if (p.insuranceDetails?.employer) {
+                <span><i class="bi bi-building me-1 text-primary"></i>{{ p.insuranceDetails?.employer }}</span>
+              }
             </div>
           </div>
         </div>

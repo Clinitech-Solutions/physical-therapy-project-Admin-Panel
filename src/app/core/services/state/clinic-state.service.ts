@@ -630,6 +630,8 @@ export class ClinicStateService {
       avatar: avatarStr || 'NP',
       gender: newPatient.gender as 'Male' | 'Female',
       phone: newPatient.phone,
+      address: newPatient.address,
+      occupation: newPatient.occupation,
       paymentType: newPatient.paymentType as 'Cash' | 'Online' | 'Insurance',
       lastVisit: new Date().toISOString(),
       documents: { ...newPatient.docs },

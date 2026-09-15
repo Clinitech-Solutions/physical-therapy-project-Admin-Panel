@@ -7,6 +7,7 @@ export interface InsuranceDetails {
   copayPercentage?: number;
   approvedSessions?: number;
   memberId?: string;
+  employer?: string;
 }
 
 export interface Patient {
@@ -16,6 +17,8 @@ export interface Patient {
   avatar: string;
   gender: Gender;
   phone: string;
+  address?: string;
+  occupation?: string;
   paymentType: PaymentMethod;
   lastVisit: string; // ISO 8601
   documents: {
@@ -36,6 +39,8 @@ export interface NewPatient {
   phone: string;
   gender: Gender;
   dob: string;
+  address?: string;
+  occupation?: string;
   paymentType: PaymentMethod;
   insuranceCompany: string;
   insuranceDetails?: InsuranceDetails;
