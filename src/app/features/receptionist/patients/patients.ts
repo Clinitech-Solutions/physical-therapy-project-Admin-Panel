@@ -5,14 +5,15 @@ import { FormsModule, ReactiveFormsModule, FormBuilder } from '@angular/forms';
 
 import { ClinicStateService } from '../../../core/services/state/clinic-state.service';
 import { Patient, NewPatient, PaymentMethod, InsuranceDetails } from '../../../core/models/patient.model';
-import { MessageService } from 'primeng/api';
+import { MessageService, SharedModule } from 'primeng/api';
 import { DialogModule } from 'primeng/dialog';
+import { ButtonModule } from 'primeng/button';
 import { PatientProfileComponent } from '../../../shared/components/patient-profile/patient-profile.component';
 
 @Component({
   selector: "app-receptionist-patients",
   standalone: true,
-  imports: [CommonModule, TranslateModule, FormsModule, ReactiveFormsModule, DialogModule, PatientProfileComponent],
+  imports: [CommonModule, TranslateModule, FormsModule, ReactiveFormsModule, DialogModule, ButtonModule, SharedModule, PatientProfileComponent],
   templateUrl: "./patients.html",
 })
 export class PatientsComponent {
@@ -86,6 +87,13 @@ export class PatientsComponent {
     return this.showDrawer();
   }
   set isAddModalOpen(val: boolean) {
+    this.showDrawer.set(val);
+  }
+
+  get patientDialog(): boolean {
+    return this.showDrawer();
+  }
+  set patientDialog(val: boolean) {
     this.showDrawer.set(val);
   }
 
@@ -172,7 +180,19 @@ export class PatientsComponent {
     this.editPatientForm = {};
   }
 
+  hideDialog() {
+    this.closeDrawer();
+  }
+
+  savePatient() {
+    this.createProfile();
+  }
+
   async createProfile() {
+    if (!this.newPatient.nameEn) {
+      this.messageService.add({ severity: 'error', summary: 'Validation Error', detail: 'Patient English name is required' });
+      return;
+    }
     if (this.newPatient.paymentType === 'Insurance' && this.newPatient.insuranceDetails) {
       this.newPatient.insuranceCompany = this.newPatient.insuranceDetails.company;
     }
