@@ -515,3 +515,50 @@
   (visibleChange)="showProfileModal.set($event)"
   [patientId]="selectedProfilePatientId()">
 </app-patient-profile>
+
+<!-- Check-In Debt Gate Modal -->
+<p-dialog [(visible)]="showDebtModal" [modal]="true" appendTo="body" [draggable]="false" [resizable]="false"
+  [closable]="true" styleClass="clean-modal" [style]="{width: '450px'}" [header]="'Outstanding Balance'"
+  (onHide)="showDebtModal = false; pendingCheckInSessionId = null">
+
+  <div class="d-flex flex-column gap-3 py-2">
+    <div class="alert alert-warning d-flex align-items-center gap-2 mb-0" role="alert" style="font-size: 0.85rem;">
+      <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+      <div>
+        <strong>Notice:</strong> This patient has an outstanding debt of 
+        <strong class="text-danger">{{ debtAmount | number:'1.0-0' }} EGP</strong>.
+      </div>
+    </div>
+    
+    <p class="small text-muted mb-0">
+      You can collect a partial installment now before checking them in, or skip to collect later.
+    </p>
+
+    <div class="form-group">
+      <label class="form-label mb-2 fw-semibold small">
+        Collect Installment (EGP)
+      </label>
+      <p-inputNumber [(ngModel)]="installmentAmount" mode="currency" currency="EGP" styleClass="w-100" class="w-full d-block"></p-inputNumber>
+    </div>
+
+    <div class="form-group" *ngIf="installmentAmount > 0">
+      <label class="form-label mb-2 fw-semibold small">
+        Payment Method <span class="text-danger">*</span>
+      </label>
+      <p-select [options]="paymentMethods" [(ngModel)]="installmentPaymentMethod"
+        appendTo="body" styleClass="w-100 p-select-sm">
+      </p-select>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="modal-footer-actions d-flex justify-content-end gap-2 w-100">
+      <p-button label="Skip & Check-In" [outlined]="true" severity="secondary"
+        (onClick)="confirmCheckIn(false)">
+      </p-button>
+      <p-button label="Collect & Check-In" severity="success" (onClick)="confirmCheckIn(true)"
+        [disabled]="!installmentAmount || installmentAmount <= 0">
+      </p-button>
+    </div>
+  </ng-template>
+</p-dialog>

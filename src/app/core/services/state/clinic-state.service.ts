@@ -208,8 +208,8 @@ export class ClinicStateService {
 
   async checkOutPatient(sessionId: string) {
     const invoice = this.invoicesSig().find(inv => inv.sessionId === sessionId);
-    if (invoice && invoice.status !== 'Paid') {
-      throw new Error('Cannot check out: The invoice for this session has not been paid yet.');
+    if (invoice && invoice.status === 'Pending') {
+      throw new Error('Cannot check out: The invoice for this session is pending. Please process payment first.');
     }
 
     this.isLoading.set(true);
@@ -724,6 +724,53 @@ export class ClinicStateService {
     this.isProcessingPayment.set(false);
   }
 
+  /**
+   * Collects a partial or full installment payment against a patient's financial plan
+   * (Package or Upfront-Copay). Updates totalPaidSoFar / remainingDebt on the plan
+   * and creates an Installment receipt invoice in the ledger.
+   */
+  async collectInstallment(patientId: string, amount: number, paymentMethod: string, sessionId?: string): Promise<void> {
+    if (amount <= 0) return;
+
+    this.isProcessingPayment.set(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // Create the Installment invoice
+    const installmentInvoice: Invoice = {
+      id: `INV-INST-${Date.now().toString().slice(-6)}`,
+      sessionId: sessionId || 'installment',
+      patientId: patientId,
+      amount: amount,
+      currency: 'EGP',
+      status: 'Paid',
+      type: 'Installment',
+      createdAt: new Date().toISOString(),
+      paidAmount: amount,
+      remainingBalance: 0,
+      paymentMethod: paymentMethod
+    };
+
+    // Add to invoices state
+    this.invoicesSig.update(invs => [installmentInvoice, ...invs]);
+
+    // Update patient's financial plan debt
+    this.patientsSig.update(list => list.map(p => {
+      if (p.id !== patientId) return p;
+      const plan = p.financialPlan ?? p.treatmentPlan?.financialPlan;
+      if (!plan) return p;
+      const updatedPlan = {
+        ...plan,
+        totalPaidSoFar: (plan.totalPaidSoFar ?? 0) + amount,
+        remainingDebt:  Math.max(0, (plan.remainingDebt ?? 0) - amount)
+      };
+      return p.financialPlan
+        ? { ...p, financialPlan: updatedPlan }
+        : { ...p, treatmentPlan: { ...p.treatmentPlan!, financialPlan: updatedPlan } };
+    }));
+
+    this.isProcessingPayment.set(false);
+  }
+
   // ==========================================
   // UI Helper Methods (ID to Name Resolution)
   // ==========================================
@@ -828,51 +875,7 @@ export class ClinicStateService {
     return this.invoicesSig().find(inv => inv.sessionId === sessionId);
   }
 
-  /**
-   * Collects a partial or full installment payment against a patient's financial plan
-   * (Package or Upfront-Copay). Updates totalPaidSoFar / remainingDebt on the plan
-   * and creates an Installment receipt invoice in the ledger.
-   */
-  async collectInstallment(patientId: string, amount: number, paymentMethod: string): Promise<void> {
-    this.isLoading.set(true);
-    await new Promise(resolve => setTimeout(resolve, 500));
 
-    // 1. Resolve the canonical financial plan (top-level or nested under treatmentPlan)
-    const patient = this.patientsSig().find(p => p.id === patientId);
-    const plan = patient?.financialPlan ?? patient?.treatmentPlan?.financialPlan;
-
-    if (patient && plan) {
-      const updatedPlan = {
-        ...plan,
-        totalPaidSoFar: (plan.totalPaidSoFar ?? 0) + amount,
-        remainingDebt:  Math.max(0, (plan.remainingDebt ?? 0) - amount)
-      };
-
-      // Apply the plan back to wherever it lived (top-level vs treatmentPlan)
-      this.patientsSig.update(list => list.map(p => {
-        if (p.id !== patientId) return p;
-        return p.financialPlan
-          ? { ...p, financialPlan: updatedPlan }
-          : { ...p, treatmentPlan: { ...p.treatmentPlan!, financialPlan: updatedPlan } };
-      }));
-    }
-
-    // 2. Generate an Installment receipt invoice (not tied to a specific session)
-    const receipt: Invoice = {
-      id:            `INV-INST-${Date.now().toString().slice(-6)}`,
-      sessionId:     'installment',
-      patientId:     patientId,
-      amount:        amount,
-      currency:      'EGP',
-      status:        'Paid',
-      type:          'Installment',
-      paymentMethod: paymentMethod,
-      createdAt:     new Date().toISOString()
-    };
-
-    this.invoicesSig.update(invs => [receipt, ...invs]);
-    this.isLoading.set(false);
-  }
 
   /** Look up a single invoice by ID */
   getInvoiceById(id: string | null): Invoice | undefined {

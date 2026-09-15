@@ -10,6 +10,7 @@ import { DialogModule } from 'primeng/dialog';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
+import { InputNumberModule } from 'primeng/inputnumber';
 import { Session, SessionType } from '../../../core/models/session.model';
 import { Doctor } from '../../../core/models/doctor.model';
 import { Patient } from '../../../core/models/patient.model';
@@ -28,6 +29,7 @@ import { PatientProfileComponent } from '../../../shared/components/patient-prof
     SelectButtonModule,
     ButtonModule,
     TooltipModule,
+    InputNumberModule,
     PatientProfileComponent
   ],
   templateUrl: "./bookings.html",
@@ -480,9 +482,38 @@ export class BookingsComponent {
   }
 
   /**
-   * Check-in patient action
+   * Check-in patient action with Debt Gate interceptor
    */
+  // Check-In Debt Modal State
+  showDebtModal = false;
+  pendingCheckInSessionId: string | null = null;
+  installmentAmount: number = 0;
+  installmentPaymentMethod: string = 'Cash';
+  paymentMethods = ['Cash', 'Credit Card', 'E-Wallet'];
+  debtAmount: number = 0;
+
   async checkInSession(sessionId: string) {
+    const session = this.sessions().find(s => s.id === sessionId);
+    if (!session) return;
+
+    const patient = this.allPatients().find(p => p.id === session.patientId);
+    const plan = patient?.financialPlan || patient?.treatmentPlan?.financialPlan;
+    
+    // If the patient has remaining debt, intercept the check-in
+    if (plan && plan.remainingDebt && plan.remainingDebt > 0) {
+      this.debtAmount = plan.remainingDebt;
+      this.pendingCheckInSessionId = sessionId;
+      this.installmentAmount = 0;
+      this.installmentPaymentMethod = 'Cash';
+      this.showDebtModal = true;
+      return;
+    }
+
+    // Otherwise proceed normally
+    await this.executeCheckIn(sessionId);
+  }
+
+  async executeCheckIn(sessionId: string) {
     try {
       await this.clinicState.checkInPatient(sessionId);
       this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Patient checked in' });
@@ -493,6 +524,37 @@ export class BookingsComponent {
         detail: error?.message || 'Check-in failed'
       });
     }
+  }
+
+  async confirmCheckIn(withInstallment: boolean) {
+    if (!this.pendingCheckInSessionId) return;
+    const sessionId = this.pendingCheckInSessionId;
+    
+    const session = this.sessions().find(s => s.id === sessionId);
+    if (!session) return;
+
+    if (withInstallment && this.installmentAmount > 0) {
+      try {
+        await this.clinicState.collectInstallment(
+          session.patientId, 
+          this.installmentAmount, 
+          this.installmentPaymentMethod, 
+          sessionId
+        );
+        this.messageService.add({ 
+          severity: 'success', 
+          summary: 'Payment Collected', 
+          detail: `${this.installmentAmount} EGP installment collected.` 
+        });
+      } catch (error: any) {
+        this.messageService.add({ severity: 'error', summary: 'Payment Error', detail: 'Failed to process installment' });
+        return; // Halt check-in on payment failure
+      }
+    }
+    
+    this.showDebtModal = false;
+    this.pendingCheckInSessionId = null;
+    await this.executeCheckIn(sessionId);
   }
 
   /**
