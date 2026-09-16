@@ -74,7 +74,7 @@ describe('Receptionist BillingComponent Reactive Signals & Payment Suite', () =>
       expect(billing.showPaymentModal).toBe(true);
       expect(billing.selectedInvoiceId).toBe('INV-1002');
       expect(billing.selectedPaymentMethod).toBe('Cash');
-      expect(billing.paymentMethods).toEqual(['Cash', 'Credit Card', 'E-Wallet']);
+      expect(billing.paymentMethods).toEqual(['Cash', 'Credit Card', 'E-Wallet', 'InstaPay']);
     });
 
     it('should confirm payment with chosen payment method, close modal, update status to Paid, and show toast', async () => {
@@ -110,7 +110,7 @@ describe('Receptionist BillingComponent Reactive Signals & Payment Suite', () =>
       expect(toastMessages.length).toBeGreaterThan(0);
       const lastToast = toastMessages[toastMessages.length - 1];
       expect(lastToast.severity).toBe('success');
-      expect(lastToast.detail).toBe('Payment processed successfully');
+      expect(lastToast.detail).toEqual(expect.stringContaining('collected via Credit Card'));
     });
   });
 

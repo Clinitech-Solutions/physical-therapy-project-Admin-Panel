@@ -405,7 +405,7 @@ describe('ClinicStateService Business Rules & Date Filtering Unit Tests', () => 
       ]);
 
       await expect(service.checkOutPatient('test_checkout_unpaid'))
-        .rejects.toThrow('Cannot check out: The invoice for this session has not been paid yet.');
+        .rejects.toThrow('Cannot check out: The invoice for this session is pending. Please process payment first.');
     });
 
     it('should throw an error on check-in if 0 rooms are Available', async () => {
@@ -565,7 +565,7 @@ describe('ClinicStateService Business Rules & Date Filtering Unit Tests', () => 
       // Session '1' is In Progress. Make sure invoice is paid first
       const invoice = service.invoices().find(inv => inv.sessionId === '1');
       if (invoice) {
-        await service.processPayment(invoice.id);
+        await service.processPayment(invoice.id, invoice.amount || 0, 'Cash');
       }
 
       await service.checkOutPatient('1');
