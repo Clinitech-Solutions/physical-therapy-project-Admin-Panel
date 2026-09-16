@@ -232,34 +232,54 @@ export const mockPatients: Patient[] = [
 // ==========================================
 // 2. الجلسات (Sessions) - تسلسل زمني منطقي
 // ==========================================
+// ==========================================
+// 2. الجلسات (Sessions) - كاملة لجميع المرضى
+// ==========================================
 export const mockSessions: Session[] = [
-  // --- المريض 1 (أحمد): خلص 4 جلسات، الـ 5 النهاردة، وباقي 5 مستقبلية ---
-  { id: 'p1_s0', patientId: 'p1', doctorId: 'doc_2', type: 'Assessment', status: 'Completed', scheduledAt: `${getPastDate(15)}T10:00:00`, roomId: 'room_1' },
-  { id: 'p1_s1', patientId: 'p1', doctorId: 'doc_2', type: 'Session', sessionNumber: 1, status: 'Completed', scheduledAt: `${getPastDate(12)}T10:00:00`, roomId: 'room_1' },
-  { id: 'p1_s2', patientId: 'p1', doctorId: 'doc_2', type: 'Session', sessionNumber: 2, status: 'Completed', scheduledAt: `${getPastDate(9)}T10:00:00`, roomId: 'room_1' },
-  { id: 'p1_s3', patientId: 'p1', doctorId: 'doc_2', type: 'Session', sessionNumber: 3, status: 'Completed', scheduledAt: `${getPastDate(6)}T10:00:00`, roomId: 'room_1' },
-  { id: 'p1_s4', patientId: 'p1', doctorId: 'doc_2', type: 'Session', sessionNumber: 4, status: 'Completed', scheduledAt: `${getPastDate(3)}T10:00:00`, roomId: 'room_1' },
-  { id: 'p1_s5', patientId: 'p1', doctorId: 'doc_2', type: 'Session', sessionNumber: 5, status: 'In Progress', scheduledAt: `${today}T10:00:00`, roomId: 'room_1', checkInTime: `${today}T09:55:00Z` }, // شغال دلوقتي
-  { id: 'p1_s6', patientId: 'p1', doctorId: 'doc_2', type: 'Session', sessionNumber: 6, status: 'Pending', scheduledAt: `${getFutureDate(3)}T10:00:00` }, // المستقبل بدون غرف
+  // ---------------------------------------------------------
+  // المريض 1 (أحمد فتحي): 4 ماضي، 1 اليوم، 5 مستقبل
+  // ---------------------------------------------------------
+  { id: 'p1_s0', patientId: 'p1', doctorId: 'doc_2', type: 'Assessment', status: 'Completed', scheduledAt: `${getPastDate(15)}T10:00:00`, roomId: 'room_1', checkInTime: `${getPastDate(15)}T09:55:00Z`, checkOutTime: `${getPastDate(15)}T10:45:00Z` },
+  { id: 'p1_s1', patientId: 'p1', doctorId: 'doc_2', type: 'Session', sessionNumber: 1, status: 'Completed', scheduledAt: `${getPastDate(12)}T10:00:00`, roomId: 'room_1', checkInTime: `${getPastDate(12)}T09:50:00Z`, checkOutTime: `${getPastDate(12)}T10:50:00Z` },
+  { id: 'p1_s2', patientId: 'p1', doctorId: 'doc_2', type: 'Session', sessionNumber: 2, status: 'Completed', scheduledAt: `${getPastDate(9)}T10:00:00`, roomId: 'room_1', checkInTime: `${getPastDate(9)}T09:58:00Z`, checkOutTime: `${getPastDate(9)}T10:55:00Z` },
+  { id: 'p1_s3', patientId: 'p1', doctorId: 'doc_2', type: 'Session', sessionNumber: 3, status: 'Completed', scheduledAt: `${getPastDate(6)}T10:00:00`, roomId: 'room_1', checkInTime: `${getPastDate(6)}T09:55:00Z`, checkOutTime: `${getPastDate(6)}T11:00:00Z` },
+  { id: 'p1_s4', patientId: 'p1', doctorId: 'doc_2', type: 'Session', sessionNumber: 4, status: 'Completed', scheduledAt: `${getPastDate(3)}T10:00:00`, roomId: 'room_1', checkInTime: `${getPastDate(3)}T10:00:00Z`, checkOutTime: `${getPastDate(3)}T10:50:00Z` },
+  { id: 'p1_s5', patientId: 'p1', doctorId: 'doc_2', type: 'Session', sessionNumber: 5, status: 'In Progress', scheduledAt: `${today}T10:00:00`, roomId: 'room_1', checkInTime: `${today}T09:55:00Z` },
+  { id: 'p1_s6', patientId: 'p1', doctorId: 'doc_2', type: 'Session', sessionNumber: 6, status: 'Pending', scheduledAt: `${getFutureDate(3)}T10:00:00` },
   { id: 'p1_s7', patientId: 'p1', doctorId: 'doc_2', type: 'Session', sessionNumber: 7, status: 'Pending', scheduledAt: `${getFutureDate(6)}T10:00:00` },
   { id: 'p1_s8', patientId: 'p1', doctorId: 'doc_2', type: 'Session', sessionNumber: 8, status: 'Pending', scheduledAt: `${getFutureDate(9)}T10:00:00` },
   { id: 'p1_s9', patientId: 'p1', doctorId: 'doc_2', type: 'Session', sessionNumber: 9, status: 'Pending', scheduledAt: `${getFutureDate(12)}T10:00:00` },
   { id: 'p1_s10', patientId: 'p1', doctorId: 'doc_2', type: 'Session', sessionNumber: 10, status: 'Pending', scheduledAt: `${getFutureDate(15)}T10:00:00` },
 
-  // --- المريض 2 (منى): خلصت 9 جلسات، والـ 10 النهاردة ---
-  { id: 'p2_s0', patientId: 'p2', doctorId: 'doc_1', type: 'Assessment', status: 'Completed', scheduledAt: `${getPastDate(30)}T11:00:00`, roomId: 'room_2' },
-  { id: 'p2_s1', patientId: 'p2', doctorId: 'doc_1', type: 'Session', sessionNumber: 1, status: 'Completed', scheduledAt: `${getPastDate(27)}T11:00:00`, roomId: 'room_2' },
-  // ... (تجاوزت كتابة 8 جلسات ماضية للاختصار، بنعتبرهم خلصوا)
-  { id: 'p2_s9', patientId: 'p2', doctorId: 'doc_1', type: 'Session', sessionNumber: 9, status: 'Completed', scheduledAt: `${getPastDate(3)}T11:00:00`, roomId: 'room_2' },
-  { id: 'p2_s10', patientId: 'p2', doctorId: 'doc_1', type: 'Session', sessionNumber: 10, status: 'In Progress', scheduledAt: `${today}T11:00:00`, roomId: 'room_2', checkInTime: `${today}T10:50:00Z` }, // شغالة دلوقتي
+  // ---------------------------------------------------------
+  // المريض 2 (منى زكي): 9 ماضي، 1 اليوم (تأمين)
+  // ---------------------------------------------------------
+  { id: 'p2_s0', patientId: 'p2', doctorId: 'doc_1', type: 'Assessment', status: 'Completed', scheduledAt: `${getPastDate(30)}T11:00:00`, roomId: 'room_2', checkInTime: `${getPastDate(30)}T10:50:00Z`, checkOutTime: `${getPastDate(30)}T11:40:00Z` },
+  { id: 'p2_s1', patientId: 'p2', doctorId: 'doc_1', type: 'Session', sessionNumber: 1, status: 'Completed', scheduledAt: `${getPastDate(27)}T11:00:00`, roomId: 'room_2', checkInTime: `${getPastDate(27)}T10:55:00Z`, checkOutTime: `${getPastDate(27)}T12:00:00Z` },
+  { id: 'p2_s2', patientId: 'p2', doctorId: 'doc_1', type: 'Session', sessionNumber: 2, status: 'Completed', scheduledAt: `${getPastDate(24)}T11:00:00`, roomId: 'room_2', checkInTime: `${getPastDate(24)}T10:50:00Z`, checkOutTime: `${getPastDate(24)}T11:50:00Z` },
+  { id: 'p2_s3', patientId: 'p2', doctorId: 'doc_1', type: 'Session', sessionNumber: 3, status: 'Completed', scheduledAt: `${getPastDate(21)}T11:00:00`, roomId: 'room_2', checkInTime: `${getPastDate(21)}T11:00:00Z`, checkOutTime: `${getPastDate(21)}T12:05:00Z` },
+  { id: 'p2_s4', patientId: 'p2', doctorId: 'doc_1', type: 'Session', sessionNumber: 4, status: 'Completed', scheduledAt: `${getPastDate(18)}T11:00:00`, roomId: 'room_2', checkInTime: `${getPastDate(18)}T10:45:00Z`, checkOutTime: `${getPastDate(18)}T11:45:00Z` },
+  { id: 'p2_s5', patientId: 'p2', doctorId: 'doc_1', type: 'Session', sessionNumber: 5, status: 'Completed', scheduledAt: `${getPastDate(15)}T11:00:00`, roomId: 'room_2', checkInTime: `${getPastDate(15)}T10:55:00Z`, checkOutTime: `${getPastDate(15)}T11:55:00Z` },
+  { id: 'p2_s6', patientId: 'p2', doctorId: 'doc_1', type: 'Session', sessionNumber: 6, status: 'Completed', scheduledAt: `${getPastDate(12)}T11:00:00`, roomId: 'room_2', checkInTime: `${getPastDate(12)}T10:50:00Z`, checkOutTime: `${getPastDate(12)}T11:50:00Z` },
+  { id: 'p2_s7', patientId: 'p2', doctorId: 'doc_1', type: 'Session', sessionNumber: 7, status: 'Completed', scheduledAt: `${getPastDate(9)}T11:00:00`, roomId: 'room_2', checkInTime: `${getPastDate(9)}T10:58:00Z`, checkOutTime: `${getPastDate(9)}T12:00:00Z` },
+  { id: 'p2_s8', patientId: 'p2', doctorId: 'doc_1', type: 'Session', sessionNumber: 8, status: 'Completed', scheduledAt: `${getPastDate(6)}T11:00:00`, roomId: 'room_2', checkInTime: `${getPastDate(6)}T10:55:00Z`, checkOutTime: `${getPastDate(6)}T11:50:00Z` },
+  { id: 'p2_s9', patientId: 'p2', doctorId: 'doc_1', type: 'Session', sessionNumber: 9, status: 'Completed', scheduledAt: `${getPastDate(3)}T11:00:00`, roomId: 'room_2', checkInTime: `${getPastDate(3)}T11:00:00Z`, checkOutTime: `${getPastDate(3)}T12:00:00Z` },
+  { id: 'p2_s10', patientId: 'p2', doctorId: 'doc_1', type: 'Session', sessionNumber: 10, status: 'In Progress', scheduledAt: `${today}T11:00:00`, roomId: 'room_2', checkInTime: `${today}T10:50:00Z` },
 
-  // --- المريض 3 (عمر): عمل التقييم زمان، والنهاردة أول جلسة ---
-  { id: 'p3_s0', patientId: 'p3', doctorId: 'doc_4', type: 'Assessment', status: 'Completed', scheduledAt: `${getPastDate(5)}T12:00:00`, roomId: 'room_3' },
-  { id: 'p3_s1', patientId: 'p3', doctorId: 'doc_4', type: 'Session', sessionNumber: 1, status: 'Confirmed', scheduledAt: `${today}T12:00:00` }, // جاية كمان شوية
+  // ---------------------------------------------------------
+  // المريض 3 (عمر حسن): تقييم ماضي، أول جلسة اليوم، والباقي مستقبل
+  // ---------------------------------------------------------
+  { id: 'p3_s0', patientId: 'p3', doctorId: 'doc_4', type: 'Assessment', status: 'Completed', scheduledAt: `${getPastDate(5)}T12:00:00`, roomId: 'room_3', checkInTime: `${getPastDate(5)}T11:50:00Z`, checkOutTime: `${getPastDate(5)}T12:45:00Z` },
+  { id: 'p3_s1', patientId: 'p3', doctorId: 'doc_4', type: 'Session', sessionNumber: 1, status: 'Pending', scheduledAt: `${today}T12:00:00` },
   { id: 'p3_s2', patientId: 'p3', doctorId: 'doc_4', type: 'Session', sessionNumber: 2, status: 'Pending', scheduledAt: `${getFutureDate(2)}T12:00:00` },
   { id: 'p3_s3', patientId: 'p3', doctorId: 'doc_4', type: 'Session', sessionNumber: 3, status: 'Pending', scheduledAt: `${getFutureDate(4)}T12:00:00` },
+  { id: 'p3_s4', patientId: 'p3', doctorId: 'doc_4', type: 'Session', sessionNumber: 4, status: 'Pending', scheduledAt: `${getFutureDate(6)}T12:00:00` },
+  { id: 'p3_s5', patientId: 'p3', doctorId: 'doc_4', type: 'Session', sessionNumber: 5, status: 'Pending', scheduledAt: `${getFutureDate(8)}T12:00:00` },
+  { id: 'p3_s6', patientId: 'p3', doctorId: 'doc_4', type: 'Session', sessionNumber: 6, status: 'Pending', scheduledAt: `${getFutureDate(10)}T12:00:00` },
 
-  // --- المريض 4 (سارة): تقييم النهاردة ---
+  // ---------------------------------------------------------
+  // المريض 4 (سارة محمود): تقييم اليوم فقط
+  // ---------------------------------------------------------
   { id: 'p4_s0', patientId: 'p4', doctorId: 'doc_3', type: 'Assessment', status: 'Pending', scheduledAt: `${today}T14:00:00` }
 ];
 
