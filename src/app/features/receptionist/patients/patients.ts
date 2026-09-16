@@ -4,17 +4,17 @@ import { TranslateModule } from '@ngx-translate/core';
 import { FormsModule, ReactiveFormsModule, FormBuilder } from '@angular/forms';
 
 import { ClinicStateService } from '../../../core/services/state/clinic-state.service';
-import { Patient, NewPatient, PaymentMethod, InsuranceDetails, FinancialPlan } from '../../../core/models/patient.model';
+import { Patient, NewPatient, PaymentMethod, InsuranceDetails } from '../../../core/models/patient.model';
 import { MessageService, SharedModule } from 'primeng/api';
 import { DialogModule } from 'primeng/dialog';
 import { ButtonModule } from 'primeng/button';
-import { SelectButtonModule } from 'primeng/selectbutton';
+
 import { PatientProfileComponent } from '../../../shared/components/patient-profile/patient-profile.component';
 
 @Component({
   selector: "app-receptionist-patients",
   standalone: true,
-  imports: [CommonModule, TranslateModule, FormsModule, ReactiveFormsModule, DialogModule, ButtonModule, SelectButtonModule, SharedModule, PatientProfileComponent],
+  imports: [CommonModule, TranslateModule, FormsModule, ReactiveFormsModule, DialogModule, ButtonModule, SharedModule, PatientProfileComponent],
   templateUrl: "./patients.html",
 })
 export class PatientsComponent {
@@ -22,7 +22,7 @@ export class PatientsComponent {
   messageService = inject(MessageService);
   private fb = inject(FormBuilder);
 
-  // Main patientForm builder (Reactive Forms)
+  // Main patientForm builder (Reactive Forms) — basic info + insurance only
   patientForm = this.fb.group({
     nameEn: [''],
     nameAr: [''],
@@ -41,43 +41,12 @@ export class PatientsComponent {
       memberId: [''],
       employer: ['']
     }),
-    financialPlan: this.fb.group({
-      paymentMode: ['Per-Session'],
-      totalAgreedAmount: [0],
-      discount: [0],
-      totalPaidSoFar: [0],
-      sessionPrice: [0]
-    }),
     docs: this.fb.group({
       medicalConsent: [false],
       liabilityWaiver: [false],
       idCard: [false]
     })
   });
-
-  // Dynamic calculated remaining debt
-  remainingDebt = signal<number>(0);
-
-  // Payment mode options for PrimeNG SelectButton
-  paymentModeOptions = [
-    { label: 'Per-Session', labelKey: 'RECEPTIONIST.PER_SESSION', value: 'Per-Session' },
-    { label: 'Package', labelKey: 'RECEPTIONIST.PACKAGE', value: 'Package' },
-    { label: 'Upfront Copay', labelKey: 'RECEPTIONIST.UPFRONT_COPAY', value: 'Upfront-Copay' }
-  ];
-
-  get currentPaymentMode(): string {
-    return this.patientForm.get('financialPlan.paymentMode')?.value || 'Per-Session';
-  }
-
-  constructor() {
-    this.patientForm.get('financialPlan')?.valueChanges.subscribe(val => {
-      const total = Number(val?.totalAgreedAmount) || 0;
-      const discount = Number(val?.discount) || 0;
-      const paid = Number(val?.totalPaidSoFar) || 0;
-      const debt = (total - discount) - paid;
-      this.remainingDebt.set(debt);
-    });
-  }
   
   // Search & Filter
   searchQuery = signal('');
@@ -161,15 +130,6 @@ export class PatientsComponent {
         memberId: '',
         employer: ''
       },
-      financialPlan: {
-        paymentMode: 'Per-Session',
-        totalAgreedAmount: 0,
-        discount: 0,
-        netAmount: 0,
-        totalPaidSoFar: 0,
-        remainingDebt: 0,
-        sessionPrice: 0
-      },
       docs: {
         medicalConsent: false,
         liabilityWaiver: false,
@@ -184,14 +144,6 @@ export class PatientsComponent {
   // Actions
   openDrawer() {
     this.newPatient = this.initNewPatient();
-    this.patientForm.get('financialPlan')?.patchValue({
-      paymentMode: 'Per-Session',
-      totalAgreedAmount: 0,
-      discount: 0,
-      totalPaidSoFar: 0,
-      sessionPrice: 0
-    });
-    this.remainingDebt.set(0);
     this.showDrawer.set(true);
   }
 
@@ -250,22 +202,7 @@ export class PatientsComponent {
     if (this.newPatient.paymentType === 'Insurance' && this.newPatient.insuranceDetails) {
       this.newPatient.insuranceCompany = this.newPatient.insuranceDetails.company;
     }
-    const fp = this.patientForm.get('financialPlan')?.value;
-    if (fp) {
-      const total = Number(fp.totalAgreedAmount) || 0;
-      const discount = Number(fp.discount) || 0;
-      const paid = Number(fp.totalPaidSoFar) || 0;
-      const debt = (total - discount) - paid;
-      this.newPatient.financialPlan = {
-        paymentMode: (fp.paymentMode as any) || 'Per-Session',
-        totalAgreedAmount: total,
-        discount: discount,
-        netAmount: total - discount,
-        totalPaidSoFar: paid,
-        remainingDebt: debt,
-        sessionPrice: Number(fp.sessionPrice) || 0
-      };
-    }
+    // Financial Agreement is handled in the Booking screen (Treatment Plan mode), not here
     await this.clinicState.createPatient(this.newPatient);
     this.closeDrawer();
     this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Patient profile created' });

@@ -221,11 +221,15 @@
                   </select>
                 </div>
                 @if (planPaymentMode === 'Package') {
-                  <div class="col-md-3">
+                  <div class="col-md-2">
                     <label class="form-label mb-1 fw-semibold text-secondary small">Total Package Price <span class="text-danger">*</span></label>
                     <p-inputNumber [(ngModel)]="packageTotalPrice" mode="currency" currency="EGP" styleClass="w-100"></p-inputNumber>
                   </div>
-                  <div class="col-md-3">
+                  <div class="col-md-2">
+                    <label class="form-label mb-1 fw-semibold text-secondary small">Discount (EGP)</label>
+                    <p-inputNumber [(ngModel)]="packageDiscount" mode="currency" currency="EGP" styleClass="w-100"></p-inputNumber>
+                  </div>
+                  <div class="col-md-2">
                     <label class="form-label mb-1 fw-semibold text-secondary small">Amount Paying Now</label>
                     <p-inputNumber [(ngModel)]="packagePayingNow" mode="currency" currency="EGP" styleClass="w-100"></p-inputNumber>
                   </div>

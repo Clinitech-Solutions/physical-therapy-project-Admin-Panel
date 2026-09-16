@@ -36,6 +36,7 @@ export interface Patient {
     liabilityWaiver: boolean;
     idCard: boolean;
   };
+  assignedDoctorId?: string;
   insuranceDetails?: InsuranceDetails;
   financialPlan?: FinancialPlan;
   treatmentPlan?: {

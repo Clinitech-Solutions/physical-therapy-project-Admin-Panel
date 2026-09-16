@@ -491,6 +491,7 @@ export class ClinicStateService {
     dates: Date[],
     paymentMode: 'Package' | 'Per-Session',
     packagePrice?: number,
+    discount?: number,
     payingNow?: number
   }) {
     this.isLoading.set(true);
@@ -538,13 +539,16 @@ export class ClinicStateService {
     this.patientsSig.update(list => list.map(p => {
       if (p.id !== planData.patientId) return p;
       const plan = p.financialPlan ?? p.treatmentPlan?.financialPlan;
+      const discount = planData.discount || 0;
       const remainingDebt = planData.paymentMode === 'Package' 
-        ? Math.max(0, (planData.packagePrice || 0) - (planData.payingNow || 0))
+        ? Math.max(0, ((planData.packagePrice || 0) - discount) - (planData.payingNow || 0))
         : 0;
 
       const updatedPlan = {
         paymentMode: planData.paymentMode,
         totalAgreedAmount: planData.packagePrice,
+        discount: discount,
+        netAmount: (planData.packagePrice || 0) - discount,
         totalPaidSoFar: planData.payingNow || 0,
         remainingDebt: remainingDebt,
         sessionPrice: planData.paymentMode === 'Per-Session' ? planData.packagePrice : undefined

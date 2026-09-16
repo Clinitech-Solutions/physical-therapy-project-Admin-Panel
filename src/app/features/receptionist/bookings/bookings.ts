@@ -77,6 +77,7 @@ export class BookingsComponent {
   planPaymentMode: 'Package' | 'Per-Session' = 'Per-Session';
   packageTotalPrice: number | null = null;
   packagePayingNow: number | null = null;
+  packageDiscount: number | null = null;
   
   weekDays = [
     { label: 'Sat', value: 6 },
@@ -105,7 +106,10 @@ export class BookingsComponent {
   }
 
   get packageRemainingDebt(): number {
-    return Math.max(0, (this.packageTotalPrice || 0) - (this.packagePayingNow || 0));
+    const total = this.packageTotalPrice || 0;
+    const discount = this.packageDiscount || 0;
+    const paid = this.packagePayingNow || 0;
+    return Math.max(0, (total - discount) - paid);
   }
 
   generateBulkDates(): Date[] {
@@ -257,7 +261,17 @@ export class BookingsComponent {
       this.sessionType = 'Assessment';
     }
 
-    if (this.selectedDoctorId) {
+    // Auto-patch assigned doctor if patient has one
+    const patient = this.selectedPatient;
+    if (patient?.assignedDoctorId) {
+      const isAssignedDocValid = this.filteredDoctors.some(d => d.id === patient.assignedDoctorId);
+      if (isAssignedDocValid) {
+        this.selectedDoctorId = patient.assignedDoctorId;
+      } else {
+        // Assigned doctor doesn't match gender filter — clear so receptionist picks manually
+        this.selectedDoctorId = '';
+      }
+    } else if (this.selectedDoctorId) {
       const isDocValid = this.filteredDoctors.some(d => d.id === this.selectedDoctorId);
       if (!isDocValid) {
         this.selectedDoctorId = '';
@@ -423,6 +437,7 @@ export class BookingsComponent {
         dates: dates,
         paymentMode: this.planPaymentMode,
         packagePrice: this.packageTotalPrice || undefined,
+        discount: this.packageDiscount || undefined,
         payingNow: this.packagePayingNow || undefined
       });
 
@@ -454,6 +469,7 @@ export class BookingsComponent {
     this.planSessionCount = 10;
     this.packageTotalPrice = null;
     this.packagePayingNow = null;
+    this.packageDiscount = null;
   }
 
   openQuickAddModal() {
