@@ -5,15 +5,15 @@ import { Room } from '../../models/room.model';
 import { Session, SessionStatus, SessionType } from '../../models/session.model';
 import { Invoice } from '../../models/invoice.model';
 import { WaitlistItem } from '../../models/waitlist.model';
-import { 
-  mockPatients, 
-  mockDoctors, 
-  mockRooms, 
-  mockSessions, 
-  mockInvoices, 
-  mockWaitlist, 
-  mockDoctorAvailability, 
-  mockDoctorSlots 
+import {
+  mockPatients,
+  mockDoctors,
+  mockRooms,
+  mockSessions,
+  mockInvoices,
+  mockWaitlist,
+  mockDoctorAvailability,
+  mockDoctorSlots
 } from '../../mock-data/mock-db';
 
 @Injectable({
@@ -145,7 +145,7 @@ export class ClinicStateService {
     this.isLoading.set(true);
     // Simulate network delay for initial load
     await new Promise(resolve => setTimeout(resolve, 500));
-    
+
     this.patientsSig.set([...mockPatients]);
     this.doctorsSig.set([...mockDoctors]);
     if (this.roomsSig().length === 0) {
@@ -156,7 +156,7 @@ export class ClinicStateService {
     this.invoicesSig.set([...mockInvoices]);
     this.doctorAvailabilitySig.set([...mockDoctorAvailability]);
     this.doctorSlotsSig.set([...mockDoctorSlots]);
-    
+
     this.isLoading.set(false);
   }
 
@@ -168,7 +168,7 @@ export class ClinicStateService {
     // 1. Find the session
     const sessions = this.sessionsSig();
     const sessionToUpdate = sessions.find(s => s.id === sessionId);
-    
+
     if (!sessionToUpdate) {
       throw new Error('Session not found.');
     }
@@ -214,10 +214,10 @@ export class ClinicStateService {
 
     this.isLoading.set(true);
     await new Promise(resolve => setTimeout(resolve, 300));
-    
+
     const sessions = this.sessionsSig();
     const sessionToUpdate = sessions.find(s => s.id === sessionId);
-    
+
     if (sessionToUpdate) {
       this.sessionsSig.update(list => list.map(s => s.id === sessionId ? { ...s, status: 'Completed', checkOutTime: new Date().toISOString() } : s));
 
@@ -232,7 +232,7 @@ export class ClinicStateService {
         this.saveRoomsToLocalStorage(this.roomsSig());
       }
     }
-    
+
     this.isLoading.set(false);
   }
 
@@ -391,14 +391,14 @@ export class ClinicStateService {
   async searchSlots(genderPref: string) {
     this.isSearching.set(true);
     await new Promise(resolve => setTimeout(resolve, 800));
-    
+
     const docs = this.doctorsSig();
     this.doctorSlotsSig.set([...mockDoctorSlots].filter(slot => {
       if (genderPref === 'Any') return true;
       const doc = docs.find(d => d.id === slot.doctorId);
       return doc?.gender === genderPref;
     }));
-    
+
     this.isSearching.set(false);
   }
 
@@ -455,8 +455,8 @@ export class ClinicStateService {
       const plan = financialPlan;
       if (plan.paymentMode === 'Package' || plan.paymentMode === 'Upfront-Copay') {
         // Session is covered by the prepaid package
-        invoiceAmount = 0; 
-        invoiceStatus = 'Paid'; 
+        invoiceAmount = 0;
+        invoiceStatus = 'Paid';
         pShare = 0;
         iShare = 0;
       } else if (plan.paymentMode === 'Per-Session') {
@@ -504,7 +504,7 @@ export class ClinicStateService {
     planData.dates.forEach((date, i) => {
       const pad = (n: number) => n.toString().padStart(2, '0');
       const scheduledIso = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:00`;
-      
+
       const session: Session = {
         id: `SESS-${Date.now().toString().slice(-4)}-${i}`,
         patientId: planData.patientId,
@@ -534,13 +534,13 @@ export class ClinicStateService {
 
     this.sessionsSig.update(s => [...s, ...newSessions]);
     this.waitlistSig.update(list => list.filter(item => item.patientId !== planData.patientId));
-    
+
     // Update Patient's Financial Plan
     this.patientsSig.update(list => list.map(p => {
       if (p.id !== planData.patientId) return p;
       const plan = p.financialPlan ?? p.treatmentPlan?.financialPlan;
       const discount = planData.discount || 0;
-      const remainingDebt = planData.paymentMode === 'Package' 
+      const remainingDebt = planData.paymentMode === 'Package'
         ? Math.max(0, ((planData.packagePrice || 0) - discount) - (planData.payingNow || 0))
         : 0;
 
@@ -698,7 +698,7 @@ export class ClinicStateService {
   async reassignRoom(roomId: string, doctorId: string | null) {
     this.isLoading.set(true);
     await new Promise(resolve => setTimeout(resolve, 300));
-    
+
     this.roomsSig.update(rooms => rooms.map(r => {
       if (r.id === roomId) {
         return { ...r, doctorId: doctorId };
@@ -712,7 +712,7 @@ export class ClinicStateService {
   async changeRoomStatus(roomId: string, status: 'Available' | 'Occupied' | 'Maintenance') {
     this.isLoading.set(true);
     await new Promise(resolve => setTimeout(resolve, 300));
-    
+
     this.roomsSig.update(rooms => rooms.map(r => {
       if (r.id === roomId) {
         if (status === 'Maintenance') {
@@ -732,7 +732,7 @@ export class ClinicStateService {
   async toggleRoomMaintenance(roomId: string) {
     this.isLoading.set(true);
     await new Promise(resolve => setTimeout(resolve, 300));
-    
+
     this.roomsSig.update(rooms => rooms.map(r => {
       if (r.id === roomId) {
         if (r.status === 'Maintenance') {
@@ -780,7 +780,7 @@ export class ClinicStateService {
     this.isLoading.set(true);
     await new Promise(resolve => setTimeout(resolve, 600));
 
-    this.patientsSig.update(patients => 
+    this.patientsSig.update(patients =>
       patients.map(p => p.id === id ? { ...p, ...updatedData } : p)
     );
     this.isLoading.set(false);
@@ -808,17 +808,17 @@ export class ClinicStateService {
       linkedPatientId = inv.patientId;
 
       const previouslyPaid = inv.paidAmount ?? 0;
-      const newPaidAmount   = previouslyPaid + amountCollected;
-      const invoiceTotal    = inv.netAmount ?? inv.amount;
-      const newRemaining    = Math.max(0, invoiceTotal - newPaidAmount);
-      const newStatus       = newRemaining <= 0 ? 'Paid' : 'Partial';
+      const newPaidAmount = previouslyPaid + amountCollected;
+      const invoiceTotal = inv.netAmount ?? inv.amount;
+      const newRemaining = Math.max(0, invoiceTotal - newPaidAmount);
+      const newStatus = newRemaining <= 0 ? 'Paid' : 'Partial';
 
       return {
         ...inv,
-        paidAmount:       newPaidAmount,
+        paidAmount: newPaidAmount,
         remainingBalance: newRemaining,
-        status:           newStatus as import('../../models/invoice.model').InvoiceStatus,
-        paymentMethod:    method
+        status: newStatus as import('../../models/invoice.model').InvoiceStatus,
+        paymentMethod: method
       };
     }));
 
@@ -831,7 +831,7 @@ export class ClinicStateService {
         const updatedPlan = {
           ...plan,
           totalPaidSoFar: (plan.totalPaidSoFar ?? 0) + amountCollected,
-          remainingDebt:  Math.max(0, (plan.remainingDebt ?? 0) - amountCollected)
+          remainingDebt: Math.max(0, (plan.remainingDebt ?? 0) - amountCollected)
         };
         return p.financialPlan
           ? { ...p, financialPlan: updatedPlan }
@@ -879,7 +879,7 @@ export class ClinicStateService {
       const updatedPlan = {
         ...plan,
         totalPaidSoFar: (plan.totalPaidSoFar ?? 0) + amount,
-        remainingDebt:  Math.max(0, (plan.remainingDebt ?? 0) - amount)
+        remainingDebt: Math.max(0, (plan.remainingDebt ?? 0) - amount)
       };
       return p.financialPlan
         ? { ...p, financialPlan: updatedPlan }

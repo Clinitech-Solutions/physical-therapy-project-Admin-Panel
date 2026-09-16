@@ -169,7 +169,7 @@
                   <td><span class="fw-semibold text-body">{{ (patient.financialPlan?.totalPaidSoFar || patient.treatmentPlan?.financialPlan?.totalPaidSoFar) | currency:'EGP' }}</span></td>
                   <td><span class="fw-bold text-danger">{{ (patient.financialPlan?.remainingDebt || patient.treatmentPlan?.financialPlan?.remainingDebt) | currency:'EGP' }}</span></td>
                   <td style="text-align:end">
-                    <p-button label="Collect Installment" icon="bi bi-cash-coin" severity="warning" styleClass="p-button-warning p-button-sm" (onClick)="openInstallmentModal(patient.id)"></p-button>
+                    <p-button label="Collect Installment" icon="bi bi-cash-coin" severity="warn" styleClass="p-button-warning p-button-sm" (onClick)="openInstallmentModal(patient.id)"></p-button>
                   </td>
                 </tr>
               </ng-template>

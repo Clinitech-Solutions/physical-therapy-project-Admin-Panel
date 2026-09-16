@@ -11,7 +11,7 @@ export interface InsuranceDetails {
 }
 
 export interface FinancialPlan {
-  paymentMode: 'Per-Session' | 'Package' | 'Upfront-Copay'; 
+  paymentMode: 'Per-Session' | 'Package' | 'Upfront-Copay';
   totalAgreedAmount?: number; // Total package price or Total Copay for all sessions
   discount?: number;
   netAmount?: number;
