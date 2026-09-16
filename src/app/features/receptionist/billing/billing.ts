@@ -60,6 +60,7 @@ export class DropdownComponent implements ControlValueAccessor {
 
 import { InputNumberModule } from 'primeng/inputnumber';
 import { ProgressBar } from 'primeng/progressbar';
+import { TabsModule } from 'primeng/tabs';
 
 @Component({
   selector: "app-receptionist-billing",
@@ -75,6 +76,7 @@ import { ProgressBar } from 'primeng/progressbar';
     SelectModule,
     InputNumberModule,
     ProgressBar,
+    TabsModule,
     DropdownComponent
   ],
   templateUrl: "./billing.html",
@@ -91,8 +93,36 @@ export class BillingComponent {
   amountToCollect: number = 0;
   paymentMethods = ['Cash', 'Credit Card', 'E-Wallet', 'InstaPay'];
   
+  // Installment Modal State
+  showInstallmentModal = false;
+  installmentPatientId: string | null = null;
+  installmentAmount: number = 0;
+  installmentPaymentMethod = 'Cash';
+
   // 100% Real-time computed signal reading strictly from ClinicStateService
   invoices = computed(() => this.clinicState.invoices());
+  patients = computed(() => this.clinicState.patients());
+
+  // New Tab Computed Signals
+  dailyCashierInvoices = computed(() => 
+    this.invoices().filter(inv => {
+      const isToday = new Date(inv.createdAt).toDateString() === new Date().toDateString();
+      const hasPatientShare = (inv.patientShare ?? inv.amount) > 0;
+      const isPaidOrPartial = inv.status === 'Paid' || inv.status === 'Partial' || inv.status === 'Pending'; // Including pending for collection
+      return isToday && hasPatientShare && isPaidOrPartial && inv.type !== 'Installment';
+    })
+  );
+
+  pendingInstallments = computed(() => 
+    this.patients().filter(p => {
+      const plan = p.financialPlan ?? p.treatmentPlan?.financialPlan;
+      return plan && (plan.remainingDebt ?? 0) > 0;
+    })
+  );
+
+  insuranceClaims = computed(() => 
+    this.invoices().filter(inv => (inv.insuranceShare ?? 0) > 0)
+  );
 
   // Centralized Financial Signals from ClinicStateService
   expectedTodayRevenue = this.clinicState.expectedTodayRevenue;
@@ -140,6 +170,44 @@ export class BillingComponent {
     this.amountToCollect = invoice?.remainingBalance ?? invoice?.amount ?? 0;
 
     this.showPaymentModal = true;
+  }
+
+  openInstallmentModal(patientId: string) {
+    this.installmentPatientId = patientId;
+    this.installmentPaymentMethod = 'Cash';
+    
+    const patient = this.clinicState.getPatientById(patientId);
+    const plan = patient?.financialPlan ?? patient?.treatmentPlan?.financialPlan;
+    this.installmentAmount = plan?.remainingDebt ?? 0;
+    
+    this.showInstallmentModal = true;
+  }
+
+  async confirmInstallmentCollection() {
+    if (!this.installmentPatientId) return;
+
+    if (!this.installmentAmount || this.installmentAmount <= 0) {
+      this.messageService.add({ severity: 'warn', summary: 'Invalid Amount', detail: 'Please enter a valid amount.' });
+      return;
+    }
+
+    try {
+      await this.clinicState.collectInstallment(
+        this.installmentPatientId,
+        this.installmentAmount,
+        this.installmentPaymentMethod
+      );
+      this.showInstallmentModal = false;
+      this.installmentPatientId = null;
+      this.installmentAmount = 0;
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Installment Collected',
+        detail: `Installment payment recorded successfully.`
+      });
+    } catch (error: any) {
+      this.messageService.add({ severity: 'error', summary: 'Error', detail: error?.message || 'Payment processing failed' });
+    }
   }
 
   /**

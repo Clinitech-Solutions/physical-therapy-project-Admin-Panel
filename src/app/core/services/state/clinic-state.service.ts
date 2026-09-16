@@ -402,7 +402,7 @@ export class ClinicStateService {
     this.isSearching.set(false);
   }
 
-  async addSession(sessionData: { patientId: string, doctorId: string, roomId: string, scheduledAt: string, type: SessionType, isFreeAssessment?: boolean }) {
+  async addSession(sessionData: { patientId: string, doctorId: string, roomId: string, scheduledAt: string, type: SessionType, isFreeAssessment?: boolean, assessmentPrice?: number | null, patientShare?: number, insuranceShare?: number }) {
     const patient = this.patientsSig().find(p => p.id === sessionData.patientId);
     if (patient && patient.paymentType === 'Insurance' && patient.insuranceDetails?.status !== 'Approved') {
       throw new Error('Insurance approval is pending. Cannot book sessions.');
@@ -429,7 +429,7 @@ export class ClinicStateService {
       scheduledAt: sessionData.scheduledAt,
       type: sessionData.type,
       status: 'Confirmed' as SessionStatus,
-      packageAlert: sessionData.type === 'Assessment' ? undefined : 'Session 1 of 10'
+      packageAlert: sessionData.type === 'Assessment' ? undefined : 'Session 1 of 1'
     };
 
     this.sessionsSig.update(sessions => [...sessions, newSession]);
@@ -438,21 +438,32 @@ export class ClinicStateService {
     // Auto-generate invoice for this session based on Financial Plan
     let invoiceAmount = 500; // Default fallback
     let invoiceStatus: Invoice['status'] = 'Pending';
+    let pShare = sessionData.patientShare;
+    let iShare = sessionData.insuranceShare;
 
     const financialPlan = patient?.financialPlan || patient?.treatmentPlan?.financialPlan;
-    if (sessionData.type === 'Assessment' && sessionData.isFreeAssessment) {
-      invoiceAmount = 0;
-      invoiceStatus = 'Waived';
+    if (sessionData.type === 'Assessment') {
+      if (sessionData.isFreeAssessment) {
+        invoiceAmount = 0;
+        invoiceStatus = 'Waived';
+        pShare = 0;
+        iShare = 0;
+      } else if (sessionData.assessmentPrice != null) {
+        invoiceAmount = sessionData.assessmentPrice;
+      }
     } else if (financialPlan) {
       const plan = financialPlan;
       if (plan.paymentMode === 'Package' || plan.paymentMode === 'Upfront-Copay') {
         // Session is covered by the prepaid package
         invoiceAmount = 0; 
         invoiceStatus = 'Paid'; 
+        pShare = 0;
+        iShare = 0;
       } else if (plan.paymentMode === 'Per-Session') {
         invoiceAmount = plan.sessionPrice || 500;
       }
     } else if (patient?.paymentType === 'Insurance' && patient.insuranceDetails?.copayPercentage != null) {
+      // Legacy fallback
       invoiceAmount = patient.insuranceDetails.copayPercentage;
     }
 
@@ -464,14 +475,117 @@ export class ClinicStateService {
       currency: 'EGP',
       status: invoiceStatus,
       type: sessionData.type,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      patientShare: pShare !== undefined ? pShare : invoiceAmount,
+      insuranceShare: iShare !== undefined ? iShare : 0
     };
 
     this.invoicesSig.update(invs => [newInvoice, ...invs]);
     this.isLoading.set(false);
   }
 
-  async bookSession(sessionData: { patientId: string, doctorId: string, roomId: string, scheduledAt: string, type: SessionType, isFreeAssessment?: boolean }) {
+  async createTreatmentPlan(planData: {
+    patientId: string,
+    doctorId: string,
+    roomId: string,
+    dates: Date[],
+    paymentMode: 'Package' | 'Per-Session',
+    packagePrice?: number,
+    payingNow?: number
+  }) {
+    this.isLoading.set(true);
+    await new Promise(resolve => setTimeout(resolve, 800));
+
+    const newSessions: Session[] = [];
+    const newInvoices: Invoice[] = [];
+
+    // Create the sessions and per-session invoices
+    planData.dates.forEach((date, i) => {
+      const pad = (n: number) => n.toString().padStart(2, '0');
+      const scheduledIso = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:00`;
+      
+      const session: Session = {
+        id: `SESS-${Date.now().toString().slice(-4)}-${i}`,
+        patientId: planData.patientId,
+        doctorId: planData.doctorId,
+        roomId: planData.roomId,
+        scheduledAt: scheduledIso,
+        type: 'Session',
+        status: 'Confirmed',
+        packageAlert: `Session ${i + 1} of ${planData.dates.length}`
+      };
+      newSessions.push(session);
+
+      const invoice: Invoice = {
+        id: `INV-${Date.now().toString().slice(-4)}-${i}`,
+        sessionId: session.id,
+        patientId: planData.patientId,
+        amount: planData.paymentMode === 'Package' ? 0 : (planData.packagePrice || 500), // Default fallback for per-session
+        currency: 'EGP',
+        status: planData.paymentMode === 'Package' ? 'Paid' : 'Pending',
+        type: 'Session',
+        createdAt: new Date().toISOString(),
+        patientShare: planData.paymentMode === 'Package' ? 0 : (planData.packagePrice || 500),
+        insuranceShare: 0
+      };
+      newInvoices.push(invoice);
+    });
+
+    this.sessionsSig.update(s => [...s, ...newSessions]);
+    this.waitlistSig.update(list => list.filter(item => item.patientId !== planData.patientId));
+    
+    // Update Patient's Financial Plan
+    this.patientsSig.update(list => list.map(p => {
+      if (p.id !== planData.patientId) return p;
+      const plan = p.financialPlan ?? p.treatmentPlan?.financialPlan;
+      const remainingDebt = planData.paymentMode === 'Package' 
+        ? Math.max(0, (planData.packagePrice || 0) - (planData.payingNow || 0))
+        : 0;
+
+      const updatedPlan = {
+        paymentMode: planData.paymentMode,
+        totalAgreedAmount: planData.packagePrice,
+        totalPaidSoFar: planData.payingNow || 0,
+        remainingDebt: remainingDebt,
+        sessionPrice: planData.paymentMode === 'Per-Session' ? planData.packagePrice : undefined
+      };
+
+      return {
+        ...p,
+        financialPlan: updatedPlan,
+        treatmentPlan: {
+          totalSessions: planData.dates.length,
+          primaryDoctorId: planData.doctorId,
+          financialPlan: updatedPlan
+        }
+      };
+    }));
+
+    // If package and there is an initial payment, create installment invoice
+    if (planData.paymentMode === 'Package' && planData.payingNow && planData.payingNow > 0) {
+      const installmentInvoice: Invoice = {
+        id: `INV-INST-${Date.now().toString().slice(-6)}`,
+        patientId: planData.patientId,
+        amount: planData.payingNow,
+        currency: 'EGP',
+        status: 'Paid',
+        type: 'Installment',
+        createdAt: new Date().toISOString(),
+        paidAmount: planData.payingNow,
+        remainingBalance: 0,
+        paymentMethod: 'Cash', // Defaulting to Cash for now
+        isInstallment: true,
+        patientShare: planData.payingNow,
+        insuranceShare: 0
+      };
+      newInvoices.unshift(installmentInvoice);
+    }
+
+    this.invoicesSig.update(invs => [...newInvoices, ...invs]);
+    this.isLoading.set(false);
+  }
+
+  async bookSession(sessionData: { patientId: string, doctorId: string, roomId: string, scheduledAt: string, type: SessionType, isFreeAssessment?: boolean, assessmentPrice?: number | null, patientShare?: number, insuranceShare?: number }) {
     const patient = this.patientsSig().find(p => p.id === sessionData.patientId);
     if (patient && patient.paymentType === 'Insurance' && patient.insuranceDetails?.status !== 'Approved') {
       throw new Error('Insurance approval is pending. Cannot book sessions.');

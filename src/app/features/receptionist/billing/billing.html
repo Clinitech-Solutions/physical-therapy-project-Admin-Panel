@@ -80,81 +80,138 @@
 
   <!-- Real-Time PrimeNG Invoices Table -->
   <div class="table-panel">
-    <div class="table-toolbar d-flex justify-content-between align-items-center">
+    <div class="table-toolbar d-flex justify-content-between align-items-center mb-2">
       <h4 class="mb-0">{{ 'RECEPTIONIST.BILLING_TITLE' | translate }}</h4>
-      <span class="badge badge-neutral">{{ invoices().length }} Invoices</span>
     </div>
-    <div class="table-scroll-area p-2">
-      <p-table 
-        [value]="invoices()" 
-        [responsiveLayout]="'scroll'" 
-        styleClass="p-datatable-striped">
-        <ng-template pTemplate="header">
-          <tr>
-            <th>{{ 'RECEPTIONIST.INVOICE_ID' | translate }}</th>
-            <th>{{ 'COMMON.PATIENT' | translate }}</th>
-            <th>{{ 'RECEPTIONIST.AMOUNT' | translate }}</th>
-            <th>{{ 'RECEPTIONIST.PAID' | translate }}</th>
-            <th>{{ 'RECEPTIONIST.REMAINING' | translate }}</th>
-            <th>{{ 'RECEPTIONIST.TYPE' | translate }}</th>
-            <th>{{ 'COMMON.DATE' | translate }}</th>
-            <th>{{ 'COMMON.STATUS' | translate }}</th>
-            <th style="text-align:end">{{ 'COMMON.ACTION' | translate }}</th>
-          </tr>
-        </ng-template>
-        <ng-template pTemplate="body" let-invoice>
-          <tr>
-            <td>
-              <span class="font-bebas text-secondary" style="letter-spacing: 0.5px;">{{ invoice.id }}</span>
-            </td>
-            <td>
-              <span class="fw-semibold text-body">{{ clinicState.getPatientName(invoice.patientId) }}</span>
-            </td>
-            <td>
-              <span class="fw-bold text-success">{{ invoice.amount | currency:'EGP' }}</span>
-            </td>
-            <td>
-              <span class="fw-semibold text-body">{{ (invoice.paidAmount || 0) | currency:'EGP' }}</span>
-            </td>
-            <td>
-              <span class="fw-semibold text-danger">{{ (invoice.remainingBalance !== undefined ? invoice.remainingBalance : invoice.amount) | currency:'EGP' }}</span>
-            </td>
-            <td>
-              <span class="badge border" [ngClass]="invoice.type === 'Assessment' ? 'border-primary text-primary' : 'border-info text-info'">
-                {{ invoice.type }}
-              </span>
-            </td>
-            <td>
-              <span class="text-secondary small">{{ invoice.date }}</span>
-            </td>
-            <td>
-              <p-tag 
-                [value]="invoice.status" 
-                [severity]="getStatusSeverity(invoice.status)">
-              </p-tag>
-            </td>
-            <td style="text-align:end">
-              @if (invoice.status === 'Pending' || invoice.status === 'Partial') {
-                <p-button 
-                  [label]="'RECEPTIONIST.PROCESS_PAYMENT' | translate" 
-                  icon="bi bi-credit-card"
-                  severity="success" 
-                  styleClass="p-button-success p-button-sm" 
-                  (onClick)="openPaymentModal(invoice.id)">
-                </p-button>
-              }
-            </td>
-          </tr>
-        </ng-template>
-        <ng-template pTemplate="emptymessage">
-          <tr>
-            <td colspan="9" class="text-center py-4 text-muted">
-              No invoices found.
-            </td>
-          </tr>
-        </ng-template>
-      </p-table>
-    </div>
+    <p-tabs value="0">
+      <p-tablist>
+        <p-tab value="0">
+          <i class="bi bi-receipt text-primary me-1"></i> Daily Cashier
+          <span class="badge bg-primary rounded-pill ms-2">{{ dailyCashierInvoices().length }}</span>
+        </p-tab>
+        <p-tab value="1">
+          <i class="bi bi-clock-history text-warning me-1"></i> Pending Installments
+          <span class="badge bg-warning text-dark rounded-pill ms-2">{{ pendingInstallments().length }}</span>
+        </p-tab>
+        <p-tab value="2">
+          <i class="bi bi-shield-check text-success me-1"></i> Insurance Claims
+          <span class="badge bg-success rounded-pill ms-2">{{ insuranceClaims().length }}</span>
+        </p-tab>
+      </p-tablist>
+
+      <p-tabpanels>
+        <!-- TAB 0: Daily Cashier -->
+        <p-tabpanel value="0">
+          <div class="table-scroll-area mt-2">
+            <p-table [value]="dailyCashierInvoices()" [responsiveLayout]="'scroll'" styleClass="p-datatable-striped">
+              <ng-template pTemplate="header">
+                <tr>
+                  <th>{{ 'RECEPTIONIST.INVOICE_ID' | translate }}</th>
+                  <th>{{ 'COMMON.PATIENT' | translate }}</th>
+                  <th>{{ 'RECEPTIONIST.AMOUNT' | translate }} (Total)</th>
+                  <th>Patient Share</th>
+                  <th>Paid</th>
+                  <th>Remaining</th>
+                  <th>{{ 'RECEPTIONIST.TYPE' | translate }}</th>
+                  <th>{{ 'COMMON.STATUS' | translate }}</th>
+                  <th style="text-align:end">{{ 'COMMON.ACTION' | translate }}</th>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="body" let-invoice>
+                <tr>
+                  <td><span class="font-bebas text-secondary">{{ invoice.id }}</span></td>
+                  <td><span class="fw-semibold text-body">{{ clinicState.getPatientName(invoice.patientId) }}</span></td>
+                  <td><span class="fw-bold text-success">{{ invoice.amount | currency:'EGP' }}</span></td>
+                  <td><span class="fw-bold text-danger">{{ invoice.patientShare | currency:'EGP' }}</span></td>
+                  <td><span class="fw-semibold text-body">{{ (invoice.paidAmount || 0) | currency:'EGP' }}</span></td>
+                  <td><span class="fw-semibold text-danger">{{ (invoice.remainingBalance !== undefined ? invoice.remainingBalance : invoice.patientShare) | currency:'EGP' }}</span></td>
+                  <td>
+                    <span class="badge border" [ngClass]="invoice.type === 'Assessment' ? 'border-primary text-primary' : 'border-info text-info'">
+                      {{ invoice.type }}
+                    </span>
+                  </td>
+                  <td>
+                    <p-tag [value]="invoice.status" [severity]="getStatusSeverity(invoice.status)"></p-tag>
+                  </td>
+                  <td style="text-align:end">
+                    @if (invoice.status === 'Pending' || invoice.status === 'Partial') {
+                      <p-button [label]="'RECEPTIONIST.PROCESS_PAYMENT' | translate" icon="bi bi-credit-card" severity="success" styleClass="p-button-success p-button-sm" (onClick)="openPaymentModal(invoice.id)"></p-button>
+                    }
+                  </td>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="emptymessage">
+                <tr><td colspan="9" class="text-center py-4 text-muted">No pending cash collections for today.</td></tr>
+              </ng-template>
+            </p-table>
+          </div>
+        </p-tabpanel>
+
+        <!-- TAB 1: Pending Installments -->
+        <p-tabpanel value="1">
+          <div class="table-scroll-area mt-2">
+            <p-table [value]="pendingInstallments()" [responsiveLayout]="'scroll'" styleClass="p-datatable-striped">
+              <ng-template pTemplate="header">
+                <tr>
+                  <th>Patient Name</th>
+                  <th>Plan Type</th>
+                  <th>Total Agreed Amount</th>
+                  <th>Total Paid So Far</th>
+                  <th>Remaining Debt</th>
+                  <th style="text-align:end">Action</th>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="body" let-patient>
+                <tr>
+                  <td><span class="fw-semibold text-body">{{ patient.nameEn }}</span></td>
+                  <td><span class="badge bg-primary bg-opacity-10 text-primary">{{ patient.financialPlan?.paymentMode || patient.treatmentPlan?.financialPlan?.paymentMode }}</span></td>
+                  <td><span class="fw-bold text-success">{{ (patient.financialPlan?.totalAgreedAmount || patient.treatmentPlan?.financialPlan?.totalAgreedAmount) | currency:'EGP' }}</span></td>
+                  <td><span class="fw-semibold text-body">{{ (patient.financialPlan?.totalPaidSoFar || patient.treatmentPlan?.financialPlan?.totalPaidSoFar) | currency:'EGP' }}</span></td>
+                  <td><span class="fw-bold text-danger">{{ (patient.financialPlan?.remainingDebt || patient.treatmentPlan?.financialPlan?.remainingDebt) | currency:'EGP' }}</span></td>
+                  <td style="text-align:end">
+                    <p-button label="Collect Installment" icon="bi bi-cash-coin" severity="warning" styleClass="p-button-warning p-button-sm" (onClick)="openInstallmentModal(patient.id)"></p-button>
+                  </td>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="emptymessage">
+                <tr><td colspan="6" class="text-center py-4 text-muted">No patients with pending installments.</td></tr>
+              </ng-template>
+            </p-table>
+          </div>
+        </p-tabpanel>
+
+        <!-- TAB 2: Insurance Claims -->
+        <p-tabpanel value="2">
+          <div class="table-scroll-area mt-2">
+            <p-table [value]="insuranceClaims()" [responsiveLayout]="'scroll'" styleClass="p-datatable-striped">
+              <ng-template pTemplate="header">
+                <tr>
+                  <th>Invoice ID</th>
+                  <th>Patient</th>
+                  <th>Total Amount</th>
+                  <th>Insurance Share</th>
+                  <th>Status</th>
+                  <th>Date</th>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="body" let-invoice>
+                <tr>
+                  <td><span class="font-bebas text-secondary">{{ invoice.id }}</span></td>
+                  <td><span class="fw-semibold text-body">{{ clinicState.getPatientName(invoice.patientId) }}</span></td>
+                  <td><span class="fw-bold text-success">{{ invoice.amount | currency:'EGP' }}</span></td>
+                  <td><span class="fw-bold text-info">{{ invoice.insuranceShare | currency:'EGP' }}</span></td>
+                  <td><p-tag [value]="'Pending Claim'" severity="warn"></p-tag></td>
+                  <td><span class="text-secondary small">{{ invoice.createdAt | date:'shortDate' }}</span></td>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="emptymessage">
+                <tr><td colspan="6" class="text-center py-4 text-muted">No insurance claims found.</td></tr>
+              </ng-template>
+            </p-table>
+          </div>
+        </p-tabpanel>
+      </p-tabpanels>
+    </p-tabs>
   </div>
 </div>
 
@@ -209,6 +266,56 @@
           <span class="spinner-border spinner-border-sm me-1"></span> {{ 'RECEPTIONIST.PROCESSING' | translate }}
         } @else {
           {{ 'RECEPTIONIST.PROCESS_PAYMENT' | translate }}
+        }
+      </button>
+    </div>
+  </ng-template>
+</p-dialog>
+
+<!-- Installment Collection Modal -->
+<p-dialog 
+  [(visible)]="showInstallmentModal" 
+  [modal]="true" 
+  appendTo="body"
+  [draggable]="false" 
+  [resizable]="false" 
+  [closable]="true" 
+  [showHeader]="true" 
+  styleClass="clean-modal"
+  [style]="{ width: '400px' }"
+  header="Collect Installment">
+
+  <div class="modal-form-vertical py-2">
+    <div class="form-group mb-3">
+      <label class="form-label mb-2">
+        Amount to Collect <span class="required-asterisk text-danger">*</span>
+      </label>
+      <p-inputNumber [(ngModel)]="installmentAmount" mode="currency" currency="EGP" styleClass="w-100" class="w-full d-block"></p-inputNumber>
+    </div>
+    <div class="form-group mb-3">
+      <label class="form-label mb-2">
+        Payment Method <span class="required-asterisk text-danger">*</span>
+      </label>
+      <p-dropdown 
+        [options]="paymentMethods" 
+        [(ngModel)]="installmentPaymentMethod" 
+        placeholder="Select Payment Method"
+        appendTo="body"
+        styleClass="w-100 p-select-sm">
+      </p-dropdown>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="d-flex justify-content-end gap-2 modal-footer-actions">
+      <button type="button" class="btn btn-outline-secondary btn-cancel" (click)="showInstallmentModal = false">
+        {{ 'COMMON.CANCEL' | translate }}
+      </button>
+      <button type="button" class="btn btn-primary" (click)="confirmInstallmentCollection()" [disabled]="clinicState.isProcessingPayment()">
+        @if (clinicState.isProcessingPayment()) {
+          <span class="spinner-border spinner-border-sm me-1"></span> Processing...
+        } @else {
+          Confirm Collection
         }
       </button>
     </div>

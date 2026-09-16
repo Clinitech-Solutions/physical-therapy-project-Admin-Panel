@@ -15,4 +15,7 @@ export interface Invoice {
   netAmount?: number; // The final amount after discount
   paidAmount?: number;
   remainingBalance?: number;
+  patientShare?: number;
+  insuranceShare?: number;
+  isInstallment?: boolean;
 }

@@ -11,6 +11,7 @@ import { SelectButtonModule } from 'primeng/selectbutton';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 import { InputNumberModule } from 'primeng/inputnumber';
+import { MultiSelectModule } from 'primeng/multiselect';
 import { Session, SessionType } from '../../../core/models/session.model';
 import { Doctor } from '../../../core/models/doctor.model';
 import { Patient } from '../../../core/models/patient.model';
@@ -30,6 +31,7 @@ import { PatientProfileComponent } from '../../../shared/components/patient-prof
     ButtonModule,
     TooltipModule,
     InputNumberModule,
+    MultiSelectModule,
     PatientProfileComponent
   ],
   templateUrl: "./bookings.html",
@@ -65,6 +67,64 @@ export class BookingsComponent {
   sessionType: SessionType = 'Assessment';
   scheduledDate: Date | null = new Date();
   isFreeAssessment: boolean = false;
+  assessmentPrice: number | null = null;
+  
+  // Treatment Plan State Variables
+  bookingMode: 'single' | 'plan' = 'single';
+  planSessionCount: number = 10;
+  planStartDate: Date | null = new Date();
+  planPreferredTime: Date | null = new Date();
+  planPaymentMode: 'Package' | 'Per-Session' = 'Per-Session';
+  packageTotalPrice: number | null = null;
+  packagePayingNow: number | null = null;
+  
+  weekDays = [
+    { label: 'Sat', value: 6 },
+    { label: 'Sun', value: 0 },
+    { label: 'Mon', value: 1 },
+    { label: 'Tue', value: 2 },
+    { label: 'Wed', value: 3 },
+    { label: 'Thu', value: 4 }
+  ];
+  selectedDays: number[] = [6, 0, 1, 2, 3, 4]; // Friday (5) excluded by default
+
+  get calculatedInsuranceShare(): { patientShare: number, insuranceShare: number } {
+    if (this.selectedPatient?.paymentType === 'Insurance' && this.selectedPatient?.insuranceDetails?.copayPercentage != null) {
+      const totalAmount = this.bookingMode === 'single' ? (this.assessmentPrice || 0) : (this.packageTotalPrice || 0);
+      const copay = this.selectedPatient.insuranceDetails.copayPercentage;
+      const patientShare = Math.round(totalAmount * (copay / 100));
+      return {
+        patientShare,
+        insuranceShare: totalAmount - patientShare
+      };
+    }
+    return {
+      patientShare: this.bookingMode === 'single' ? (this.assessmentPrice || 0) : (this.packageTotalPrice || 0),
+      insuranceShare: 0
+    };
+  }
+
+  get packageRemainingDebt(): number {
+    return Math.max(0, (this.packageTotalPrice || 0) - (this.packagePayingNow || 0));
+  }
+
+  generateBulkDates(): Date[] {
+    if (!this.planStartDate || this.planSessionCount <= 0 || this.selectedDays.length === 0) return [];
+    
+    const dates: Date[] = [];
+    const current = new Date(this.planStartDate);
+    const preferredTime = this.planPreferredTime || new Date();
+    
+    while (dates.length < this.planSessionCount) {
+      if (this.selectedDays.includes(current.getDay())) {
+        const d = new Date(current);
+        d.setHours(preferredTime.getHours(), preferredTime.getMinutes(), 0, 0);
+        dates.push(d);
+      }
+      current.setDate(current.getDate() + 1);
+    }
+    return dates;
+  }
 
   // Status Filter State for Schedule
   selectedFilter: 'All' | 'Upcoming' | 'In Progress' | 'Completed' = 'All';
@@ -297,9 +357,17 @@ export class BookingsComponent {
     }
 
     const finalType: SessionType = this.isNewPatient ? 'Assessment' : this.sessionType;
+
+    if (finalType === 'Assessment' && !this.isFreeAssessment && this.assessmentPrice == null) {
+      this.messageService.add({ severity: 'error', summary: 'Validation Error', detail: 'Please enter the Assessment Price.' });
+      return;
+    }
+
     const dateObj = this.scheduledDate instanceof Date ? this.scheduledDate : new Date(this.scheduledDate);
     const pad = (n: number) => n.toString().padStart(2, '0');
     const scheduledIso = `${dateObj.getFullYear()}-${pad(dateObj.getMonth() + 1)}-${pad(dateObj.getDate())}T${pad(dateObj.getHours())}:${pad(dateObj.getMinutes())}:00`;
+
+    const shares = this.calculatedInsuranceShare;
 
     try {
       await this.clinicState.addSession({
@@ -308,7 +376,10 @@ export class BookingsComponent {
         roomId: this.selectedRoomId,
         scheduledAt: scheduledIso,
         type: finalType,
-        isFreeAssessment: finalType === 'Assessment' && this.isFreeAssessment
+        isFreeAssessment: finalType === 'Assessment' && this.isFreeAssessment,
+        assessmentPrice: this.assessmentPrice,
+        patientShare: shares.patientShare,
+        insuranceShare: shares.insuranceShare
       });
 
       this.messageService.add({
@@ -327,6 +398,50 @@ export class BookingsComponent {
     }
   }
 
+  async submitTreatmentPlan() {
+    if (!this.selectedPatientId || !this.selectedDoctorId || !this.selectedRoomId) {
+      this.messageService.add({ severity: 'error', summary: 'Validation Error', detail: 'Please select patient, doctor, and room.' });
+      return;
+    }
+    if (this.planPaymentMode === 'Package' && (this.packageTotalPrice == null || this.packagePayingNow == null)) {
+      this.messageService.add({ severity: 'error', summary: 'Validation Error', detail: 'Please fill in package financial details.' });
+      return;
+    }
+    if (this.selectedDays.length === 0) {
+      this.messageService.add({ severity: 'error', summary: 'Validation Error', detail: 'Please select at least one preferred day.' });
+      return;
+    }
+
+    const dates = this.generateBulkDates();
+    if (dates.length === 0) return;
+
+    try {
+      await this.clinicState.createTreatmentPlan({
+        patientId: this.selectedPatientId,
+        doctorId: this.selectedDoctorId,
+        roomId: this.selectedRoomId,
+        dates: dates,
+        paymentMode: this.planPaymentMode,
+        packagePrice: this.packageTotalPrice || undefined,
+        payingNow: this.packagePayingNow || undefined
+      });
+
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Treatment Plan Created',
+        detail: `Successfully booked ${dates.length} sessions for ${this.clinicState.getPatientName(this.selectedPatientId)}.`
+      });
+
+      this.resetBookingForm();
+    } catch (e: any) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Plan Creation Failed',
+        detail: e.message || 'Error generating treatment plan.'
+      });
+    }
+  }
+
   resetBookingForm() {
     this.selectedPatientId = '';
     this.selectedDoctorId = '';
@@ -334,6 +449,11 @@ export class BookingsComponent {
     this.sessionType = 'Assessment';
     this.scheduledDate = new Date();
     this.isFreeAssessment = false;
+    this.assessmentPrice = null;
+    this.bookingMode = 'single';
+    this.planSessionCount = 10;
+    this.packageTotalPrice = null;
+    this.packagePayingNow = null;
   }
 
   openQuickAddModal() {

@@ -12,7 +12,11 @@
     <div class="card-header bg-transparent border-bottom py-2 px-3 d-flex justify-content-between align-items-center">
       <div class="d-flex align-items-center gap-2">
         <i class="bi bi-calendar2-plus text-primary"></i>
-        <span class="font-clash fw-bold small">Session Booking & Walk-In</span>
+        <span class="font-clash fw-bold small">Booking Mode:</span>
+        <select class="form-select form-select-sm ms-2" style="width: auto; font-size: 0.8rem; font-weight: 600;" [(ngModel)]="bookingMode">
+          <option value="single">Single Session / Assessment</option>
+          <option value="plan">Treatment Plan (Bulk)</option>
+        </select>
       </div>
       <div class="d-flex align-items-center gap-2">
         @if (selectedPatientId && isNewPatient) {
@@ -122,6 +126,14 @@
               </label>
             </div>
           </div>
+          @if (!isFreeAssessment) {
+            <div class="col-lg-2 col-md-3">
+              <label class="form-label mb-1 fw-semibold text-secondary small">
+                Assessment Price <span class="text-danger">*</span>
+              </label>
+              <p-inputNumber [(ngModel)]="assessmentPrice" mode="currency" currency="EGP" styleClass="w-100" inputId="assessmentPriceInput" placeholder="Price"></p-inputNumber>
+            </div>
+          }
         }
 
         <!-- Doctor Dropdown (Strict Gender Matching) -->
@@ -167,19 +179,88 @@
           </p-select>
         </div>
 
-        <!-- Date & Time Picker -->
-        <div class="col-lg-3 col-md-4">
-          <label class="form-label mb-1 fw-semibold text-secondary small">
-            {{ 'COMMON.DATE' | translate }} & {{ 'COMMON.TIME' | translate }} <span class="text-danger">*</span>
-          </label>
-          <p-datepicker [(ngModel)]="scheduledDate" [showTime]="true" hourFormat="12" [showIcon]="true"
-            placeholder="Date & Time" appendTo="body" styleClass="w-100 p-datepicker-sm">
-          </p-datepicker>
-        </div>
+        @if (bookingMode === 'single') {
+          <!-- Date & Time Picker -->
+          <div class="col-lg-3 col-md-4">
+            <label class="form-label mb-1 fw-semibold text-secondary small">
+              {{ 'COMMON.DATE' | translate }} & {{ 'COMMON.TIME' | translate }} <span class="text-danger">*</span>
+            </label>
+            <p-datepicker [(ngModel)]="scheduledDate" [showTime]="true" hourFormat="12" [showIcon]="true"
+              placeholder="Date & Time" appendTo="body" styleClass="w-100 p-datepicker-sm">
+            </p-datepicker>
+          </div>
+        } @else {
+          <!-- Treatment Plan Config -->
+          <div class="col-12 mt-2">
+            <div class="p-3 border rounded bg-light">
+              <h6 class="font-clash fw-bold text-primary mb-3"><i class="bi bi-collection me-1"></i> Treatment Plan Setup</h6>
+              <div class="row g-2">
+                <div class="col-md-2">
+                  <label class="form-label mb-1 fw-semibold text-secondary small">Total Sessions <span class="text-danger">*</span></label>
+                  <p-inputNumber [(ngModel)]="planSessionCount" [min]="1" styleClass="w-100"></p-inputNumber>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label mb-1 fw-semibold text-secondary small">Preferred Days <span class="text-danger">*</span></label>
+                  <p-multiSelect [options]="weekDays" [(ngModel)]="selectedDays" optionLabel="label" optionValue="value" defaultLabel="Select Days" selectedItemsLabel="{0} days selected" styleClass="w-100" appendTo="body"></p-multiSelect>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label mb-1 fw-semibold text-secondary small">Start Date <span class="text-danger">*</span></label>
+                  <p-datepicker [(ngModel)]="planStartDate" [showIcon]="true" appendTo="body" styleClass="w-100"></p-datepicker>
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label mb-1 fw-semibold text-secondary small">Preferred Time <span class="text-danger">*</span></label>
+                  <p-datepicker [(ngModel)]="planPreferredTime" [timeOnly]="true" hourFormat="12" appendTo="body" styleClass="w-100"></p-datepicker>
+                </div>
+              </div>
+              <div class="row g-2 mt-2">
+                <div class="col-md-3">
+                  <label class="form-label mb-1 fw-semibold text-secondary small">Payment Mode <span class="text-danger">*</span></label>
+                  <select class="form-select" [(ngModel)]="planPaymentMode">
+                    <option value="Per-Session">Per-Session</option>
+                    <option value="Package">Package (Bulk Payment)</option>
+                  </select>
+                </div>
+                @if (planPaymentMode === 'Package') {
+                  <div class="col-md-3">
+                    <label class="form-label mb-1 fw-semibold text-secondary small">Total Package Price <span class="text-danger">*</span></label>
+                    <p-inputNumber [(ngModel)]="packageTotalPrice" mode="currency" currency="EGP" styleClass="w-100"></p-inputNumber>
+                  </div>
+                  <div class="col-md-3">
+                    <label class="form-label mb-1 fw-semibold text-secondary small">Amount Paying Now</label>
+                    <p-inputNumber [(ngModel)]="packagePayingNow" mode="currency" currency="EGP" styleClass="w-100"></p-inputNumber>
+                  </div>
+                  <div class="col-md-3 d-flex align-items-end">
+                    <div class="w-100 p-2 border rounded bg-white text-center" [ngClass]="packageRemainingDebt > 0 ? 'border-warning text-warning' : 'border-success text-success'">
+                      <small class="fw-bold d-block">Remaining Debt</small>
+                      <span class="fs-6 fw-bold">{{ packageRemainingDebt | currency:'EGP' }}</span>
+                    </div>
+                  </div>
+                } @else {
+                  <div class="col-md-3">
+                    <label class="form-label mb-1 fw-semibold text-secondary small">Price Per-Session <span class="text-danger">*</span></label>
+                    <p-inputNumber [(ngModel)]="packageTotalPrice" mode="currency" currency="EGP" styleClass="w-100"></p-inputNumber>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+        }
 
-        <!-- Financial Context Strip: Shown whenever a patient with a financial plan is selected -->
-        @if (selectedPatient?.financialPlan) {
-          <div class="col-12">
+        <!-- Financial Context Strip & Live Insurance Split -->
+        @if (selectedPatient?.paymentType === 'Insurance' && selectedPatient?.insuranceDetails?.copayPercentage != null && ((bookingMode === 'single' && !isFreeAssessment) || bookingMode === 'plan')) {
+          <div class="col-12 mt-2">
+            <div class="alert alert-info py-2 px-3 mb-0 d-flex align-items-center gap-3">
+              <span class="badge bg-primary fs-6">{{ selectedPatient?.insuranceDetails?.copayPercentage }}% Copay</span>
+              <div class="fw-semibold">
+                Patient Pays: <strong class="text-danger">{{ calculatedInsuranceShare.patientShare | number:'1.0-0' }} EGP</strong>
+                <span class="text-muted mx-2">|</span>
+                Insurance Pays: <strong class="text-success">{{ calculatedInsuranceShare.insuranceShare | number:'1.0-0' }} EGP</strong>
+              </div>
+            </div>
+          </div>
+        }
+        @if (selectedPatient?.financialPlan && bookingMode === 'single') {
+          <div class="col-12 mt-2">
             <div class="d-flex flex-wrap align-items-center gap-2 px-2 py-2 rounded border"
                  [ngClass]="(selectedPatient?.financialPlan?.remainingDebt ?? 0) > 0
                    ? 'border-warning bg-warning bg-opacity-10'
@@ -242,21 +323,32 @@
             Reset
           </button>
 
-          <button type="button" class="btn btn-warning btn-sm fw-semibold px-3 d-flex align-items-center shadow-sm"
-            (click)="handleWalkInNearestSlot()" [disabled]="!selectedPatientId || isInsurancePending">
-            <i class="bi bi-lightning-charge-fill me-1"></i> Find Nearest Slot (Walk-in)
-          </button>
-
-          <button type="button" class="btn btn-primary btn-sm fw-semibold px-4 d-flex align-items-center shadow-sm"
-            (click)="submitBooking()"
-            [disabled]="isLoading() || !selectedPatientId || !selectedDoctorId || !selectedRoomId || !scheduledDate || isInsurancePending">
-            @if (isLoading()) {
-            <span class="spinner-border spinner-border-sm me-1"></span>
-            {{ 'RECEPTIONIST.PROCESSING' | translate }}
-            } @else {
-            <i class="bi bi-calendar-check me-1"></i> {{ 'RECEPTIONIST.BOOK_SESSION' | translate }}
-            }
-          </button>
+          @if (bookingMode === 'single') {
+            <button type="button" class="btn btn-warning btn-sm fw-semibold px-3 d-flex align-items-center shadow-sm"
+              (click)="handleWalkInNearestSlot()" [disabled]="!selectedPatientId || isInsurancePending">
+              <i class="bi bi-lightning-charge-fill me-1"></i> Find Nearest Slot (Walk-in)
+            </button>
+            <button type="button" class="btn btn-primary btn-sm fw-semibold px-4 d-flex align-items-center shadow-sm"
+              (click)="submitBooking()"
+              [disabled]="isLoading() || !selectedPatientId || !selectedDoctorId || !selectedRoomId || !scheduledDate || isInsurancePending">
+              @if (isLoading()) {
+              <span class="spinner-border spinner-border-sm me-1"></span>
+              {{ 'RECEPTIONIST.PROCESSING' | translate }}
+              } @else {
+              <i class="bi bi-calendar-check me-1"></i> {{ 'RECEPTIONIST.BOOK_SESSION' | translate }}
+              }
+            </button>
+          } @else {
+            <button type="button" class="btn btn-primary btn-sm fw-semibold px-4 d-flex align-items-center shadow-sm"
+              (click)="submitTreatmentPlan()"
+              [disabled]="isLoading() || !selectedPatientId || !selectedDoctorId || !selectedRoomId || isInsurancePending">
+              @if (isLoading()) {
+                <span class="spinner-border spinner-border-sm me-1"></span> Processing...
+              } @else {
+                <i class="bi bi-collection-play me-1"></i> Create Treatment Plan
+              }
+            </button>
+          }
         </div>
       </div>
     </div>
