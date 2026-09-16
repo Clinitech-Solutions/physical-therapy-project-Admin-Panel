@@ -54,11 +54,11 @@ export class PatientProfileComponent {
 
   get totalSessions(): number {
     const p = this.currentPatient;
-    return p?.treatmentPlan?.totalSessions || p?.insuranceDetails?.approvedSessions || this.sessions.length || 0;
+    return p?.treatmentPlan?.totalSessions || p?.insuranceDetails?.approvedSessions || this.sessions.filter(s => s.type !== 'Assessment').length || 0;
   }
 
   get completedSessionsCount(): number {
-    return this.sessions.filter(s => s.status === 'Completed').length;
+    return this.sessions.filter(s => s.status === 'Completed' && s.type !== 'Assessment').length;
   }
 
   get progressPercentage(): number {
