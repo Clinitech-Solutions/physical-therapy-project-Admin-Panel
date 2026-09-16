@@ -131,7 +131,7 @@
               <label class="form-label mb-1 fw-semibold text-secondary small">
                 Assessment Price <span class="text-danger">*</span>
               </label>
-              <p-inputNumber [(ngModel)]="assessmentPrice" mode="currency" currency="EGP" styleClass="w-100" inputId="assessmentPriceInput" placeholder="Price"></p-inputNumber>
+              <p-inputNumber [(ngModel)]="assessmentPrice" mode="currency" currency="EGP" styleClass="w-100" inputId="assessmentPriceInput" placeholder="Price" [min]="0"></p-inputNumber>
             </div>
           }
         }
@@ -223,15 +223,15 @@
                 @if (planPaymentMode === 'Package') {
                   <div class="col-md-2">
                     <label class="form-label mb-1 fw-semibold text-secondary small">Total Package Price <span class="text-danger">*</span></label>
-                    <p-inputNumber [(ngModel)]="packageTotalPrice" mode="currency" currency="EGP" styleClass="w-100"></p-inputNumber>
+                    <p-inputNumber [(ngModel)]="packageTotalPrice" mode="currency" currency="EGP" styleClass="w-100" [min]="0"></p-inputNumber>
                   </div>
                   <div class="col-md-2">
                     <label class="form-label mb-1 fw-semibold text-secondary small">Discount (EGP)</label>
-                    <p-inputNumber [(ngModel)]="packageDiscount" mode="currency" currency="EGP" styleClass="w-100"></p-inputNumber>
+                    <p-inputNumber [(ngModel)]="packageDiscount" mode="currency" currency="EGP" styleClass="w-100" [min]="0" [max]="packageTotalPrice"></p-inputNumber>
                   </div>
                   <div class="col-md-2">
                     <label class="form-label mb-1 fw-semibold text-secondary small">Amount Paying Now</label>
-                    <p-inputNumber [(ngModel)]="packagePayingNow" mode="currency" currency="EGP" styleClass="w-100"></p-inputNumber>
+                    <p-inputNumber [(ngModel)]="packagePayingNow" mode="currency" currency="EGP" styleClass="w-100" [min]="0"></p-inputNumber>
                   </div>
                   <div class="col-md-3 d-flex align-items-end">
                     <div class="w-100 p-2 border rounded bg-white text-center" [ngClass]="packageRemainingDebt > 0 ? 'border-warning text-warning' : 'border-success text-success'">
@@ -242,7 +242,7 @@
                 } @else {
                   <div class="col-md-3">
                     <label class="form-label mb-1 fw-semibold text-secondary small">Price Per-Session <span class="text-danger">*</span></label>
-                    <p-inputNumber [(ngModel)]="packageTotalPrice" mode="currency" currency="EGP" styleClass="w-100"></p-inputNumber>
+                    <p-inputNumber [(ngModel)]="packageTotalPrice" mode="currency" currency="EGP" styleClass="w-100" [min]="0"></p-inputNumber>
                   </div>
                 }
               </div>

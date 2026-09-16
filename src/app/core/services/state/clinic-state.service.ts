@@ -494,6 +494,10 @@ export class ClinicStateService {
     discount?: number,
     payingNow?: number
   }) {
+    if ((planData.discount || 0) > (planData.packagePrice || 0) || (planData.payingNow || 0) < 0) {
+      throw new Error("Invalid financial parameters");
+    }
+
     this.isLoading.set(true);
     await new Promise(resolve => setTimeout(resolve, 800));
 
@@ -848,7 +852,17 @@ export class ClinicStateService {
    * and creates an Installment receipt invoice in the ledger.
    */
   async collectInstallment(patientId: string, amount: number, paymentMethod: string, sessionId?: string): Promise<void> {
-    if (amount <= 0) return;
+    if (amount <= 0) {
+      throw new Error("Amount must be greater than 0");
+    }
+
+    const patient = this.patientsSig().find(p => p.id === patientId);
+    const plan = patient?.financialPlan ?? patient?.treatmentPlan?.financialPlan;
+    const remainingDebt = plan?.remainingDebt ?? 0;
+
+    if (amount > remainingDebt) {
+      throw new Error("Cannot collect more than the remaining debt");
+    }
 
     this.isProcessingPayment.set(true);
     await new Promise(resolve => setTimeout(resolve, 500));

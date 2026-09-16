@@ -290,7 +290,7 @@
       <label class="form-label mb-2">
         Amount to Collect <span class="required-asterisk text-danger">*</span>
       </label>
-      <p-inputNumber [(ngModel)]="installmentAmount" mode="currency" currency="EGP" styleClass="w-100" class="w-full d-block"></p-inputNumber>
+      <p-inputNumber [(ngModel)]="installmentAmount" mode="currency" currency="EGP" styleClass="w-100" class="w-full d-block" [min]="1" [max]="selectedPatientRemainingDebt"></p-inputNumber>
     </div>
     <div class="form-group mb-3">
       <label class="form-label mb-2">

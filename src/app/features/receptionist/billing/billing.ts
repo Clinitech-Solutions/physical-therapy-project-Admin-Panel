@@ -98,6 +98,7 @@ export class BillingComponent {
   installmentPatientId: string | null = null;
   installmentAmount: number = 0;
   installmentPaymentMethod = 'Cash';
+  selectedPatientRemainingDebt: number = 0;
 
   // 100% Real-time computed signal reading strictly from ClinicStateService
   invoices = computed(() => this.clinicState.invoices());
@@ -178,7 +179,8 @@ export class BillingComponent {
     
     const patient = this.clinicState.getPatientById(patientId);
     const plan = patient?.financialPlan ?? patient?.treatmentPlan?.financialPlan;
-    this.installmentAmount = plan?.remainingDebt ?? 0;
+    this.selectedPatientRemainingDebt = plan?.remainingDebt ?? 0;
+    this.installmentAmount = this.selectedPatientRemainingDebt;
     
     this.showInstallmentModal = true;
   }
