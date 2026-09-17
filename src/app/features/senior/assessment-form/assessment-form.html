@@ -5,22 +5,22 @@
   </div>
 </div>
 
-<div class="grid-2 gap-6 align-items-start" style="grid-template-columns: 2fr 1fr;">
+<div class="grid-2 gap-3" style="grid-template-columns: 2fr 1fr;">
 
   <!-- LEFT: Form (Diagnosis & Treatment Plan) -->
-  <div class="card" style="height: fit-content;">
+  <div class="card  " style="height: fit-content;">
     <div class="card-body">
       <form [formGroup]="form" (ngSubmit)="submit()">
         
-        <div class="form-group mb-3">
+        <div class="form-group mb-">
           <label class="form-label">{{ 'SENIOR.DIAGNOSIS' | translate }} <span class="text-danger">*</span></label>
-          <textarea class="form-control" formControlName="diagnosis" rows="3" style="resize: vertical;"></textarea>
+          <textarea class="form-control" formControlName="diagnosis" rows="4" style="resize: vertical;"></textarea>
           @if (form.get('diagnosis')?.invalid && form.get('diagnosis')?.touched) {
             <small class="text-danger">Required</small>
           }
         </div>
 
-        <div class="grid-2 gap-3 mb-3">
+        <div class="grid-2 gap-4 mb-">
           <div class="form-group">
             <label class="form-label">{{ 'SENIOR.TOTAL_SESSIONS' | translate }} <span class="text-danger">*</span></label>
             <input type="number" class="form-control" formControlName="totalSessions" min="1" />
@@ -41,7 +41,7 @@
           </div>
         </div>
 
-        <div class="form-group mb-3">
+        <div class="form-group mb-2">
           <label class="form-label">{{ 'SENIOR.ASSIGN_DOCTOR' | translate }} <span class="text-danger">*</span></label>
           <select class="form-control" formControlName="assignedDoctorId">
             <option value="" disabled selected>-- Select Doctor --</option>
@@ -58,12 +58,12 @@
           }
         </div>
 
-        <div class="form-group mb-3">
+        <div class="form-group mb-2">
           <label class="form-label">{{ 'SENIOR.EXERCISES' | translate }}</label>
-          <textarea class="form-control" formControlName="exercises" rows="2" style="resize: vertical;"></textarea>
+          <textarea class="form-control" formControlName="exercises" rows="3" style="resize: vertical;"></textarea>
         </div>
 
-        <div class="mt-3">
+        <div class="mt-">
           <button type="submit" class="btn btn-primary w-100">
             <i class="bi bi-check-circle"></i> {{ 'SENIOR.SUBMIT_ASSESSMENT' | translate }}
           </button>
@@ -73,7 +73,7 @@
   </div>
 
   <!-- RIGHT: Patient Summary & Smart Doctor Info -->
-  <div class="d-flex flex-column gap-6">
+  <div class="d-flex flex-column gap-3">
     <div class="card">
       <div class="card-body">
         <h4 style="margin-bottom: var(--space-4); border-bottom: 1px solid var(--border-color); padding-bottom: var(--space-2);">
@@ -82,7 +82,7 @@
         </h4>
 
         @if (patient(); as p) {
-          <div class="d-flex align-items-center gap-3 mb-4">
+          <div class="d-flex align-items-center gap-3 mb-2">
             <div class="avatar avatar-lg">{{ p.avatar }}</div>
             <div>
               <div class="fw-semibold" style="font-size: var(--text-lg);">{{ p.nameEn }}</div>
@@ -117,9 +117,9 @@
           {{ 'SENIOR.SMART_DOCTOR_SELECTION' | translate }}
         </h4>
         
-        <div class="table-scroll-area d-flex flex-column" style="max-height: 380px; overflow-y: auto; padding-right: 8px;">
+        <div class="d-flex flex-column">
           @for (doc of smartDoctors(); track doc.id) {
-            <div class="p-3 mb-3 d-flex flex-column gap-2" 
+            <div class="p-2 mb-2 d-flex flex-column gap-2" 
                  (click)="selectDoctorFromList(doc.id)"
                  style="border-radius: var(--radius-md); border: 1px solid var(--border-color); cursor: pointer; transition: all 0.2s;"
                  [style.background]="form.get('assignedDoctorId')?.value === doc.id ? 'var(--mq-teal-dim)' : 'transparent'"
