@@ -27,7 +27,7 @@ export class Login {
     this.authService.login(role);
     this.messageService.add({ severity: 'success', summary: 'Success', detail: `Logged in as ${role}` });
     if (role === 'Receptionist') this.router.navigate(['/receptionist/dashboard']);
-    else if (role === 'Senior Therapist') this.router.navigate(['/senior']);
+    else if (role === 'Senior Therapist') this.router.navigate(['/senior/dashboard']);
     else if (role === 'Doctor') this.router.navigate(['/doctor']);
     else if (role === 'CEO') this.router.navigate(['/ceo']);
   }

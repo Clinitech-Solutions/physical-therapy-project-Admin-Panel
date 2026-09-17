@@ -40,11 +40,10 @@ export class Sidebar {
         ];
       case 'Senior Therapist':
         return [
-          { icon: 'bi bi-grid-1x2', labelKey: 'SIDEBAR.DASHBOARD', route: '/senior' },
-          { icon: 'bi bi-clipboard2-pulse', labelKey: 'SIDEBAR.ASSESSMENTS', route: '/senior/assessments', badge: 5 },
-          { icon: 'bi bi-arrow-repeat', labelKey: 'SIDEBAR.REASSESSMENTS', route: '/senior/re-assessments', badge: 2 },
-          { icon: 'bi bi-eye', labelKey: 'SIDEBAR.LIVE_VIEW', route: '/senior/live-view' },
-          { icon: 'bi bi-calendar-check', labelKey: 'SIDEBAR.MY_SCHEDULE', route: '/senior/schedule' },
+          { icon: 'bi bi-activity', labelKey: 'SIDEBAR.DASHBOARD', route: '/senior/dashboard' },
+          { icon: 'bi bi-clipboard2-pulse', labelKey: 'SIDEBAR.ASSESSMENTS', route: '/senior/assessment-form' },
+          { icon: 'bi bi-arrow-repeat', labelKey: 'SIDEBAR.REASSESSMENTS', route: '/senior/re-assessment-form' },
+          { icon: 'bi bi-person-fill-slash', labelKey: 'SIDEBAR.ABSENCE_COVERAGE', route: '/senior/absence-coverage' },
         ];
       case 'Doctor':
         return [

@@ -17,7 +17,11 @@ export const routes: Routes = [
       { path: 'receptionist/insurance', loadComponent: () => import('./features/receptionist/insurance/insurance').then(m => m.InsuranceComponent) },
       { path: 'receptionist/billing', loadComponent: () => import('./features/receptionist/billing/billing').then(m => m.BillingComponent) },
       
-      { path: 'senior', loadComponent: () => import('./features/senior/dashboard/dashboard').then(m => m.Dashboard) },
+      // ── Senior Therapist Routes ──
+      { path: 'senior/dashboard', loadComponent: () => import('./features/senior/live-dashboard/live-dashboard').then(m => m.LiveDashboard) },
+      { path: 'senior/assessment-form', loadComponent: () => import('./features/senior/assessment-form/assessment-form').then(m => m.AssessmentForm) },
+      { path: 'senior/re-assessment-form', loadComponent: () => import('./features/senior/re-assessment-form/re-assessment-form').then(m => m.ReAssessmentForm) },
+      { path: 'senior/absence-coverage', loadComponent: () => import('./features/senior/absence-coverage/absence-coverage').then(m => m.AbsenceCoverage) },
       { path: 'doctor', loadComponent: () => import('./features/doctor/dashboard/dashboard').then(m => m.Dashboard) },
       { path: 'ceo', loadComponent: () => import('./features/ceo/dashboard/dashboard').then(m => m.Dashboard) },
     ]

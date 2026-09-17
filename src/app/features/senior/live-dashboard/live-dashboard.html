@@ -1,1 +1,146 @@
-<p>live-dashboard works!</p>
+<!-- ═══════════════════════════════════════════════════════════
+     Senior Therapist — Live Dashboard
+     Reactive view over ClinicStateService (Signals)
+     ═══════════════════════════════════════════════════════════ -->
+
+<!-- ── Page Header ─────────────────────────────────────────── -->
+<div class="page-header">
+  <div>
+    <h2>{{ 'SENIOR.DASHBOARD_TITLE' | translate }}</h2>
+    <p>{{ 'SENIOR.DASHBOARD_SUB' | translate }}</p>
+  </div>
+</div>
+
+<!-- ── KPI Row ─────────────────────────────────────────────── -->
+<div class="kpi-row">
+  <!-- Total Pending Tasks -->
+  <div class="stat-card border-start-teal">
+    <div class="stat-label">Pending Tasks</div>
+    <div class="stat-value">{{ totalPendingTasks() }}</div>
+    <div class="stat-sub">Assessments + Re-assessments today</div>
+  </div>
+
+  <!-- Assessments -->
+  <div class="stat-card" style="border-left-color: var(--color-info);">
+    <div class="stat-label">Assessments</div>
+    <div class="stat-value">{{ assessmentCount() }}</div>
+    <div class="stat-sub">New patient evaluations</div>
+  </div>
+
+  <!-- Re-assessments -->
+  <div class="stat-card" style="border-left-color: var(--color-warning);">
+    <div class="stat-label">Re-Assessments</div>
+    <div class="stat-value">{{ reassessmentCount() }}</div>
+    <div class="stat-sub">Mid-treatment re-evaluations</div>
+  </div>
+
+  <!-- Available Doctors -->
+  <div class="stat-card" style="border-left-color: var(--color-success);">
+    <div class="stat-label">Doctors Available</div>
+    <div class="stat-value">{{ availableDoctorsCount() }}</div>
+    <div class="stat-sub">{{ busyDoctorsCount() }} currently busy</div>
+  </div>
+</div>
+
+<!-- ── Main 2-Column Grid ──────────────────────────────────── -->
+<div class="grid-2 gap-6">
+
+  <!-- ── LEFT: Today's Tasks (Tabbed) ─────────────────────── -->
+  <div class="card">
+    <div class="card-body">
+      <h4 style="margin-bottom: var(--space-3);">
+        <i class="bi bi-clipboard2-pulse" style="color: var(--mq-teal); margin-right: 8px;"></i>
+        Today's Tasks
+      </h4>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <div class="tab"
+             [class.active]="activeTab() === 'assessments'"
+             (click)="switchTab('assessments')">
+          Assessments ({{ assessmentCount() }})
+        </div>
+        <div class="tab"
+             [class.active]="activeTab() === 'reassessments'"
+             (click)="switchTab('reassessments')">
+          Re-Assessments ({{ reassessmentCount() }})
+        </div>
+      </div>
+
+      <!-- Task List -->
+      <div class="task-list">
+        @if (activeTasks().length === 0) {
+          <div class="empty-state">
+            <i class="bi bi-check-circle" style="font-size: 32px; color: var(--mq-teal); opacity: 0.5;"></i>
+            <p style="color: var(--text-muted); margin-top: var(--space-2);">
+              No {{ activeTab() === 'assessments' ? 'assessments' : 're-assessments' }} pending today.
+            </p>
+          </div>
+        }
+
+        @for (task of activeTasks(); track task.sessionId) {
+          <div class="task-row">
+            <div class="flex items-center gap-3">
+              <div class="avatar avatar-sm">{{ task.avatarInitials }}</div>
+              <div>
+                <div class="task-patient-name">{{ task.patientName }}</div>
+                <div class="task-meta">
+                  <i class="bi bi-clock"></i> {{ task.scheduledTime }}
+                  <span class="task-meta-divider">·</span>
+                  <span>{{ task.doctorName }}</span>
+                  @if (task.type === 'Re-Assessment') {
+                    <span class="task-meta-divider">·</span>
+                    <span class="badge badge-info" style="font-size: 9px; padding: 1px 6px;">{{ task.sessionBadge }}</span>
+                  }
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="badge" [ngClass]="getStatusBadgeClass(task.status)">{{ task.status }}</span>
+              <button class="btn btn-primary btn-sm" (click)="startTask(task)">
+                <i class="bi bi-play-fill"></i> Start
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RIGHT: Live View Capacity ────────────────────────── -->
+  <div class="card">
+    <div class="card-body">
+      <h4 style="margin-bottom: var(--space-3);">
+        <i class="bi bi-people-fill" style="color: var(--mq-teal); margin-right: 8px;"></i>
+        Live View — Doctor Capacity
+      </h4>
+
+      <div class="doctor-grid">
+        @for (doctor of activeDoctorsWorkload(); track doctor.doctorId) {
+          <div class="doctor-card" [style.border-left-color]="doctor.borderColor">
+            <div class="flex justify-between items-center" style="margin-bottom: var(--space-2);">
+              <div class="doctor-name">{{ doctor.name }}</div>
+              <span class="load-label">{{ doctor.currentLoad }}/{{ doctor.maxLoad }}</span>
+            </div>
+            <div class="load-bar" [ngClass]="doctor.loadClass">
+              <div class="load-bar-fill"></div>
+            </div>
+            @if (doctor.currentLoad > 0) {
+              <div class="doctor-room-tag">
+                <i class="bi bi-door-open"></i> {{ doctor.roomName }}
+              </div>
+            }
+          </div>
+        }
+
+        @if (activeDoctorsWorkload().length === 0) {
+          <div class="empty-state">
+            <i class="bi bi-person-x" style="font-size: 32px; color: var(--text-muted); opacity: 0.5;"></i>
+            <p style="color: var(--text-muted); margin-top: var(--space-2);">No doctor availability data.</p>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+</div>

@@ -31,7 +31,8 @@
     "OVERVIEW": "نظرة عامة",
     "STAFF": "الموظفين",
     "REPORTS": "التقارير",
-    "SYSTEM_SETTINGS": "إعدادات النظام"
+    "SYSTEM_SETTINGS": "إعدادات النظام",
+    "ABSENCE_COVERAGE": "تغطية الغياب"
   },
   "COMMON": {
     "SAVE": "حفظ",

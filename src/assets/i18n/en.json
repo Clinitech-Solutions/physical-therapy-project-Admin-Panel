@@ -31,7 +31,8 @@
     "OVERVIEW": "Overview",
     "STAFF": "Staff",
     "REPORTS": "Reports",
-    "SYSTEM_SETTINGS": "System Settings"
+    "SYSTEM_SETTINGS": "System Settings",
+    "ABSENCE_COVERAGE": "Absence Coverage"
   },
   "COMMON": {
     "SAVE": "Save",
