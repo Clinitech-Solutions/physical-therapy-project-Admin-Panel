@@ -3,12 +3,12 @@
    Brand: Smarter Clinics. Better Care.
    Colors, typography, components — all from brand guidelines.
    ============================================================ */
+
+/* ── FONTS ────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-/* ── FONTS ────────────────────────────────────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap');
-
 /* Clash Display & Bebas Neue — load via your font host or CDN */
 /* @font-face { font-family: 'Clash Display'; src: url('/fonts/ClashDisplay-Bold.woff2'); } */
 /* @font-face { font-family: 'Bebas Neue'; src: url('/fonts/BebasNeue-Regular.woff2'); } */
