@@ -322,6 +322,25 @@
     "LIVE_VIEW_CAPACITY": "Live View — Doctor Capacity",
     "NO_ASSESSMENTS": "No assessments pending today.",
     "NO_REASSESSMENTS": "No re-assessments pending today.",
-    "NO_DOCTORS_AVAILABLE": "No doctor availability data."
+    "NO_DOCTORS_AVAILABLE": "No doctor availability data.",
+    "ASSESSMENT_FORM_TITLE": "Assessment Form",
+    "ASSESSMENT_FORM_SUB": "Record diagnosis and create treatment plan",
+    "DIAGNOSIS": "Diagnosis",
+    "TOTAL_SESSIONS": "Total Sessions",
+    "FREQUENCY": "Frequency",
+    "TWICE_A_WEEK": "Twice a week",
+    "THREE_TIMES_A_WEEK": "Three times a week",
+    "ONCE_A_WEEK": "Once a week",
+    "DAILY": "Daily",
+    "ASSIGN_DOCTOR": "Assign Doctor",
+    "RECOMMENDED": "Recommended",
+    "GENDER_MATCH": "Gender Match",
+    "LOAD": "Load",
+    "EXERCISES": "Exercises (Optional)",
+    "SUBMIT_ASSESSMENT": "Submit Assessment",
+    "PATIENT_SUMMARY": "Patient Summary",
+    "AGE": "Age",
+    "PAYMENT_TYPE": "Payment Type",
+    "SMART_DOCTOR_SELECTION": "Smart Doctor Selection"
   }
 }

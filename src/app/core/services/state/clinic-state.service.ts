@@ -236,6 +236,12 @@ export class ClinicStateService {
     this.isLoading.set(false);
   }
 
+  updateSessionStatus(sessionId: string, status: SessionStatus) {
+    this.sessionsSig.update(list =>
+      list.map(s => s.id === sessionId ? { ...s, status } : s)
+    );
+  }
+
   markPatientAbsent(sessionId: string): void {
     const sessionToUpdate = this.sessionsSig().find(s => s.id === sessionId);
     if (!sessionToUpdate) {

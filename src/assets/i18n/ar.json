@@ -322,6 +322,25 @@
     "LIVE_VIEW_CAPACITY": "مراقبة حية — سعة الأطباء",
     "NO_ASSESSMENTS": "لا يوجد مهام تقييم اليوم.",
     "NO_REASSESSMENTS": "لا يوجد مهام إعادة تقييم اليوم.",
-    "NO_DOCTORS_AVAILABLE": "لا تتوفر بيانات عن الأطباء."
+    "NO_DOCTORS_AVAILABLE": "لا تتوفر بيانات عن الأطباء.",
+    "ASSESSMENT_FORM_TITLE": "نموذج التقييم",
+    "ASSESSMENT_FORM_SUB": "تسجيل التشخيص وإنشاء خطة العلاج",
+    "DIAGNOSIS": "التشخيص",
+    "TOTAL_SESSIONS": "إجمالي الجلسات",
+    "FREQUENCY": "المعدل",
+    "TWICE_A_WEEK": "مرتين أسبوعياً",
+    "THREE_TIMES_A_WEEK": "ثلاث مرات أسبوعياً",
+    "ONCE_A_WEEK": "مرة أسبوعياً",
+    "DAILY": "يومياً",
+    "ASSIGN_DOCTOR": "تعيين طبيب",
+    "RECOMMENDED": "موصى به",
+    "GENDER_MATCH": "مطابقة الجنس",
+    "LOAD": "الكثافة",
+    "EXERCISES": "التمارين (اختياري)",
+    "SUBMIT_ASSESSMENT": "تقديم التقييم",
+    "PATIENT_SUMMARY": "ملخص المريض",
+    "AGE": "العمر",
+    "PAYMENT_TYPE": "طريقة الدفع",
+    "SMART_DOCTOR_SELECTION": "اختيار الطبيب الذكي"
   }
 }
