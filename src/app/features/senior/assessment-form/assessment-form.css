@@ -1,0 +1,15 @@
+/* ═══════════════════════════════════════════════════════════
+   Assessment Form — Component Styles
+   ═══════════════════════════════════════════════════════════ */
+
+.senior-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--space-6);
+}
+
+@media (max-width: 1024px) {
+  .senior-grid {
+    grid-template-columns: 1fr;
+  }
+}

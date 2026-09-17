@@ -122,3 +122,10 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Collapse main grid-2 earlier for tablet readability */
+@media (max-width: 1024px) {
+  :host ::ng-deep .grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
