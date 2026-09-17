@@ -341,11 +341,21 @@
     "RECOMMENDED": "Recommended",
     "GENDER_MATCH": "Gender Match",
     "LOAD": "Load",
-    "EXERCISES": "Exercises (Optional)",
+    "EXERCISES": "Prescribed Exercises",
     "SUBMIT_ASSESSMENT": "Submit Assessment",
     "PATIENT_SUMMARY": "Patient Summary",
     "AGE": "Age",
     "PAYMENT_TYPE": "Payment Type",
-    "SMART_DOCTOR_SELECTION": "Smart Doctor Selection"
+    "SMART_DOCTOR_SELECTION": "Smart Doctor Selection",
+    "REASSESSMENT_TITLE": "Re-Assessment Evaluation",
+    "INITIAL_PLAN": "Initial Treatment Plan",
+    "CURRENT_EVALUATION": "Current Evaluation",
+    "PROGRESS_NOTES": "Progress Notes",
+    "DECISION": "Clinical Decision",
+    "CONTINUE_PLAN": "Continue Current Plan",
+    "ADJUST_PLAN": "Adjust Treatment Plan",
+    "DISCHARGE": "Discharge Patient",
+    "ADDITIONAL_SESSIONS": "Additional Sessions",
+    "SUBMIT_REASSESSMENT": "Submit Re-Assessment"
   }
 }

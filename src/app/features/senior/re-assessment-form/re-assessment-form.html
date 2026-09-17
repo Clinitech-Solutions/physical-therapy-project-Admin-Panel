@@ -1,1 +1,117 @@
-<p>re-assessment-form works!</p>
+<div class="page-header">
+  <div>
+    <h2>{{ 'SENIOR.REASSESSMENT_TITLE' | translate }}</h2>
+    <p>{{ 'SENIOR.CURRENT_EVALUATION' | translate }}</p>
+  </div>
+</div>
+
+<div class="senior-grid gap-3 align-items-start">
+
+  <!-- LEFT: Initial Plan (Read Only) -->
+  <div class="card" style="height: fit-content;">
+    <div class="card-body">
+      <h4 style="margin-bottom: var(--space-4); border-bottom: 1px solid var(--border-color); padding-bottom: var(--space-2);">
+        <i class="bi bi-clock-history" style="color: var(--text-muted); margin-right: 8px;"></i>
+        {{ 'SENIOR.INITIAL_PLAN' | translate }}
+      </h4>
+
+      @if (patient(); as p) {
+        <!-- Patient header info -->
+        <div class="d-flex align-items-center gap-3 mb-4">
+          <div class="avatar avatar-lg">{{ p.avatar }}</div>
+          <div>
+            <div class="fw-semibold" style="font-size: var(--text-lg);">{{ p.nameEn }}</div>
+            <div class="text-muted" style="font-size: var(--text-sm);">{{ p.nameAr }}</div>
+          </div>
+        </div>
+
+        <div class="d-flex flex-column gap-3">
+          <div>
+            <div class="text-muted mb-1" style="font-size: var(--text-sm);">{{ 'SENIOR.DIAGNOSIS' | translate }}</div>
+            <div class="p-2 bg-light text-muted" style="border-radius: var(--radius-md); font-size: var(--text-sm); border: 1px solid var(--border-color-subtle);">
+              {{ $any(p.treatmentPlan)?.diagnosis || 'N/A' }}
+            </div>
+          </div>
+
+          <div class="grid-2 gap-3">
+            <div>
+              <div class="text-muted mb-1" style="font-size: var(--text-sm);">{{ 'SENIOR.TOTAL_SESSIONS' | translate }}</div>
+              <div class="p-2 bg-light text-muted fw-medium" style="border-radius: var(--radius-md); font-size: var(--text-sm); border: 1px solid var(--border-color-subtle);">
+                {{ p.treatmentPlan?.totalSessions || 0 }}
+              </div>
+            </div>
+            <div>
+              <div class="text-muted mb-1" style="font-size: var(--text-sm);">{{ 'SENIOR.ASSIGN_DOCTOR' | translate }}</div>
+              <div class="p-2 bg-light text-muted fw-medium" style="border-radius: var(--radius-md); font-size: var(--text-sm); border: 1px solid var(--border-color-subtle);">
+                {{ p.treatmentPlan?.primaryDoctorId || 'Unassigned' }}
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="text-muted mb-1" style="font-size: var(--text-sm);">{{ 'SENIOR.EXERCISES' | translate }}</div>
+            <div class="p-2 bg-light text-muted" style="border-radius: var(--radius-md); font-size: var(--text-sm); border: 1px solid var(--border-color-subtle);">
+              {{ $any(p.treatmentPlan)?.exercises || 'None prescribed' }}
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- RIGHT: Current Evaluation Form -->
+  <div class="card" style="height: fit-content;">
+    <div class="card-body">
+      <h4 style="margin-bottom: var(--space-4); border-bottom: 1px solid var(--border-color); padding-bottom: var(--space-2);">
+        <i class="bi bi-file-earmark-medical" style="color: var(--mq-teal); margin-right: 8px;"></i>
+        {{ 'SENIOR.CURRENT_EVALUATION' | translate }}
+      </h4>
+
+      <form [formGroup]="form" (ngSubmit)="submit()">
+        
+        <div class="form-group mb-4">
+          <label class="form-label">{{ 'SENIOR.PROGRESS_NOTES' | translate }} <span class="text-danger">*</span></label>
+          <textarea class="form-control" formControlName="progressNotes" rows="4" style="resize: vertical;"></textarea>
+          @if (form.get('progressNotes')?.invalid && form.get('progressNotes')?.touched) {
+            <small class="text-danger">Required</small>
+          }
+        </div>
+
+        <div class="form-group mb-4">
+          <label class="form-label">{{ 'SENIOR.DECISION' | translate }} <span class="text-danger">*</span></label>
+          <select class="form-control" formControlName="clinicalDecision">
+            <option value="" disabled selected>-- Select --</option>
+            <option value="Continue">{{ 'SENIOR.CONTINUE_PLAN' | translate }}</option>
+            <option value="Adjust">{{ 'SENIOR.ADJUST_PLAN' | translate }}</option>
+            <option value="Discharge">{{ 'SENIOR.DISCHARGE' | translate }}</option>
+          </select>
+          @if (form.get('clinicalDecision')?.invalid && form.get('clinicalDecision')?.touched) {
+            <small class="text-danger">Required</small>
+          }
+        </div>
+
+        @if (form.get('clinicalDecision')?.value !== 'Discharge') {
+          <div class="form-group mb-4">
+            <label class="form-label">{{ 'SENIOR.ADDITIONAL_SESSIONS' | translate }} <span class="text-danger">*</span></label>
+            <input type="number" class="form-control" formControlName="additionalSessions" min="1" />
+            @if (form.get('additionalSessions')?.invalid && form.get('additionalSessions')?.touched) {
+              <small class="text-danger">Must be at least 1</small>
+            }
+          </div>
+
+          <div class="form-group mb-4">
+            <label class="form-label">{{ 'SENIOR.EXERCISES' | translate }} (Adjusted)</label>
+            <textarea class="form-control" formControlName="adjustedExercises" rows="3" style="resize: vertical;"></textarea>
+          </div>
+        }
+
+        <div class="mt-4">
+          <button type="submit" class="btn btn-primary w-100">
+            <i class="bi bi-check-circle"></i> {{ 'SENIOR.SUBMIT_REASSESSMENT' | translate }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</div>

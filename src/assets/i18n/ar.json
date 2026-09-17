@@ -346,6 +346,16 @@
     "PATIENT_SUMMARY": "ملخص المريض",
     "AGE": "العمر",
     "PAYMENT_TYPE": "طريقة الدفع",
-    "SMART_DOCTOR_SELECTION": "اختيار الطبيب الذكي"
+    "SMART_DOCTOR_SELECTION": "اختيار الطبيب الذكي",
+    "REASSESSMENT_TITLE": "تقييم إعادة الحالة",
+    "INITIAL_PLAN": "خطة العلاج المبدئية",
+    "CURRENT_EVALUATION": "التقييم الحالي",
+    "PROGRESS_NOTES": "ملاحظات التقدم",
+    "DECISION": "القرار الطبي",
+    "CONTINUE_PLAN": "الاستمرار في الخطة الحالية",
+    "ADJUST_PLAN": "تعديل خطة العلاج",
+    "DISCHARGE": "إنهاء العلاج (تسريح المريض)",
+    "ADDITIONAL_SESSIONS": "جلسات إضافية",
+    "SUBMIT_REASSESSMENT": "تقديم التقييم"
   }
 }
