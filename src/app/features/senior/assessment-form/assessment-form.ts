@@ -125,4 +125,13 @@ export class AssessmentForm implements OnInit {
     // 4. Navigate back to dashboard
     this.router.navigate(['/senior/dashboard']);
   }
+
+  selectDoctorFromList(doctorId: string): void {
+    this.form.patchValue({ assignedDoctorId: doctorId });
+    this.messageService.add({ 
+      severity: 'info', 
+      summary: 'Doctor Selected', 
+      detail: 'The selected doctor has been assigned to the treatment plan.' 
+    });
+  }
 }

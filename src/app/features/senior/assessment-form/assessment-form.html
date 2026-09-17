@@ -12,7 +12,7 @@
     <div class="card-body">
       <form [formGroup]="form" (ngSubmit)="submit()">
         
-        <div class="form-group" style="margin-bottom: var(--space-4);">
+        <div class="form-group mb-4">
           <label class="form-label">{{ 'SENIOR.DIAGNOSIS' | translate }} <span class="text-danger">*</span></label>
           <textarea class="form-control" formControlName="diagnosis" rows="4" style="resize: vertical;"></textarea>
           @if (form.get('diagnosis')?.invalid && form.get('diagnosis')?.touched) {
@@ -20,7 +20,7 @@
           }
         </div>
 
-        <div class="grid-2 gap-4" style="margin-bottom: var(--space-4);">
+        <div class="grid-2 gap-4 mb-4">
           <div class="form-group">
             <label class="form-label">{{ 'SENIOR.TOTAL_SESSIONS' | translate }} <span class="text-danger">*</span></label>
             <input type="number" class="form-control" formControlName="totalSessions" min="1" />
@@ -41,14 +41,14 @@
           </div>
         </div>
 
-        <div class="form-group" style="margin-bottom: var(--space-4);">
+        <div class="form-group mb-4">
           <label class="form-label">{{ 'SENIOR.ASSIGN_DOCTOR' | translate }} <span class="text-danger">*</span></label>
           <select class="form-control" formControlName="assignedDoctorId">
             <option value="" disabled selected>-- Select Doctor --</option>
             @for (doc of smartDoctors(); track doc.id) {
               <option [value]="doc.id">
                 {{ doc.name }} 
-                (Load: {{ doc.currentLoad }}) 
+                ({{ 'SENIOR.LOAD' | translate }}: {{ doc.currentLoad }}) 
                 {{ doc.isRecommended ? '★ ' + ('SENIOR.RECOMMENDED' | translate) : '' }}
               </option>
             }
@@ -58,13 +58,13 @@
           }
         </div>
 
-        <div class="form-group" style="margin-bottom: var(--space-4);">
+        <div class="form-group mb-4">
           <label class="form-label">{{ 'SENIOR.EXERCISES' | translate }}</label>
           <textarea class="form-control" formControlName="exercises" rows="3" style="resize: vertical;"></textarea>
         </div>
 
-        <div class="flex justify-end mt-4">
-          <button type="submit" class="btn btn-primary">
+        <div class="mt-4">
+          <button type="submit" class="btn btn-primary w-100">
             <i class="bi bi-check-circle"></i> {{ 'SENIOR.SUBMIT_ASSESSMENT' | translate }}
           </button>
         </div>
@@ -73,7 +73,7 @@
   </div>
 
   <!-- RIGHT: Patient Summary & Smart Doctor Info -->
-  <div class="flex-col gap-6">
+  <div class="d-flex flex-column gap-6">
     <div class="card">
       <div class="card-body">
         <h4 style="margin-bottom: var(--space-4); border-bottom: 1px solid var(--border-color); padding-bottom: var(--space-2);">
@@ -82,27 +82,27 @@
         </h4>
 
         @if (patient(); as p) {
-          <div class="flex items-center gap-3" style="margin-bottom: var(--space-4);">
+          <div class="d-flex align-items-center gap-3 mb-4">
             <div class="avatar avatar-lg">{{ p.avatar }}</div>
             <div>
-              <div style="font-weight: var(--font-semibold); font-size: var(--text-lg);">{{ p.nameEn }}</div>
+              <div class="fw-semibold" style="font-size: var(--text-lg);">{{ p.nameEn }}</div>
               <div class="text-muted" style="font-size: var(--text-sm);">{{ p.nameAr }}</div>
             </div>
           </div>
 
-          <div class="flex-col gap-2" style="font-size: var(--text-sm);">
-            <div class="flex justify-between">
+          <div class="d-flex flex-column gap-2" style="font-size: var(--text-sm);">
+            <div class="d-flex justify-content-between">
               <span class="text-muted">{{ 'COMMON.GENDER' | translate }}</span>
-              <span style="font-weight: var(--font-medium);">
+              <span class="fw-medium">
                 {{ p.gender === 'Male' ? ('COMMON.MALE' | translate) : ('COMMON.FEMALE' | translate) }}
               </span>
             </div>
-            <div class="flex justify-between">
-              <span class="text-muted">{{ 'SENIOR.AGE' | translate }}</span>
-              <span style="font-weight: var(--font-medium);">{{ patientAge() }}</span>
+            <div class="d-flex justify-content-between">
+              <span class="text-muted">{{ 'COMMON.AGE' | translate }}</span>
+              <span class="fw-medium">{{ patientAge() }}</span>
             </div>
-            <div class="flex justify-between">
-              <span class="text-muted">{{ 'SENIOR.PAYMENT_TYPE' | translate }}</span>
+            <div class="d-flex justify-content-between">
+              <span class="text-muted">{{ 'COMMON.PAYMENT_TYPE' | translate }}</span>
               <span class="badge badge-info">{{ p.paymentType === 'Cash' ? ('RECEPTIONIST.CASH' | translate) : ('RECEPTIONIST.INSURANCE_PAYMENT' | translate) }}</span>
             </div>
           </div>
@@ -117,21 +117,31 @@
           {{ 'SENIOR.SMART_DOCTOR_SELECTION' | translate }}
         </h4>
         
-        <div class="flex-col gap-3">
+        <div class="d-flex flex-column">
           @for (doc of smartDoctors(); track doc.id) {
-            <div class="task-row" [style.border-left]="doc.isRecommended ? '4px solid var(--color-warning)' : '1px solid var(--border-color)'">
-              <div class="flex-col">
-                <div style="font-weight: var(--font-medium);">{{ doc.name }}</div>
-                <div style="font-size: var(--text-xs); color: var(--text-muted); display: flex; gap: 8px; margin-top: 4px;">
-                  @if (doc.isGenderMatch) {
-                    <span class="text-success"><i class="bi bi-gender-ambiguous"></i> {{ 'SENIOR.GENDER_MATCH' | translate }}</span>
-                  }
-                  <span><i class="bi bi-people"></i> {{ 'SENIOR.LOAD' | translate }}: {{ doc.currentLoad }}</span>
-                </div>
+            <div class="p-3 mb-3 d-flex flex-column gap-2" 
+                 (click)="selectDoctorFromList(doc.id)"
+                 style="border-radius: var(--radius-md); border: 1px solid var(--border-color); cursor: pointer; transition: all 0.2s;"
+                 [style.background]="form.get('assignedDoctorId')?.value === doc.id ? 'var(--mq-teal-dim)' : 'transparent'"
+                 [style.border-color]="form.get('assignedDoctorId')?.value === doc.id ? 'var(--mq-teal)' : 'var(--border-color)'">
+              
+              <!-- Top Row: Name and Load -->
+              <div class="d-flex justify-content-between align-items-center">
+                <span class="fw-medium">{{ doc.name }}</span>
+                <span class="text-xs text-muted">
+                  <i class="bi bi-people"></i> {{ 'SENIOR.LOAD' | translate }}: {{ doc.currentLoad }}
+                </span>
               </div>
-              @if (doc.isRecommended) {
-                <span class="badge badge-warning" style="font-size: 10px;">{{ 'SENIOR.RECOMMENDED' | translate }}</span>
-              }
+
+              <!-- Badges Row -->
+              <div class="d-flex gap-2 align-items-center flex-wrap">
+                @if (doc.isGenderMatch) {
+                  <span class="badge badge-info"><i class="bi bi-gender-ambiguous"></i> {{ 'SENIOR.GENDER_MATCH' | translate }}</span>
+                }
+                @if (doc.isRecommended) {
+                  <span class="badge badge-warning">★ {{ 'SENIOR.RECOMMENDED' | translate }}</span>
+                }
+              </div>
             </div>
           }
         </div>

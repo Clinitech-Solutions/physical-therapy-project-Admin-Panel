@@ -51,7 +51,12 @@
     "ENGLISH": "إنجليزي",
     "ARABIC": "عربي",
     "START": "بدء",
-    "PENDING": "قيد الانتظار"
+    "PENDING": "قيد الانتظار",
+    "GENDER": "النوع",
+    "MALE": "ذكر",
+    "FEMALE": "أنثى",
+    "AGE": "العمر",
+    "PAYMENT_TYPE": "طريقة الدفع"
   },
   "RECEPTIONIST": {
     "DASHBOARD_TITLE": "لوحة الاستقبال",

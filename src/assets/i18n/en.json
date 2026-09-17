@@ -51,7 +51,12 @@
     "ENGLISH": "English",
     "ARABIC": "Arabic",
     "START": "Start",
-    "PENDING": "Pending"
+    "PENDING": "Pending",
+    "GENDER": "Gender",
+    "MALE": "Male",
+    "FEMALE": "Female",
+    "AGE": "Age",
+    "PAYMENT_TYPE": "Payment Type"
   },
   "RECEPTIONIST": {
     "DASHBOARD_TITLE": "Receptionist Dashboard",
