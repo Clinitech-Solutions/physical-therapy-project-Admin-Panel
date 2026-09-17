@@ -50,7 +50,8 @@
     "NO_AVAILABLE_ROOMS": "No available rooms",
     "ENGLISH": "English",
     "ARABIC": "Arabic",
-    "START": "Start"
+    "START": "Start",
+    "PENDING": "Pending"
   },
   "RECEPTIONIST": {
     "DASHBOARD_TITLE": "Receptionist Dashboard",
@@ -309,9 +310,18 @@
   "SENIOR": {
     "DASHBOARD_TITLE": "Senior Therapist Dashboard",
     "DASHBOARD_SUB": "Intake assessment oversight & capacity view",
+    "PENDING_TASKS": "Pending Tasks",
+    "PENDING_TASKS_SUB": "Assessments + Re-assessments today",
+    "ASSESSMENTS": "Assessments",
+    "ASSESSMENTS_SUB": "New patient evaluations",
+    "REASSESSMENTS": "Re-Assessments",
+    "REASSESSMENTS_SUB": "Mid-treatment re-evaluations",
+    "DOCTORS_AVAILABLE": "Doctors Available",
+    "DOCTORS_BUSY": "currently busy",
     "TODAYS_TASKS": "Today's Tasks",
-    "ASSESSMENTS_4": "Assessments (4)",
-    "REASSESSMENTS_2": "Re-assessments (2)",
-    "LIVE_VIEW_CAPACITY": "Live Capacity View"
+    "LIVE_VIEW_CAPACITY": "Live View — Doctor Capacity",
+    "NO_ASSESSMENTS": "No assessments pending today.",
+    "NO_REASSESSMENTS": "No re-assessments pending today.",
+    "NO_DOCTORS_AVAILABLE": "No doctor availability data."
   }
 }

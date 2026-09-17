@@ -15,30 +15,30 @@
 <div class="kpi-row">
   <!-- Total Pending Tasks -->
   <div class="stat-card border-start-teal">
-    <div class="stat-label">Pending Tasks</div>
+    <div class="stat-label">{{ 'SENIOR.PENDING_TASKS' | translate }}</div>
     <div class="stat-value">{{ totalPendingTasks() }}</div>
-    <div class="stat-sub">Assessments + Re-assessments today</div>
+    <div class="stat-sub">{{ 'SENIOR.PENDING_TASKS_SUB' | translate }}</div>
   </div>
 
   <!-- Assessments -->
   <div class="stat-card" style="border-left-color: var(--color-info);">
-    <div class="stat-label">Assessments</div>
+    <div class="stat-label">{{ 'SENIOR.ASSESSMENTS' | translate }}</div>
     <div class="stat-value">{{ assessmentCount() }}</div>
-    <div class="stat-sub">New patient evaluations</div>
+    <div class="stat-sub">{{ 'SENIOR.ASSESSMENTS_SUB' | translate }}</div>
   </div>
 
   <!-- Re-assessments -->
   <div class="stat-card" style="border-left-color: var(--color-warning);">
-    <div class="stat-label">Re-Assessments</div>
+    <div class="stat-label">{{ 'SENIOR.REASSESSMENTS' | translate }}</div>
     <div class="stat-value">{{ reassessmentCount() }}</div>
-    <div class="stat-sub">Mid-treatment re-evaluations</div>
+    <div class="stat-sub">{{ 'SENIOR.REASSESSMENTS_SUB' | translate }}</div>
   </div>
 
   <!-- Available Doctors -->
   <div class="stat-card" style="border-left-color: var(--color-success);">
-    <div class="stat-label">Doctors Available</div>
+    <div class="stat-label">{{ 'SENIOR.DOCTORS_AVAILABLE' | translate }}</div>
     <div class="stat-value">{{ availableDoctorsCount() }}</div>
-    <div class="stat-sub">{{ busyDoctorsCount() }} currently busy</div>
+    <div class="stat-sub">{{ busyDoctorsCount() }} {{ 'SENIOR.DOCTORS_BUSY' | translate }}</div>
   </div>
 </div>
 
@@ -50,7 +50,7 @@
     <div class="card-body">
       <h4 style="margin-bottom: var(--space-3);">
         <i class="bi bi-clipboard2-pulse" style="color: var(--mq-teal); margin-right: 8px;"></i>
-        Today's Tasks
+        {{ 'SENIOR.TODAYS_TASKS' | translate }}
       </h4>
 
       <!-- Tabs -->
@@ -58,12 +58,12 @@
         <div class="tab"
              [class.active]="activeTab() === 'assessments'"
              (click)="switchTab('assessments')">
-          Assessments ({{ assessmentCount() }})
+          {{ 'SENIOR.ASSESSMENTS' | translate }} ({{ assessmentCount() }})
         </div>
         <div class="tab"
              [class.active]="activeTab() === 'reassessments'"
              (click)="switchTab('reassessments')">
-          Re-Assessments ({{ reassessmentCount() }})
+          {{ 'SENIOR.REASSESSMENTS' | translate }} ({{ reassessmentCount() }})
         </div>
       </div>
 
@@ -73,7 +73,7 @@
           <div class="empty-state">
             <i class="bi bi-check-circle" style="font-size: 32px; color: var(--mq-teal); opacity: 0.5;"></i>
             <p style="color: var(--text-muted); margin-top: var(--space-2);">
-              No {{ activeTab() === 'assessments' ? 'assessments' : 're-assessments' }} pending today.
+              {{ activeTab() === 'assessments' ? ('SENIOR.NO_ASSESSMENTS' | translate) : ('SENIOR.NO_REASSESSMENTS' | translate) }}
             </p>
           </div>
         }
@@ -96,9 +96,9 @@
               </div>
             </div>
             <div class="flex items-center gap-2">
-              <span class="badge" [ngClass]="getStatusBadgeClass(task.status)">{{ task.status }}</span>
+              <span class="badge" [ngClass]="getStatusBadgeClass(task.status)">{{ 'COMMON.' + (task.status | uppercase) | translate }}</span>
               <button class="btn btn-primary btn-sm" (click)="startTask(task)">
-                <i class="bi bi-play-fill"></i> Start
+                <i class="bi bi-play-fill"></i> {{ 'COMMON.START' | translate }}
               </button>
             </div>
           </div>
@@ -112,7 +112,7 @@
     <div class="card-body">
       <h4 style="margin-bottom: var(--space-3);">
         <i class="bi bi-people-fill" style="color: var(--mq-teal); margin-right: 8px;"></i>
-        Live View — Doctor Capacity
+        {{ 'SENIOR.LIVE_VIEW_CAPACITY' | translate }}
       </h4>
 
       <div class="doctor-grid">
@@ -127,7 +127,7 @@
             </div>
             @if (doctor.currentLoad > 0) {
               <div class="doctor-room-tag">
-                <i class="bi bi-door-open"></i> {{ doctor.roomName }}
+                <i class="bi bi-door-open"></i> {{ 'COMMON.ROOM' | translate }} {{ doctor.roomId }}
               </div>
             }
           </div>
@@ -136,7 +136,7 @@
         @if (activeDoctorsWorkload().length === 0) {
           <div class="empty-state">
             <i class="bi bi-person-x" style="font-size: 32px; color: var(--text-muted); opacity: 0.5;"></i>
-            <p style="color: var(--text-muted); margin-top: var(--space-2);">No doctor availability data.</p>
+            <p style="color: var(--text-muted); margin-top: var(--space-2);">{{ 'SENIOR.NO_DOCTORS_AVAILABLE' | translate }}</p>
           </div>
         }
       </div>

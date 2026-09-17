@@ -1,5 +1,5 @@
 export type SessionStatus = 'Confirmed' | 'In Progress' | 'Pending' | 'Cancelled' | 'Waiting' | 'Completed';
-export type SessionType = 'Session' | 'Assessment';
+export type SessionType = 'Session' | 'Assessment' | 'Re-Assessment';
 
 export interface Session {
   id: string;

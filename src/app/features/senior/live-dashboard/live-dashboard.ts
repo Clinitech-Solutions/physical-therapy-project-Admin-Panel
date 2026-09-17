@@ -63,37 +63,18 @@ export class LiveDashboard {
   });
 
   // ── Business Rule 1b: Today's Re-Assessments ─────────────
-  // Existing patients who have a completed Assessment historically AND are
-  // scheduled for a regular Session today that is past the midpoint of their
-  // treatment plan (sessionNumber >= ceil(totalSessions / 2)).
-  // These are candidates the Senior should re-evaluate.
+  // strictly fetches Re-Assessment tasks.
   todayReassessments = computed(() => {
     const today = this.todayString();
     const sessions = this.clinicState.sessions();
     const patients = this.clinicState.patients();
 
-    // Find patients who already completed an assessment historically
-    const patientsWithCompletedAssessment = new Set(
-      sessions
-        .filter(s => s.type === 'Assessment' && s.status === 'Completed')
-        .map(s => s.patientId)
-    );
-
     return sessions
       .filter(s => {
-        if (s.type !== 'Session') return false;
+        if (s.type !== 'Re-Assessment') return false;
         if (s.status === 'Completed' || s.status === 'Cancelled') return false;
         if (!s.scheduledAt) return false;
-        if (!s.scheduledAt.startsWith(today)) return false;
-        if (!patientsWithCompletedAssessment.has(s.patientId)) return false;
-
-        // Check if this session is at or past the midpoint → candidate for re-assessment
-        const patient = patients.find(p => p.id === s.patientId);
-        const totalSessions = patient?.treatmentPlan?.totalSessions ?? 0;
-        if (totalSessions === 0) return false;
-
-        const midpoint = Math.ceil(totalSessions / 2);
-        return (s.sessionNumber ?? 0) >= midpoint;
+        return s.scheduledAt.startsWith(today);
       })
       .map(s => {
         const patient = patients.find(p => p.id === s.patientId);
@@ -153,6 +134,7 @@ export class LiveDashboard {
         maxLoad,
         borderColor,
         loadClass,
+        roomId: a.roomId,
         roomName: this.clinicState.getRoomName(a.roomId),
       };
     });

@@ -45,12 +45,13 @@
     "TIME": "الوقت",
     "DATE": "التاريخ",
     "DOCTOR": "الطبيب",
-    "ROOM": "الغرفة",
+    "ROOM": "غرفة",
     "ASSIGNED_TO": "مخصص لـ",
     "NO_AVAILABLE_ROOMS": "لا توجد غرف متاحة",
     "ENGLISH": "إنجليزي",
     "ARABIC": "عربي",
-    "START": "بدء"
+    "START": "بدء",
+    "PENDING": "قيد الانتظار"
   },
   "RECEPTIONIST": {
     "DASHBOARD_TITLE": "لوحة الاستقبال",
@@ -309,9 +310,18 @@
   "SENIOR": {
     "DASHBOARD_TITLE": "لوحة الأخصائي الأول",
     "DASHBOARD_SUB": "الإشراف على التقييم الأولي وسعة العيادة",
+    "PENDING_TASKS": "المهام المعلقة",
+    "PENDING_TASKS_SUB": "تقييمات وإعادة تقييم اليوم",
+    "ASSESSMENTS": "التقييمات",
+    "ASSESSMENTS_SUB": "تقييم مرضى جدد",
+    "REASSESSMENTS": "إعادة التقييم",
+    "REASSESSMENTS_SUB": "متابعة منتصف العلاج",
+    "DOCTORS_AVAILABLE": "الأطباء المتاحين",
+    "DOCTORS_BUSY": "مشغول حالياً",
     "TODAYS_TASKS": "مهام اليوم",
-    "ASSESSMENTS_4": "التقييمات (٤)",
-    "REASSESSMENTS_2": "إعادة التقييم (٢)",
-    "LIVE_VIEW_CAPACITY": "عرض السعة المباشر"
+    "LIVE_VIEW_CAPACITY": "مراقبة حية — سعة الأطباء",
+    "NO_ASSESSMENTS": "لا يوجد مهام تقييم اليوم.",
+    "NO_REASSESSMENTS": "لا يوجد مهام إعادة تقييم اليوم.",
+    "NO_DOCTORS_AVAILABLE": "لا تتوفر بيانات عن الأطباء."
   }
 }
