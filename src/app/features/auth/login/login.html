@@ -29,54 +29,51 @@
           </p>
         </div>
 
-        <div class="form-group mb-3">
-          <div class="input-icon-wrapper">
-            <i class="bi bi-envelope input-icon-start"></i>
-            <input type="email" class="form-input input-with-icon" 
-                   [placeholder]="langService.currentLang() === 'en' ? 'Enter your email' : 'أدخل بريدك الإلكتروني'">
+        <form [formGroup]="loginForm" (ngSubmit)="submit()">
+          <div class="form-group mb-3">
+            <div class="input-icon-wrapper">
+              <i class="bi bi-person input-icon-start"></i>
+              <input type="text" class="form-input input-with-icon" formControlName="userName"
+                     [placeholder]="langService.currentLang() === 'en' ? 'Enter your username' : 'أدخل اسم المستخدم'">
+            </div>
+            <div style="min-height: 20px;">
+              <small class="text-danger" style="color: red; font-size: 0.8em;" *ngIf="loginForm.get('userName')?.invalid && loginForm.get('userName')?.touched">
+                {{ langService.currentLang() === 'en' ? 'Username is required' : 'اسم المستخدم مطلوب' }}
+              </small>
+            </div>
           </div>
-        </div>
 
-        <div class="form-group mb-3">
-          <div class="input-icon-wrapper">
-            <i class="bi bi-lock input-icon-start"></i>
-            <input type="password" class="form-input input-with-icon input-with-icon-end" 
-                   [placeholder]="langService.currentLang() === 'en' ? 'Enter your password' : 'أدخل كلمة المرور'">
-            <i class="bi bi-eye input-icon-end"></i>
+          <div class="form-group mb-3">
+            <div class="input-icon-wrapper">
+              <i class="bi bi-lock input-icon-start"></i>
+              <input type="password" class="form-input input-with-icon input-with-icon-end" formControlName="password"
+                     [placeholder]="langService.currentLang() === 'en' ? 'Enter your password' : 'أدخل كلمة المرور'">
+              <i class="bi bi-eye input-icon-end"></i>
+            </div>
+            <div style="min-height: 20px;">
+              <small class="text-danger" style="color: red; font-size: 0.8em;" *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
+                {{ langService.currentLang() === 'en' ? 'Password is required' : 'كلمة المرور مطلوبة' }}
+              </small>
+            </div>
           </div>
-        </div>
 
-        <div class="flex justify-between items-center mb-4 text-sm">
-          <label class="flex items-center gap-2" style="cursor: pointer">
-            <input type="checkbox"> 
-            <span>{{ langService.currentLang() === 'en' ? 'Remember me' : 'تذكرني' }}</span>
-          </label>
-          <a href="#" style="color: var(--mq-teal); text-decoration: none;">
-            {{ langService.currentLang() === 'en' ? 'Forgot Password?' : 'نسيت كلمة المرور؟' }}
-          </a>
-        </div>
-
-        <div class="mb-4">
-          <h4 class="text-sm text-center mb-3">{{ langService.currentLang() === 'en' ? 'Select a demo role to login' : 'اختر دوراً تجريبياً لتسجيل الدخول' }}</h4>
-          <div class="grid-2 gap-2">
-            <button class="btn btn-primary w-full flex justify-between items-center" (click)="onLogin('Receptionist')">
-              <span>{{ langService.currentLang() === 'en' ? 'Receptionist' : 'موظف استقبال' }}</span>
-              <i class="bi" [class.bi-arrow-right]="langService.currentLang() === 'en'" [class.bi-arrow-left]="langService.currentLang() === 'ar'"></i>
-            </button>
-            <button class="btn btn-primary w-full flex justify-between items-center" (click)="onLogin('Senior Therapist')">
-              <span>{{ langService.currentLang() === 'en' ? 'Senior Therapist' : 'أخصائي أول' }}</span>
-              <i class="bi" [class.bi-arrow-right]="langService.currentLang() === 'en'" [class.bi-arrow-left]="langService.currentLang() === 'ar'"></i>
-            </button>
-            <button class="btn btn-primary w-full flex justify-between items-center" (click)="onLogin('Doctor')">
-              <span>{{ langService.currentLang() === 'en' ? 'Doctor' : 'طبيب' }}</span>
-              <i class="bi" [class.bi-arrow-right]="langService.currentLang() === 'en'" [class.bi-arrow-left]="langService.currentLang() === 'ar'"></i>
-            </button>
-            <button class="btn btn-primary w-full flex justify-between items-center" (click)="onLogin('CEO')">
-              <span>{{ langService.currentLang() === 'en' ? 'CEO' : 'المدير التنفيذي' }}</span>
-              <i class="bi" [class.bi-arrow-right]="langService.currentLang() === 'en'" [class.bi-arrow-left]="langService.currentLang() === 'ar'"></i>
-            </button>
+          <div class="flex justify-between items-center mb-4 text-sm">
+            <label class="flex items-center gap-2" style="cursor: pointer">
+              <input type="checkbox"> 
+              <span>{{ langService.currentLang() === 'en' ? 'Remember me' : 'تذكرني' }}</span>
+            </label>
+            <a href="#" style="color: var(--mq-teal); text-decoration: none;">
+              {{ langService.currentLang() === 'en' ? 'Forgot Password?' : 'نسيت كلمة المرور؟' }}
+            </a>
           </div>
-        </div>
+
+          <button type="submit" class="btn btn-primary w-full flex justify-center items-center mb-4" style="height: 44px;" [disabled]="isSubmitting()">
+            <span *ngIf="!isSubmitting()">{{ langService.currentLang() === 'en' ? 'Sign In' : 'تسجيل الدخول' }}</span>
+            <div *ngIf="isSubmitting()" class="spinner-border spinner-border-sm" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          </button>
+        </form>
 
         <div class="divider text-center" style="position: relative; margin: 32px 0;">
           <span style="position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: var(--bg-card); padding: 0 10px; font-size: 12px; color: var(--text-muted);">
