@@ -22,7 +22,10 @@ export const routes: Routes = [
       { path: 'senior/assessment-form', loadComponent: () => import('./features/senior/assessment-form/assessment-form').then(m => m.AssessmentForm) },
       { path: 'senior/re-assessment-form', loadComponent: () => import('./features/senior/re-assessment-form/re-assessment-form').then(m => m.ReAssessmentForm) },
       { path: 'senior/absence-coverage', loadComponent: () => import('./features/senior/absence-coverage/absence-coverage').then(m => m.AbsenceCoverage) },
-      { path: 'doctor', loadComponent: () => import('./features/doctor/dashboard/dashboard').then(m => m.Dashboard) },
+      // ── Doctor Routes ──
+      { path: 'doctor', redirectTo: 'doctor/dashboard', pathMatch: 'full' },
+      { path: 'doctor/dashboard', loadComponent: () => import('./features/doctor/dashboard/dashboard').then(m => m.Dashboard) },
+      { path: 'doctor/session-notes/:sessionId', loadComponent: () => import('./features/doctor/dashboard/dashboard').then(m => m.Dashboard) }, // TODO: Replace with SessionNotes component when created
       { path: 'ceo', loadComponent: () => import('./features/ceo/dashboard/dashboard').then(m => m.Dashboard) },
     ]
   },

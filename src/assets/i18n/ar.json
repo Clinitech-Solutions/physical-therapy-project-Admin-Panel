@@ -302,15 +302,15 @@
     "HOUR_AGO_1": "منذ ساعة"
   },
   "DOCTOR": {
-    "DASHBOARD_TITLE": "جدول الطبيب",
-    "DASHBOARD_SUB": "الجلسات والعلاجات المخصصة اليوم",
-    "ROOM_1": "غرفة ١",
-    "ROOM_3": "غرفة ٣",
-    "SESSION_4_10": "جلسة ٤ من ١٠",
-    "SESSION_8_12": "جلسة ٨ من ١٢",
+    "DASHBOARD_TITLE": "جدول اليوم",
+    "DASHBOARD_SUB": "الجلسات والعلاجات المخصصة لك اليوم",
     "START_SESSION": "بدء الجلسة",
     "AVAILABLE_SLOT": "فترة متاحة",
-    "ASSESSMENT": "تقييم"
+    "ASSESSMENT": "تقييم",
+    "RE_ASSESSMENT": "إعادة تقييم",
+    "ROOM": "غرفة",
+    "NO_SESSIONS_TODAY": "لا توجد جلسات مجدولة لليوم.",
+    "SESSION_X_OF_Y": "جلسة {{current}} من {{total}}"
   },
   "SENIOR": {
     "DASHBOARD_TITLE": "لوحة الأخصائي الأول",

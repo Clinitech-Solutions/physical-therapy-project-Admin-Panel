@@ -302,15 +302,15 @@
     "HOUR_AGO_1": "1 hour ago"
   },
   "DOCTOR": {
-    "DASHBOARD_TITLE": "Doctor Schedule",
-    "DASHBOARD_SUB": "Today's assigned sessions & treatments",
-    "ROOM_1": "Room 1",
-    "ROOM_3": "Room 3",
-    "SESSION_4_10": "Session 4/10",
-    "SESSION_8_12": "Session 8/12",
+    "DASHBOARD_TITLE": "Today's Schedule",
+    "DASHBOARD_SUB": "Your assigned sessions & treatments for today",
     "START_SESSION": "Start Session",
     "AVAILABLE_SLOT": "Available Slot",
-    "ASSESSMENT": "Assessment"
+    "ASSESSMENT": "Assessment",
+    "RE_ASSESSMENT": "Re-Assessment",
+    "ROOM": "Room",
+    "NO_SESSIONS_TODAY": "No sessions scheduled for today.",
+    "SESSION_X_OF_Y": "Session {{current}} of {{total}}"
   },
   "SENIOR": {
     "DASHBOARD_TITLE": "Senior Therapist Dashboard",

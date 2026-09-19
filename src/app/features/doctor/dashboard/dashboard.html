@@ -3,66 +3,58 @@
   <p class="text-secondary">{{ 'DOCTOR.DASHBOARD_SUB' | translate }}</p>
 </div>
 
+<!-- Empty state when no sessions today -->
+@if (groupedSlots().length === 0) {
+  <div class="card card-sm d-flex justify-content-center align-items-center" style="padding: 3rem; opacity: 0.6;">
+    <span class="text-sm text-secondary">{{ 'DOCTOR.NO_SESSIONS_TODAY' | translate }}</span>
+  </div>
+}
+
 <div class="d-flex flex-column gap-4">
-  <!-- Time Slot -->
-  <div>
-    <h4 class="text-sm text-muted mb-2">09:00 AM - 10:00 AM</h4>
-    <div class="grid-2 gap-4">
-      <!-- Patient 1 -->
-      <div class="card card-sm">
-        <div class="d-flex justify-content-between align-items-start mb-3">
-          <div class="d-flex align-items-center gap-3">
-            <div class="avatar">A</div>
-            <div>
-              <div class="fw-medium">Ahmed Ali</div>
-              <div class="text-xs text-secondary">{{ 'DOCTOR.ROOM_1' | translate }}</div>
-            </div>
-          </div>
-          <span class="badge badge-info">{{ 'DOCTOR.SESSION_4_10' | translate }}</span>
-        </div>
-        <button class="btn btn-primary w-100">{{ 'DOCTOR.START_SESSION' | translate }}</button>
-      </div>
+  @for (slot of groupedSlots(); track slot.sortKey) {
+    <div>
+      <!-- Time Slot Header -->
+      <h4 class="text-sm text-muted mb-2">{{ slot.label }}</h4>
 
-      <!-- Patient 2 (Empty) -->
-      <div class="card card-sm d-flex justify-content-center align-items-center" style="border-style: dashed; background: transparent; opacity: 0.5;">
-        <span class="text-sm">{{ 'DOCTOR.AVAILABLE_SLOT' | translate }}</span>
+      <div class="grid-2 gap-4">
+        @for (item of slot.items; track $index) {
+
+          <!-- Patient Card -->
+          @if (item.type === 'patient') {
+            <div class="card card-sm">
+              <div class="d-flex justify-content-between align-items-start mb-3">
+                <div class="d-flex align-items-center gap-3">
+                  <div class="avatar">{{ item.patientAvatar }}</div>
+                  <div>
+                    <div class="fw-medium">{{ item.patientName }}</div>
+                    <div class="text-xs text-secondary">{{ 'DOCTOR.ROOM' | translate }}: {{ item.roomName }}</div>
+                  </div>
+                </div>
+
+                @if (item.sessionType === 'Assessment' || item.sessionType === 'Re-Assessment') {
+                  <span class="badge badge-warning">{{ 'DOCTOR.ASSESSMENT' | translate }}</span>
+                } @else {
+                  <span class="badge badge-info">{{ item.sessionBadge }}</span>
+                }
+              </div>
+
+              <button
+                class="btn btn-primary w-100"
+                (click)="startSession(item.session!.id)">
+                {{ 'DOCTOR.START_SESSION' | translate }}
+              </button>
+            </div>
+          }
+
+          <!-- Available Slot Placeholder -->
+          @if (item.type === 'available') {
+            <div class="card card-sm d-flex justify-content-center align-items-center"
+                 style="border-style: dashed; background: transparent; opacity: 0.5;">
+              <span class="text-sm">{{ 'DOCTOR.AVAILABLE_SLOT' | translate }}</span>
+            </div>
+          }
+        }
       </div>
     </div>
-  </div>
-
-  <!-- Time Slot -->
-  <div>
-    <h4 class="text-sm text-muted mb-2">10:00 AM - 11:00 AM</h4>
-    <div class="grid-2 gap-4">
-      <!-- Patient 1 -->
-      <div class="card card-sm">
-        <div class="d-flex justify-content-between align-items-start mb-3">
-          <div class="d-flex align-items-center gap-3">
-            <div class="avatar">O</div>
-            <div>
-              <div class="fw-medium">Omar Zaid</div>
-              <div class="text-xs text-secondary">{{ 'DOCTOR.ROOM_1' | translate }}</div>
-            </div>
-          </div>
-          <span class="badge badge-warning">{{ 'DOCTOR.ASSESSMENT' | translate }}</span>
-        </div>
-        <button class="btn btn-primary w-100">{{ 'DOCTOR.START_SESSION' | translate }}</button>
-      </div>
-
-      <!-- Patient 2 -->
-      <div class="card card-sm">
-        <div class="d-flex justify-content-between align-items-start mb-3">
-          <div class="d-flex align-items-center gap-3">
-            <div class="avatar">M</div>
-            <div>
-              <div class="fw-medium">Mona Hassan</div>
-              <div class="text-xs text-secondary">{{ 'DOCTOR.ROOM_3' | translate }}</div>
-            </div>
-          </div>
-          <span class="badge badge-info">{{ 'DOCTOR.SESSION_8_12' | translate }}</span>
-        </div>
-        <button class="btn btn-primary w-100">{{ 'DOCTOR.START_SESSION' | translate }}</button>
-      </div>
-    </div>
-  </div>
+  }
 </div>
