@@ -1,4 +1,5 @@
 {
+  "FORCE_UPDATE": "1",
   "NAVBAR": {
     "WELCOME": "Welcome",
     "LOGOUT": "Logout",
