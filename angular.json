@@ -24,13 +24,7 @@
                 "glob": "**/*",
                 "input": "public"
               },
-              "vercel.json",
-              {
-                "glob": "**/*",
-                "input": "src/assets",
-                "output": "assets"
-              }
-              
+              "vercel.json"
             ],
             "styles": [
               "node_modules/bootstrap/dist/css/bootstrap.min.css",
