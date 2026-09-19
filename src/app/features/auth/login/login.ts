@@ -32,7 +32,7 @@ export class Login {
     password: ['', Validators.required]
   });
 
-  submit() {
+  onSubmit() {
     if (this.loginForm.invalid) {
       this.loginForm.markAllAsTouched();
       return;
@@ -40,13 +40,7 @@ export class Login {
 
     this.isSubmitting.set(true);
 
-    const loginData = {
-      email: this.loginForm.value.userName, // Auth service interface expects email
-      password: this.loginForm.value.password,
-      userName: this.loginForm.value.userName
-    };
-
-    this.authService.login(loginData).subscribe({
+    this.authService.login(this.loginForm.value).subscribe({
       next: () => {
         this.isSubmitting.set(false);
         const user = this.authService.currentUser();

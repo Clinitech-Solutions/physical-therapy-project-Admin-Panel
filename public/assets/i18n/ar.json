@@ -1,4 +1,18 @@
 {
+  "AUTH": {
+    "SIGN_IN": "تسجيل الدخول",
+    "WELCOME_BACK": "أهلاً بك مجدداً",
+    "SIGN_IN_SUBTITLE": "سجّل دخولك لمتابعة رحلة تعافيك",
+    "USERNAME_PLACEHOLDER": "أدخل اسم المستخدم",
+    "USERNAME_REQUIRED": "اسم المستخدم مطلوب",
+    "PASSWORD_PLACEHOLDER": "أدخل كلمة المرور",
+    "PASSWORD_REQUIRED": "كلمة المرور مطلوبة",
+    "REMEMBER_ME": "تذكرني",
+    "FORGOT_PASSWORD": "نسيت كلمة المرور؟",
+    "CONTINUE_WITH": "— أو تابع عبر —",
+    "DONT_HAVE_ACCOUNT": "ليس لديك حساب؟",
+    "SIGN_UP": "إنشاء حساب"
+  },
   "NAVBAR": {
     "WELCOME": "مرحباً",
     "LOGOUT": "تسجيل الخروج",

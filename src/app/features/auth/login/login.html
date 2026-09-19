@@ -21,24 +21,23 @@
       <div class="login-form-container d-flex flex-column justify-content-center" style="z-index: 10; position: relative;">
         <div class="text-center mb-4">
           <h1 class="mb-2" style="font-family: var(--font-display); color: var(--text-primary)">
-            {{ langService.currentLang() === 'en' ? 'Welcome Back' : 'أهلاً بك مجدداً' }}
+            {{ 'AUTH.WELCOME_BACK' | translate }}
           </h1>
           <p class="text-secondary text-sm">
-            <ng-container *ngIf="langService.currentLang() === 'en'">Sign in to continue your recovery journey</ng-container>
-            <ng-container *ngIf="langService.currentLang() === 'ar'">سجّل دخولك لمتابعة رحلة تعافيك</ng-container>
+            {{ 'AUTH.SIGN_IN_SUBTITLE' | translate }}
           </p>
         </div>
 
-        <form [formGroup]="loginForm" (ngSubmit)="submit()">
+        <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
           <div class="form-group mb-3">
             <div class="input-icon-wrapper">
               <i class="bi bi-person input-icon-start"></i>
               <input type="text" class="form-input input-with-icon" formControlName="userName"
-                     [placeholder]="langService.currentLang() === 'en' ? 'Enter your username' : 'أدخل اسم المستخدم'">
+                     [placeholder]="'AUTH.USERNAME_PLACEHOLDER' | translate">
             </div>
             <div style="min-height: 20px;">
               <small class="text-danger" style="color: red; font-size: 0.8em;" *ngIf="loginForm.get('userName')?.invalid && loginForm.get('userName')?.touched">
-                {{ langService.currentLang() === 'en' ? 'Username is required' : 'اسم المستخدم مطلوب' }}
+                {{ 'AUTH.USERNAME_REQUIRED' | translate }}
               </small>
             </div>
           </div>
@@ -47,12 +46,12 @@
             <div class="input-icon-wrapper">
               <i class="bi bi-lock input-icon-start"></i>
               <input type="password" class="form-input input-with-icon input-with-icon-end" formControlName="password"
-                     [placeholder]="langService.currentLang() === 'en' ? 'Enter your password' : 'أدخل كلمة المرور'">
+                     [placeholder]="'AUTH.PASSWORD_PLACEHOLDER' | translate">
               <i class="bi bi-eye input-icon-end"></i>
             </div>
             <div style="min-height: 20px;">
               <small class="text-danger" style="color: red; font-size: 0.8em;" *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
-                {{ langService.currentLang() === 'en' ? 'Password is required' : 'كلمة المرور مطلوبة' }}
+                {{ 'AUTH.PASSWORD_REQUIRED' | translate }}
               </small>
             </div>
           </div>
@@ -60,24 +59,22 @@
           <div class="flex justify-between items-center mb-4 text-sm">
             <label class="flex items-center gap-2" style="cursor: pointer">
               <input type="checkbox"> 
-              <span>{{ langService.currentLang() === 'en' ? 'Remember me' : 'تذكرني' }}</span>
+              <span>{{ 'AUTH.REMEMBER_ME' | translate }}</span>
             </label>
             <a href="#" style="color: var(--mq-teal); text-decoration: none;">
-              {{ langService.currentLang() === 'en' ? 'Forgot Password?' : 'نسيت كلمة المرور؟' }}
+              {{ 'AUTH.FORGOT_PASSWORD' | translate }}
             </a>
           </div>
 
-          <button type="submit" class="btn btn-primary w-full flex justify-center items-center mb-4" style="height: 44px;" [disabled]="isSubmitting()">
-            <span *ngIf="!isSubmitting()">{{ langService.currentLang() === 'en' ? 'Sign In' : 'تسجيل الدخول' }}</span>
-            <div *ngIf="isSubmitting()" class="spinner-border spinner-border-sm" role="status">
-              <span class="visually-hidden">Loading...</span>
-            </div>
+          <button type="submit" class="btn btn-primary w-100 mt-4" [disabled]="loginForm.invalid || isSubmitting()">
+            <span *ngIf="isSubmitting()" class="spinner-border spinner-border-sm me-2"></span>
+            {{ 'AUTH.SIGN_IN' | translate }}
           </button>
         </form>
 
         <div class="divider text-center" style="position: relative; margin: 32px 0;">
           <span style="position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: var(--bg-card); padding: 0 10px; font-size: 12px; color: var(--text-muted);">
-            {{ langService.currentLang() === 'en' ? '— or continue with —' : '— أو تابع عبر —' }}
+            {{ 'AUTH.CONTINUE_WITH' | translate }}
           </span>
         </div>
 
@@ -91,9 +88,9 @@
         </div>
 
         <p class="text-center text-sm">
-          <span class="text-secondary">{{ langService.currentLang() === 'en' ? 'Don\'t have an account?' : 'ليس لديك حساب؟' }}</span>
+          <span class="text-secondary">{{ 'AUTH.DONT_HAVE_ACCOUNT' | translate }}</span>
           <a href="#" style="color: var(--mq-teal); text-decoration: none; font-weight: bold; margin-left: 5px;">
-            {{ langService.currentLang() === 'en' ? 'Sign Up' : 'إنشاء حساب' }}
+            {{ 'AUTH.SIGN_UP' | translate }}
           </a>
         </p>
       </div>
