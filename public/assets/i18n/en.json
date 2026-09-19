@@ -1,18 +1,4 @@
 {
-  "AUTH": {
-    "SIGN_IN": "Sign In",
-    "WELCOME_BACK": "Welcome Back",
-    "SIGN_IN_SUBTITLE": "Sign in to continue your recovery journey",
-    "USERNAME_PLACEHOLDER": "Enter your username",
-    "USERNAME_REQUIRED": "Username is required",
-    "PASSWORD_PLACEHOLDER": "Enter your password",
-    "PASSWORD_REQUIRED": "Password is required",
-    "REMEMBER_ME": "Remember me",
-    "FORGOT_PASSWORD": "Forgot Password?",
-    "CONTINUE_WITH": "— or continue with —",
-    "DONT_HAVE_ACCOUNT": "Don't have an account?",
-    "SIGN_UP": "Sign Up"
-  },
   "NAVBAR": {
     "WELCOME": "Welcome",
     "LOGOUT": "Logout",
@@ -312,5 +298,18 @@
     "ASSESSMENTS_4": "Assessments (4)",
     "REASSESSMENTS_2": "Re-assessments (2)",
     "LIVE_VIEW_CAPACITY": "Live Capacity View"
+  } ,   "AUTH": {
+    "SIGN_IN": "Sign In",
+    "WELCOME_BACK": "Welcome Back",
+    "SIGN_IN_SUBTITLE": "Sign in to continue your recovery journey",
+    "USERNAME_PLACEHOLDER": "Enter your username",
+    "USERNAME_REQUIRED": "Username is required",
+    "PASSWORD_PLACEHOLDER": "Enter your password",
+    "PASSWORD_REQUIRED": "Password is required",
+    "REMEMBER_ME": "Remember me",
+    "FORGOT_PASSWORD": "Forgot Password?",
+    "CONTINUE_WITH": "— or continue with —",
+    "DONT_HAVE_ACCOUNT": "Don't have an account?",
+    "SIGN_UP": "Sign Up"
   }
 }
