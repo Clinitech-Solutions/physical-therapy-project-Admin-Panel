@@ -18,22 +18,31 @@ export class AddUserComponent {
   roles = ['CEO', 'Doctor', 'Senior Therapist', 'Receptionist'];
 
   userForm = this.fb.nonNullable.group({
-    name: ['', Validators.required],
-    username: ['', Validators.required],
+    fullName: ['', Validators.required],
+    userName: ['', Validators.required],
     password: ['', [Validators.required, Validators.minLength(6)]],
+    gender: ['', Validators.required],
+    birthDate: ['', Validators.required],
     role: ['', Validators.required]
   });
 
   isSubmitting = false;
+  showPassword = false;
+
+  togglePasswordVisibility() {
+    this.showPassword = !this.showPassword;
+  }
 
   onSubmit() {
     if (this.userForm.valid) {
       this.isSubmitting = true;
       const formValues = this.userForm.getRawValue();
       const payload = {
-        fullName: formValues.name,
-        userName: formValues.username,
+        fullName: formValues.fullName,
+        userName: formValues.userName,
         password: formValues.password,
+        gender: Number(formValues.gender),
+        birthDate: formValues.birthDate,
         roles: [formValues.role]
       };
 

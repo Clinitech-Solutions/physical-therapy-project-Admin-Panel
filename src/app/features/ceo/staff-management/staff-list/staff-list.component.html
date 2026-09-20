@@ -44,9 +44,10 @@
             <th class="py-3 px-4 font-semibold text-right">Actions</th>
           </tr>
         </thead>
-        <tbody>
+       <tbody>
           @for (user of userService.users(); track user.id) {
           <tr class="border-b border-color-subtle hover:bg-elevated transition-colors">
+            <!-- مسحنا كود الـ JSON من هنا -->
             <td class="py-3 px-4 font-medium text-primary">{{ user.fullName }}</td>
             <td class="py-3 px-4 text-secondary">{{ user.userName }}</td>
             <td class="py-3 px-4">

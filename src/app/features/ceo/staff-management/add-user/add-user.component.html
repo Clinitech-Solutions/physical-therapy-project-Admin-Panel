@@ -1,22 +1,22 @@
 <div>
   <h4 class="mb-4">Create New User</h4>
-  <form [formGroup]="userForm" (ngSubmit)="onSubmit()" class="flex flex-col gap-4">
+  <form [formGroup]="userForm" (ngSubmit)="onSubmit()" class="flex flex-col gap-4" autocomplete="off">
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       
-      <!-- Name -->
+      <!-- Full Name -->
       <div class="form-group">
         <label class="form-label">Full Name</label>
-        <input type="text" formControlName="name" class="form-input" placeholder="e.g. Dr. John Doe">
-        <div class="form-error" *ngIf="userForm.controls.name.invalid && userForm.controls.name.touched">
-          Name is required.
+        <input type="text" formControlName="fullName" class="form-input form-control" [ngClass]="{'is-invalid': userForm.controls.fullName.invalid && userForm.controls.fullName.touched}" placeholder="e.g. Dr. John Doe">
+        <div class="invalid-feedback">
+          Full Name is required.
         </div>
       </div>
 
       <!-- Username -->
       <div class="form-group">
         <label class="form-label">Username</label>
-        <input type="text" formControlName="username" class="form-input" placeholder="e.g. johndoe">
-        <div class="form-error" *ngIf="userForm.controls.username.invalid && userForm.controls.username.touched">
+        <input type="text" formControlName="userName" class="form-input form-control" [ngClass]="{'is-invalid': userForm.controls.userName.invalid && userForm.controls.userName.touched}" placeholder="e.g. johndoe" autocomplete="new-password">
+        <div class="invalid-feedback">
           Username is required.
         </div>
       </div>
@@ -24,20 +24,47 @@
       <!-- Password -->
       <div class="form-group">
         <label class="form-label">Password</label>
-        <input type="password" formControlName="password" class="form-input" placeholder="Min 6 characters">
-        <div class="form-error" *ngIf="userForm.controls.password.invalid && userForm.controls.password.touched">
-          Valid password is required (min 6 characters).
+        <div class="input-group">
+          <input [type]="showPassword ? 'text' : 'password'" formControlName="password" class="form-input form-control" [ngClass]="{'is-invalid': userForm.controls.password.invalid && userForm.controls.password.touched}" placeholder="Min 6 characters" autocomplete="new-password">
+          <button class="btn btn-outline-secondary" type="button" (click)="togglePasswordVisibility()">
+            <i class="bi" [ngClass]="showPassword ? 'bi-eye-slash' : 'bi-eye'"></i>
+          </button>
+          <div class="invalid-feedback">
+            Valid password is required (min 6 characters).
+          </div>
+        </div>
+      </div>
+
+      <!-- Gender -->
+      <div class="form-group">
+        <label class="form-label">Gender</label>
+        <select formControlName="gender" class="form-select form-control" [ngClass]="{'is-invalid': userForm.controls.gender.invalid && userForm.controls.gender.touched}">
+          <option value="" disabled selected>Select Gender</option>
+          <option value="0">Male</option>
+          <option value="1">Female</option>
+        </select>
+        <div class="invalid-feedback">
+          Gender is required.
+        </div>
+      </div>
+
+      <!-- Birth Date -->
+      <div class="form-group">
+        <label class="form-label">Birth Date</label>
+        <input type="date" formControlName="birthDate" class="form-input form-control" [ngClass]="{'is-invalid': userForm.controls.birthDate.invalid && userForm.controls.birthDate.touched}">
+        <div class="invalid-feedback">
+          Birth Date is required.
         </div>
       </div>
 
       <!-- Role -->
       <div class="form-group">
         <label class="form-label">Role</label>
-        <select formControlName="role" class="form-select">
+        <select formControlName="role" class="form-select form-control" [ngClass]="{'is-invalid': userForm.controls.role.invalid && userForm.controls.role.touched}">
           <option value="" disabled selected>Select Role</option>
           <option *ngFor="let role of roles" [value]="role">{{ role }}</option>
         </select>
-        <div class="form-error" *ngIf="userForm.controls.role.invalid && userForm.controls.role.touched">
+        <div class="invalid-feedback">
           Role is required.
         </div>
       </div>
