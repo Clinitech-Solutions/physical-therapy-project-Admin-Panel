@@ -35,13 +35,13 @@
     </div>
 
     <div class="table-scroll-area" *ngIf="!userService.loading() && !userService.error()">
-      <table class="w-full text-start border-collapse">
+      <table class="w-full ltr:text-left rtl:text-right border-collapse">
         <thead>
           <tr class="border-b border-color text-secondary text-sm">
             <th class="py-3 px-4 font-semibold">{{ 'CEO.STAFF.NAME' | translate }}</th>
             <th class="py-3 px-4 font-semibold">{{ 'CEO.STAFF.USERNAME' | translate }}</th>
             <th class="py-3 px-4 font-semibold">{{ 'CEO.STAFF.ROLE' | translate }}</th>
-            <th class="py-3 px-4 font-semibold text-end">{{ 'CEO.STAFF.ACTIONS' | translate }}</th>
+            <th class="py-3 px-4 font-semibold ltr:text-right rtl:text-left">{{ 'CEO.STAFF.ACTIONS' | translate }}</th>
           </tr>
         </thead>
         <tbody>
@@ -61,7 +61,7 @@
                 {{ user.roles?.[0] }}
               </span>
             </td>
-            <td class="py-3 px-4 text-end">
+            <td class="py-3 px-4 ltr:text-right rtl:text-left">
               <button class="btn-action" [title]="'CEO.STAFF.EDIT_USER' | translate" (click)="onEdit(user)">
                 <i class="bi bi-pencil"></i>
               </button>

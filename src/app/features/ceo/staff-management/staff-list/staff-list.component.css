@@ -26,3 +26,16 @@
   from { opacity: 0; transform: translateY(-20px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+:host-context([dir="rtl"]) table {
+  text-align: right !important;
+}
+
+:host-context([dir="rtl"]) td {
+  text-align: right !important;
+}
+
+:host-context([dir="rtl"]) th.rtl\:text-left,
+:host-context([dir="rtl"]) td.rtl\:text-left {
+  text-align: left !important;
+}
