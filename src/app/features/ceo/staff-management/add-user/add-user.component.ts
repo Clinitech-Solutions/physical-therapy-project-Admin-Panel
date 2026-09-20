@@ -29,7 +29,15 @@ export class AddUserComponent {
   onSubmit() {
     if (this.userForm.valid) {
       this.isSubmitting = true;
-      this.userService.addUser(this.userForm.getRawValue()).subscribe({
+      const formValues = this.userForm.getRawValue();
+      const payload = {
+        fullName: formValues.name,
+        userName: formValues.username,
+        password: formValues.password,
+        roles: [formValues.role]
+      };
+
+      this.userService.addUser(payload as any).subscribe({
         next: () => {
           this.isSubmitting = false;
           this.userForm.reset();
