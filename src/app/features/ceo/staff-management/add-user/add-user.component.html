@@ -1,70 +1,70 @@
 <div>
-  <h4 class="mb-4">Create New User</h4>
+  <h4 class="mb-4">{{ 'CEO.STAFF.CREATE_NEW_USER' | translate }}</h4>
   <form [formGroup]="userForm" (ngSubmit)="onSubmit()" autocomplete="off">
     <div class="row g-3">
       
       <!-- Full Name -->
       <div class="col-md-6 form-group">
-        <label class="form-label">Full Name</label>
+        <label class="form-label">{{ 'CEO.STAFF.FULL_NAME' | translate }}</label>
         <input type="text" formControlName="fullName" class="form-control" [ngClass]="{'is-invalid': userForm.controls.fullName.invalid && userForm.controls.fullName.touched}">
         <div class="invalid-feedback">
-          Full Name is required.
+          {{ 'CEO.STAFF.FULL_NAME_REQUIRED' | translate }}
         </div>
       </div>
 
       <!-- Username -->
       <div class="col-md-6 form-group">
-        <label class="form-label">Username</label>
+        <label class="form-label">{{ 'CEO.STAFF.USERNAME' | translate }}</label>
         <input type="text" formControlName="userName" class="form-control" [ngClass]="{'is-invalid': userForm.controls.userName.invalid && userForm.controls.userName.touched}" autocomplete="new-password">
         <div class="invalid-feedback">
-          Username is required.
+          {{ 'CEO.STAFF.USERNAME_REQUIRED' | translate }}
         </div>
       </div>
 
       <!-- Password -->
       <div class="col-md-6 form-group">
-        <label class="form-label">Password</label>
+        <label class="form-label">{{ 'CEO.STAFF.PASSWORD' | translate }}</label>
         <div class="input-group">
           <input [type]="showPassword ? 'text' : 'password'" formControlName="password" class="form-control" [ngClass]="{'is-invalid': userForm.controls.password.invalid && userForm.controls.password.touched}" autocomplete="new-password">
           <button class="btn btn-outline-secondary" type="button" (click)="togglePasswordVisibility()">
             <i class="bi" [ngClass]="showPassword ? 'bi-eye-slash' : 'bi-eye'"></i>
           </button>
           <div class="invalid-feedback">
-            Valid password is required (min 6 characters).
+            {{ 'CEO.STAFF.VALID_PASSWORD_REQUIRED' | translate }}
           </div>
         </div>
       </div>
 
       <!-- Gender -->
       <div class="col-md-6 form-group">
-        <label class="form-label">Gender</label>
+        <label class="form-label">{{ 'CEO.STAFF.GENDER' | translate }}</label>
         <select formControlName="gender" class="form-select" [ngClass]="{'is-invalid': userForm.controls.gender.invalid && userForm.controls.gender.touched}">
-          <option value="0">Male</option>
-          <option value="1">Female</option>
+          <option value="0">{{ 'CEO.STAFF.MALE' | translate }}</option>
+          <option value="1">{{ 'CEO.STAFF.FEMALE' | translate }}</option>
         </select>
         <div class="invalid-feedback">
-          Gender is required.
+          {{ 'CEO.STAFF.GENDER_REQUIRED' | translate }}
         </div>
       </div>
 
       <!-- Birth Date -->
       <div class="col-md-6 form-group">
-        <label class="form-label">Birth Date</label>
+        <label class="form-label">{{ 'CEO.STAFF.BIRTH_DATE' | translate }}</label>
         <input type="date" formControlName="birthDate" class="form-control" [ngClass]="{'is-invalid': userForm.controls.birthDate.invalid && userForm.controls.birthDate.touched}">
         <div class="invalid-feedback">
-          Birth Date is required.
+          {{ 'CEO.STAFF.BIRTH_DATE_REQUIRED' | translate }}
         </div>
       </div>
 
       <!-- Role -->
       <div class="col-md-6 form-group">
-        <label class="form-label">Role</label>
+        <label class="form-label">{{ 'CEO.STAFF.ROLE' | translate }}</label>
         <select formControlName="role" class="form-select" [ngClass]="{'is-invalid': userForm.controls.role.invalid && userForm.controls.role.touched}">
-          <option value="" disabled selected>Select Role</option>
+          <option value="" disabled selected>{{ 'CEO.STAFF.SELECT_ROLE' | translate }}</option>
           <option *ngFor="let role of roles" [value]="role">{{ role }}</option>
         </select>
         <div class="invalid-feedback">
-          Role is required.
+          {{ 'CEO.STAFF.ROLE_REQUIRED' | translate }}
         </div>
       </div>
 
@@ -72,7 +72,7 @@
 
     <div class="mt-4 text-end">
       <button type="submit" class="btn btn-primary" [disabled]="userForm.invalid">
-        <i class="bi bi-check-circle me-2"></i> Save User
+        <i class="bi bi-check-circle me-2"></i> {{ 'CEO.STAFF.SAVE_USER' | translate }}
       </button>
     </div>
   </form>

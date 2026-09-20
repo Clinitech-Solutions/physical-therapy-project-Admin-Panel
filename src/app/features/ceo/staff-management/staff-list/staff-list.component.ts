@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { UserService, User } from '../../../../core/services/user.service';
 import { AddUserComponent } from '../add-user/add-user.component';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-staff-list',
   standalone: true,
-  imports: [CommonModule, AddUserComponent, ReactiveFormsModule],
+  imports: [CommonModule, AddUserComponent, ReactiveFormsModule, TranslateModule],
   templateUrl: './staff-list.component.html',
   styleUrl: './staff-list.component.css'
 })

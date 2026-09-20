@@ -1,12 +1,12 @@
 <div class="page-content">
   <div class="page-header">
     <div>
-      <h2>Staff Management</h2>
-      <p>Manage all users, roles, and system access.</p>
+      <h2>{{ 'CEO.STAFF.STAFF_MANAGEMENT' | translate }}</h2>
+      <p>{{ 'CEO.STAFF.STAFF_MANAGEMENT_SUB' | translate }}</p>
     </div>
     <button class="btn btn-primary" (click)="toggleAddForm()">
       <i class="bi" [ngClass]="showAddForm() ? 'bi-x' : 'bi-plus-lg'"></i>
-      {{ showAddForm() ? 'Close Form' : 'Add New User' }}
+      {{ showAddForm() ? ('CEO.STAFF.CLOSE_FORM' | translate) : ('CEO.STAFF.ADD_NEW_USER' | translate) }}
     </button>
   </div>
 
@@ -20,13 +20,13 @@
   <!-- Staff List Table Panel -->
   <div class="table-panel">
     <div class="table-toolbar">
-      <h3 class="m-0">System Users</h3>
+      <h3 class="m-0">{{ 'CEO.STAFF.SYSTEM_USERS' | translate }}</h3>
       <!-- We can add search/filter here in the future -->
     </div>
 
     <!-- Loading State -->
     <div *ngIf="userService.loading()" class="p-4 text-center">
-      <p class="text-secondary">Loading users...</p>
+      <p class="text-secondary">{{ 'CEO.STAFF.LOADING_USERS' | translate }}</p>
     </div>
 
     <!-- Error State -->
@@ -35,13 +35,13 @@
     </div>
 
     <div class="table-scroll-area" *ngIf="!userService.loading() && !userService.error()">
-      <table class="w-full text-left border-collapse">
+      <table class="w-full text-start border-collapse">
         <thead>
           <tr class="border-b border-color text-secondary text-sm">
-            <th class="py-3 px-4 font-semibold">Name</th>
-            <th class="py-3 px-4 font-semibold">Username</th>
-            <th class="py-3 px-4 font-semibold">Role</th>
-            <th class="py-3 px-4 font-semibold text-right">Actions</th>
+            <th class="py-3 px-4 font-semibold">{{ 'CEO.STAFF.NAME' | translate }}</th>
+            <th class="py-3 px-4 font-semibold">{{ 'CEO.STAFF.USERNAME' | translate }}</th>
+            <th class="py-3 px-4 font-semibold">{{ 'CEO.STAFF.ROLE' | translate }}</th>
+            <th class="py-3 px-4 font-semibold text-end">{{ 'CEO.STAFF.ACTIONS' | translate }}</th>
           </tr>
         </thead>
         <tbody>
@@ -61,11 +61,11 @@
                 {{ user.roles?.[0] }}
               </span>
             </td>
-            <td class="py-3 px-4 text-right">
-              <button class="btn-action" title="Edit User" (click)="onEdit(user)">
+            <td class="py-3 px-4 text-end">
+              <button class="btn-action" [title]="'CEO.STAFF.EDIT_USER' | translate" (click)="onEdit(user)">
                 <i class="bi bi-pencil"></i>
               </button>
-              <button class="btn-action action-danger ml-2" title="Delete User" (click)="onDelete(user)">
+              <button class="btn-action action-danger ms-2" [title]="'CEO.STAFF.DELETE_USER' | translate" (click)="onDelete(user)">
                 <i class="bi bi-trash"></i>
               </button>
             </td>
@@ -73,7 +73,7 @@
           } @empty {
           <tr>
             <td colspan="4" class="py-6 text-center text-secondary">
-              No users found. Click "Add New User" to create one.
+              {{ 'CEO.STAFF.NO_USERS_FOUND' | translate }}
             </td>
           </tr>
           }
@@ -87,40 +87,40 @@
 <div class="custom-modal-overlay" *ngIf="selectedUser">
   <div class="custom-modal-dialog card-glass">
     <div class="modal-header border-0 d-flex justify-content-between align-items-center mb-3">
-      <h5 class="modal-title m-0">Edit User</h5>
+      <h5 class="modal-title m-0">{{ 'CEO.STAFF.EDIT_USER' | translate }}</h5>
       <button type="button" class="btn-close" aria-label="Close" (click)="closeEditModal()"></button>
     </div>
     <div class="modal-body p-0">
       <form [formGroup]="editForm" (ngSubmit)="onUpdate()">
         <div class="mb-3">
-          <label class="form-label">Full Name</label>
-          <input type="text" class="form-control" formControlName="fullName" placeholder="Enter full name">
+          <label class="form-label">{{ 'CEO.STAFF.FULL_NAME' | translate }}</label>
+          <input type="text" class="form-control" formControlName="fullName" [placeholder]="'CEO.STAFF.ENTER_FULL_NAME' | translate">
         </div>
         
         <div class="mb-3">
-          <label class="form-label">Username</label>
-          <input type="text" class="form-control" formControlName="userName" placeholder="Enter username">
+          <label class="form-label">{{ 'CEO.STAFF.USERNAME' | translate }}</label>
+          <input type="text" class="form-control" formControlName="userName" [placeholder]="'CEO.STAFF.ENTER_USERNAME' | translate">
         </div>
         
         <div class="row">
           <div class="col-md-6 mb-3">
-            <label class="form-label">Gender</label>
+            <label class="form-label">{{ 'CEO.STAFF.GENDER' | translate }}</label>
             <select class="form-control" formControlName="gender">
-              <option [value]="0">Male</option>
-              <option [value]="1">Female</option>
+              <option [value]="0">{{ 'CEO.STAFF.MALE' | translate }}</option>
+              <option [value]="1">{{ 'CEO.STAFF.FEMALE' | translate }}</option>
             </select>
           </div>
           
           <div class="col-md-6 mb-3">
-            <label class="form-label">Birth Date</label>
+            <label class="form-label">{{ 'CEO.STAFF.BIRTH_DATE' | translate }}</label>
             <input type="date" class="form-control" formControlName="birthDate">
           </div>
         </div>
         
         <div class="mb-4">
-          <label class="form-label">Role</label>
+          <label class="form-label">{{ 'CEO.STAFF.ROLE' | translate }}</label>
           <select class="form-control" formControlName="role">
-            <option value="">Select Role</option>
+            <option value="">{{ 'CEO.STAFF.SELECT_ROLE' | translate }}</option>
             @for (r of roles; track r) {
               <option [value]="r">{{ r }}</option>
             }
@@ -128,8 +128,8 @@
         </div>
         
         <div class="d-flex justify-content-end gap-2">
-          <button type="button" class="btn btn-secondary" (click)="closeEditModal()">Cancel</button>
-          <button type="submit" class="btn btn-primary" [disabled]="editForm.invalid">Update User</button>
+          <button type="button" class="btn btn-secondary" (click)="closeEditModal()">{{ 'CEO.STAFF.CANCEL' | translate }}</button>
+          <button type="submit" class="btn btn-primary" [disabled]="editForm.invalid">{{ 'CEO.STAFF.UPDATE_USER' | translate }}</button>
         </div>
       </form>
     </div>
@@ -140,15 +140,15 @@
 <div class="custom-modal-overlay" *ngIf="userToDelete">
   <div class="custom-modal-dialog card-glass" style="max-width: 400px;">
     <div class="modal-header border-0 d-flex justify-content-between align-items-center mb-3">
-      <h5 class="modal-title m-0 text-danger">Delete User</h5>
+      <h5 class="modal-title m-0 text-danger">{{ 'CEO.STAFF.DELETE_USER' | translate }}</h5>
       <button type="button" class="btn-close" aria-label="Close" (click)="closeDeleteModal()"></button>
     </div>
     <div class="modal-body p-0">
-      <p>Are you sure you want to delete user <strong class="text-primary">{{ userToDelete.fullName }}</strong>?</p>
-      <p class="text-secondary text-sm mb-4">This action cannot be undone.</p>
+      <p>{{ 'CEO.STAFF.CONFIRM_DELETE_USER' | translate }} <strong class="text-primary">{{ userToDelete.fullName }}</strong>?</p>
+      <p class="text-secondary text-sm mb-4">{{ 'CEO.STAFF.CANNOT_BE_UNDONE' | translate }}</p>
       <div class="d-flex justify-content-end gap-2">
-        <button type="button" class="btn btn-secondary" (click)="closeDeleteModal()">Cancel</button>
-        <button type="button" class="btn btn-danger" style="background-color: #ef4444; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.375rem; font-weight: 500; transition: all 0.2s;" (click)="confirmDelete()">Delete</button>
+        <button type="button" class="btn btn-secondary" (click)="closeDeleteModal()">{{ 'CEO.STAFF.CANCEL' | translate }}</button>
+        <button type="button" class="btn btn-danger" style="background-color: #ef4444; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.375rem; font-weight: 500; transition: all 0.2s;" (click)="confirmDelete()">{{ 'CEO.STAFF.DELETE' | translate }}</button>
       </div>
     </div>
   </div>
