@@ -135,3 +135,21 @@
     </div>
   </div>
 </div>
+
+<!-- Delete User Modal -->
+<div class="custom-modal-overlay" *ngIf="userToDelete">
+  <div class="custom-modal-dialog card-glass" style="max-width: 400px;">
+    <div class="modal-header border-0 d-flex justify-content-between align-items-center mb-3">
+      <h5 class="modal-title m-0 text-danger">Delete User</h5>
+      <button type="button" class="btn-close" aria-label="Close" (click)="closeDeleteModal()"></button>
+    </div>
+    <div class="modal-body p-0">
+      <p>Are you sure you want to delete user <strong class="text-primary">{{ userToDelete.fullName }}</strong>?</p>
+      <p class="text-secondary text-sm mb-4">This action cannot be undone.</p>
+      <div class="d-flex justify-content-end gap-2">
+        <button type="button" class="btn btn-secondary" (click)="closeDeleteModal()">Cancel</button>
+        <button type="button" class="btn btn-danger" style="background-color: #ef4444; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.375rem; font-weight: 500; transition: all 0.2s;" (click)="confirmDelete()">Delete</button>
+      </div>
+    </div>
+  </div>
+</div>

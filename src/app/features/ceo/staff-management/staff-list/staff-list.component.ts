@@ -18,6 +18,7 @@ export class StaffListComponent implements OnInit {
   showAddForm = signal(false);
 
   selectedUser: User | null = null;
+  userToDelete: User | null = null;
   editForm!: FormGroup;
 
   roles = ['Admin', 'Owner', 'Doctor', 'Patient', 'Senior', 'Receptionist', 'Ceo'];
@@ -58,14 +59,26 @@ export class StaffListComponent implements OnInit {
   }
 
   onDelete(user: User) {
-    if (window.confirm('Are you sure you want to delete this user?')) {
-      if (user.id) {
-        this.userService.deleteUser(user.id).subscribe({
-          next: () => this.loadUsers(),
-          error: (err) => console.error('Delete error', err)
-        });
-      }
+    this.userToDelete = user;
+  }
+
+  confirmDelete() {
+    if (this.userToDelete?.id) {
+      this.userService.deleteUser(this.userToDelete.id).subscribe({
+        next: () => {
+          this.loadUsers();
+          this.userToDelete = null;
+        },
+        error: (err) => {
+          console.error('Delete error', err);
+          this.userToDelete = null;
+        }
+      });
     }
+  }
+
+  closeDeleteModal() {
+    this.userToDelete = null;
   }
 
   onUpdate() {
