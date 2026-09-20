@@ -75,14 +75,18 @@ export class AuthService {
   private processToken(token: string) {
     const payload = this.decodeJwt(token);
     if (payload) {
-      // Decode .NET roles which can be stored in the 'role' or the schema URL claim
-      const rolesClaim = payload['role'] || payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
       let roles: UserRole[] = [];
       
-      if (Array.isArray(rolesClaim)) {
-        roles = rolesClaim;
-      } else if (typeof rolesClaim === 'string') {
-        roles = [rolesClaim];
+      if (Array.isArray(payload.roles)) {
+        roles = payload.roles;
+      } else {
+        // Fallback for .NET roles which can be stored in the 'role' or the schema URL claim
+        const rolesClaim = payload['role'] || payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
+        if (Array.isArray(rolesClaim)) {
+          roles = rolesClaim;
+        } else if (typeof rolesClaim === 'string') {
+          roles = [rolesClaim];
+        }
       }
 
       this.currentRole.set(roles.length > 0 ? roles[0] : null);
@@ -90,6 +94,7 @@ export class AuthService {
       this.currentUser.set({
         id: payload.nameid || payload.sub || '',
         email: payload.email || '',
+        userName: payload.userName || payload.unique_name || payload.name || '',
         roles: roles,
         ...payload
       });

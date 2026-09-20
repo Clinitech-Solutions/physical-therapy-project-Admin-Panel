@@ -17,10 +17,10 @@
     <!-- Avatar & Role -->
     <div class="flex items-center gap-3">
       <div class="flex-col items-end d-none d-md-flex">
-        <span class="text-sm fw-bold">Admin</span>
+        <span class="text-sm fw-bold">{{ authService.currentUser()?.userName || 'User' }}</span>
         <span class="badge badge-info">{{ getRoleKey(authService.currentRole()) | translate }}</span>
       </div>
-      <div class="avatar avatar-sm">A</div>
+      <div class="avatar avatar-sm">{{ (authService.currentUser()?.userName?.charAt(0) || 'U') | uppercase }}</div>
     </div>
   </div>
 </div>

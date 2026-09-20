@@ -17,6 +17,7 @@
     <a *ngFor="let item of navItems()" 
        [routerLink]="item.route"
        routerLinkActive="active"
+       [routerLinkActiveOptions]="{exact: true}"
        class="sidebar-item">
       <i class="sidebar-item-icon" [ngClass]="item.icon"></i>
       <span class="label" *ngIf="isHovered() || isMobileOpen()">
