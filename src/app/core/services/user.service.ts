@@ -2,11 +2,17 @@ import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 
+export interface ApiResponse<T> {
+  value: T;
+  isSuccess: boolean;
+  isFailure?: boolean;
+}
+
 export interface User {
   id?: string;
-  name: string;
-  username: string;
-  role: string;
+  fullName: string;
+  userName: string;
+  roles: string[];
 }
 
 @Injectable({
@@ -24,9 +30,9 @@ export class UserService {
   getAllUsers() {
     this.loading.set(true);
     this.error.set(null);
-    this.http.get<User[]>(`${this.apiUrl}/GetAll`).subscribe({
+    this.http.get<ApiResponse<User[]>>(`${this.apiUrl}/GetAll`).subscribe({
       next: (data) => {
-        this.users.set(data);
+        this.users.set(data.value);
         this.loading.set(false);
       },
       error: (err) => {

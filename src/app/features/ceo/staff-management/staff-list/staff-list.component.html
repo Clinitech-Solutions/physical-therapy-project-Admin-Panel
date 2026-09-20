@@ -45,19 +45,20 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let user of userService.users()" class="border-b border-color-subtle hover:bg-elevated transition-colors">
-            <td class="py-3 px-4 font-medium text-primary">{{ user.name }}</td>
-            <td class="py-3 px-4 text-secondary">{{ user.username }}</td>
+          @for (user of userService.users(); track user.id) {
+          <tr class="border-b border-color-subtle hover:bg-elevated transition-colors">
+            <td class="py-3 px-4 font-medium text-primary">{{ user.fullName }}</td>
+            <td class="py-3 px-4 text-secondary">{{ user.userName }}</td>
             <td class="py-3 px-4">
               <span class="badge" 
                     [ngClass]="{
-                      'badge-ceo': user.role === 'CEO',
-                      'badge-doctor': user.role === 'Doctor',
-                      'badge-senior': user.role === 'Senior Therapist',
-                      'badge-recep': user.role === 'Receptionist',
-                      'badge-neutral': !['CEO','Doctor','Senior Therapist','Receptionist'].includes(user.role)
+                      'badge-ceo': user.roles?.[0] === 'Ceo' || user.roles?.[0] === 'CEO',
+                      'badge-doctor': user.roles?.[0] === 'Doctor',
+                      'badge-senior': user.roles?.[0] === 'Senior Therapist',
+                      'badge-recep': user.roles?.[0] === 'Receptionist',
+                      'badge-neutral': !['CEO', 'Ceo', 'Doctor', 'Senior Therapist', 'Receptionist'].includes(user.roles?.[0] || '')
                     }">
-                {{ user.role }}
+                {{ user.roles?.[0] }}
               </span>
             </td>
             <td class="py-3 px-4 text-right">
@@ -69,12 +70,13 @@
               </button>
             </td>
           </tr>
-          
-          <tr *ngIf="userService.users().length === 0">
+          } @empty {
+          <tr>
             <td colspan="4" class="py-6 text-center text-secondary">
               No users found. Click "Add New User" to create one.
             </td>
           </tr>
+          }
         </tbody>
       </table>
     </div>
