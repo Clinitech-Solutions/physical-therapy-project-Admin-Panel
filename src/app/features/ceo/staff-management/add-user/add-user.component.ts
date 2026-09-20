@@ -8,26 +8,7 @@ import { UserService } from '../../../../core/services/user.service';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './add-user.component.html',
-  styles: [`
-    .form-control, .form-select {
-      height: 40px;
-      padding: 0.5rem 1rem;
-    }
-    .input-group .form-control {
-      height: 40px;
-    }
-    .input-group .btn {
-      height: 40px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0 1rem;
-    }
-    input[type="date"].form-control {
-      appearance: none;
-      min-height: 40px; 
-    }
-  `]
+  styleUrl: './add-user.component.css'
 })
 export class AddUserComponent {
   private fb = inject(FormBuilder);
