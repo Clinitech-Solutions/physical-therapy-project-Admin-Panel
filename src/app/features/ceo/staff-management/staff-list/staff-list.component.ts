@@ -9,6 +9,7 @@ import { AddUserComponent } from '../add-user/add-user.component';
   standalone: true,
   imports: [CommonModule, AddUserComponent, ReactiveFormsModule],
   templateUrl: './staff-list.component.html',
+  styleUrl: './staff-list.component.css'
 })
 export class StaffListComponent implements OnInit {
   userService = inject(UserService);
