@@ -1,31 +1,31 @@
 <div>
   <h4 class="mb-4">Create New User</h4>
-  <form [formGroup]="userForm" (ngSubmit)="onSubmit()" class="flex flex-col gap-4" autocomplete="off">
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+  <form [formGroup]="userForm" (ngSubmit)="onSubmit()" autocomplete="off">
+    <div class="row g-3">
       
       <!-- Full Name -->
-      <div class="form-group">
+      <div class="col-md-6 form-group">
         <label class="form-label">Full Name</label>
-        <input type="text" formControlName="fullName" class="form-input form-control" [ngClass]="{'is-invalid': userForm.controls.fullName.invalid && userForm.controls.fullName.touched}" placeholder="e.g. Dr. John Doe">
+        <input type="text" formControlName="fullName" class="form-control" [ngClass]="{'is-invalid': userForm.controls.fullName.invalid && userForm.controls.fullName.touched}">
         <div class="invalid-feedback">
           Full Name is required.
         </div>
       </div>
 
       <!-- Username -->
-      <div class="form-group">
+      <div class="col-md-6 form-group">
         <label class="form-label">Username</label>
-        <input type="text" formControlName="userName" class="form-input form-control" [ngClass]="{'is-invalid': userForm.controls.userName.invalid && userForm.controls.userName.touched}" placeholder="e.g. johndoe" autocomplete="new-password">
+        <input type="text" formControlName="userName" class="form-control" [ngClass]="{'is-invalid': userForm.controls.userName.invalid && userForm.controls.userName.touched}" autocomplete="new-password">
         <div class="invalid-feedback">
           Username is required.
         </div>
       </div>
 
       <!-- Password -->
-      <div class="form-group">
+      <div class="col-md-6 form-group">
         <label class="form-label">Password</label>
         <div class="input-group">
-          <input [type]="showPassword ? 'text' : 'password'" formControlName="password" class="form-input form-control" [ngClass]="{'is-invalid': userForm.controls.password.invalid && userForm.controls.password.touched}" placeholder="Min 6 characters" autocomplete="new-password">
+          <input [type]="showPassword ? 'text' : 'password'" formControlName="password" class="form-control" [ngClass]="{'is-invalid': userForm.controls.password.invalid && userForm.controls.password.touched}" autocomplete="new-password">
           <button class="btn btn-outline-secondary" type="button" (click)="togglePasswordVisibility()">
             <i class="bi" [ngClass]="showPassword ? 'bi-eye-slash' : 'bi-eye'"></i>
           </button>
@@ -36,10 +36,9 @@
       </div>
 
       <!-- Gender -->
-      <div class="form-group">
+      <div class="col-md-6 form-group">
         <label class="form-label">Gender</label>
-        <select formControlName="gender" class="form-select form-control" [ngClass]="{'is-invalid': userForm.controls.gender.invalid && userForm.controls.gender.touched}">
-          <option value="" disabled selected>Select Gender</option>
+        <select formControlName="gender" class="form-select" [ngClass]="{'is-invalid': userForm.controls.gender.invalid && userForm.controls.gender.touched}">
           <option value="0">Male</option>
           <option value="1">Female</option>
         </select>
@@ -49,18 +48,18 @@
       </div>
 
       <!-- Birth Date -->
-      <div class="form-group">
+      <div class="col-md-6 form-group">
         <label class="form-label">Birth Date</label>
-        <input type="date" formControlName="birthDate" class="form-input form-control" [ngClass]="{'is-invalid': userForm.controls.birthDate.invalid && userForm.controls.birthDate.touched}">
+        <input type="date" formControlName="birthDate" class="form-control" [ngClass]="{'is-invalid': userForm.controls.birthDate.invalid && userForm.controls.birthDate.touched}">
         <div class="invalid-feedback">
           Birth Date is required.
         </div>
       </div>
 
       <!-- Role -->
-      <div class="form-group">
+      <div class="col-md-6 form-group">
         <label class="form-label">Role</label>
-        <select formControlName="role" class="form-select form-control" [ngClass]="{'is-invalid': userForm.controls.role.invalid && userForm.controls.role.touched}">
+        <select formControlName="role" class="form-select" [ngClass]="{'is-invalid': userForm.controls.role.invalid && userForm.controls.role.touched}">
           <option value="" disabled selected>Select Role</option>
           <option *ngFor="let role of roles" [value]="role">{{ role }}</option>
         </select>
@@ -71,11 +70,9 @@
 
     </div>
 
-    <div class="flex justify-end mt-2">
-      <button type="submit" class="btn btn-primary" [disabled]="userForm.invalid || isSubmitting">
-        <i class="bi bi-check-circle" *ngIf="!isSubmitting"></i>
-        <i class="bi bi-hourglass-split animate-spin" *ngIf="isSubmitting"></i>
-        {{ isSubmitting ? 'Saving...' : 'Save User' }}
+    <div class="mt-4 text-end">
+      <button type="submit" class="btn btn-primary" [disabled]="userForm.invalid">
+        <i class="bi bi-check-circle me-2"></i> Save User
       </button>
     </div>
   </form>

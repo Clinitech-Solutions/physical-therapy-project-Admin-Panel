@@ -7,7 +7,27 @@ import { UserService } from '../../../../core/services/user.service';
   selector: 'app-add-user',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
-  templateUrl: './add-user.component.html'
+  templateUrl: './add-user.component.html',
+  styles: [`
+    .form-control, .form-select {
+      height: 40px;
+      padding: 0.5rem 1rem;
+    }
+    .input-group .form-control {
+      height: 40px;
+    }
+    .input-group .btn {
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 1rem;
+    }
+    input[type="date"].form-control {
+      appearance: none;
+      min-height: 40px; 
+    }
+  `]
 })
 export class AddUserComponent {
   private fb = inject(FormBuilder);
@@ -15,13 +35,13 @@ export class AddUserComponent {
 
   userAdded = output<void>();
 
-  roles = ['CEO', 'Doctor', 'Senior Therapist', 'Receptionist'];
+  roles = ['Admin', 'Owner', 'Doctor', 'Patient', 'Senior', 'Receptionist', 'Ceo'];
 
   userForm = this.fb.nonNullable.group({
     fullName: ['', Validators.required],
     userName: ['', Validators.required],
     password: ['', [Validators.required, Validators.minLength(6)]],
-    gender: ['', Validators.required],
+    gender: [0, Validators.required],
     birthDate: ['', Validators.required],
     role: ['', Validators.required]
   });
