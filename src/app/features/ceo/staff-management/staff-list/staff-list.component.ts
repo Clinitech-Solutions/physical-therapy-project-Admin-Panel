@@ -72,7 +72,7 @@ export class StaffListComponent implements OnInit {
     if (this.editForm.valid && this.selectedUser?.id) {
       const formValues = this.editForm.getRawValue();
       const payload = {
-        id: this.selectedUser.id,
+        userId: this.selectedUser.id,
         fullName: formValues.fullName,
         userName: formValues.userName,
         gender: Number(formValues.gender),

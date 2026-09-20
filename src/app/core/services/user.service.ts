@@ -22,7 +22,7 @@ export interface User {
 })
 export class UserService {
   private http = inject(HttpClient);
-  private apiUrl = `${environment.apiUrl}/Users`; 
+  private apiUrl = `${environment.apiUrl}/Users`;
 
   // Signal state management
   users = signal<User[]>([]);
@@ -49,10 +49,10 @@ export class UserService {
   }
 
   updateUser(payload: any) {
-    return this.http.post<ApiResponse<any>>(`${this.apiUrl}/Update`, payload);
+    return this.http.post<ApiResponse<any>>(`${this.apiUrl}/Update?userId=${payload.userId}`, payload);
   }
 
   deleteUser(id: string) {
-    return this.http.delete<ApiResponse<any>>(`${this.apiUrl}/Delete?id=${id}`);
+    return this.http.delete<ApiResponse<any>>(`${this.apiUrl}/Delete?userId=${id}`);
   }
 }
