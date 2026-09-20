@@ -44,15 +44,14 @@
             <th class="py-3 px-4 font-semibold text-right">Actions</th>
           </tr>
         </thead>
-       <tbody>
+        <tbody>
           @for (user of userService.users(); track user.id) {
           <tr class="border-b border-color-subtle hover:bg-elevated transition-colors">
             <!-- مسحنا كود الـ JSON من هنا -->
             <td class="py-3 px-4 font-medium text-primary">{{ user.fullName }}</td>
             <td class="py-3 px-4 text-secondary">{{ user.userName }}</td>
             <td class="py-3 px-4">
-              <span class="badge" 
-                    [ngClass]="{
+              <span class="badge" [ngClass]="{
                       'badge-ceo': user.roles?.[0] === 'Ceo' || user.roles?.[0] === 'CEO',
                       'badge-doctor': user.roles?.[0] === 'Doctor',
                       'badge-senior': user.roles?.[0] === 'Senior Therapist',
@@ -63,10 +62,10 @@
               </span>
             </td>
             <td class="py-3 px-4 text-right">
-              <button class="btn-action" title="Edit User">
+              <button class="btn-action" title="Edit User" (click)="onEdit(user)">
                 <i class="bi bi-pencil"></i>
               </button>
-              <button class="btn-action action-danger ml-2" title="Delete User">
+              <button class="btn-action action-danger ml-2" title="Delete User" (click)="onDelete(user)">
                 <i class="bi bi-trash"></i>
               </button>
             </td>
@@ -80,6 +79,59 @@
           }
         </tbody>
       </table>
+    </div>
+  </div>
+</div>
+
+<!-- Edit User Modal -->
+<div class="custom-modal-overlay" *ngIf="selectedUser">
+  <div class="custom-modal-dialog card-glass">
+    <div class="modal-header border-0 d-flex justify-content-between align-items-center mb-3">
+      <h5 class="modal-title m-0">Edit User</h5>
+      <button type="button" class="btn-close" aria-label="Close" (click)="closeEditModal()"></button>
+    </div>
+    <div class="modal-body p-0">
+      <form [formGroup]="editForm" (ngSubmit)="onUpdate()">
+        <div class="mb-3">
+          <label class="form-label">Full Name</label>
+          <input type="text" class="form-control" formControlName="fullName" placeholder="Enter full name">
+        </div>
+        
+        <div class="mb-3">
+          <label class="form-label">Username</label>
+          <input type="text" class="form-control" formControlName="userName" placeholder="Enter username">
+        </div>
+        
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Gender</label>
+            <select class="form-control" formControlName="gender">
+              <option [value]="0">Male</option>
+              <option [value]="1">Female</option>
+            </select>
+          </div>
+          
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Birth Date</label>
+            <input type="date" class="form-control" formControlName="birthDate">
+          </div>
+        </div>
+        
+        <div class="mb-4">
+          <label class="form-label">Role</label>
+          <select class="form-control" formControlName="role">
+            <option value="">Select Role</option>
+            @for (r of roles; track r) {
+              <option [value]="r">{{ r }}</option>
+            }
+          </select>
+        </div>
+        
+        <div class="d-flex justify-content-end gap-2">
+          <button type="button" class="btn btn-secondary" (click)="closeEditModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" [disabled]="editForm.invalid">Update User</button>
+        </div>
+      </form>
     </div>
   </div>
 </div>

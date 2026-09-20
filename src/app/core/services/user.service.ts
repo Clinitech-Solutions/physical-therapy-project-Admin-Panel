@@ -13,6 +13,8 @@ export interface User {
   fullName: string;
   userName: string;
   roles: string[];
+  gender?: string;
+  birthDate?: string;
 }
 
 @Injectable({
@@ -44,5 +46,13 @@ export class UserService {
 
   addUser(payload: Partial<User>) {
     return this.http.post<User>(`${this.apiUrl}/Add`, payload);
+  }
+
+  updateUser(payload: any) {
+    return this.http.post<ApiResponse<any>>(`${this.apiUrl}/Update`, payload);
+  }
+
+  deleteUser(id: string) {
+    return this.http.delete<ApiResponse<any>>(`${this.apiUrl}/Delete?id=${id}`);
   }
 }
