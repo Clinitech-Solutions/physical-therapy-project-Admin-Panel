@@ -45,9 +45,9 @@
           <div class="form-group mb-3">
             <div class="input-icon-wrapper">
               <i class="bi bi-lock input-icon-start"></i>
-              <input type="password" class="form-input input-with-icon input-with-icon-end" formControlName="password"
+              <input [type]="showPassword() ? 'text' : 'password'" class="form-input input-with-icon input-with-icon-end" formControlName="password"
                      [placeholder]="'AUTH.PASSWORD_PLACEHOLDER' | translate">
-              <i class="bi bi-eye input-icon-end"></i>
+              <i class="bi input-icon-end" [ngClass]="showPassword() ? 'bi-eye-slash' : 'bi-eye'" (click)="togglePasswordVisibility()" style="cursor: pointer;"></i>
             </div>
             <div style="min-height: 20px;">
               <small class="text-danger" style="color: red; font-size: 0.8em;" *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
