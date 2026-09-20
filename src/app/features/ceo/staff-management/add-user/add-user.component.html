@@ -1,0 +1,55 @@
+<div>
+  <h4 class="mb-4">Create New User</h4>
+  <form [formGroup]="userForm" (ngSubmit)="onSubmit()" class="flex flex-col gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      
+      <!-- Name -->
+      <div class="form-group">
+        <label class="form-label">Full Name</label>
+        <input type="text" formControlName="name" class="form-input" placeholder="e.g. Dr. John Doe">
+        <div class="form-error" *ngIf="userForm.controls.name.invalid && userForm.controls.name.touched">
+          Name is required.
+        </div>
+      </div>
+
+      <!-- Username -->
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input type="text" formControlName="username" class="form-input" placeholder="e.g. johndoe">
+        <div class="form-error" *ngIf="userForm.controls.username.invalid && userForm.controls.username.touched">
+          Username is required.
+        </div>
+      </div>
+
+      <!-- Password -->
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" formControlName="password" class="form-input" placeholder="Min 6 characters">
+        <div class="form-error" *ngIf="userForm.controls.password.invalid && userForm.controls.password.touched">
+          Valid password is required (min 6 characters).
+        </div>
+      </div>
+
+      <!-- Role -->
+      <div class="form-group">
+        <label class="form-label">Role</label>
+        <select formControlName="role" class="form-select">
+          <option value="" disabled selected>Select Role</option>
+          <option *ngFor="let role of roles" [value]="role">{{ role }}</option>
+        </select>
+        <div class="form-error" *ngIf="userForm.controls.role.invalid && userForm.controls.role.touched">
+          Role is required.
+        </div>
+      </div>
+
+    </div>
+
+    <div class="flex justify-end mt-2">
+      <button type="submit" class="btn btn-primary" [disabled]="userForm.invalid || isSubmitting">
+        <i class="bi bi-check-circle" *ngIf="!isSubmitting"></i>
+        <i class="bi bi-hourglass-split animate-spin" *ngIf="isSubmitting"></i>
+        {{ isSubmitting ? 'Saving...' : 'Save User' }}
+      </button>
+    </div>
+  </form>
+</div>

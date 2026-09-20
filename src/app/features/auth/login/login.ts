@@ -48,8 +48,8 @@ export class Login {
 
         this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Logged in successfully' });
 
-        if (role === 'CEO') this.router.navigate(['/ceo']);
-        else if (role === 'Senior Therapist') this.router.navigate(['/senior/dashboard']);
+        if (role === 'Cثخ') this.router.navigate(['/ceo']);
+        else if (role === 'Senior') this.router.navigate(['/senior/dashboard']);
         else if (role === 'Doctor') this.router.navigate(['/doctor']);
         else if (role === 'Receptionist') this.router.navigate(['/receptionist/dashboard']);
         else this.router.navigate(['/']);

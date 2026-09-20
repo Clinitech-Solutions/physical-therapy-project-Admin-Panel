@@ -29,7 +29,10 @@ export const routes: Routes = [
       { path: 'doctor/dashboard', loadComponent: () => import('./features/doctor/dashboard/dashboard').then(m => m.Dashboard), canActivate: [roleGuard], data: { roles: ['Doctor', 'CEO'] } },
       { path: 'doctor/session-notes/:sessionId', loadComponent: () => import('./features/doctor/dashboard/dashboard').then(m => m.Dashboard), canActivate: [roleGuard], data: { roles: ['Doctor', 'CEO'] } }, // TODO: Replace with SessionNotes component when created
       { path: 'ceo', loadComponent: () => import('./features/ceo/dashboard/dashboard').then(m => m.Dashboard), canActivate: [roleGuard], data: { roles: ['CEO'] } },
+      { path: 'ceo/staff', loadComponent: () => import('./features/ceo/staff-management/staff-list/staff-list.component').then(m => m.StaffListComponent), canActivate: [roleGuard], data: { roles: ['CEO'] } },
     ]
   },
   { path: '**', redirectTo: 'login' }
 ];
+
+

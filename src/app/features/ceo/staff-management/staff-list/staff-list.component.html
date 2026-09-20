@@ -1,0 +1,82 @@
+<div class="page-content">
+  <div class="page-header">
+    <div>
+      <h2>Staff Management</h2>
+      <p>Manage all users, roles, and system access.</p>
+    </div>
+    <button class="btn btn-primary" (click)="toggleAddForm()">
+      <i class="bi" [ngClass]="showAddForm() ? 'bi-x' : 'bi-plus-lg'"></i>
+      {{ showAddForm() ? 'Close Form' : 'Add New User' }}
+    </button>
+  </div>
+
+  <!-- Add User Form Section -->
+  <div class="mb-4" *ngIf="showAddForm()">
+    <div class="card card-body card-glass">
+      <app-add-user (userAdded)="onUserAdded()"></app-add-user>
+    </div>
+  </div>
+
+  <!-- Staff List Table Panel -->
+  <div class="table-panel">
+    <div class="table-toolbar">
+      <h3 class="m-0">System Users</h3>
+      <!-- We can add search/filter here in the future -->
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="userService.loading()" class="p-4 text-center">
+      <p class="text-secondary">Loading users...</p>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="userService.error()" class="p-4 text-center">
+      <p class="form-error">{{ userService.error() }}</p>
+    </div>
+
+    <div class="table-scroll-area" *ngIf="!userService.loading() && !userService.error()">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="border-b border-color text-secondary text-sm">
+            <th class="py-3 px-4 font-semibold">Name</th>
+            <th class="py-3 px-4 font-semibold">Username</th>
+            <th class="py-3 px-4 font-semibold">Role</th>
+            <th class="py-3 px-4 font-semibold text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let user of userService.users()" class="border-b border-color-subtle hover:bg-elevated transition-colors">
+            <td class="py-3 px-4 font-medium text-primary">{{ user.name }}</td>
+            <td class="py-3 px-4 text-secondary">{{ user.username }}</td>
+            <td class="py-3 px-4">
+              <span class="badge" 
+                    [ngClass]="{
+                      'badge-ceo': user.role === 'CEO',
+                      'badge-doctor': user.role === 'Doctor',
+                      'badge-senior': user.role === 'Senior Therapist',
+                      'badge-recep': user.role === 'Receptionist',
+                      'badge-neutral': !['CEO','Doctor','Senior Therapist','Receptionist'].includes(user.role)
+                    }">
+                {{ user.role }}
+              </span>
+            </td>
+            <td class="py-3 px-4 text-right">
+              <button class="btn-action" title="Edit User">
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button class="btn-action action-danger ml-2" title="Delete User">
+                <i class="bi bi-trash"></i>
+              </button>
+            </td>
+          </tr>
+          
+          <tr *ngIf="userService.users().length === 0">
+            <td colspan="4" class="py-6 text-center text-secondary">
+              No users found. Click "Add New User" to create one.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
