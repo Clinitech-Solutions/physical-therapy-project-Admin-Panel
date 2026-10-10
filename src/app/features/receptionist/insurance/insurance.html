@@ -23,7 +23,7 @@
 
   <!-- Insurance Portals Grid -->
   <div class="insurance-portal-grid">
-    @for(provider of providers; track provider.id) {
+    @for(provider of providers(); track provider.id) {
       <div class="portal-card">
         <div class="portal-card-header">
           <div class="d-flex align-items-center gap-3">

@@ -36,6 +36,7 @@ const ROLE_MENU_MAP: Record<string, NavItem[]> = {
   ceo: [
     { icon: 'bi bi-grid-1x2', labelKey: 'SIDEBAR.OVERVIEW', route: '/ceo' },
     { icon: 'bi bi-person-badge', labelKey: 'SIDEBAR.STAFF', route: '/ceo/staff' },
+    { icon: 'bi bi-shield-check', labelKey: 'SIDEBAR.INSURANCE', route: '/ceo/insurance' },
     { icon: 'bi bi-graph-up', labelKey: 'SIDEBAR.REPORTS', route: '/ceo/reports' },
     { icon: 'ti ti-settings-2', labelKey: 'SIDEBAR.SYSTEM_SETTINGS', route: '/ceo/settings' },
   ]

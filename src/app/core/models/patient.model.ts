@@ -37,6 +37,7 @@ export interface Patient {
     idCard: boolean;
   };
   assignedDoctorId?: string;
+  insuranceCompanyId?: number | null;
   insuranceDetails?: InsuranceDetails;
   financialPlan?: FinancialPlan;
   treatmentPlan?: {
@@ -55,6 +56,7 @@ export interface NewPatient {
   address?: string;
   occupation?: string;
   paymentType: PaymentMethod;
+  insuranceCompanyId?: number | null;
   insuranceCompany: string;
   insuranceDetails?: InsuranceDetails;
   financialPlan?: FinancialPlan;

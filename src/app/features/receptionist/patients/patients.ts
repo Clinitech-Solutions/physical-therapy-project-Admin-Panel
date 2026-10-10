@@ -1,9 +1,10 @@
-import { Component, signal, computed, inject } from "@angular/core";
+import { Component, signal, computed, inject, OnInit } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { TranslateModule } from '@ngx-translate/core';
 import { FormsModule, ReactiveFormsModule, FormBuilder } from '@angular/forms';
 
 import { ClinicStateService } from '../../../core/services/state/clinic-state.service';
+import { InsuranceService } from '../../../core/services/insurance.service';
 import { Patient, NewPatient, PaymentMethod, InsuranceDetails } from '../../../core/models/patient.model';
 import { MessageService, SharedModule } from 'primeng/api';
 import { DialogModule } from 'primeng/dialog';
@@ -17,10 +18,15 @@ import { PatientProfileComponent } from '../../../shared/components/patient-prof
   imports: [CommonModule, TranslateModule, FormsModule, ReactiveFormsModule, DialogModule, ButtonModule, SharedModule, PatientProfileComponent],
   templateUrl: "./patients.html",
 })
-export class PatientsComponent {
+export class PatientsComponent implements OnInit {
   clinicState = inject(ClinicStateService);
   messageService = inject(MessageService);
+  private insuranceService = inject(InsuranceService);
   private fb = inject(FormBuilder);
+
+  ngOnInit() {
+    this.insuranceService.getCompanies();
+  }
 
   // Main patientForm builder (Reactive Forms) — basic info + insurance only
   patientForm = this.fb.group({
@@ -32,6 +38,7 @@ export class PatientsComponent {
     address: [''],
     occupation: [''],
     paymentType: ['Cash'],
+    insuranceCompanyId: [null],
     insuranceCompany: ['Bupa'],
     insuranceDetails: this.fb.group({
       company: ['Bupa'],
@@ -54,7 +61,7 @@ export class PatientsComponent {
   filterCompany = signal<string>('All');
   
   // Available Insurance Companies
-  insuranceCompanies = ['Bupa', 'AXA', 'MetLife', 'Allianz'];
+  insuranceCompanies = this.insuranceService.companies;
 
   // Base Data
   patients = this.clinicState.patients;

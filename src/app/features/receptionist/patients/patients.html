@@ -30,8 +30,8 @@
         <div class="col-md-3">
           <select class="form-select" [(ngModel)]="filterCompany">
             <option value="All">{{ 'RECEPTIONIST.ALL_COMPANIES' | translate }}</option>
-            @for (company of insuranceCompanies; track company) {
-              <option [value]="company">{{ company }}</option>
+            @for (company of insuranceCompanies(); track company.id) {
+              <option [value]="company.name">{{ company.name }}</option>
             }
           </select>
         </div>
@@ -228,9 +228,10 @@
                 <label class="form-label fw-bold small mb-1">
                   {{ 'RECEPTIONIST.INSURANCE_COMPANY' | translate }} <span class="text-danger">*</span>
                 </label>
-                <select class="form-select form-select-sm" [(ngModel)]="newPatient.insuranceDetails.company" [ngModelOptions]="{standalone: true}">
-                  @for (company of insuranceCompanies; track company) {
-                    <option [value]="company">{{ company }}</option>
+                <select class="form-select form-select-sm" formControlName="insuranceCompanyId">
+                  <option [ngValue]="null">No Insurance / Cash</option>
+                  @for (company of insuranceCompanies(); track company.id) {
+                    <option [ngValue]="company.id">{{ company.name }}</option>
                   }
                 </select>
               </div>
@@ -405,9 +406,10 @@
               <label class="form-label fw-bold small mb-1">
                 {{ 'RECEPTIONIST.INSURANCE_COMPANY' | translate }} <span class="text-danger">*</span>
               </label>
-              <select class="form-select form-select-sm" [(ngModel)]="editPatientForm.insuranceDetails.company">
-                @for (company of insuranceCompanies; track company) {
-                  <option [value]="company">{{ company }}</option>
+              <select class="form-select form-select-sm" [(ngModel)]="editPatientForm.insuranceCompanyId">
+                <!-- <option [ngValue]="null">No Insurance / Cash</option> -->
+                @for (company of insuranceCompanies(); track company.id) {
+                  <option [ngValue]="company.id">{{ company.name }}</option>
                 }
               </select>
             </div>

@@ -33,6 +33,7 @@ export const routes: Routes = [
       // ── CEO Routes ──
       { path: 'ceo', loadComponent: () => import('./features/ceo/dashboard/dashboard').then(m => m.Dashboard), canActivate: [roleGuard], data: { roles: ['Ceo'] } },
       { path: 'ceo/staff', loadComponent: () => import('./features/ceo/staff-management/staff-list/staff-list.component').then(m => m.StaffListComponent), canActivate: [roleGuard], data: { roles: ['Ceo'] } },
+      { path: 'ceo/insurance', loadComponent: () => import('./features/ceo/insurance-management/insurance-management.component').then(m => m.InsuranceManagementComponent), canActivate: [roleGuard], data: { roles: ['Ceo'] } },
     ]
   },
   { path: '**', redirectTo: 'login' }

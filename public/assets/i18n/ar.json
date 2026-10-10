@@ -58,7 +58,11 @@
     "MALE": "ع-Male",
     "FEMALE": "ع-Female",
     "AGE": "ع-Age",
-    "PAYMENT_TYPE": "ع-Payment Type"
+    "PAYMENT_TYPE": "ع-Payment Type",
+    "EDIT": "تعديل",
+    "DELETE": "حذف",
+    "ACTIVE": "نشط",
+    "INACTIVE": "غير نشط"
   },
   "RECEPTIONIST": {
     "DASHBOARD_TITLE": "لوحة الاستقبال",
@@ -320,6 +324,24 @@
       "BIRTH_DATE_REQUIRED": "تاريخ الميلاد مطلوب.",
       "ROLE_REQUIRED": "الدور مطلوب.",
       "SAVE_USER": "حفظ المستخدم"
+    },
+    "INSURANCE_MANAGEMENT": {
+      "TITLE": "شركات التأمين",
+      "ADD_NEW": "إضافة شركة جديدة",
+      "NO_COMPANIES": "لم يتم العثور على شركات تأمين.",
+      "ADD_FIRST": "أضف شركتك الأولى",
+      "COMPANY_NAME": "اسم الشركة",
+      "PORTAL_URL": "رابط البوابة الإلكترونية",
+      "PATIENTS_COUNT": "عدد المرضى",
+      "EDIT_COMPANY": "تعديل شركة التأمين",
+      "ADD_COMPANY": "إضافة شركة تأمين",
+      "NAME_PLACEHOLDER": "مثال: بوبا",
+      "NAME_REQUIRED": "اسم الشركة مطلوب.",
+      "HOTLINE": "الخط الساخن",
+      "ACTIVE_STATUS": "حالة النشاط",
+      "UPDATE_COMPANY": "تحديث الشركة",
+      "SAVE_COMPANY": "حفظ الشركة",
+      "CONFIRM_DELETE": "هل أنت متأكد من حذف شركة التأمين هذه؟"
     }
   },
   "DOCTOR": {
