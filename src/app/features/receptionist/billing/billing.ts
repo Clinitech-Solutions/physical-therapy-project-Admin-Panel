@@ -4,6 +4,7 @@ import { CommonModule } from "@angular/common";
 import { TranslateModule } from '@ngx-translate/core';
 import { ClinicStateService } from '../../../core/services/state/clinic-state.service';
 import { MessageService } from 'primeng/api';
+import { PatientService } from '../../../core/services/patient.service';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ButtonModule } from 'primeng/button';
@@ -84,6 +85,7 @@ import { TabsModule } from 'primeng/tabs';
 })
 export class BillingComponent {
   clinicState = inject(ClinicStateService);
+  patientService = inject(PatientService);
   messageService = inject(MessageService);
 
   // Modal State
@@ -100,9 +102,9 @@ export class BillingComponent {
   installmentPaymentMethod = 'Cash';
   selectedPatientRemainingDebt: number = 0;
 
-  // 100% Real-time computed signal reading strictly from ClinicStateService
+  // 100% Real-time computed signal reading strictly from ClinicStateService for invoices
   invoices = computed(() => this.clinicState.invoices());
-  patients = computed(() => this.clinicState.patients());
+  patients = this.patientService.patients;
 
   // New Tab Computed Signals
   dailyCashierInvoices = computed(() => 
@@ -173,11 +175,11 @@ export class BillingComponent {
     this.showPaymentModal = true;
   }
 
-  openInstallmentModal(patientId: string) {
-    this.installmentPatientId = patientId;
+  openInstallmentModal(patientId: string | number) {
+    this.installmentPatientId = patientId.toString();
     this.installmentPaymentMethod = 'Cash';
     
-    const patient = this.clinicState.getPatientById(patientId);
+    const patient = this.patients().find(p => p.id === patientId.toString());
     const plan = patient?.financialPlan ?? patient?.treatmentPlan?.financialPlan;
     this.selectedPatientRemainingDebt = plan?.remainingDebt ?? 0;
     this.installmentAmount = this.selectedPatientRemainingDebt;
@@ -277,5 +279,10 @@ export class BillingComponent {
       case 'Partial': return 'info';
       default:        return 'secondary';
     }
+  }
+
+  getPatientName(patientId: string): string {
+    const p = this.patients().find(p => p.id === patientId);
+    return p ? (p.nameEn || p.nameAr || '') : this.clinicState.getPatientName(patientId);
   }
 }

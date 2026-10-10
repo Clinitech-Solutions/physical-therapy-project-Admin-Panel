@@ -404,10 +404,10 @@
                       <span class="live-indicator"></span>
                       }
                       <span class="patient-name fw-semibold small text-truncate" role="button" (click)="openPatientProfile(session.patientId); $event.stopPropagation()" style="cursor: pointer;">{{
-                        clinicState.getPatientName(session.patientId) }}</span>
-                      @if(clinicState.getSessionBadge(session)) {
+                        session.patientName || clinicState.getPatientName(session.patientId.toString()) }}</span>
+                      @if(getSessionBadge(session)) {
                       <span class="badge badge-warning ms-1" style="font-size: 0.65rem;" role="button" (click)="openPatientProfile(session.patientId); $event.stopPropagation()" style="cursor: pointer;" title="Treatment Progress">
-                        {{ clinicState.getSessionBadge(session) }}
+                        {{ getSessionBadge(session) }}
                       </span>
                       }
                     </div>
@@ -423,15 +423,15 @@
                   </div>
 
                   <div class="d-flex justify-content-between align-items-center text-muted" style="font-size: 0.72rem;">
-                    <span><i class="bi bi-person me-1"></i>{{ clinicState.getDoctorName(session.doctorId) }}</span>
-                    <span><i class="bi bi-door-open me-1"></i>{{ clinicState.getRoomName(session.roomId) }}</span>
+                    <span><i class="bi bi-person me-1"></i>{{ session.doctorName || clinicState.getDoctorName(session.doctorId?.toString() || '') }}</span>
+                    <span><i class="bi bi-door-open me-1"></i>{{ session.roomName || clinicState.getRoomName(session.roomId?.toString() || '') }}</span>
                   </div>
 
                   <div class="d-flex justify-content-between align-items-center mt-1 pt-1 border-top border-opacity-10"
                     style="font-size: 0.68rem;">
-                    <span class="badge bg-secondary bg-opacity-10 text-secondary py-0 px-1">{{ session.type }}</span>
+                    <span class="badge bg-secondary bg-opacity-10 text-secondary py-0 px-1">{{ session.appointmentType }}</span>
                     <span class="session-time font-monospace text-muted">
-                      <i class="bi bi-clock me-1"></i>{{ formatTime(session.scheduledAt) }}
+                      <i class="bi bi-clock me-1"></i>{{ formatTime(session.startTime?.toString()) }}
                     </span>
                   </div>
 

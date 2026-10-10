@@ -120,7 +120,7 @@
               <ng-template pTemplate="body" let-invoice>
                 <tr>
                   <td><span class="font-bebas text-secondary">{{ invoice.id }}</span></td>
-                  <td><span class="fw-semibold text-body">{{ clinicState.getPatientName(invoice.patientId) }}</span></td>
+                  <td><span class="fw-semibold text-body">{{ getPatientName(invoice.patientId) }}</span></td>
                   <td><span class="fw-bold text-success">{{ invoice.amount | currency:'EGP' }}</span></td>
                   <td><span class="fw-bold text-danger">{{ invoice.patientShare | currency:'EGP' }}</span></td>
                   <td><span class="fw-semibold text-body">{{ (invoice.paidAmount || 0) | currency:'EGP' }}</span></td>
@@ -197,7 +197,7 @@
               <ng-template pTemplate="body" let-invoice>
                 <tr>
                   <td><span class="font-bebas text-secondary">{{ invoice.id }}</span></td>
-                  <td><span class="fw-semibold text-body">{{ clinicState.getPatientName(invoice.patientId) }}</span></td>
+                  <td><span class="fw-semibold text-body">{{ getPatientName(invoice.patientId) }}</span></td>
                   <td><span class="fw-bold text-success">{{ invoice.amount | currency:'EGP' }}</span></td>
                   <td><span class="fw-bold text-info">{{ invoice.insuranceShare | currency:'EGP' }}</span></td>
                   <td><p-tag [value]="'Pending Claim'" severity="warn"></p-tag></td>

@@ -80,22 +80,22 @@
         <tbody>
           @for(session of filteredTodaySessions(); track session.id) {
           <tr>
-            <td class="font-bebas" style="font-size:1rem">{{ formatTime(session.scheduledAt) }}</td>
+            <td class="font-bebas" style="font-size:1rem">{{ formatTime(session.startTime?.toString()) }}</td>
             <td>
               <div class="d-flex align-items-center gap-2">
-                <div class="avatar avatar-sm">{{ clinicState.getPatientAvatar(session.patientId) }}</div>
+                <div class="avatar avatar-sm">{{ clinicState.getPatientAvatar(session.patientId.toString()) }}</div>
                 <span class="fw-semibold text-primary-hover" role="button" (click)="openPatientProfile(session.patientId)" style="cursor: pointer;">
-                  {{ clinicState.getPatientName(session.patientId) }}
+                  {{ session.patientName || clinicState.getPatientName(session.patientId.toString()) }}
                 </span>
-                @if(clinicState.getSessionBadge(session)) {
+                @if(getSessionBadge(session)) {
                 <span class="badge badge-warning" role="button" (click)="openPatientProfile(session.patientId)" style="cursor: pointer;" title="Treatment Progress">
-                  <i class="bi bi-clock-history"></i> {{ clinicState.getSessionBadge(session) }}
+                  <i class="bi bi-clock-history"></i> {{ getSessionBadge(session) }}
                 </span>
                 }
               </div>
             </td>
-            <td>{{ clinicState.getDoctorName(session.doctorId) }}</td>
-            <td><span class="badge badge-neutral">{{ clinicState.getRoomName(session.roomId) }}</span></td>
+            <td>{{ session.doctorName || clinicState.getDoctorName(session.doctorId?.toString() || '') }}</td>
+            <td><span class="badge badge-neutral">{{ session.roomName || clinicState.getRoomName(session.roomId?.toString() || '') }}</span></td>
             <td>
               <span class="badge" [ngClass]="{
                   'badge-success': session.status === 'Confirmed' || session.status === 'Completed',
@@ -121,7 +121,7 @@
                 }
                 @if(session.status === 'In Progress' || session.status === 'Waiting') {
                 <button class="btn-action action-success" [attr.data-tip]="'RECEPTIONIST.CHECK_OUT' | translate"
-                  (click)="checkOut(session.id)">
+                  (click)="checkOut(session.id!)">
                   <i class="bi bi-box-arrow-right"></i>
                 </button>
                 }
@@ -131,7 +131,7 @@
                   pTooltip="{{ 'RECEPTIONIST.MARK_ABSENT' | translate }}"
                   tooltipPosition="top"
                   tooltipStyleClass="custom-tooltip"
-                  (onClick)="markPatientAbsent(session.id)">
+                  (onClick)="markPatientAbsent(session.id!)">
                 </p-button>
               </div>
             </td>
