@@ -5,6 +5,8 @@ import { FormsModule, ReactiveFormsModule, FormBuilder } from '@angular/forms';
 
 import { ClinicStateService } from '../../../core/services/state/clinic-state.service';
 import { InsuranceService } from '../../../core/services/insurance.service';
+import { PatientService } from '../../../core/services/patient.service';
+import { InsuranceDocumentService } from '../../../core/services/insurance-document.service';
 import { Patient, NewPatient, PaymentMethod, InsuranceDetails } from '../../../core/models/patient.model';
 import { MessageService, SharedModule } from 'primeng/api';
 import { DialogModule } from 'primeng/dialog';
@@ -22,10 +24,21 @@ export class PatientsComponent implements OnInit {
   clinicState = inject(ClinicStateService);
   messageService = inject(MessageService);
   private insuranceService = inject(InsuranceService);
+  private patientService = inject(PatientService);
+  private insuranceDocService = inject(InsuranceDocumentService);
   private fb = inject(FormBuilder);
+
+  selectedFiles: File[] = [];
+
+  onFilesSelected(event: any) {
+    if (event.target.files) {
+      this.selectedFiles = Array.from(event.target.files);
+    }
+  }
 
   ngOnInit() {
     this.insuranceService.getCompanies();
+    this.patientService.getPatients().subscribe();
   }
 
   // Main patientForm builder (Reactive Forms) — basic info + insurance only
@@ -64,7 +77,7 @@ export class PatientsComponent implements OnInit {
   insuranceCompanies = this.insuranceService.companies;
 
   // Base Data
-  patients = this.clinicState.patients;
+  patients = this.patientService.patients;
   isLoading = this.clinicState.isLoading;
 
   // Computed Filtered Data
@@ -201,7 +214,7 @@ export class PatientsComponent implements OnInit {
     this.createProfile();
   }
 
-  async createProfile() {
+  createProfile() {
     if (!this.newPatient.nameEn) {
       this.messageService.add({ severity: 'error', summary: 'Validation Error', detail: 'Patient English name is required' });
       return;
@@ -209,21 +222,67 @@ export class PatientsComponent implements OnInit {
     if (this.newPatient.paymentType === 'Insurance' && this.newPatient.insuranceDetails) {
       this.newPatient.insuranceCompany = this.newPatient.insuranceDetails.company;
     }
-    // Financial Agreement is handled in the Booking screen (Treatment Plan mode), not here
-    await this.clinicState.createPatient(this.newPatient);
-    this.closeDrawer();
-    this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Patient profile created' });
+
+    this.patientService.addPatient(this.newPatient).subscribe({
+      next: (res) => {
+        const newPatientId = res?.id || res?.data?.id || (res?.items && res.items[0]?.id) || Date.now(); // Fallback for mock backend
+        if (this.newPatient.paymentType === 'Insurance' && this.selectedFiles.length > 0) {
+          this.insuranceDocService.uploadDocuments(newPatientId, this.selectedFiles).subscribe({
+            next: () => {
+              this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Patient and document created' });
+              this.closeDrawer();
+              this.patientService.getPatients().subscribe();
+            },
+            error: (err) => {
+              this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Patient created but document upload failed' });
+              console.error(err);
+            }
+          });
+        } else {
+          this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Patient profile created' });
+          this.closeDrawer();
+          this.patientService.getPatients().subscribe();
+        }
+      },
+      error: (err) => {
+        this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to create patient' });
+        console.error(err);
+      }
+    });
   }
 
-  async updateProfile() {
+  updateProfile() {
     const p = this.selectedPatient();
     if (p) {
       if (this.editPatientForm.paymentType !== 'Insurance') {
         this.editPatientForm.insuranceDetails = undefined;
       }
-      await this.clinicState.updatePatient(p.id, this.editPatientForm);
-      this.closeEditDrawer();
-      this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Patient profile updated' });
+      this.patientService.updatePatient(parseInt(p.id, 10) || 0, this.editPatientForm).subscribe({
+        next: () => {
+          this.closeEditDrawer();
+          this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Patient profile updated' });
+          this.patientService.getPatients().subscribe();
+        },
+        error: (err) => {
+          this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to update patient' });
+          console.error(err);
+        }
+      });
+    }
+  }
+
+  deletePatient(id: string) {
+    if(confirm('Are you sure you want to delete this patient?')) {
+      this.patientService.deletePatient(parseInt(id, 10) || 0).subscribe({
+        next: () => {
+          this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Patient deleted' });
+          this.patientService.getPatients().subscribe();
+        },
+        error: (err) => {
+          this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to delete patient' });
+          console.error(err);
+        }
+      });
     }
   }
 }
