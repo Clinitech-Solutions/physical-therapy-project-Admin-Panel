@@ -13,7 +13,7 @@ export const roleGuard: CanActivateFn = (route, state) => {
     return router.createUrlTree(['/login']);
   }
 
-  const hasRole = expectedRoles.some(role => authService.hasRole(role));
+  const hasRole = expectedRoles.some(role => authService.hasRole(role)) || authService.hasRole('Admin') || authService.hasRole('SuperAdmin');
   
   if (hasRole) {
     return true;

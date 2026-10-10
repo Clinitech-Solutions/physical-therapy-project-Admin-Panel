@@ -9,7 +9,9 @@
     "CEO": "CEO",
     "RECEPTIONIST": "Receptionist",
     "SENIOR": "Senior Therapist",
-    "DOCTOR": "Doctor"
+    "DOCTOR": "Doctor",
+    "ADMIN": "System Admin",
+    "SUPERADMIN": "Super Admin"
   },
   "SIDEBAR": {
     "DASHBOARD": "Dashboard",
@@ -24,6 +26,7 @@
     "WALK_IN": "Walk-In",
     "ASSESSMENTS": "Assessments",
     "REASSESSMENTS": "Re-Assessments",
+    "ABSENCE_COVERAGE": "Absence Coverage",
     "LIVE_VIEW": "Live View",
     "MY_SCHEDULE": "My Schedule",
     "TODAYS_SCHEDULE": "Today's Schedule",
@@ -50,7 +53,12 @@
     "NO_AVAILABLE_ROOMS": "No available rooms",
     "ENGLISH": "English",
     "ARABIC": "Arabic",
-    "START": "Start"
+    "START": "Start",
+    "GENDER": "Gender",
+    "MALE": "Male",
+    "FEMALE": "Female",
+    "AGE": "Age",
+    "PAYMENT_TYPE": "Payment Type"
   },
   "RECEPTIONIST": {
     "DASHBOARD_TITLE": "Receptionist Dashboard",
@@ -67,7 +75,6 @@
     "WALKIN_SUB": "Find available slots for immediate care",
     "BOOKINGS_TITLE": "Appointments",
     "BOOKINGS_SUB": "Manage the daily schedule",
-    
     "TODAYS_SESSIONS": "TODAY'S SESSIONS",
     "COMPLETED_SESSIONS": "Completed Sessions",
     "TODAY_REVENUE": "Today's Revenue",
@@ -80,7 +87,6 @@
     "WALKINS": "WALK-INS",
     "PENDING_PAYMENTS": "PENDING PAYMENTS",
     "TIMELINE_TITLE": "Today's Sessions Timeline",
-    
     "SEARCH_PLACEHOLDER": "Search by name or phone number...",
     "ALL_DOCTORS": "All Doctors",
     "ALL_ROOMS": "All Rooms",
@@ -92,14 +98,12 @@
     "INITIAL_STATUS": "Initial Status",
     "AVAILABLE": "Available",
     "ROOM_ADDED_SUCCESS": "Room added successfully",
-    
     "CONFIRMED": "Confirmed",
     "IN_PROGRESS": "In Progress",
     "PENDING": "Pending",
     "CANCELLED": "Cancelled",
     "WAITING": "Waiting",
     "COMPLETED": "Completed",
-    
     "CHECK_IN": "Check-In",
     "CHECK_OUT": "Check-Out",
     "MARK_ABSENT": "Mark Absent",
@@ -110,7 +114,6 @@
     "CONFIRM_COVERAGE": "Confirm Coverage",
     "PROCESSING": "Processing...",
     "CANCEL": "Cancel",
-    
     "ADD_PATIENT": "Add Patient",
     "GENDER_TH": "Gender",
     "PHONE": "Phone",
@@ -135,7 +138,6 @@
     "SAVE_CHANGES": "Save Changes",
     "ALL_PAYMENT_TYPES": "All Payment Types",
     "FILTER_BY_PAYMENT": "Filter by Payment",
-    
     "ALL_COMPANIES": "All Companies",
     "INSURANCE_DETAILS": "Insurance Details",
     "STATUS_PENDING": "Pending Approval",
@@ -173,7 +175,6 @@
     "FEATURE_GLOBAL_CARD": "Global Card Verification",
     "FEATURE_BALANCE_CHECK": "Session Balance Check",
     "FEATURE_PAPERLESS": "Paperless Billing",
-    
     "COMPANY": "Company",
     "CO_PAY": "Co-Pay",
     "DOCUMENTS_PENDING": "Documents Pending",
@@ -193,7 +194,6 @@
     "RECORD_COPAY": "Record Co-Pay Percentage",
     "SAVE_COPAY": "Save Co-Pay",
     "SUBMIT_TO_INSURER": "Submit to Insurer",
-    
     "INVOICE_ID": "Invoice ID",
     "TYPE": "Type",
     "AMOUNT": "Amount",
@@ -209,7 +209,6 @@
     "PROCESS_PAYMENT": "Process Payment",
     "CASH_PAYMENTS": "Cash Payments",
     "ONLINE_PAYMENTS": "Online Payments",
-    
     "GENDER": "Patient Gender",
     "MALE": "Male",
     "FEMALE": "Female",
@@ -217,7 +216,6 @@
     "NOW": "Now",
     "SEARCH": "Search Slots",
     "AVAILABLE_SLOTS": "Available Slots",
-    "AVAILABLE": "Available",
     "LOAD": "Load",
     "FILL_SLOT": "Fill Slot",
     "BOOK_ASSESSMENT": "Book Assessment",
@@ -227,7 +225,6 @@
     "LOCKED": "Locked",
     "WAITLIST": "Waitlist",
     "NO_WAITLIST": "No patients currently on the waitlist.",
-    
     "OCCUPIED": "Occupied",
     "MAINTENANCE": "Maintenance",
     "UNDER_MAINTENANCE": "Under Maintenance",
@@ -250,7 +247,6 @@
     "PRIMARY_DOCTOR": "Primary Doctor",
     "SESSION_PROGRESS": "Treatment Progress",
     "TOTAL_SESSIONS": "Total Sessions",
-    "COMPLETED_SESSIONS": "Completed Sessions",
     "SESSION_NUMBER": "#",
     "CHECK_IN_TIME": "Check-In",
     "CHECK_OUT_TIME": "Check-Out",
@@ -258,7 +254,15 @@
     "SESSION_STATUS": "Session Status",
     "NOT_YET": "Not Yet",
     "UNBILLED": "Unbilled",
-    "NO_SESSIONS_FOUND": "No sessions found for this patient."
+    "NO_SESSIONS_FOUND": "No sessions found for this patient.",
+    "FREE_ASSESSMENT": "Free Assessment",
+    "FINANCIAL_AGREEMENT": "Financial Agreement",
+    "TOTAL_AMOUNT": "Total Amount",
+    "AMOUNT_PAID_NOW": "Amount Paid Now",
+    "REMAINING_DEBT": "Remaining Debt",
+    "SESSION_COVERED": "Session Covered",
+    "PRICE_PER_SESSION": "Price Per Session",
+    "WAIVED": "Waived"
   },
   "CEO": {
     "DASHBOARD_TITLE": "Executive Overview",
@@ -327,7 +331,9 @@
     "SESSION_8_12": "Session 8/12",
     "START_SESSION": "Start Session",
     "AVAILABLE_SLOT": "Available Slot",
-    "ASSESSMENT": "Assessment"
+    "ASSESSMENT": "Assessment",
+    "NO_SESSIONS_TODAY": "No Sessions Today",
+    "ROOM": "Room"
   },
   "SENIOR": {
     "DASHBOARD_TITLE": "Senior Therapist Dashboard",
@@ -335,8 +341,47 @@
     "TODAYS_TASKS": "Today's Tasks",
     "ASSESSMENTS_4": "Assessments (4)",
     "REASSESSMENTS_2": "Re-assessments (2)",
-    "LIVE_VIEW_CAPACITY": "Live Capacity View"
-  } ,   "AUTH": {
+    "LIVE_VIEW_CAPACITY": "Live Capacity View",
+    "ASSESSMENT_FORM_TITLE": "Assessment Form Title",
+    "ASSESSMENT_FORM_SUB": "Assessment Form Sub",
+    "DIAGNOSIS": "Diagnosis",
+    "TOTAL_SESSIONS": "Total Sessions",
+    "FREQUENCY": "Frequency",
+    "DAILY": "Daily",
+    "TWICE_A_WEEK": "Twice A Week",
+    "THREE_TIMES_A_WEEK": "Three Times A Week",
+    "ONCE_A_WEEK": "Once A Week",
+    "ASSIGN_DOCTOR": "Assign Doctor",
+    "LOAD": "Load",
+    "RECOMMENDED": "Recommended",
+    "EXERCISES": "Exercises",
+    "SUBMIT_ASSESSMENT": "Submit Assessment",
+    "PATIENT_SUMMARY": "Patient Summary",
+    "SMART_DOCTOR_SELECTION": "Smart Doctor Selection",
+    "GENDER_MATCH": "Gender Match",
+    "PENDING_TASKS": "Pending Tasks",
+    "PENDING_TASKS_SUB": "Pending Tasks Sub",
+    "ASSESSMENTS": "Assessments",
+    "ASSESSMENTS_SUB": "Assessments Sub",
+    "REASSESSMENTS": "Reassessments",
+    "REASSESSMENTS_SUB": "Reassessments Sub",
+    "DOCTORS_AVAILABLE": "Doctors Available",
+    "DOCTORS_BUSY": "Doctors Busy",
+    "NO_ASSESSMENTS": "No Assessments",
+    "NO_REASSESSMENTS": "No Reassessments",
+    "NO_DOCTORS_AVAILABLE": "No Doctors Available",
+    "REASSESSMENT_TITLE": "Reassessment Title",
+    "CURRENT_EVALUATION": "Current Evaluation",
+    "INITIAL_PLAN": "Initial Plan",
+    "PROGRESS_NOTES": "Progress Notes",
+    "DECISION": "Decision",
+    "CONTINUE_PLAN": "Continue Plan",
+    "ADJUST_PLAN": "Adjust Plan",
+    "DISCHARGE": "Discharge",
+    "ADDITIONAL_SESSIONS": "Additional Sessions",
+    "SUBMIT_REASSESSMENT": "Submit Reassessment"
+  },
+  "AUTH": {
     "SIGN_IN": "Sign In",
     "WELCOME_BACK": "Welcome Back",
     "SIGN_IN_SUBTITLE": "Sign in to continue your recovery journey",
@@ -349,5 +394,8 @@
     "CONTINUE_WITH": "— or continue with —",
     "DONT_HAVE_ACCOUNT": "Don't have an account?",
     "SIGN_UP": "Sign Up"
-  }
+  },
+  "AMOUNT_TO_COLLECT": "Amount To Collect",
+  "DEBT_GATE_TITLE": "Debt Gate Title",
+  "COLLECT_AND_CHECK_IN": "Collect And Check In"
 }

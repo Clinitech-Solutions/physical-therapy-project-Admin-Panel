@@ -53,11 +53,11 @@ export class Login {
 
         this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Logged in successfully' });
 
-        if (role === 'Ceo') this.router.navigate(['/ceo']);
+        if (role === 'Ceo' || role === 'Admin' || role === 'SuperAdmin') this.router.navigate(['/ceo']);
         else if (role === 'Senior') this.router.navigate(['/senior/dashboard']);
         else if (role === 'Doctor') this.router.navigate(['/doctor']);
         else if (role === 'Receptionist') this.router.navigate(['/receptionist/dashboard']);
-        else this.router.navigate(['/']);
+        else this.router.navigate(['/ceo']);
       },
       error: (err) => {
         this.isSubmitting.set(false);

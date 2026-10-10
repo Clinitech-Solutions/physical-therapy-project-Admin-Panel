@@ -58,6 +58,16 @@ export class Sidebar {
   navItems = computed<NavItem[]>(() => {
     const role = this.auth.currentRole();
     const normalizedRole = role ? role.toLowerCase() : '';
+    
+    if (normalizedRole === 'admin' || normalizedRole === 'superadmin') {
+      return [
+        ...ROLE_MENU_MAP['receptionist'],
+        ...ROLE_MENU_MAP['senior'],
+        ...ROLE_MENU_MAP['doctor'],
+        ...ROLE_MENU_MAP['ceo']
+      ];
+    }
+    
     return ROLE_MENU_MAP[normalizedRole] || [];
   });
 

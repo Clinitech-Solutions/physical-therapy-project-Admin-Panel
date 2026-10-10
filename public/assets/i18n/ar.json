@@ -9,7 +9,9 @@
     "CEO": "المدير التنفيذي",
     "RECEPTIONIST": "الاستقبال",
     "SENIOR": "أخصائي أول",
-    "DOCTOR": "طبيب"
+    "DOCTOR": "طبيب",
+    "ADMIN": "مدير النظام",
+    "SUPERADMIN": "المدير العام"
   },
   "SIDEBAR": {
     "DASHBOARD": "لوحة التحكم",
@@ -24,6 +26,7 @@
     "WALK_IN": "بدون موعد",
     "ASSESSMENTS": "التقييمات",
     "REASSESSMENTS": "إعادة التقييم",
+    "ABSENCE_COVERAGE": "تغطية الغياب",
     "LIVE_VIEW": "البث الحي",
     "MY_SCHEDULE": "جدولي",
     "TODAYS_SCHEDULE": "جدول اليوم",
@@ -50,7 +53,12 @@
     "NO_AVAILABLE_ROOMS": "لا توجد غرف متاحة",
     "ENGLISH": "إنجليزي",
     "ARABIC": "عربي",
-    "START": "بدء"
+    "START": "بدء",
+    "GENDER": "ع-Gender",
+    "MALE": "ع-Male",
+    "FEMALE": "ع-Female",
+    "AGE": "ع-Age",
+    "PAYMENT_TYPE": "ع-Payment Type"
   },
   "RECEPTIONIST": {
     "DASHBOARD_TITLE": "لوحة الاستقبال",
@@ -67,7 +75,6 @@
     "WALKIN_SUB": "البحث عن فترات متاحة للرعاية الفورية",
     "BOOKINGS_TITLE": "المواعيد",
     "BOOKINGS_SUB": "إدارة الجدول اليومي",
-    
     "TODAYS_SESSIONS": "جلسات اليوم",
     "COMPLETED_SESSIONS": "الجلسات المكتملة",
     "TODAY_REVENUE": "إيرادات اليوم",
@@ -80,7 +87,6 @@
     "WALKINS": "بدون موعد",
     "PENDING_PAYMENTS": "المدفوعات المعلقة",
     "TIMELINE_TITLE": "الجدول الزمني لجلسات اليوم",
-    
     "SEARCH_PLACEHOLDER": "البحث بالاسم أو رقم الهاتف...",
     "ALL_DOCTORS": "جميع الأطباء",
     "ALL_ROOMS": "جميع الغرف",
@@ -92,14 +98,12 @@
     "INITIAL_STATUS": "الحالة الأولية",
     "AVAILABLE": "متاح",
     "ROOM_ADDED_SUCCESS": "تمت إضافة الغرفة بنجاح",
-    
     "CONFIRMED": "مؤكد",
     "IN_PROGRESS": "قيد التنفيذ",
     "PENDING": "قيد الانتظار",
     "CANCELLED": "ملغى",
     "WAITING": "في الانتظار",
     "COMPLETED": "مكتمل",
-    
     "CHECK_IN": "تسجيل الدخول",
     "CHECK_OUT": "تسجيل الخروج",
     "MARK_ABSENT": "تسجيل غياب",
@@ -110,7 +114,6 @@
     "CONFIRM_COVERAGE": "تأكيد التغطية",
     "PROCESSING": "جاري المعالجة...",
     "CANCEL": "إلغاء",
-    
     "ADD_PATIENT": "إضافة مريض",
     "GENDER_TH": "الجنس",
     "PHONE": "رقم الهاتف",
@@ -135,7 +138,6 @@
     "SAVE_CHANGES": "حفظ التغييرات",
     "ALL_PAYMENT_TYPES": "جميع طرق الدفع",
     "FILTER_BY_PAYMENT": "تصفية حسب الدفع",
-    
     "ALL_COMPANIES": "جميع الشركات",
     "INSURANCE_DETAILS": "تفاصيل التأمين",
     "STATUS_PENDING": "قيد المراجعة",
@@ -173,7 +175,6 @@
     "FEATURE_GLOBAL_CARD": "تحقق البطاقات العالمية",
     "FEATURE_BALANCE_CHECK": "التحقق من رصيد الجلسات",
     "FEATURE_PAPERLESS": "فوترة لا ورقية",
-    
     "COMPANY": "الشركة",
     "CO_PAY": "نسبة التحمل",
     "DOCUMENTS_PENDING": "المستندات معلقة",
@@ -193,7 +194,6 @@
     "RECORD_COPAY": "تسجيل نسبة التحمل",
     "SAVE_COPAY": "حفظ نسبة التحمل",
     "SUBMIT_TO_INSURER": "إرسال لشركة التأمين",
-    
     "INVOICE_ID": "رقم الفاتورة",
     "TYPE": "النوع",
     "AMOUNT": "المبلغ",
@@ -209,7 +209,6 @@
     "PROCESS_PAYMENT": "إتمام الدفع",
     "CASH_PAYMENTS": "المدفوعات النقدية",
     "ONLINE_PAYMENTS": "المدفوعات الإلكترونية",
-    
     "GENDER": "جنس المريض",
     "MALE": "ذكر",
     "FEMALE": "أنثى",
@@ -217,7 +216,6 @@
     "NOW": "الآن",
     "SEARCH": "البحث عن فترات",
     "AVAILABLE_SLOTS": "الفترات المتاحة",
-    "AVAILABLE": "متاح",
     "LOAD": "كثافة الحالات",
     "FILL_SLOT": "حجز الفترة",
     "BOOK_ASSESSMENT": "حجز تقييم",
@@ -227,7 +225,6 @@
     "LOCKED": "مغلق",
     "WAITLIST": "قائمة الانتظار",
     "NO_WAITLIST": "لا يوجد مرضى حالياً في قائمة الانتظار.",
-    
     "OCCUPIED": "مشغول",
     "MAINTENANCE": "صيانة",
     "UNDER_MAINTENANCE": "تحت الصيانة",
@@ -250,7 +247,6 @@
     "PRIMARY_DOCTOR": "الطبيب المعالج",
     "SESSION_PROGRESS": "تقدم الجلسات",
     "TOTAL_SESSIONS": "إجمالي الجلسات",
-    "COMPLETED_SESSIONS": "الجلسات المكتملة",
     "SESSION_NUMBER": "رقم الجلسة",
     "CHECK_IN_TIME": "وقت الحضور",
     "CHECK_OUT_TIME": "وقت الانصراف",
@@ -258,7 +254,15 @@
     "SESSION_STATUS": "حالة الجلسة",
     "NOT_YET": "ليس بعد",
     "UNBILLED": "غير مفوتر",
-    "NO_SESSIONS_FOUND": "لا توجد جلسات مسجلة لهذا المريض."
+    "NO_SESSIONS_FOUND": "لا توجد جلسات مسجلة لهذا المريض.",
+    "FREE_ASSESSMENT": "ع-Free Assessment",
+    "FINANCIAL_AGREEMENT": "ع-Financial Agreement",
+    "TOTAL_AMOUNT": "ع-Total Amount",
+    "AMOUNT_PAID_NOW": "ع-Amount Paid Now",
+    "REMAINING_DEBT": "ع-Remaining Debt",
+    "SESSION_COVERED": "ع-Session Covered",
+    "PRICE_PER_SESSION": "ع-Price Per Session",
+    "WAIVED": "ع-Waived"
   },
   "CEO": {
     "DASHBOARD_TITLE": "نظرة عامة تنفيذية",
@@ -327,7 +331,9 @@
     "SESSION_8_12": "جلسة ٨ من ١٢",
     "START_SESSION": "بدء الجلسة",
     "AVAILABLE_SLOT": "فترة متاحة",
-    "ASSESSMENT": "تقييم"
+    "ASSESSMENT": "تقييم",
+    "NO_SESSIONS_TODAY": "ع-No Sessions Today",
+    "ROOM": "ع-Room"
   },
   "SENIOR": {
     "DASHBOARD_TITLE": "لوحة الأخصائي الأول",
@@ -335,9 +341,47 @@
     "TODAYS_TASKS": "مهام اليوم",
     "ASSESSMENTS_4": "التقييمات (٤)",
     "REASSESSMENTS_2": "إعادة التقييم (٢)",
-    "LIVE_VIEW_CAPACITY": "عرض السعة المباشر"
+    "LIVE_VIEW_CAPACITY": "عرض السعة المباشر",
+    "ASSESSMENT_FORM_TITLE": "ع-Assessment Form Title",
+    "ASSESSMENT_FORM_SUB": "ع-Assessment Form Sub",
+    "DIAGNOSIS": "ع-Diagnosis",
+    "TOTAL_SESSIONS": "ع-Total Sessions",
+    "FREQUENCY": "ع-Frequency",
+    "DAILY": "ع-Daily",
+    "TWICE_A_WEEK": "ع-Twice A Week",
+    "THREE_TIMES_A_WEEK": "ع-Three Times A Week",
+    "ONCE_A_WEEK": "ع-Once A Week",
+    "ASSIGN_DOCTOR": "ع-Assign Doctor",
+    "LOAD": "ع-Load",
+    "RECOMMENDED": "ع-Recommended",
+    "EXERCISES": "ع-Exercises",
+    "SUBMIT_ASSESSMENT": "ع-Submit Assessment",
+    "PATIENT_SUMMARY": "ع-Patient Summary",
+    "SMART_DOCTOR_SELECTION": "ع-Smart Doctor Selection",
+    "GENDER_MATCH": "ع-Gender Match",
+    "PENDING_TASKS": "ع-Pending Tasks",
+    "PENDING_TASKS_SUB": "ع-Pending Tasks Sub",
+    "ASSESSMENTS": "ع-Assessments",
+    "ASSESSMENTS_SUB": "ع-Assessments Sub",
+    "REASSESSMENTS": "ع-Reassessments",
+    "REASSESSMENTS_SUB": "ع-Reassessments Sub",
+    "DOCTORS_AVAILABLE": "ع-Doctors Available",
+    "DOCTORS_BUSY": "ع-Doctors Busy",
+    "NO_ASSESSMENTS": "ع-No Assessments",
+    "NO_REASSESSMENTS": "ع-No Reassessments",
+    "NO_DOCTORS_AVAILABLE": "ع-No Doctors Available",
+    "REASSESSMENT_TITLE": "ع-Reassessment Title",
+    "CURRENT_EVALUATION": "ع-Current Evaluation",
+    "INITIAL_PLAN": "ع-Initial Plan",
+    "PROGRESS_NOTES": "ع-Progress Notes",
+    "DECISION": "ع-Decision",
+    "CONTINUE_PLAN": "ع-Continue Plan",
+    "ADJUST_PLAN": "ع-Adjust Plan",
+    "DISCHARGE": "ع-Discharge",
+    "ADDITIONAL_SESSIONS": "ع-Additional Sessions",
+    "SUBMIT_REASSESSMENT": "ع-Submit Reassessment"
   },
-    "AUTH": {
+  "AUTH": {
     "SIGN_IN": "تسجيل الدخول",
     "WELCOME_BACK": "أهلاً بك مجدداً",
     "SIGN_IN_SUBTITLE": "سجّل دخولك لمتابعة رحلة تعافيك",
@@ -350,5 +394,8 @@
     "CONTINUE_WITH": "— أو تابع عبر —",
     "DONT_HAVE_ACCOUNT": "ليس لديك حساب؟",
     "SIGN_UP": "إنشاء حساب"
-  }
+  },
+  "AMOUNT_TO_COLLECT": "ع-Amount To Collect",
+  "DEBT_GATE_TITLE": "ع-Debt Gate Title",
+  "COLLECT_AND_CHECK_IN": "ع-Collect And Check In"
 }
