@@ -33,14 +33,17 @@ export class ClinicStateService {
       if (stored) {
         try {
           const parsed: Room[] = JSON.parse(stored);
-          const cleaned = parsed.map(r => {
-            if (r.status === 'Available') {
-              return { ...r, doctorId: null };
-            }
-            return r;
-          });
-          this.saveRoomsToLocalStorage(cleaned);
-          return cleaned;
+          // An empty cache from an earlier app version must not hide the initial rooms.
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const cleaned = parsed.map(r => {
+              if (r.status === 'Available') {
+                return { ...r, doctorId: null };
+              }
+              return r;
+            });
+            this.saveRoomsToLocalStorage(cleaned);
+            return cleaned;
+          }
         } catch {
           // Fallback if parsing fails
         }

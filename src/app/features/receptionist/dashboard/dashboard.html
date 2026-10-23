@@ -89,7 +89,7 @@
                   {{ getPatientName(session.patientId, session.patientName) }}
                 </span>
                 @if(getSessionBadge(session)) {
-                <span class="badge badge-warning" role="button" (click)="openPatientProfile(session.patientId)" style="cursor: pointer;" [title]="'RECEPTIONIST.UI.TREATMENT_PROGRESS' | translate">
+                <span class="badge badge-warning" role="button" (click)="openPatientProfile(session.patientId)" style="cursor: pointer;" [title]="'RECEPTIONIST.DASHBOARD.TREATMENT_PROGRESS' | translate">
                   <i class="bi bi-clock-history"></i> {{ getSessionBadge(session) }}
                 </span>
                 }
@@ -141,7 +141,7 @@
           @if (filteredTodaySessions().length === 0) {
           <tr>
             <td colspan="6" class="text-center py-4 text-muted">
-              {{ 'RECEPTIONIST.UI.NO_SESSIONS_SCHEDULED_FOR_TODAY_MATCHING_YOUR_CRITERIA_' | translate }}
+              {{ 'RECEPTIONIST.DASHBOARD.NO_SESSIONS_MATCHING' | translate }}
             </td>
           </tr>
           }
@@ -158,8 +158,8 @@
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content border-0 shadow-lg">
       <div class="modal-header p-3">
-        <h5 class="modal-title font-clash">{{ 'RECEPTIONIST.UI.DOCTOR_ABSENT_TODAY' | translate:{ doctor: absentDoctorName() } }}</h5>
-        <button type="button" class="btn-close" [attr.aria-label]="'RECEPTIONIST.UI.CLOSE' | translate" (click)="closeAbsenceModal()"></button>
+        <h5 class="modal-title font-clash">{{ 'RECEPTIONIST.DASHBOARD.DOCTOR_ABSENT_TODAY' | translate:{ doctor: absentDoctorName() } }}</h5>
+        <button type="button" class="btn-close" [attr.aria-label]="'RECEPTIONIST.DASHBOARD.CLOSE' | translate" (click)="closeAbsenceModal()"></button>
       </div>
       <div class="modal-body p-3">
         <div class="alert alert-warning d-flex align-items-center gap-3 mb-3">
@@ -169,7 +169,7 @@
 
         <div class="row g-3">
           <div class="col-md-6">
-            <p class="section-label text-teal">{{ 'RECEPTIONIST.UI.AUTO_ASSIGNED_TO_SENIOR_50_' | translate }}</p>
+            <p class="section-label text-teal">{{ 'RECEPTIONIST.DASHBOARD.AUTO_ASSIGNED_TO_SENIOR_50_' | translate }}</p>
             <div class="card card-bg border-0 mb-2">
               <div class="card-body p-3 d-flex justify-content-between align-items-center">
                 <span class="fw-medium">Ahmed Fathy</span>
@@ -249,7 +249,7 @@
         type="button" 
         class="btn btn-outline-secondary btn-cancel" 
         (click)="confirmDebtPayment(false)">
-        {{ 'RECEPTIONIST.UI.CHECK_IN_ONLY' | translate }}
+        {{ 'RECEPTIONIST.DASHBOARD.CHECK_IN_ONLY' | translate }}
       </button>
       <button 
         type="button" 

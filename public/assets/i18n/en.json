@@ -549,6 +549,49 @@
       "REFUNDED": "Refunded",
       "APPROVED": "Approved",
       "E_G_ARABIC_NAME": "e.g. أحمد محمد"
+    },
+    "DASHBOARD": {
+      "TREATMENT_PROGRESS": "Treatment Progress",
+      "NO_SESSIONS_MATCHING": "No sessions scheduled for today matching your criteria.",
+      "DOCTOR_ABSENT_TODAY": "{{doctor}} is absent today",
+      "CLOSE": "Close",
+      "AUTO_ASSIGNED_TO_SENIOR_50_": "Auto-Assigned to Senior (50%)",
+      "CHECK_IN_ONLY": "Check-In Only"
+    },
+    "BILLING": {
+      "PENDING_COLLECTION_REQUIRED": "Pending collection required",
+      "DAILY_CASHIER": "Daily Cashier",
+      "PENDING_INSTALLMENTS": "Pending Installments",
+      "INSURANCE_CLAIMS": "Insurance Claims",
+      "PATIENT_SHARE": "Patient Share",
+      "PAID": "Paid",
+      "REMAINING": "Remaining",
+      "NO_PENDING_CASH": "No pending cash collections for today.",
+      "PATIENT_NAME": "Patient Name",
+      "PLAN_TYPE": "Plan Type",
+      "TOTAL_AGREED_AMOUNT": "Total Agreed Amount",
+      "TOTAL_PAID_SO_FAR": "Total Paid So Far",
+      "REMAINING_DEBT": "Remaining Debt",
+      "ACTION": "Action",
+      "COLLECT_INSTALLMENT": "Collect Installment",
+      "NO_PENDING_INSTALLMENTS": "No patients with pending installments.",
+      "INVOICE_ID": "Invoice ID",
+      "PATIENT": "Patient",
+      "TOTAL_AMOUNT": "Total Amount",
+      "INSURANCE_SHARE": "Insurance Share",
+      "STATUS": "Status",
+      "DATE": "Date",
+      "NO_INSURANCE_CLAIMS": "No insurance claims found.",
+      "PREVIOUS_PAYMENTS": "Previous Payments",
+      "AMOUNT_TO_COLLECT": "Amount to Collect",
+      "PAYMENT_METHOD": "Payment Method",
+      "SELECT_PAYMENT_METHOD": "Select Payment Method",
+      "PROCESSING": "Processing...",
+      "CONFIRM_COLLECTION": "Confirm Collection"
+    },
+    "ROOMS": {
+      "EMPTY_TITLE": "No rooms added yet",
+      "EMPTY_DESCRIPTION": "Add a room to start managing clinic availability."
     }
   },
   "CEO": {

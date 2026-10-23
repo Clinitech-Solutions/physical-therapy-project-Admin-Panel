@@ -549,6 +549,49 @@
       "REFUNDED": "مسترد",
       "APPROVED": "معتمد",
       "E_G_ARABIC_NAME": "مثال: أحمد محمد"
+    },
+    "DASHBOARD": {
+      "TREATMENT_PROGRESS": "تقدم العلاج",
+      "NO_SESSIONS_MATCHING": "لا توجد جلسات اليوم تطابق معايير البحث.",
+      "DOCTOR_ABSENT_TODAY": "الطبيب {{doctor}} غائب اليوم",
+      "CLOSE": "إغلاق",
+      "AUTO_ASSIGNED_TO_SENIOR_50_": "تم إسنادها تلقائياً للأخصائي الأول (٥٠٪)",
+      "CHECK_IN_ONLY": "تسجيل الحضور فقط"
+    },
+    "BILLING": {
+      "PENDING_COLLECTION_REQUIRED": "توجد مبالغ مستحقة للتحصيل",
+      "DAILY_CASHIER": "التحصيل اليومي",
+      "PENDING_INSTALLMENTS": "الأقساط المستحقة",
+      "INSURANCE_CLAIMS": "مطالبات التأمين",
+      "PATIENT_SHARE": "حصة المريض",
+      "PAID": "مدفوع",
+      "REMAINING": "المتبقي",
+      "NO_PENDING_CASH": "لا توجد مبالغ نقدية مستحقة للتحصيل اليوم.",
+      "PATIENT_NAME": "اسم المريض",
+      "PLAN_TYPE": "نوع الخطة",
+      "TOTAL_AGREED_AMOUNT": "إجمالي المبلغ المتفق عليه",
+      "TOTAL_PAID_SO_FAR": "إجمالي المدفوع حتى الآن",
+      "REMAINING_DEBT": "المبلغ المتبقي",
+      "ACTION": "الإجراء",
+      "COLLECT_INSTALLMENT": "تحصيل قسط",
+      "NO_PENDING_INSTALLMENTS": "لا يوجد مرضى لديهم أقساط مستحقة.",
+      "INVOICE_ID": "رقم الفاتورة",
+      "PATIENT": "المريض",
+      "TOTAL_AMOUNT": "المبلغ الإجمالي",
+      "INSURANCE_SHARE": "حصة التأمين",
+      "STATUS": "الحالة",
+      "DATE": "التاريخ",
+      "NO_INSURANCE_CLAIMS": "لا توجد مطالبات تأمين.",
+      "PREVIOUS_PAYMENTS": "الدفعات السابقة",
+      "AMOUNT_TO_COLLECT": "المبلغ المطلوب تحصيله",
+      "PAYMENT_METHOD": "طريقة الدفع",
+      "SELECT_PAYMENT_METHOD": "اختر طريقة الدفع",
+      "PROCESSING": "جارٍ المعالجة...",
+      "CONFIRM_COLLECTION": "تأكيد التحصيل"
+    },
+    "ROOMS": {
+      "EMPTY_TITLE": "لم تتم إضافة غرف بعد",
+      "EMPTY_DESCRIPTION": "أضف غرفة لبدء إدارة الغرف المتاحة في العيادة."
     }
   },
   "CEO": {

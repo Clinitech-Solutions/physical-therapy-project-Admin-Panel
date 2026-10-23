@@ -65,7 +65,7 @@
           <div class="d-flex align-items-center justify-content-between mb-1">
             <span class="text-secondary small fw-semibold text-uppercase">{{ 'RECEPTIONIST.PENDING_COLLECTION' | translate }}</span>
             @if (pendingTodayRevenue() > 0) {
-              <i class="pi pi-exclamation-triangle text-warning fs-5" [title]="'RECEPTIONIST.UI.PENDING_COLLECTION_REQUIRED' | translate"></i>
+              <i class="pi pi-exclamation-triangle text-warning fs-5" [title]="'RECEPTIONIST.BILLING.PENDING_COLLECTION_REQUIRED' | translate"></i>
             } @else {
               <i class="bi bi-check-circle text-success fs-5"></i>
             }
@@ -86,15 +86,15 @@
     <p-tabs value="0">
       <p-tablist>
         <p-tab value="0">
-          <i class="bi bi-receipt text-primary me-1"></i> {{ 'RECEPTIONIST.UI.DAILY_CASHIER' | translate }}
+          <i class="bi bi-receipt text-primary me-1"></i> {{ 'RECEPTIONIST.BILLING.DAILY_CASHIER' | translate }}
           <span class="badge bg-primary rounded-pill ms-2">{{ dailyCashierInvoices().length }}</span>
         </p-tab>
         <p-tab value="1">
-          <i class="bi bi-clock-history text-warning me-1"></i> {{ 'RECEPTIONIST.UI.PENDING_INSTALLMENTS' | translate }}
+          <i class="bi bi-clock-history text-warning me-1"></i> {{ 'RECEPTIONIST.BILLING.PENDING_INSTALLMENTS' | translate }}
           <span class="badge bg-warning text-dark rounded-pill ms-2">{{ pendingInstallments().length }}</span>
         </p-tab>
         <p-tab value="2">
-          <i class="bi bi-shield-check text-success me-1"></i> {{ 'RECEPTIONIST.UI.INSURANCE_CLAIMS' | translate }}
+          <i class="bi bi-shield-check text-success me-1"></i> {{ 'RECEPTIONIST.BILLING.INSURANCE_CLAIMS' | translate }}
           <span class="badge bg-success rounded-pill ms-2">{{ insuranceClaims().length }}</span>
         </p-tab>
       </p-tablist>
@@ -109,9 +109,9 @@
                   <th>{{ 'RECEPTIONIST.INVOICE_ID' | translate }}</th>
                   <th>{{ 'COMMON.PATIENT' | translate }}</th>
                   <th>{{ 'RECEPTIONIST.TOTAL_AMOUNT' | translate }}</th>
-                  <th>{{ 'RECEPTIONIST.UI.PATIENT_SHARE' | translate }}</th>
-                  <th>{{ 'RECEPTIONIST.UI.PAID' | translate }}</th>
-                  <th>{{ 'RECEPTIONIST.UI.REMAINING' | translate }}</th>
+                  <th>{{ 'RECEPTIONIST.BILLING.PATIENT_SHARE' | translate }}</th>
+                  <th>{{ 'RECEPTIONIST.BILLING.PAID' | translate }}</th>
+                  <th>{{ 'RECEPTIONIST.BILLING.REMAINING' | translate }}</th>
                   <th>{{ 'RECEPTIONIST.TYPE' | translate }}</th>
                   <th>{{ 'COMMON.STATUS' | translate }}</th>
                   <th style="text-align:end">{{ 'COMMON.ACTION' | translate }}</th>
@@ -141,7 +141,7 @@
                 </tr>
               </ng-template>
               <ng-template pTemplate="emptymessage">
-                <tr><td colspan="9" class="text-center py-4 text-muted">{{ 'RECEPTIONIST.UI.NO_PENDING_CASH_COLLECTIONS_FOR_TODAY_' | translate }}</td></tr>
+                <tr><td colspan="9" class="text-center py-4 text-muted">{{ 'RECEPTIONIST.BILLING.NO_PENDING_CASH' | translate }}</td></tr>
               </ng-template>
             </p-table>
           </div>
@@ -153,12 +153,12 @@
             <p-table [value]="pendingInstallments()" [responsiveLayout]="'scroll'" styleClass="p-datatable-striped">
               <ng-template pTemplate="header">
                 <tr>
-                  <th>{{ 'RECEPTIONIST.UI.PATIENT_NAME' | translate }}</th>
-                  <th>{{ 'RECEPTIONIST.UI.PLAN_TYPE' | translate }}</th>
-                  <th>{{ 'RECEPTIONIST.UI.TOTAL_AGREED_AMOUNT' | translate }}</th>
-                  <th>{{ 'RECEPTIONIST.UI.TOTAL_PAID_SO_FAR' | translate }}</th>
-                  <th>{{ 'RECEPTIONIST.UI.REMAINING_DEBT' | translate }}</th>
-                  <th style="text-align:end">{{ 'RECEPTIONIST.UI.ACTION' | translate }}</th>
+                  <th>{{ 'RECEPTIONIST.BILLING.PATIENT_NAME' | translate }}</th>
+                  <th>{{ 'RECEPTIONIST.BILLING.PLAN_TYPE' | translate }}</th>
+                  <th>{{ 'RECEPTIONIST.BILLING.TOTAL_AGREED_AMOUNT' | translate }}</th>
+                  <th>{{ 'RECEPTIONIST.BILLING.TOTAL_PAID_SO_FAR' | translate }}</th>
+                  <th>{{ 'RECEPTIONIST.BILLING.REMAINING_DEBT' | translate }}</th>
+                  <th style="text-align:end">{{ 'RECEPTIONIST.BILLING.ACTION' | translate }}</th>
                 </tr>
               </ng-template>
               <ng-template pTemplate="body" let-patient>
@@ -169,12 +169,12 @@
                   <td><span class="fw-semibold text-body">{{ (patient.financialPlan?.totalPaidSoFar || patient.treatmentPlan?.financialPlan?.totalPaidSoFar) | currency:'EGP':'symbol':'1.2-2':locale.language }}</span></td>
                   <td><span class="fw-bold text-danger">{{ (patient.financialPlan?.remainingDebt || patient.treatmentPlan?.financialPlan?.remainingDebt) | currency:'EGP':'symbol':'1.2-2':locale.language }}</span></td>
                   <td style="text-align:end">
-                    <p-button [label]="'RECEPTIONIST.UI.COLLECT_INSTALLMENT' | translate" icon="bi bi-cash-coin" severity="warn" styleClass="p-button-warning p-button-sm" (onClick)="openInstallmentModal(patient.id)"></p-button>
+                    <p-button [label]="'RECEPTIONIST.BILLING.COLLECT_INSTALLMENT' | translate" icon="bi bi-cash-coin" severity="warn" styleClass="p-button-warning p-button-sm" (onClick)="openInstallmentModal(patient.id)"></p-button>
                   </td>
                 </tr>
               </ng-template>
               <ng-template pTemplate="emptymessage">
-                <tr><td colspan="6" class="text-center py-4 text-muted">{{ 'RECEPTIONIST.UI.NO_PATIENTS_WITH_PENDING_INSTALLMENTS_' | translate }}</td></tr>
+                <tr><td colspan="6" class="text-center py-4 text-muted">{{ 'RECEPTIONIST.BILLING.NO_PENDING_INSTALLMENTS' | translate }}</td></tr>
               </ng-template>
             </p-table>
           </div>
@@ -186,12 +186,12 @@
             <p-table [value]="insuranceClaims()" [responsiveLayout]="'scroll'" styleClass="p-datatable-striped">
               <ng-template pTemplate="header">
                 <tr>
-                  <th>{{ 'RECEPTIONIST.UI.INVOICE_ID' | translate }}</th>
-                  <th>{{ 'RECEPTIONIST.UI.PATIENT' | translate }}</th>
-                  <th>{{ 'RECEPTIONIST.UI.TOTAL_AMOUNT' | translate }}</th>
-                  <th>{{ 'RECEPTIONIST.UI.INSURANCE_SHARE' | translate }}</th>
-                  <th>{{ 'RECEPTIONIST.UI.STATUS' | translate }}</th>
-                  <th>{{ 'RECEPTIONIST.UI.DATE' | translate }}</th>
+                  <th>{{ 'RECEPTIONIST.BILLING.INVOICE_ID' | translate }}</th>
+                  <th>{{ 'RECEPTIONIST.BILLING.PATIENT' | translate }}</th>
+                  <th>{{ 'RECEPTIONIST.BILLING.TOTAL_AMOUNT' | translate }}</th>
+                  <th>{{ 'RECEPTIONIST.BILLING.INSURANCE_SHARE' | translate }}</th>
+                  <th>{{ 'RECEPTIONIST.BILLING.STATUS' | translate }}</th>
+                  <th>{{ 'RECEPTIONIST.BILLING.DATE' | translate }}</th>
                 </tr>
               </ng-template>
               <ng-template pTemplate="body" let-invoice>
@@ -205,7 +205,7 @@
                 </tr>
               </ng-template>
               <ng-template pTemplate="emptymessage">
-                <tr><td colspan="6" class="text-center py-4 text-muted">{{ 'RECEPTIONIST.UI.NO_INSURANCE_CLAIMS_FOUND_' | translate }}</td></tr>
+                <tr><td colspan="6" class="text-center py-4 text-muted">{{ 'RECEPTIONIST.BILLING.NO_INSURANCE_CLAIMS' | translate }}</td></tr>
               </ng-template>
             </p-table>
           </div>
@@ -250,7 +250,7 @@
 
     @if (invoicePayments().length > 0) {
       <div class="mt-3 pt-2 border-top">
-        <div class="text-secondary small fw-semibold mb-1">{{ 'RECEPTIONIST.UI.PREVIOUS_PAYMENTS' | translate }}</div>
+        <div class="text-secondary small fw-semibold mb-1">{{ 'RECEPTIONIST.BILLING.PREVIOUS_PAYMENTS' | translate }}</div>
         @for (pay of invoicePayments(); track pay.id || $index) {
           <div class="d-flex justify-content-between align-items-center small py-1">
             <span class="text-muted">{{ billingService.mapMethodToString(pay.method) | receptionistText }}</span>
@@ -295,23 +295,23 @@
   [showHeader]="true" 
   styleClass="clean-modal receptionist-modal"
   [style]="{ width: '400px' }"
-  [header]="'RECEPTIONIST.UI.COLLECT_INSTALLMENT' | translate">
+  [header]="'RECEPTIONIST.BILLING.COLLECT_INSTALLMENT' | translate">
 
   <div class="modal-form-vertical py-2">
     <div class="form-group mb-3">
       <label class="form-label mb-2">
-        {{ 'RECEPTIONIST.UI.AMOUNT_TO_COLLECT' | translate }} <span class="required-asterisk text-danger">*</span>
+        {{ 'RECEPTIONIST.BILLING.AMOUNT_TO_COLLECT' | translate }} <span class="required-asterisk text-danger">*</span>
       </label>
       <p-inputNumber [(ngModel)]="installmentAmount" mode="currency" currency="EGP" [locale]="locale.language" styleClass="w-100" class="w-full d-block" [min]="1" [max]="selectedPatientRemainingDebt"></p-inputNumber>
     </div>
     <div class="form-group mb-3">
       <label class="form-label mb-2">
-        {{ 'RECEPTIONIST.UI.PAYMENT_METHOD' | translate }} <span class="required-asterisk text-danger">*</span>
+        {{ 'RECEPTIONIST.BILLING.PAYMENT_METHOD' | translate }} <span class="required-asterisk text-danger">*</span>
       </label>
       <p-dropdown 
         [options]="paymentMethods" 
         [(ngModel)]="installmentPaymentMethod" 
-        [placeholder]="'RECEPTIONIST.UI.SELECT_PAYMENT_METHOD' | translate"
+        [placeholder]="'RECEPTIONIST.BILLING.SELECT_PAYMENT_METHOD' | translate"
         appendTo="body"
         styleClass="w-100 p-select-sm">
       </p-dropdown>
@@ -325,9 +325,9 @@
       </button>
       <button type="button" class="btn btn-primary" (click)="confirmInstallmentCollection()" [disabled]="isProcessingPayment()">
         @if (isProcessingPayment()) {
-          <span class="spinner-border spinner-border-sm me-1"></span> {{ 'RECEPTIONIST.UI.PROCESSING_' | translate }}
+          <span class="spinner-border spinner-border-sm me-1"></span> {{ 'RECEPTIONIST.BILLING.PROCESSING' | translate }}
         } @else {
-          {{ 'RECEPTIONIST.UI.CONFIRM_COLLECTION' | translate }}
+          {{ 'RECEPTIONIST.BILLING.CONFIRM_COLLECTION' | translate }}
         }
       </button>
     </div>
