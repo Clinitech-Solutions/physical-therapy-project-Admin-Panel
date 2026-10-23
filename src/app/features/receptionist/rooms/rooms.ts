@@ -21,7 +21,6 @@ export class RoomsComponent {
   clinicState = inject(ClinicStateService);
   messageService = inject(MessageService);
   
-  // Forcing angular to recompile to refresh assets cache
   rooms = this.clinicState.rooms;
   allDoctors = this.clinicState.doctors;
 
@@ -82,15 +81,17 @@ export class RoomsComponent {
 
   // Determines visual state for the floor plan
   getRoomStatusCssClass(room: Room): string {
-    if (room.status === 'Maintenance') return 'room-maintenance';
-    if (room.status === 'Occupied') return 'room-occupied';
-    return 'room-available';
+    if (room.status === 'Maintenance') return 'maintenance';
+    if (room.status === 'Occupied') return 'occupied';
+    if (room.status === 'Available') return 'available';
+    return 'unknown';
   }
 
   getRoomStatusLabel(room: Room): string {
-    if (room.status === 'Maintenance') return 'Maintenance';
-    if (room.status === 'Occupied') return 'Occupied';
-    return 'Available';
+    if (room.status === 'Maintenance') return 'RECEPTIONIST.MAINTENANCE';
+    if (room.status === 'Occupied') return 'RECEPTIONIST.OCCUPIED';
+    if (room.status === 'Available') return 'RECEPTIONIST.AVAILABLE';
+    return 'RECEPTIONIST.ROOMS.UNKNOWN_STATUS';
   }
 
   // Identifies doctors managing multiple rooms and assigns a distinct theme color to visually link them

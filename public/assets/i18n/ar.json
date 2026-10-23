@@ -590,6 +590,8 @@
       "CONFIRM_COLLECTION": "تأكيد التحصيل"
     },
     "ROOMS": {
+      "UNNAMED_ROOM": "غرفة دون اسم",
+      "UNKNOWN_STATUS": "حالة الغرفة غير معروفة",
       "EMPTY_TITLE": "لم تتم إضافة غرف بعد",
       "EMPTY_DESCRIPTION": "أضف غرفة لبدء إدارة الغرف المتاحة في العيادة."
     }

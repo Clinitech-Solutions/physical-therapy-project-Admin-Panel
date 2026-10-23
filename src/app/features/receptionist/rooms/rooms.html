@@ -19,15 +19,15 @@
   }
 
   <div class="rooms-grid">
-    <div *ngFor="let room of clinicState.rooms()" class="room-card" [ngClass]="room.status.toLowerCase()">
+    <div *ngFor="let room of rooms()" class="room-card" [ngClass]="getRoomStatusCssClass(room)">
 
       <!-- Top Section -->
       <div class="room-header">
         <div class="room-title" style="display: flex; align-items: center; gap: 1rem;">
-          <span class="font-bold text-lg">{{ room.displayName }}</span>
+          <span class="font-bold text-lg">{{ room.displayName || ('RECEPTIONIST.ROOMS.UNNAMED_ROOM' | translate) }}</span>
         </div>
         <!-- Animated Pulse Status -->
-        <div class="status-indicator-wrapper" [title]="'RECEPTIONIST.' + room.status.toUpperCase() | translate">
+        <div class="status-indicator-wrapper" [title]="getRoomStatusLabel(room) | translate">
           <div class="status-indicator"></div>
           <div class="status-pulse" *ngIf="room.status !== 'Maintenance'"></div>
         </div>

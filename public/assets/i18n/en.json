@@ -590,6 +590,8 @@
       "CONFIRM_COLLECTION": "Confirm Collection"
     },
     "ROOMS": {
+      "UNNAMED_ROOM": "Unnamed room",
+      "UNKNOWN_STATUS": "Unknown room status",
       "EMPTY_TITLE": "No rooms added yet",
       "EMPTY_DESCRIPTION": "Add a room to start managing clinic availability."
     }
