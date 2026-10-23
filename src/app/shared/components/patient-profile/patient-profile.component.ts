@@ -9,6 +9,9 @@ import { TagModule } from 'primeng/tag';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 import { ClinicStateService } from '../../../core/services/state/clinic-state.service';
+import { BillingService } from '../../../core/services/billing.service';
+import { PatientService } from '../../../core/services/patient.service';
+import { AppointmentService } from '../../../core/services/appointment.service';
 import { Patient } from '../../../core/models/patient.model';
 import { Session, SessionStatus } from '../../../core/models/session.model';
 
@@ -31,6 +34,9 @@ import { Session, SessionStatus } from '../../../core/models/session.model';
 })
 export class PatientProfileComponent {
   public clinicState = inject(ClinicStateService);
+  public billingService = inject(BillingService, { optional: true }) ?? new BillingService();
+  public patientService = inject(PatientService, { optional: true });
+  public appointmentService = inject(AppointmentService, { optional: true });
 
   @Input() visible = false;
   @Output() visibleChange = new EventEmitter<boolean>();
@@ -40,7 +46,13 @@ export class PatientProfileComponent {
 
   get currentPatient(): Patient | undefined {
     if (this.patient) return this.patient;
-    if (this.patientId) return this.clinicState.getPatientById(this.patientId);
+    if (this.patientId) {
+      const apiPatient = this.patientService
+        ?.patients()
+        .find((p) => p.id === this.patientId);
+      if (apiPatient) return apiPatient;
+      return this.clinicState.getPatientById(this.patientId);
+    }
     return undefined;
   }
 
@@ -71,7 +83,24 @@ export class PatientProfileComponent {
     const p = this.currentPatient;
     if (!p) return [];
 
-    const existingSessions = this.clinicState.getSessionsByPatientId(p.id);
+    const apiApps = (this.appointmentService?.appointments() ?? []).filter(
+      (a) => String(a.patientId) === String(p.id)
+    );
+
+    const existingSessions: Session[] =
+      apiApps.length > 0
+        ? apiApps.map((a, idx) => ({
+            id: String(a.id ?? idx + 1),
+            patientId: String(a.patientId),
+            doctorId: a.doctorId ? String(a.doctorId) : (p.treatmentPlan?.primaryDoctorId || ''),
+            roomId: a.roomId ? String(a.roomId) : undefined,
+            scheduledAt: a.startTime,
+            status: (a.status as SessionStatus) || 'Pending',
+            type: (a.appointmentType as any) || 'Session',
+            sessionNumber: idx + 1
+          }))
+        : this.clinicState.getSessionsByPatientId(p.id);
+
     const total = p.treatmentPlan?.totalSessions || p.insuranceDetails?.approvedSessions || existingSessions.length;
 
     if (total <= existingSessions.length) {
@@ -108,19 +137,20 @@ export class PatientProfileComponent {
   }
 
   getPaymentInfo(sessionId: string): { label: string; severity: 'success' | 'info' | 'warn' | 'danger' | 'secondary' } {
-    const invoice = this.clinicState.getSessionInvoice(sessionId);
+    const invoice = this.billingService.getInvoiceBySessionId(sessionId);
     if (!invoice) {
       return { label: 'RECEPTIONIST.UNBILLED', severity: 'secondary' };
     }
-    switch (invoice.status) {
+    const statusLabel = this.billingService.mapStatusToString(invoice.status);
+    switch (statusLabel) {
       case 'Paid':
-        return { label: invoice.status, severity: 'success' };
+        return { label: statusLabel, severity: 'success' };
       case 'Pending':
-        return { label: invoice.status, severity: 'warn' };
+        return { label: statusLabel, severity: 'warn' };
       case 'Partial':
-        return { label: invoice.status, severity: 'info' };
+        return { label: statusLabel, severity: 'info' };
       default:
-        return { label: invoice.status, severity: 'secondary' };
+        return { label: statusLabel, severity: 'secondary' };
     }
   }
 

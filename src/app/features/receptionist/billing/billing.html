@@ -120,21 +120,21 @@
               <ng-template pTemplate="body" let-invoice>
                 <tr>
                   <td><span class="font-bebas text-secondary">{{ invoice.id }}</span></td>
-                  <td><span class="fw-semibold text-body">{{ getPatientName(invoice.patientId) }}</span></td>
-                  <td><span class="fw-bold text-success">{{ invoice.amount | currency:'EGP' }}</span></td>
-                  <td><span class="fw-bold text-danger">{{ invoice.patientShare | currency:'EGP' }}</span></td>
+                  <td><span class="fw-semibold text-body">{{ getPatientName(invoice.patientId, invoice.patientName) }}</span></td>
+                  <td><span class="fw-bold text-success">{{ invoice.totalAmount | currency:'EGP' }}</span></td>
+                  <td><span class="fw-bold text-danger">{{ invoice.patientAmount | currency:'EGP' }}</span></td>
                   <td><span class="fw-semibold text-body">{{ (invoice.paidAmount || 0) | currency:'EGP' }}</span></td>
-                  <td><span class="fw-semibold text-danger">{{ (invoice.remainingBalance !== undefined ? invoice.remainingBalance : invoice.patientShare) | currency:'EGP' }}</span></td>
+                  <td><span class="fw-semibold text-danger">{{ (invoice.remainingBalance !== undefined ? invoice.remainingBalance : invoice.patientAmount) | currency:'EGP' }}</span></td>
                   <td>
-                    <span class="badge border" [ngClass]="invoice.type === 'Assessment' ? 'border-primary text-primary' : 'border-info text-info'">
-                      {{ invoice.type }}
+                    <span class="badge border" [ngClass]="billingService.mapTypeToString(invoice.type) === 'Assessment' ? 'border-primary text-primary' : 'border-info text-info'">
+                      {{ billingService.mapTypeToString(invoice.type) }}
                     </span>
                   </td>
                   <td>
-                    <p-tag [value]="invoice.status" [severity]="getStatusSeverity(invoice.status)"></p-tag>
+                    <p-tag [value]="billingService.mapStatusToString(invoice.status)" [severity]="getStatusSeverity(billingService.mapStatusToString(invoice.status))"></p-tag>
                   </td>
                   <td style="text-align:end">
-                    @if (invoice.status === 'Pending' || invoice.status === 'Partial') {
+                    @if (billingService.mapStatusToString(invoice.status) === 'Pending' || billingService.mapStatusToString(invoice.status) === 'Partial') {
                       <p-button [label]="'RECEPTIONIST.PROCESS_PAYMENT' | translate" icon="bi bi-credit-card" severity="success" styleClass="p-button-success p-button-sm" (onClick)="openPaymentModal(invoice.id)"></p-button>
                     }
                   </td>
@@ -197,10 +197,10 @@
               <ng-template pTemplate="body" let-invoice>
                 <tr>
                   <td><span class="font-bebas text-secondary">{{ invoice.id }}</span></td>
-                  <td><span class="fw-semibold text-body">{{ getPatientName(invoice.patientId) }}</span></td>
-                  <td><span class="fw-bold text-success">{{ invoice.amount | currency:'EGP' }}</span></td>
-                  <td><span class="fw-bold text-info">{{ invoice.insuranceShare | currency:'EGP' }}</span></td>
-                  <td><p-tag [value]="'Pending Claim'" severity="warn"></p-tag></td>
+                  <td><span class="fw-semibold text-body">{{ getPatientName(invoice.patientId, invoice.patientName) }}</span></td>
+                  <td><span class="fw-bold text-success">{{ invoice.totalAmount | currency:'EGP' }}</span></td>
+                  <td><span class="fw-bold text-info">{{ invoice.insuranceAmount | currency:'EGP' }}</span></td>
+                  <td><p-tag [value]="billingService.mapStatusToString(invoice.status)" [severity]="getStatusSeverity(billingService.mapStatusToString(invoice.status))"></p-tag></td>
                   <td><span class="text-secondary small">{{ invoice.createdAt | date:'shortDate' }}</span></td>
                 </tr>
               </ng-template>
@@ -247,6 +247,18 @@
         styleClass="w-100 p-select-sm">
       </p-dropdown>
     </div>
+
+    @if (invoicePayments().length > 0) {
+      <div class="mt-3 pt-2 border-top">
+        <div class="text-secondary small fw-semibold mb-1">Previous Payments</div>
+        @for (pay of invoicePayments(); track pay.id || $index) {
+          <div class="d-flex justify-content-between align-items-center small py-1">
+            <span class="text-muted">{{ billingService.mapMethodToString(pay.method) }}</span>
+            <span class="fw-semibold text-success">{{ pay.amount | currency:'EGP' }}</span>
+          </div>
+        }
+      </div>
+    }
   </div>
 
   <ng-template pTemplate="footer">
@@ -261,8 +273,8 @@
         type="button" 
         class="btn btn-primary" 
         (click)="confirmPayment()"
-        [disabled]="clinicState.isProcessingPayment()">
-        @if (clinicState.isProcessingPayment()) {
+        [disabled]="isProcessingPayment()">
+        @if (isProcessingPayment()) {
           <span class="spinner-border spinner-border-sm me-1"></span> {{ 'RECEPTIONIST.PROCESSING' | translate }}
         } @else {
           {{ 'RECEPTIONIST.PROCESS_PAYMENT' | translate }}
@@ -311,8 +323,8 @@
       <button type="button" class="btn btn-outline-secondary btn-cancel" (click)="showInstallmentModal = false">
         {{ 'COMMON.CANCEL' | translate }}
       </button>
-      <button type="button" class="btn btn-primary" (click)="confirmInstallmentCollection()" [disabled]="clinicState.isProcessingPayment()">
-        @if (clinicState.isProcessingPayment()) {
+      <button type="button" class="btn btn-primary" (click)="confirmInstallmentCollection()" [disabled]="isProcessingPayment()">
+        @if (isProcessingPayment()) {
           <span class="spinner-border spinner-border-sm me-1"></span> Processing...
         } @else {
           Confirm Collection

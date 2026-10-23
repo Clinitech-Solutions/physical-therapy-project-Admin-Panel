@@ -3,10 +3,12 @@ import { CommonModule } from "@angular/common";
 import { LanguageService } from "../../../core/services/language";
 import { TranslateModule } from '@ngx-translate/core';
 import { FormsModule } from '@angular/forms';
+import { firstValueFrom } from 'rxjs';
 
 import { ClinicStateService } from '../../../core/services/state/clinic-state.service';
 import { AppointmentService, Appointment } from '../../../core/services/appointment.service';
 import { PatientService } from '../../../core/services/patient.service';
+import { BillingService } from '../../../core/services/billing.service';
 import { MessageService } from 'primeng/api';
 import { ProgressBar } from 'primeng/progressbar';
 import { ButtonModule } from 'primeng/button';
@@ -25,19 +27,39 @@ import { PatientProfileComponent } from '../../../shared/components/patient-prof
 export class Dashboard implements OnInit {
   langService = inject(LanguageService);
   clinicState = inject(ClinicStateService);
-  appointmentService = inject(AppointmentService);
-  patientService = inject(PatientService);
+  appointmentService = inject(AppointmentService, { optional: true });
+  patientService = inject(PatientService, { optional: true });
+  billingService = inject(BillingService, { optional: true }) ?? new BillingService();
   messageService = inject(MessageService);
   
   todayDate = new Date();
 
-  // Financial signals from ClinicStateService
-  expectedTodayRevenue = this.clinicState.expectedTodayRevenue;
-  collectedTodayRevenue = this.clinicState.collectedTodayRevenue;
-  collectionRateToday = this.clinicState.collectionRateToday;
+  // Financial signals strictly bound to BillingService
+  expectedTodayRevenue = this.billingService.expectedTodayRevenue;
+  collectedTodayRevenue = this.billingService.collectedTodayRevenue;
+  collectionRateToday = this.billingService.collectionRateToday;
 
-  appointments = this.appointmentService.appointments;
-  allPatients = this.patientService.patients;
+  appointments = computed<Appointment[]>(() => {
+    const apiApps = this.appointmentService?.appointments() ?? [];
+    if (apiApps.length > 0) return apiApps;
+    return this.clinicState.sessions().map((s) => ({
+      id: Number(s.id) || (s.id as any),
+      patientId: Number(s.patientId) || (s.patientId as any),
+      doctorId: (s.doctorId as any) ?? null,
+      roomId: (s.roomId as any) ?? null,
+      appointmentType: s.type,
+      startTime: s.scheduledAt || '',
+      endTime: s.scheduledAt || '',
+      status: s.status,
+      scheduledAt: s.scheduledAt
+    })) as any[];
+  });
+
+  allPatients = computed(() => {
+    const apiPatients = this.patientService?.patients() ?? [];
+    return apiPatients.length > 0 ? apiPatients : this.clinicState.patients();
+  });
+
   allDoctors = this.clinicState.doctors;
   allRooms = this.clinicState.rooms;
 
@@ -56,12 +78,13 @@ export class Dashboard implements OnInit {
   }
 
   ngOnInit() {
-    this.appointmentService.getAppointments();
-    this.patientService.getPatients().subscribe();
+    this.appointmentService?.getAppointments();
+    this.patientService?.getPatients().subscribe();
+    this.billingService.getInvoices();
   }
 
   /**
-   * Real-time computed signal: Filter clinicState.sessions() where date matches today
+   * Real-time computed signal: Filter appointments/sessions where date matches today
    */
   todaySessions = computed(() => {
     const today = new Date();
@@ -69,14 +92,15 @@ export class Dashboard implements OnInit {
     const pad = (n: number) => n.toString().padStart(2, '0');
     const localYMD = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
 
-    return this.appointments().filter(a => {
-      if (!a.startTime) return false;
-      const sessionDate = new Date(a.startTime);
+    return this.appointments().filter((a: any) => {
+      const timeVal = a.startTime || a.scheduledAt;
+      if (!timeVal) return false;
+      const sessionDate = new Date(timeVal);
       const isSameDay = !isNaN(sessionDate.getTime()) &&
         sessionDate.getFullYear() === today.getFullYear() &&
         sessionDate.getMonth() === today.getMonth() &&
         sessionDate.getDate() === today.getDate();
-      const sessionDatePart = a.startTime.toString().split('T')[0];
+      const sessionDatePart = timeVal.toString().split('T')[0];
       return isSameDay || sessionDatePart === todayYMD || sessionDatePart === localYMD;
     });
   });
@@ -89,17 +113,14 @@ export class Dashboard implements OnInit {
   );
 
   /**
-   * Real-time computed signal: Count of clinicState.invoices() where status is 'Pending'
+   * Real-time computed signal: Strictly bound to billingService.pendingPaymentsCount
    */
-  pendingPaymentsCount = computed(() =>
-    this.clinicState.invoices().filter(i => i.status === 'Pending').length
-  );
+  pendingPaymentsCount = this.billingService.pendingPaymentsCount;
 
   /**
-   * Real-time computed signal: Sum the amount of all clinicState.invoices()
-   * where status is 'Paid' AND the createdAt date matches today
+   * Real-time computed signal: Strictly bound to billingService.collectedTodayRevenue
    */
-  todayRevenue = computed(() => this.collectedTodayRevenue());
+  todayRevenue = computed(() => this.billingService.collectedTodayRevenue());
 
   /**
    * Filtered today's sessions for the timeline table (reactive computed signal)
@@ -185,7 +206,19 @@ export class Dashboard implements OnInit {
 
   onCheckInClick(session: Appointment) {
     const patient = this.allPatients().find(p => p.id === session.patientId.toString());
-    const debt = patient?.financialPlan?.remainingDebt || patient?.treatmentPlan?.financialPlan?.remainingDebt || 0;
+    const planDebt = patient?.financialPlan?.remainingDebt || patient?.treatmentPlan?.financialPlan?.remainingDebt || 0;
+    const unpaidInvoicesDebt = this.billingService
+      .invoices()
+      .filter((inv) => {
+        const st = this.billingService.mapStatusToString(inv.status);
+        return (
+          Number(inv.patientId) === Number(session.patientId) &&
+          (st === 'Pending' || st === 'Partial')
+        );
+      })
+      .reduce((sum, inv) => sum + (inv.remainingBalance ?? inv.patientAmount ?? 0), 0);
+
+    const debt = Math.max(planDebt, unpaidInvoicesDebt);
     if (debt > 0) {
       this.pendingDebtTotal = debt;
       this.debtAmountToCollect = debt;
@@ -200,7 +233,40 @@ export class Dashboard implements OnInit {
     if (collect && this.debtAmountToCollect > 0 && this.debtSessionId) {
       const session = this.appointments().find(s => s.id?.toString() === this.debtSessionId);
       if (session) {
-        await this.clinicState.collectInstallment(session.patientId.toString(), this.debtAmountToCollect, 'Cash');
+        let targetInvoice =
+          this.billingService.getInvoiceBySessionId(this.debtSessionId) ||
+          this.billingService
+            .invoices()
+            .find((inv) => {
+              const st = this.billingService.mapStatusToString(inv.status);
+              return (
+                Number(inv.patientId) === Number(session.patientId) &&
+                (st === 'Pending' || st === 'Partial')
+              );
+            });
+
+        if (!targetInvoice) {
+          targetInvoice = await firstValueFrom(
+            this.billingService.createInvoice({
+              appointmentId: Number(this.debtSessionId),
+              patientId: Number(session.patientId),
+              type: this.billingService.mapTypeToNumber('Installment'),
+              totalAmount: this.debtAmountToCollect,
+              insuranceAmount: 0,
+              patientAmount: this.debtAmountToCollect
+            })
+          );
+        }
+
+        if (targetInvoice?.id) {
+          await firstValueFrom(
+            this.billingService.recordPayment({
+              invoiceId: Number(targetInvoice.id),
+              amount: this.debtAmountToCollect,
+              method: this.billingService.mapPaymentMethodToNumber('Cash')
+            })
+          );
+        }
       }
     }
     if (this.debtSessionId) {
@@ -214,12 +280,14 @@ export class Dashboard implements OnInit {
 
   async checkIn(id: number) {
     try {
-      await new Promise<void>((resolve, reject) => {
-        this.appointmentService.updateStatus(id, 'In Progress').subscribe({
-          next: () => resolve(),
-          error: (e) => reject(e)
+      if (this.appointmentService) {
+        await new Promise<void>((resolve, reject) => {
+          this.appointmentService!.updateStatus(id, 'In Progress').subscribe({
+            next: () => resolve(),
+            error: (e) => reject(e)
+          });
         });
-      });
+      }
       this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Patient checked in' });
     } catch (e: any) {
       this.messageService.add({ severity: 'error', summary: 'Check-in Failed', detail: e.message || 'Room is not available for booking.' });
@@ -228,12 +296,24 @@ export class Dashboard implements OnInit {
 
   async checkOut(id: number) {
     try {
-      await new Promise<void>((resolve, reject) => {
-        this.appointmentService.updateStatus(id, 'Completed').subscribe({
-          next: () => resolve(),
-          error: (e) => reject(e)
+      const sessionInvoice = this.billingService.getInvoiceBySessionId(id);
+      if (sessionInvoice) {
+        const statusStr = this.billingService.mapStatusToString(sessionInvoice.status);
+        if (statusStr !== 'Paid' && statusStr !== 'Waived') {
+          throw new Error(
+            'Cannot check out: The invoice for this session is pending. Please process payment first.'
+          );
+        }
+      }
+
+      if (this.appointmentService) {
+        await new Promise<void>((resolve, reject) => {
+          this.appointmentService!.updateStatus(id, 'Completed').subscribe({
+            next: () => resolve(),
+            error: (e) => reject(e)
+          });
         });
-      });
+      }
       this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Patient checked out' });
     } catch (error: any) {
       this.messageService.add({
@@ -246,7 +326,7 @@ export class Dashboard implements OnInit {
 
   markPatientAbsent(sessionId: number) {
     try {
-      this.appointmentService.updateStatus(sessionId, 'Cancelled').subscribe({
+      this.appointmentService?.updateStatus(sessionId, 'Cancelled').subscribe({
         next: () => {
           this.messageService.add({
             severity: 'success',
@@ -273,4 +353,3 @@ export class Dashboard implements OnInit {
 }
 
 export { Dashboard as DashboardComponent };
-

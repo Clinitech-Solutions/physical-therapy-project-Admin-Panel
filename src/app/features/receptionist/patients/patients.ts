@@ -7,6 +7,7 @@ import { ClinicStateService } from '../../../core/services/state/clinic-state.se
 import { InsuranceService } from '../../../core/services/insurance.service';
 import { PatientService } from '../../../core/services/patient.service';
 import { InsuranceDocumentService } from '../../../core/services/insurance-document.service';
+import { BillingService } from '../../../core/services/billing.service';
 import { Patient, NewPatient, PaymentMethod, InsuranceDetails } from '../../../core/models/patient.model';
 import { MessageService, SharedModule } from 'primeng/api';
 import { DialogModule } from 'primeng/dialog';
@@ -26,6 +27,7 @@ export class PatientsComponent implements OnInit {
   private insuranceService = inject(InsuranceService);
   private patientService = inject(PatientService);
   private insuranceDocService = inject(InsuranceDocumentService);
+  private billingService = inject(BillingService, { optional: true });
   private fb = inject(FormBuilder);
 
   selectedFiles: File[] = [];
@@ -39,6 +41,7 @@ export class PatientsComponent implements OnInit {
   ngOnInit() {
     this.insuranceService.getCompanies();
     this.patientService.getPatients().subscribe();
+    this.billingService?.getInvoices();
   }
 
   // Main patientForm builder (Reactive Forms) — basic info + insurance only
@@ -286,4 +289,3 @@ export class PatientsComponent implements OnInit {
     }
   }
 }
-
