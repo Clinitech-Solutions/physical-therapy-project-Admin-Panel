@@ -99,56 +99,56 @@
 
       <div class="schedule-filter-tools">
         <div class="schedule-filter-fields">
-        <!-- Search Input -->
-        <div class="search-bar schedule-search">
-          <i class="bi bi-search"></i>
-          <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="onSearchOrFilterChange()"
-            [placeholder]="'COMMON.SEARCH' | translate"
-            [attr.aria-label]="'RECEPTIONIST.SEARCH_PLACEHOLDER' | translate"
-            [title]="'RECEPTIONIST.SEARCH_PLACEHOLDER' | translate" />
-          @if (searchQuery) {
-            <button type="button" class="btn-clear-search" (click)="searchQuery = ''; onSearchOrFilterChange()" [title]="'RECEPTIONIST.UI.CLEAR_SEARCH' | translate">
-              <i class="bi bi-x-lg"></i>
-            </button>
-          }
-        </div>
+          <!-- Search Input -->
+          <div class="search-bar schedule-search">
+            <i class="bi bi-search"></i>
+            <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="onSearchOrFilterChange()"
+              [placeholder]="'COMMON.SEARCH' | translate"
+              [attr.aria-label]="'RECEPTIONIST.SEARCH_PLACEHOLDER' | translate"
+              [title]="'RECEPTIONIST.SEARCH_PLACEHOLDER' | translate" />
+            @if (searchQuery) {
+              <button type="button" class="btn-clear-search" (click)="searchQuery = ''; onSearchOrFilterChange()" [title]="'RECEPTIONIST.UI.CLEAR_SEARCH' | translate">
+                <i class="bi bi-x-lg"></i>
+              </button>
+            }
+          </div>
 
-        <!-- Doctor Filter -->
-        <select class="form-select form-select-sm schedule-filter-select" [attr.aria-label]="'RECEPTIONIST.ALL_DOCTORS' | translate" [(ngModel)]="selectedDoctorFilter"
-          (ngModelChange)="onSearchOrFilterChange()">
-          <option value="">{{ 'RECEPTIONIST.ALL_DOCTORS' | translate }}</option>
-          @for (doc of allDoctors(); track doc.id) {
-            <option [value]="doc.id">{{ doc.name }}</option>
-          }
-        </select>
+          <!-- Doctor Filter -->
+          <select class="form-select form-select-sm schedule-filter-select" [attr.aria-label]="'RECEPTIONIST.ALL_DOCTORS' | translate" [(ngModel)]="selectedDoctorFilter"
+            (ngModelChange)="onSearchOrFilterChange()">
+            <option value="">{{ 'RECEPTIONIST.ALL_DOCTORS' | translate }}</option>
+            @for (doc of allDoctors(); track doc.id) {
+              <option [value]="doc.id">{{ doc.name }}</option>
+            }
+          </select>
 
-        <!-- Room Filter -->
-        <select class="form-select form-select-sm schedule-filter-select" [attr.aria-label]="'RECEPTIONIST.ALL_ROOMS' | translate" [(ngModel)]="selectedRoomFilter"
-          (ngModelChange)="onSearchOrFilterChange()">
-          <option value="">{{ 'RECEPTIONIST.ALL_ROOMS' | translate }}</option>
-          @for (room of allRooms(); track room.id) {
-            <option [value]="room.id">{{ room.displayName }}</option>
-          }
-        </select>
+          <!-- Room Filter -->
+          <select class="form-select form-select-sm schedule-filter-select" [attr.aria-label]="'RECEPTIONIST.ALL_ROOMS' | translate" [(ngModel)]="selectedRoomFilter"
+            (ngModelChange)="onSearchOrFilterChange()">
+            <option value="">{{ 'RECEPTIONIST.ALL_ROOMS' | translate }}</option>
+            @for (room of allRooms(); track room.id) {
+              <option [value]="room.id">{{ room.displayName }}</option>
+            }
+          </select>
         </div>
 
         <div class="schedule-view-controls">
-        @if (searchQuery || selectedDoctorFilter || selectedRoomFilter || selectedFilter !== 'All') {
-          <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-1" (click)="resetFilters()"
-            [attr.aria-label]="'RECEPTIONIST.UI.RESET_FILTERS' | translate" [title]="'RECEPTIONIST.UI.RESET_FILTERS' | translate">
-            <i class="bi bi-arrow-counterclockwise"></i>
-          </button>
-        }
+          @if (searchQuery || selectedDoctorFilter || selectedRoomFilter || selectedFilter !== 'All') {
+            <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-1" (click)="resetFilters()"
+              [attr.aria-label]="'RECEPTIONIST.UI.RESET_FILTERS' | translate" [title]="'RECEPTIONIST.UI.RESET_FILTERS' | translate">
+              <i class="bi bi-arrow-counterclockwise"></i>
+            </button>
+          }
 
-        <!-- View Mode Toggle -->
-        <div class="view-mode-toggle">
-          <button type="button" class="view-btn" [class.active]="viewMode() === 'Day'" [attr.aria-pressed]="viewMode() === 'Day'" (click)="viewMode.set('Day')">
-            {{ 'RECEPTIONIST.DAY' | translate }}
-          </button>
-          <button type="button" class="view-btn" [class.active]="viewMode() === 'Week'" [attr.aria-pressed]="viewMode() === 'Week'" (click)="viewMode.set('Week')">
-            {{ 'RECEPTIONIST.WEEK' | translate }}
-          </button>
-        </div>
+          <!-- View Mode Toggle -->
+          <div class="view-mode-toggle">
+            <button type="button" class="view-btn" [class.active]="viewMode() === 'Day'" [attr.aria-pressed]="viewMode() === 'Day'" (click)="viewMode.set('Day')">
+              {{ 'RECEPTIONIST.DAY' | translate }}
+            </button>
+            <button type="button" class="view-btn" [class.active]="viewMode() === 'Week'" [attr.aria-pressed]="viewMode() === 'Week'" (click)="viewMode.set('Week')">
+              {{ 'RECEPTIONIST.WEEK' | translate }}
+            </button>
+          </div>
         </div>
       </div>
     </div>
