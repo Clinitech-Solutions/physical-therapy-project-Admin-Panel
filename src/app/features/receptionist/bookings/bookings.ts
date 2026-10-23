@@ -1,5 +1,6 @@
 import { Component, signal, computed, inject, OnInit } from "@angular/core";
 import { CommonModule } from "@angular/common";
+import { RouterModule } from "@angular/router";
 import { TranslateModule } from '@ngx-translate/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
@@ -26,6 +27,7 @@ import { BillingService, CreateInvoiceDto } from '../../../core/services/billing
   standalone: true,
   imports: [
     CommonModule, 
+    RouterModule,
     TranslateModule, 
     FormsModule, 
     SelectModule, 
@@ -53,7 +55,7 @@ export class BookingsComponent implements OnInit {
 
   // Global State Signals
   appointments = this.appointmentService?.appointments ?? signal<Appointment[]>([]);
-  allPatients = this.patientService?.patients ?? signal<Patient[]>([]);
+  allPatients = this.patientService?.patients ?? this.clinicState.patients;
   allDoctors = this.clinicState.doctors;
   allRooms = this.clinicState.rooms;
   availableRooms = this.clinicState.availableRooms;
@@ -251,6 +253,16 @@ export class BookingsComponent implements OnInit {
 
   get isInsurancePending(): boolean {
     return this.selectedPatient?.paymentType === 'Insurance' && this.selectedPatient?.insuranceDetails?.status !== 'Approved';
+  }
+
+  get selectedDoctorName(): string {
+    if (!this.selectedDoctorId) return '';
+    return this.allDoctors().find((d) => d.id === this.selectedDoctorId)?.name || this.clinicState.getDoctorName(this.selectedDoctorId);
+  }
+
+  get selectedRoomName(): string {
+    if (!this.selectedRoomId) return '';
+    return this.allRooms().find((r) => r.id === this.selectedRoomId)?.displayName || this.clinicState.getRoomName(this.selectedRoomId);
   }
 
   /**

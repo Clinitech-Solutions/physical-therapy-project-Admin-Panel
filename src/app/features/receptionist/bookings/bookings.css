@@ -1,204 +1,351 @@
-/* Compact Layout & Booking Form */
-.compact-booking-card {
-  border-radius: 10px;
-  background-color: var(--bs-card-bg, #ffffff);
+/* =========================================================
+   Bookings & Walk-In Care — Modern Guided Workspace
+   ========================================================= */
+
+.bookings-page {
+  padding-bottom: 2.5rem;
 }
 
-.compact-booking-card .card-header {
-  padding: 0.5rem 1rem;
+.booking-hero-header {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.15rem 1.5rem;
+  box-shadow: var(--shadow-card);
 }
 
-.compact-booking-card .card-body {
-  padding: 0.75rem 1rem;
-}
-
-.compact-booking-card .form-label {
-  font-size: 0.78rem;
-  margin-bottom: 0.2rem;
-}
-
-/* Timeline & Schedule Table */
-.timeline-scroll-area {
-  max-height: 520px;
-  overflow-y: auto;
-}
-
-.calendar-slot-row {
-  min-height: 64px;
-  border-bottom: 1px solid var(--bs-border-color, #e2e8f0);
-  transition: background-color 0.15s ease;
-}
-
-.calendar-slot-row:hover {
-  background-color: rgba(0, 0, 0, 0.015);
-}
-
-.time-badge-col {
-  width: 85px;
-  min-width: 85px;
-  font-size: 0.76rem;
-  font-family: var(--bs-font-monospace, monospace);
-  font-weight: 600;
-  color: var(--bs-secondary, #64748b);
-  border-right: 1px solid var(--bs-border-color, #e2e8f0);
-  padding: 0.5rem;
+.header-icon-box {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: var(--mq-gradient);
+  color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: rgba(0, 0, 0, 0.01);
+  font-size: 1.35rem;
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(0, 201, 167, 0.25);
 }
 
-.slot-sessions-container {
-  padding: 0.35rem 0.5rem;
+/* ── Mode Switcher Cards ── */
+.booking-mode-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+@media (max-width: 768px) {
+  .booking-mode-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.mode-selector-card {
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.1rem 1.25rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-card);
+}
+
+.mode-selector-card:hover {
+  border-color: var(--border-brand);
+  transform: translateY(-2px);
+}
+
+.mode-selector-card.active {
+  border-color: var(--mq-teal);
+  background: linear-gradient(135deg, rgba(0, 201, 167, 0.08) 0%, var(--bg-card) 100%);
+  box-shadow: var(--shadow-card), 0 0 0 2px var(--mq-teal-dim);
+}
+
+.mode-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--mq-teal-dim);
+  color: var(--mq-teal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.mode-icon.mode-icon-blue {
+  background: var(--color-info-bg);
+  color: var(--color-info);
+}
+
+.mode-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.mode-radio-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--border-color-strong);
+  display: inline-block;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.mode-selector-card.active .mode-radio-dot {
+  border-color: var(--mq-teal);
+}
+
+.mode-selector-card.active .mode-radio-dot::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  background: var(--mq-teal);
+}
+
+/* ── Gate Banners ── */
+.gate-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.85rem 1.15rem;
+  border-radius: var(--radius-md);
+  font-size: 0.84rem;
+}
+
+.gate-warning {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.gate-danger {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+/* ── Step Section Cards ── */
+.booking-section-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  transition: border-color 0.2s ease;
+}
+
+.booking-section-card:hover {
+  border-color: var(--border-brand);
+}
+
+.section-card-header {
+  padding: 1rem 1.35rem;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-elevated);
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.step-badge {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--mq-gradient);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.section-card-body {
+  padding: 1.35rem;
+}
+
+/* ── Selected Patient Quick Info Strip ── */
+.patient-context-strip {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  justify-content: space-between;
   align-items: center;
-  flex-grow: 1;
+  gap: 1rem;
+  padding: 0.85rem 1.1rem;
+  border-radius: 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-color);
 }
 
-/* =========================================================
-   Distinct Visual States for Session Cards
-   ========================================================= */
+.patient-strip-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--mq-gradient);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
 
-.session-card {
-  min-width: 220px;
-  max-width: 280px;
-  padding: 0.45rem 0.65rem;
+/* ── Free Assessment Card Toggle ── */
+.free-assessment-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 1rem;
+  border-radius: 10px;
+  border: 1.5px solid var(--border-color);
+  background: var(--bg-elevated);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.free-assessment-card.active {
+  border-color: var(--color-warning);
+  background: var(--color-warning-bg);
+}
+
+/* ── Walk-In Auto Fill Button & Helper ── */
+.btn-walkin-auto {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  font-weight: 600;
   border-radius: 8px;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
+  transition: all 0.2s ease;
+}
+
+.btn-walkin-auto:hover:not(:disabled) {
+  background: var(--color-warning);
+  color: #0A1628;
+}
+
+.schedule-helper-box {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  background: var(--bg-elevated);
+  border: 1px dashed var(--border-color-strong);
+}
+
+/* ── Financial & Insurance Banners ── */
+.insurance-split-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem 1.1rem;
+  border-radius: 10px;
+  background: var(--color-info-bg);
+  border: 1px solid rgba(27, 79, 255, 0.3);
+}
+
+.financial-plan-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1.1rem;
+  border-radius: 10px;
+}
+
+.plan-strip-warn {
+  background: var(--color-warning-bg);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.plan-strip-ok {
+  background: var(--color-success-bg);
+  border: 1px solid rgba(0, 201, 167, 0.35);
+}
+
+/* ── Right Column: Sticky Booking Summary Card ── */
+.booking-summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-elevated);
+  overflow: hidden;
+  position: sticky;
+  top: 84px;
+}
+
+.summary-header {
+  padding: 1.15rem 1.35rem;
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.summary-body {
+  padding: 1.25rem 1.35rem;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 0.85rem;
 }
 
-/* 1. Completed State: Visually recedes, opacity 0.5, grayscale/muted, strike-through time */
-.session-card.status-completed {
-  opacity: 0.5;
-  filter: grayscale(0.85);
-  background-color: #f1f5f9 !important;
-  border: 1px solid #cbd5e1 !important;
-  border-left: 3px solid #94a3b8 !important;
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid var(--border-color-subtle);
 }
 
-.session-card.status-completed .session-time {
-  text-decoration: line-through;
-  color: #64748b !important;
-}
-
-.session-card.status-completed .patient-name {
-  color: #475569;
-}
-
-.session-card.status-completed:hover {
-  opacity: 0.8;
-  filter: grayscale(0.2);
-}
-
-/* 2. In-Progress State: Make it pop! Thick active border, subtle color tint, soft box shadow */
-.session-card.status-in-progress {
-  opacity: 1;
-  border: 1px solid rgba(13, 110, 253, 0.35) !important;
-  border-left: 4px solid var(--bs-primary, #0d6efd) !important;
-  background-color: rgba(13, 110, 253, 0.08) !important;
-  box-shadow: 0 4px 14px rgba(13, 110, 253, 0.16) !important;
-}
-
-.session-card.status-in-progress .patient-name {
-  color: var(--bs-primary, #0d6efd);
-}
-
-.session-card.status-in-progress:hover {
-  box-shadow: 0 6px 18px rgba(13, 110, 253, 0.22) !important;
-  transform: translateY(-1px);
-}
-
-/* Pulsing live badge for In Progress */
-.session-card.status-in-progress .live-indicator {
-  display: inline-block;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background-color: var(--bs-primary, #0d6efd);
-  animation: pulse-live 1.8s infinite ease-in-out;
-  margin-right: 4px;
-}
-
-@keyframes pulse-live {
-  0% {
-    transform: scale(0.9);
-    box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.7);
-  }
-  70% {
-    transform: scale(1.1);
-    box-shadow: 0 0 0 6px rgba(13, 110, 253, 0);
-  }
-  100% {
-    transform: scale(0.9);
-    box-shadow: 0 0 0 0 rgba(13, 110, 253, 0);
-  }
-}
-
-/* 3. Upcoming (Pending & Confirmed): Standard clean card, fully opaque, standard borders */
-.session-card.status-confirmed {
-  opacity: 1;
-  background-color: var(--bs-card-bg, #ffffff);
-  border: 1px solid var(--bs-border-color, #e2e8f0);
-  border-left: 3px solid #10b981 !important;
-}
-
-.session-card.status-pending {
-  opacity: 1;
-  background-color: var(--bs-card-bg, #ffffff);
-  border: 1px solid var(--bs-border-color, #e2e8f0);
-  border-left: 3px solid #f59e0b !important;
-}
-
-.session-card.status-cancelled {
-  opacity: 0.4;
-  background-color: #fef2f2;
-  border: 1px solid #fecaca;
-  border-left: 3px solid #ef4444 !important;
-}
-
-.session-card.status-confirmed:hover,
-.session-card.status-pending:hover {
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
-  transform: translateY(-1px);
-}
-
-/* Empty slot placeholder */
-.empty-slot-hint {
-  font-size: 0.75rem;
-  color: var(--bs-secondary, #94a3b8);
-  font-style: italic;
-}
-
-/* PrimeNG SelectButton override for compact schedule filter */
-:host ::ng-deep .schedule-filter-selectbutton .p-button {
-  padding: 0.25rem 0.65rem;
-  font-size: 0.76rem;
+.summary-label {
+  font-size: 0.8rem;
   font-weight: 500;
+  color: var(--text-secondary);
 }
 
-:host ::ng-deep .btn-tinted-danger {
-  background-color: #fee2e2 !important; /* Light red/pink background */
-  color: #ef4444 !important; /* Dark red icon */
-  border: none !important;
-  border-radius: 8px !important;
-  width: 28px !important;
-  height: 28px !important;
-  padding: 0 !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  transition: background-color 0.2s;
+.summary-val {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: end;
 }
 
+.summary-financial-box {
+  padding: 0.9rem 1rem;
+  border-radius: 10px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-color);
+}
 
-/* :host ::ng-deep .btn-tinted-danger .p-button-icon,
-:host ::ng-deep .btn-tinted-danger i {
-  color: #ef4444 !important;
-  font-size: 1rem !important;
-} */
+.summary-footer {
+  padding: 1.15rem 1.35rem;
+  background: var(--bg-elevated);
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.btn-walkin-cta {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+  border: 1.5px solid rgba(245, 158, 11, 0.4);
+  border-radius: var(--radius-md);
+  transition: all 0.2s ease;
+}
+
+.btn-walkin-cta:hover:not(:disabled) {
+  background: var(--color-warning);
+  color: #0A1628;
+}
