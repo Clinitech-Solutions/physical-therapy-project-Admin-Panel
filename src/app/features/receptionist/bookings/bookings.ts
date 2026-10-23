@@ -1,3 +1,4 @@
+import { ReceptionistLocale, ReceptionistTextPipe } from '../../../shared/receptionist-locale';
 import { Component, signal, computed, inject, OnInit } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { RouterModule } from "@angular/router";
@@ -25,7 +26,7 @@ import { BillingService, CreateInvoiceDto } from '../../../core/services/billing
 @Component({
   selector: "app-receptionist-bookings",
   standalone: true,
-  imports: [
+  imports: [ReceptionistTextPipe,
     CommonModule, 
     RouterModule,
     TranslateModule, 
@@ -44,6 +45,7 @@ import { BillingService, CreateInvoiceDto } from '../../../core/services/billing
   styleUrls: ["./bookings.css"]
 })
 export class BookingsComponent implements OnInit {
+  readonly locale = new ReceptionistLocale();
   clinicState = inject(ClinicStateService);
   messageService = inject(MessageService);
   appointmentService = inject(AppointmentService, { optional: true })!;
@@ -102,6 +104,7 @@ export class BookingsComponent implements OnInit {
     { label: 'Wed', value: 3 },
     { label: 'Thu', value: 4 }
   ];
+  get localizedWeekDays() { return this.weekDays.map(day => ({ ...day, label: this.locale.label(day.label) })); }
   selectedDays: number[] = [6, 0, 1, 2, 3, 4]; // Friday (5) excluded by default
 
   get calculatedInsuranceShare(): { patientShare: number, insuranceShare: number } {
@@ -210,8 +213,8 @@ export class BookingsComponent implements OnInit {
     if (!this.absentDoctorId || !this.coveringSeniorId) {
       this.messageService.add({
         severity: 'warn',
-        summary: 'Incomplete Selection',
-        detail: 'Please select both an absent doctor and a covering senior doctor.'
+        summary: this.locale.text('INCOMPLETE_SELECTION', "Incomplete Selection"),
+        detail: this.locale.text('PLEASE_SELECT_BOTH_AN_ABSENT_DOCTOR_AND_A_COVERING_SENIOR_DOCTOR_', "Please select both an absent doctor and a covering senior doctor.")
       });
       return;
     }
@@ -220,15 +223,15 @@ export class BookingsComponent implements OnInit {
       this.clinicState.handleDoctorAbsence(this.absentDoctorId, this.coveringSeniorId);
       this.messageService.add({
         severity: 'success',
-        summary: 'Absence Recorded',
-        detail: 'Absence recorded. 50% of sessions reassigned to Senior, remainder distributed to available doctors.'
+        summary: this.locale.text('ABSENCE_RECORDED', "Absence Recorded"),
+        detail: this.locale.text('ABSENCE_RECORDED_50_OF_SESSIONS_REASSIGNED_TO_SENIOR_REMAINDER_DISTRIBUTED_TO_AVAILABLE_DOCTORS_', "Absence recorded. 50% of sessions reassigned to Senior, remainder distributed to available doctors.")
       });
       this.closeAbsenceModal();
     } catch (error: any) {
       this.messageService.add({
         severity: 'error',
-        summary: 'Absence Error',
-        detail: error?.message || 'Failed to record doctor absence.'
+        summary: this.locale.text('ABSENCE_ERROR', "Absence Error"),
+        detail: this.locale.error(error, 'FAILED_TO_RECORD_DOCTOR_ABSENCE_', "Failed to record doctor absence.")
       });
     }
   }
@@ -312,8 +315,8 @@ export class BookingsComponent implements OnInit {
     if (!this.selectedPatientId) {
       this.messageService.add({
         severity: 'warn',
-        summary: 'Select Patient',
-        detail: 'Please select or add a patient first to find the nearest walk-in slot.'
+        summary: this.locale.text('SELECT_PATIENT', "Select Patient"),
+        detail: this.locale.text('PLEASE_SELECT_OR_ADD_A_PATIENT_FIRST_TO_FIND_THE_NEAREST_WALK_IN_SLOT_', "Please select or add a patient first to find the nearest walk-in slot.")
       });
       return;
     }
@@ -321,8 +324,8 @@ export class BookingsComponent implements OnInit {
     if (this.isInsurancePending) {
       this.messageService.add({
         severity: 'error',
-        summary: 'Insurance Pending',
-        detail: 'Insurance approval is pending. Cannot book sessions.'
+        summary: this.locale.text('INSURANCE_PENDING', "Insurance Pending"),
+        detail: this.locale.text('INSURANCE_APPROVAL_IS_PENDING_CANNOT_BOOK_SESSIONS_', "Insurance approval is pending. Cannot book sessions.")
       });
       return;
     }
@@ -332,8 +335,8 @@ export class BookingsComponent implements OnInit {
       const patientGender = this.selectedPatient?.gender || this.clinicState.getPatientGender(this.selectedPatientId);
       this.messageService.add({
         severity: 'error',
-        summary: 'No Matching Doctors',
-        detail: `No available ${patientGender ? patientGender.toLowerCase() : ''} doctors found to treat this patient.`
+        summary: this.locale.text('NO_MATCHING_DOCTORS', "No Matching Doctors"),
+        detail: this.locale.text('NO_GENDER_MATCH', "No available doctors matching the patient’s gender were found.")
       });
       return;
     }
@@ -350,41 +353,41 @@ export class BookingsComponent implements OnInit {
 
       this.messageService.add({
         severity: 'success',
-        summary: 'Walk-In Slot Found',
-        detail: `Auto-assigned Dr. ${this.clinicState.getDoctorName(slot.doctorId)} (${this.clinicState.getDoctorGender(slot.doctorId)}) in ${this.clinicState.getRoomName(slot.roomId)} at ${this.formatTime(slot.scheduledAt)}.`
+        summary: this.locale.text('WALK_IN_SLOT_FOUND', "Walk-In Slot Found"),
+        detail: this.locale.text('SLOT_ASSIGNED', "Assigned {{doctor}} in {{room}} at {{time}}.", { doctor: this.clinicState.getDoctorName(slot.doctorId), room: this.clinicState.getRoomName(slot.roomId), time: this.formatTime(slot.scheduledAt) })
       });
     } catch (error: any) {
       this.messageService.add({
         severity: 'error',
-        summary: 'Slot Search Failed',
-        detail: error.message || 'No suitable slot found matching gender and load criteria.'
+        summary: this.locale.text('SLOT_SEARCH_FAILED', "Slot Search Failed"),
+        detail: this.locale.error(error, 'NO_SUITABLE_SLOT_FOUND_MATCHING_GENDER_AND_LOAD_CRITERIA_', "No suitable slot found matching gender and load criteria.")
       });
     }
   }
 
   async submitBooking() {
     if (!this.selectedPatientId) {
-      this.messageService.add({ severity: 'error', summary: 'Validation Error', detail: 'Please select a patient.' });
+      this.messageService.add({ severity: 'error', summary: this.locale.text('VALIDATION_ERROR', "Validation Error"), detail: this.locale.text('PLEASE_SELECT_A_PATIENT_', "Please select a patient.") });
       return;
     }
     if (this.isInsurancePending) {
       this.messageService.add({
         severity: 'error',
-        summary: 'Insurance Pending',
-        detail: 'Insurance approval is pending. Cannot book sessions.'
+        summary: this.locale.text('INSURANCE_PENDING', "Insurance Pending"),
+        detail: this.locale.text('INSURANCE_APPROVAL_IS_PENDING_CANNOT_BOOK_SESSIONS_', "Insurance approval is pending. Cannot book sessions.")
       });
       return;
     }
     if (!this.selectedDoctorId) {
-      this.messageService.add({ severity: 'error', summary: 'Validation Error', detail: 'Please select a doctor.' });
+      this.messageService.add({ severity: 'error', summary: this.locale.text('VALIDATION_ERROR', "Validation Error"), detail: this.locale.text('PLEASE_SELECT_A_DOCTOR_', "Please select a doctor.") });
       return;
     }
     if (!this.selectedRoomId) {
-      this.messageService.add({ severity: 'error', summary: 'Validation Error', detail: 'Please select an available room.' });
+      this.messageService.add({ severity: 'error', summary: this.locale.text('VALIDATION_ERROR', "Validation Error"), detail: this.locale.text('PLEASE_SELECT_AN_AVAILABLE_ROOM_', "Please select an available room.") });
       return;
     }
     if (!this.scheduledDate) {
-      this.messageService.add({ severity: 'error', summary: 'Validation Error', detail: 'Please select date and time.' });
+      this.messageService.add({ severity: 'error', summary: this.locale.text('VALIDATION_ERROR', "Validation Error"), detail: this.locale.text('PLEASE_SELECT_DATE_AND_TIME_', "Please select date and time.") });
       return;
     }
 
@@ -393,8 +396,8 @@ export class BookingsComponent implements OnInit {
       const patientGender = this.selectedPatient?.gender || this.clinicState.getPatientGender(this.selectedPatientId);
       this.messageService.add({
         severity: 'error',
-        summary: 'Gender Mismatch',
-        detail: `Strict policy: Male doctors treat male patients, and female doctors treat female patients. Please select a ${patientGender?.toLowerCase()} doctor.`
+        summary: this.locale.text('GENDER_MISMATCH', "Gender Mismatch"),
+        detail: this.locale.text('GENDER_POLICY', "Please select a doctor of the same gender as the patient.")
       });
       return;
     }
@@ -402,7 +405,7 @@ export class BookingsComponent implements OnInit {
     const finalType: SessionType = this.isNewPatient ? 'Assessment' : this.sessionType;
 
     if (finalType === 'Assessment' && !this.isFreeAssessment && this.assessmentPrice == null) {
-      this.messageService.add({ severity: 'error', summary: 'Validation Error', detail: 'Please enter the Assessment Price.' });
+      this.messageService.add({ severity: 'error', summary: this.locale.text('VALIDATION_ERROR', "Validation Error"), detail: this.locale.text('PLEASE_ENTER_THE_ASSESSMENT_PRICE_', "Please enter the Assessment Price.") });
       return;
     }
 
@@ -495,36 +498,36 @@ export class BookingsComponent implements OnInit {
       });
 
       const patientDisplayName =
-        this.selectedPatient?.nameEn ||
+        this.locale.patientName(this.selectedPatient) ||
         this.clinicState.getPatientName(this.selectedPatientId);
 
       this.messageService.add({
         severity: 'success',
-        summary: 'Booking Successful',
-        detail: `${finalType} booked for ${patientDisplayName} with Dr. ${this.clinicState.getDoctorName(this.selectedDoctorId)}!`
+        summary: this.locale.text('BOOKING_SUCCESSFUL', "Booking Successful"),
+        detail: this.locale.text('BOOKING_CREATED', "{{type}} booked for {{patient}} with {{doctor}}.", { type: this.locale.label(finalType), patient: patientDisplayName, doctor: this.clinicState.getDoctorName(this.selectedDoctorId) })
       });
 
       this.resetBookingForm();
     } catch (e: any) {
       this.messageService.add({
         severity: 'error',
-        summary: 'Booking Failed',
-        detail: e.message || 'Room is not available for booking.'
+        summary: this.locale.text('BOOKING_FAILED', "Booking Failed"),
+        detail: this.locale.error(e, 'ROOM_IS_NOT_AVAILABLE_FOR_BOOKING_', "Room is not available for booking.")
       });
     }
   }
 
   async submitTreatmentPlan() {
     if (!this.selectedPatientId || !this.selectedDoctorId || !this.selectedRoomId) {
-      this.messageService.add({ severity: 'error', summary: 'Validation Error', detail: 'Please select patient, doctor, and room.' });
+      this.messageService.add({ severity: 'error', summary: this.locale.text('VALIDATION_ERROR', "Validation Error"), detail: this.locale.text('PLEASE_SELECT_PATIENT_DOCTOR_AND_ROOM_', "Please select patient, doctor, and room.") });
       return;
     }
     if (this.planPaymentMode === 'Package' && (this.packageTotalPrice == null || this.packagePayingNow == null)) {
-      this.messageService.add({ severity: 'error', summary: 'Validation Error', detail: 'Please fill in package financial details.' });
+      this.messageService.add({ severity: 'error', summary: this.locale.text('VALIDATION_ERROR', "Validation Error"), detail: this.locale.text('PLEASE_FILL_IN_PACKAGE_FINANCIAL_DETAILS_', "Please fill in package financial details.") });
       return;
     }
     if (this.selectedDays.length === 0) {
-      this.messageService.add({ severity: 'error', summary: 'Validation Error', detail: 'Please select at least one preferred day.' });
+      this.messageService.add({ severity: 'error', summary: this.locale.text('VALIDATION_ERROR', "Validation Error"), detail: this.locale.text('PLEASE_SELECT_AT_LEAST_ONE_PREFERRED_DAY_', "Please select at least one preferred day.") });
       return;
     }
 
@@ -674,16 +677,16 @@ export class BookingsComponent implements OnInit {
 
       this.messageService.add({
         severity: 'success',
-        summary: 'Treatment Plan Created',
-        detail: `Successfully booked ${dates.length} sessions for ${patientDisplayName}.`
+        summary: this.locale.text('TREATMENT_PLAN_CREATED', "Treatment Plan Created"),
+        detail: this.locale.text('PLAN_CREATED', "Successfully booked {{count}} sessions for {{patient}}.", { count: dates.length, patient: patientDisplayName })
       });
 
       this.resetBookingForm();
     } catch (e: any) {
       this.messageService.add({
         severity: 'error',
-        summary: 'Plan Creation Failed',
-        detail: e.message || 'Error generating treatment plan.'
+        summary: this.locale.text('PLAN_CREATION_FAILED', "Plan Creation Failed"),
+        detail: this.locale.error(e, 'ERROR_GENERATING_TREATMENT_PLAN_', "Error generating treatment plan.")
       });
     }
   }
@@ -722,8 +725,8 @@ export class BookingsComponent implements OnInit {
     if (!this.quickPatient.nameEn.trim() || !this.quickPatient.phone.trim()) {
       this.messageService.add({
         severity: 'error',
-        summary: 'Required Fields',
-        detail: 'Please enter patient name and phone number.'
+        summary: this.locale.text('REQUIRED_FIELDS', "Required Fields"),
+        detail: this.locale.text('PLEASE_ENTER_PATIENT_NAME_AND_PHONE_NUMBER_', "Please enter patient name and phone number.")
       });
       return;
     }
@@ -754,14 +757,14 @@ export class BookingsComponent implements OnInit {
       this.closeQuickAddModal();
       this.messageService.add({
         severity: 'success',
-        summary: 'Patient Registered',
-        detail: 'New patient created and selected.'
+        summary: this.locale.text('PATIENT_REGISTERED', "Patient Registered"),
+        detail: this.locale.text('NEW_PATIENT_CREATED_AND_SELECTED_', "New patient created and selected.")
       });
     } catch (error) {
       this.messageService.add({
         severity: 'error',
-        summary: 'Registration Failed',
-        detail: 'Could not register new patient.'
+        summary: this.locale.text('REGISTRATION_FAILED', "Registration Failed"),
+        detail: this.locale.text('COULD_NOT_REGISTER_NEW_PATIENT_', "Could not register new patient.")
       });
     }
   }
@@ -774,7 +777,7 @@ export class BookingsComponent implements OnInit {
   formatTime(isoString?: string) {
     if (!isoString) return '-';
     try {
-      return new Date(isoString).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+      return new Date(isoString).toLocaleTimeString(this.locale.language, { hour: '2-digit', minute: '2-digit' });
     } catch {
       return isoString;
     }
@@ -940,12 +943,12 @@ export class BookingsComponent implements OnInit {
           error: (e) => reject(e)
         });
       });
-      this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Patient checked in' });
+      this.messageService.add({ severity: 'success', summary: this.locale.text('SUCCESS', "Success"), detail: this.locale.text('PATIENT_CHECKED_IN', "Patient checked in") });
     } catch (error: any) {
       this.messageService.add({
         severity: 'error',
-        summary: 'Check-in Error',
-        detail: error?.message || 'Check-in failed'
+        summary: this.locale.text('CHECK_IN_ERROR', "Check-in Error"),
+        detail: this.locale.error(error, 'CHECK_IN_FAILED', "Check-in failed")
       });
     }
   }
@@ -1000,11 +1003,11 @@ export class BookingsComponent implements OnInit {
 
         this.messageService.add({ 
           severity: 'success', 
-          summary: 'Payment Collected', 
-          detail: `${this.installmentAmount} EGP installment collected.` 
+          summary: this.locale.text('PAYMENT_COLLECTED', "Payment Collected"),
+          detail: this.locale.text('INSTALLMENT_COLLECTED_DETAIL', "{{amount}} EGP installment collected.", { amount: this.installmentAmount.toLocaleString(this.locale.language) })
         });
       } catch (error: any) {
-        this.messageService.add({ severity: 'error', summary: 'Payment Error', detail: 'Failed to process installment' });
+        this.messageService.add({ severity: 'error', summary: this.locale.text('PAYMENT_ERROR', "Payment Error"), detail: this.locale.text('FAILED_TO_PROCESS_INSTALLMENT', "Failed to process installment") });
         return; // Halt check-in on payment failure
       }
     }
@@ -1027,7 +1030,7 @@ export class BookingsComponent implements OnInit {
         const statusStr = this.billingService.mapStatusToString(sessionInvoice.status);
         if (statusStr !== 'Paid' && statusStr !== 'Waived') {
           throw new Error(
-            'Cannot check out: The invoice for this session is pending. Please process payment first.'
+            this.locale.text('CANNOT_CHECK_OUT_THE_INVOICE_FOR_THIS_SESSION_IS_PENDING_PLEASE_PROCESS_PAYMENT_FIRST_', 'Cannot check out: The invoice for this session is pending. Please process payment first.')
           );
         }
       }
@@ -1038,12 +1041,12 @@ export class BookingsComponent implements OnInit {
           error: (e) => reject(e)
         });
       });
-      this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Patient checked out' });
+      this.messageService.add({ severity: 'success', summary: this.locale.text('SUCCESS', "Success"), detail: this.locale.text('PATIENT_CHECKED_OUT', "Patient checked out") });
     } catch (error: any) {
       this.messageService.add({
         severity: 'error',
-        summary: 'Check-out Blocked',
-        detail: error.message || 'Failed to check out'
+        summary: this.locale.text('CHECK_OUT_BLOCKED', "Check-out Blocked"),
+        detail: this.locale.error(error, 'FAILED_TO_CHECK_OUT', "Failed to check out")
       });
     }
   }
@@ -1060,23 +1063,23 @@ export class BookingsComponent implements OnInit {
         next: () => {
           this.messageService.add({
             severity: 'success',
-            summary: 'Success',
-            detail: 'Patient marked as absent and session cancelled.'
+            summary: this.locale.text('SUCCESS', "Success"),
+            detail: this.locale.text('PATIENT_MARKED_AS_ABSENT_AND_SESSION_CANCELLED_', "Patient marked as absent and session cancelled.")
           });
         },
         error: (error) => {
           this.messageService.add({
             severity: 'error',
-            summary: 'Error',
-            detail: error.message || 'Failed to mark patient absent.'
+            summary: this.locale.text('ERROR', "Error"),
+            detail: this.locale.error(error, 'FAILED_TO_MARK_PATIENT_ABSENT_', "Failed to mark patient absent.")
           });
         }
       });
     } catch (error: any) {
       this.messageService.add({
         severity: 'error',
-        summary: 'Error',
-        detail: error.message || 'Failed to mark patient absent.'
+        summary: this.locale.text('ERROR', "Error"),
+        detail: this.locale.error(error, 'FAILED_TO_MARK_PATIENT_ABSENT_', "Failed to mark patient absent.")
       });
     }
   }

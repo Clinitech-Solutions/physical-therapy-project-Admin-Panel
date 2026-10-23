@@ -1,7 +1,11 @@
 <div class="app-layout">
-  <app-sidebar></app-sidebar>
+  <app-sidebar #sidebar></app-sidebar>
+  @if (sidebar.isMobileOpen()) {
+    <button class="navigation-backdrop" (click)="sidebar.isMobileOpen.set(false)"
+      [attr.aria-label]="'COMMON.CLOSE_NAVIGATION' | translate"></button>
+  }
   <div class="main-content">
-    <app-topbar></app-topbar>
+    <app-topbar [menuOpen]="sidebar.isMobileOpen()" (menuToggle)="sidebar.isMobileOpen.set(!sidebar.isMobileOpen())"></app-topbar>
     <div class="page-content">
       <router-outlet></router-outlet>
     </div>

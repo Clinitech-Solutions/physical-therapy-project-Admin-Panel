@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ThemeService } from '../../core/services/theme';
 import { LanguageService } from '../../core/services/language';
@@ -15,6 +15,8 @@ import { TranslateModule } from '@ngx-translate/core';
   styleUrl: './topbar.css',
 })
 export class Topbar {
+  @Input() menuOpen = false;
+  @Output() menuToggle = new EventEmitter<void>();
   themeService = inject(ThemeService);
   langService = inject(LanguageService);
   authService = inject(AuthService);

@@ -1,3 +1,5 @@
+import { registerLocaleData } from '@angular/common';
+import arabicLocale from '@angular/common/locales/ar';
 import { ApplicationConfig, importProvidersFrom } from '@angular/core';
 import { provideRouter, withHashLocation } from '@angular/router';
 import { routes } from './app.routes';
@@ -11,18 +13,21 @@ import { MessageService } from 'primeng/api';
 import { providePrimeNG } from 'primeng/config';
 import Aura from '@primeuix/themes/aura';
 
+registerLocaleData(arabicLocale, 'ar-EG');
+
 export function HttpLoaderFactory(http: HttpClient) {
   return new TranslateHttpLoader(http, '/assets/i18n/', `.json?v=${new Date().getTime()}`);
 }
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideRouter(routes, withHashLocation()), 
+    provideRouter(routes, withHashLocation()),
     provideHttpClient(withInterceptors([authInterceptor, errorInterceptor])),
     provideAnimations(),
     providePrimeNG({
       theme: {
-        preset: Aura
+        preset: Aura,
+        options: { darkModeSelector: ':root:not(.light)' }
       },
       overlayAppendTo: 'body'
     }),

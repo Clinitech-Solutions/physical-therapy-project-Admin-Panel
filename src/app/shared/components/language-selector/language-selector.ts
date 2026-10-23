@@ -42,7 +42,7 @@ import { TranslateModule } from '@ngx-translate/core';
     .lang-dropdown {
       position: absolute;
       top: 110%;
-      right: 0;
+      inset-inline-end: 0;
       background: var(--bg-card);
       border: 1px solid var(--border-color);
       border-radius: var(--radius-md);
@@ -51,10 +51,6 @@ import { TranslateModule } from '@ngx-translate/core';
       z-index: 1000;
       overflow: hidden;
       animation: fadeIn 0.2s ease;
-    }
-    html[dir="rtl"] .lang-dropdown {
-      right: auto;
-      left: 0;
     }
     .dropdown-item {
       display: block;

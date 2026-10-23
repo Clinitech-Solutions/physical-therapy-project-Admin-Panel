@@ -1,3 +1,4 @@
+import { ReceptionistLocale, ReceptionistTextPipe } from '../../../shared/receptionist-locale';
 import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
@@ -36,7 +37,7 @@ export interface ScheduleRoomOption {
 @Component({
   selector: 'app-receptionist-schedule',
   standalone: true,
-  imports: [
+  imports: [ReceptionistTextPipe,
     CommonModule,
     RouterModule,
     TranslateModule,
@@ -53,6 +54,7 @@ export interface ScheduleRoomOption {
   styleUrls: ['./schedule.css']
 })
 export class ScheduleComponent implements OnInit {
+  readonly locale = new ReceptionistLocale();
   messageService = inject(MessageService);
   receptionistService =
     inject(ReceptionistService, { optional: true }) ?? new ReceptionistService();
@@ -189,7 +191,7 @@ export class ScheduleComponent implements OnInit {
     try {
       const d = new Date(isoString);
       if (isNaN(d.getTime())) return isoString;
-      return d.toLocaleTimeString('en-US', {
+      return d.toLocaleTimeString(this.locale.language, {
         hour: '2-digit',
         minute: '2-digit'
       });
@@ -339,11 +341,10 @@ export class ScheduleComponent implements OnInit {
 
   // API-backed display resolvers (zero mock data)
   getPatientName(session: TodaySession): string {
-    if (session.patientName) return session.patientName;
     const p = this.allPatients().find(
       (pt) => String(pt.id) === String(session.patientId)
     );
-    return p?.nameEn || p?.nameAr || `Patient #${session.patientId}`;
+    return this.locale.patientName(p) || session.patientName || this.locale.text('PATIENT_NUMBER', "Patient #{{id}}", { id: session.patientId });
   }
 
   getDoctorName(session: TodaySession): string {
@@ -353,9 +354,9 @@ export class ScheduleComponent implements OnInit {
         (d) => String(d.id) === String(session.doctorId)
       );
       if (doc) return doc.name;
-      return `Doctor #${session.doctorId}`;
+      return this.locale.text('DOCTOR_NUMBER', "Doctor #{{id}}", { id: session.doctorId });
     }
-    return 'Unassigned';
+    return this.locale.label('Unassigned');
   }
 
   getRoomName(session: TodaySession): string {
@@ -365,9 +366,9 @@ export class ScheduleComponent implements OnInit {
         (r) => String(r.id) === String(session.roomId)
       );
       if (room) return room.displayName;
-      return `Room ${session.roomId}`;
+      return this.locale.text('ROOM_NUMBER', "Room {{id}}", { id: session.roomId });
     }
-    return 'Unassigned';
+    return this.locale.label('Unassigned');
   }
 
   getPatientInitials(session: TodaySession): string {
@@ -383,7 +384,7 @@ export class ScheduleComponent implements OnInit {
   getSessionBadge(session: TodaySession): string {
     if (session.packageAlert) return session.packageAlert;
     if (session.sessionNumber && session.totalSessions) {
-      return `Session ${session.sessionNumber} of ${session.totalSessions}`;
+      return this.locale.text('SESSION_PROGRESS', "Session {{number}} of {{total}}", { number: session.sessionNumber, total: session.totalSessions });
     }
     const patient = this.allPatients().find(
       (p) => String(p.id) === String(session.patientId)
@@ -392,7 +393,7 @@ export class ScheduleComponent implements OnInit {
       patient?.treatmentPlan?.totalSessions ||
       patient?.insuranceDetails?.approvedSessions;
     if (total && session.sessionNumber) {
-      return `Session ${session.sessionNumber} of ${total}`;
+      return this.locale.text('SESSION_PROGRESS', "Session {{number}} of {{total}}", { number: session.sessionNumber, total });
     }
     return '';
   }
@@ -485,14 +486,14 @@ export class ScheduleComponent implements OnInit {
       );
       this.messageService.add({
         severity: 'success',
-        summary: 'Success',
-        detail: 'Patient checked in'
+        summary: this.locale.text('SUCCESS', "Success"),
+        detail: this.locale.text('PATIENT_CHECKED_IN', "Patient checked in")
       });
     } catch (error: any) {
       this.messageService.add({
         severity: 'error',
-        summary: 'Check-in Error',
-        detail: error?.message || 'Check-in failed'
+        summary: this.locale.text('CHECK_IN_ERROR', "Check-in Error"),
+        detail: this.locale.error(error, 'CHECK_IN_FAILED', "Check-in failed")
       });
     }
   }
@@ -549,14 +550,14 @@ export class ScheduleComponent implements OnInit {
 
         this.messageService.add({
           severity: 'success',
-          summary: 'Payment Collected',
-          detail: `${this.installmentAmount} EGP installment collected.`
+          summary: this.locale.text('PAYMENT_COLLECTED', "Payment Collected"),
+          detail: this.locale.text('INSTALLMENT_COLLECTED_DETAIL', "{{amount}} EGP installment collected.", { amount: this.installmentAmount.toLocaleString(this.locale.language) })
         });
       } catch (error: any) {
         this.messageService.add({
           severity: 'error',
-          summary: 'Payment Error',
-          detail: 'Failed to process installment'
+          summary: this.locale.text('PAYMENT_ERROR', "Payment Error"),
+          detail: this.locale.text('FAILED_TO_PROCESS_INSTALLMENT', "Failed to process installment")
         });
         return;
       }
@@ -582,7 +583,7 @@ export class ScheduleComponent implements OnInit {
         );
         if (statusStr !== 'Paid' && statusStr !== 'Waived') {
           throw new Error(
-            'Cannot check out: The invoice for this session is pending. Please process payment first.'
+            this.locale.text('CANNOT_CHECK_OUT_THE_INVOICE_FOR_THIS_SESSION_IS_PENDING_PLEASE_PROCESS_PAYMENT_FIRST_', 'Cannot check out: The invoice for this session is pending. Please process payment first.')
           );
         }
       }
@@ -597,14 +598,14 @@ export class ScheduleComponent implements OnInit {
       );
       this.messageService.add({
         severity: 'success',
-        summary: 'Success',
-        detail: 'Patient checked out'
+        summary: this.locale.text('SUCCESS', "Success"),
+        detail: this.locale.text('PATIENT_CHECKED_OUT', "Patient checked out")
       });
     } catch (error: any) {
       this.messageService.add({
         severity: 'error',
-        summary: 'Check-out Blocked',
-        detail: error.message || 'Failed to check out'
+        summary: this.locale.text('CHECK_OUT_BLOCKED', "Check-out Blocked"),
+        detail: this.locale.error(error, 'FAILED_TO_CHECK_OUT', "Failed to check out")
       });
     }
   }
@@ -618,15 +619,15 @@ export class ScheduleComponent implements OnInit {
       next: () => {
         this.messageService.add({
           severity: 'success',
-          summary: 'Success',
-          detail: 'Patient marked as absent and session cancelled.'
+          summary: this.locale.text('SUCCESS', "Success"),
+          detail: this.locale.text('PATIENT_MARKED_AS_ABSENT_AND_SESSION_CANCELLED_', "Patient marked as absent and session cancelled.")
         });
       },
       error: (error) => {
         this.messageService.add({
           severity: 'error',
-          summary: 'Error',
-          detail: error?.message || 'Failed to mark patient absent.'
+          summary: this.locale.text('ERROR', "Error"),
+          detail: this.locale.error(error, 'FAILED_TO_MARK_PATIENT_ABSENT_', "Failed to mark patient absent.")
         });
       }
     });

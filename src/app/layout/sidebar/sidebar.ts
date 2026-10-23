@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService, UserRole } from '../../core/services/auth';
@@ -56,6 +56,9 @@ export class Sidebar {
   
   isHovered = signal(false);
   isMobileOpen = signal(false);
+
+  @HostListener('document:keydown.escape')
+  closeMobileMenu() { this.isMobileOpen.set(false); }
 
   navItems = computed<NavItem[]>(() => {
     const role = this.auth.currentRole();

@@ -1,4 +1,4 @@
-<div class="sidebar" 
+<div class="sidebar" id="main-navigation"
      [class.collapsed]="!isHovered() && !isMobileOpen()" 
      [class.open]="isMobileOpen()"
      (mouseenter)="onMouseEnter()" 
@@ -18,7 +18,8 @@
        [routerLink]="item.route"
        routerLinkActive="active"
        [routerLinkActiveOptions]="{exact: true}"
-       class="sidebar-item">
+       class="sidebar-item" (click)="closeMobileMenu()"
+       [attr.aria-label]="item.labelKey | translate">
       <i class="sidebar-item-icon" [ngClass]="item.icon"></i>
       <span class="label" *ngIf="isHovered() || isMobileOpen()">
         {{ item.labelKey | translate }}

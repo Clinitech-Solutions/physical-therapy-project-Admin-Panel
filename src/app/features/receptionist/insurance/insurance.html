@@ -1,4 +1,4 @@
-<div class="page-content fade-in">
+<div class="page-content receptionist-page fade-in">
   <div class="page-header">
     <div>
       <h2 class="font-clash">{{ 'RECEPTIONIST.INSURANCE_TITLE' | translate }}</h2>
@@ -37,7 +37,7 @@
           </div>
           <span class="badge badge-success d-flex align-items-center gap-1">
             <span class="p-tag-icon bi bi-circle-fill" style="font-size: 6px;"></span>
-            <span>{{ 'RECEPTIONIST.PORTAL_ACTIVE' | translate }}</span>
+            <span>{{ (provider.isActive && provider.portalUrl ? 'RECEPTIONIST.PORTAL_ACTIVE' : 'RECEPTIONIST.UI.PORTAL_UNAVAILABLE') | translate }}</span>
           </span>
         </div>
 
@@ -55,12 +55,14 @@
         </div>
 
         <div class="portal-card-footer">
-          <button class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2" (click)="openPortal(provider.portalUrl)">
+          <button class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2" [disabled]="!provider.isActive || !provider.portalUrl" (click)="openPortal(provider.portalUrl)">
             <i class="bi bi-box-arrow-up-right"></i>
             <span>{{ 'RECEPTIONIST.OPEN_PORTAL' | translate }}</span>
           </button>
         </div>
       </div>
+    } @empty {
+      <p class="text-muted py-4">{{ 'RECEPTIONIST.UI.NO_PROVIDERS_FOUND_' | translate }}</p>
     }
   </div>
 </div>

@@ -17,19 +17,19 @@
 }
 
 .table-scroll-area {
-  overflow-x: visible !important;
+  overflow-x: auto;
   padding: 0 !important;
 }
 
 /* Prevent Unnecessary X-Overflow in the Table Wrapper */
-:host ::ng-deep .p-datatable-wrapper {
-  overflow-x: clip !important; /* Better than hidden, prevents layout shifts */
+:host ::ng-deep .p-datatable-table-container {
+  overflow-x: auto;
 }
 
 /* Ensure the table itself strictly stays within bounds */
 :host ::ng-deep .p-datatable table {
   width: 100% !important;
-  max-width: 100% !important;
+  min-width: 760px;
 }
 
 :host ::ng-deep .p-datatable {

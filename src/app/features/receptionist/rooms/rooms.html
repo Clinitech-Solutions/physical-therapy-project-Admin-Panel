@@ -1,4 +1,4 @@
-<div class="rooms-container fade-in">
+<div class="receptionist-page rooms-container fade-in">
   <!-- Top Action Bar -->
   <div class="d-flex justify-content-between align-items-center mb-3">
     <div>
@@ -48,7 +48,7 @@
       <div class="room-footer">
         <div class="maintenance-toggle">
           <span class="text-sm font-medium">{{ 'RECEPTIONIST.MAINTENANCE' | translate }}</span>
-          <p-toggleSwitch [ngModel]="room.status === 'Maintenance'"
+          <p-toggleSwitch [ariaLabel]="'RECEPTIONIST.MAINTENANCE' | translate" [ngModel]="room.status === 'Maintenance'"
             (onChange)="clinicState.toggleRoomMaintenance(room.id)">
           </p-toggleSwitch>
         </div>
@@ -60,14 +60,14 @@
 
 <!-- Add Room Modal (Standard Clean Modal) -->
 <p-dialog 
-  [(visible)]="isAddRoomModalOpen" 
+  [visible]="isAddRoomModalOpen()" (visibleChange)="isAddRoomModalOpen.set($event)"
   [modal]="true" 
   appendTo="body"
   [draggable]="false" 
   [resizable]="false" 
   [closable]="true" 
   [showHeader]="true" 
-  styleClass="clean-modal"
+  styleClass="clean-modal receptionist-modal"
   [style]="{ width: '450px' }"
   [header]="'RECEPTIONIST.ADD_ROOM' | translate">
 
@@ -80,7 +80,7 @@
         type="text" 
         class="form-control" 
         [(ngModel)]="newRoom.displayName" 
-        placeholder="e.g. Therapy Room 4">
+        [placeholder]="'RECEPTIONIST.UI.E_G_THERAPY_ROOM_4' | translate">
     </div>
 
     <div class="modal-form-grid">

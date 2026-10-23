@@ -1,0 +1,7 @@
+.navigation-backdrop { display: none; }
+@media (max-width: 768px) {
+  .navigation-backdrop {
+    display: block; position: fixed; inset: 0; z-index: 99;
+    background: var(--bg-overlay); border: 0;
+  }
+}

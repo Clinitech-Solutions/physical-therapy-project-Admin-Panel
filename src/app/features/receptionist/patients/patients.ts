@@ -1,3 +1,4 @@
+import { ReceptionistLocale, ReceptionistTextPipe } from '../../../shared/receptionist-locale';
 import { Component, signal, computed, inject, OnInit } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { TranslateModule } from '@ngx-translate/core';
@@ -18,10 +19,11 @@ import { PatientProfileComponent } from '../../../shared/components/patient-prof
 @Component({
   selector: "app-receptionist-patients",
   standalone: true,
-  imports: [CommonModule, TranslateModule, FormsModule, ReactiveFormsModule, DialogModule, ButtonModule, SharedModule, PatientProfileComponent],
+  imports: [ReceptionistTextPipe, CommonModule, TranslateModule, FormsModule, ReactiveFormsModule, DialogModule, ButtonModule, SharedModule, PatientProfileComponent],
   templateUrl: "./patients.html",
 })
 export class PatientsComponent implements OnInit {
+  readonly locale = new ReceptionistLocale();
   clinicState = inject(ClinicStateService);
   messageService = inject(MessageService);
   private insuranceService = inject(InsuranceService);
@@ -219,7 +221,7 @@ export class PatientsComponent implements OnInit {
 
   createProfile() {
     if (!this.newPatient.nameEn) {
-      this.messageService.add({ severity: 'error', summary: 'Validation Error', detail: 'Patient English name is required' });
+      this.messageService.add({ severity: 'error', summary: this.locale.text('VALIDATION_ERROR', "Validation Error"), detail: this.locale.text('PATIENT_ENGLISH_NAME_IS_REQUIRED', "Patient English name is required") });
       return;
     }
     if (this.newPatient.paymentType === 'Insurance' && this.newPatient.insuranceDetails) {
@@ -232,23 +234,23 @@ export class PatientsComponent implements OnInit {
         if (this.newPatient.paymentType === 'Insurance' && this.selectedFiles.length > 0) {
           this.insuranceDocService.uploadDocuments(newPatientId, this.selectedFiles).subscribe({
             next: () => {
-              this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Patient and document created' });
+              this.messageService.add({ severity: 'success', summary: this.locale.text('SUCCESS', "Success"), detail: this.locale.text('PATIENT_AND_DOCUMENT_CREATED', "Patient and document created") });
               this.closeDrawer();
               this.patientService.getPatients().subscribe();
             },
             error: (err) => {
-              this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Patient created but document upload failed' });
+              this.messageService.add({ severity: 'error', summary: this.locale.text('ERROR', "Error"), detail: this.locale.text('PATIENT_CREATED_BUT_DOCUMENT_UPLOAD_FAILED', "Patient created but document upload failed") });
               console.error(err);
             }
           });
         } else {
-          this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Patient profile created' });
+          this.messageService.add({ severity: 'success', summary: this.locale.text('SUCCESS', "Success"), detail: this.locale.text('PATIENT_PROFILE_CREATED', "Patient profile created") });
           this.closeDrawer();
           this.patientService.getPatients().subscribe();
         }
       },
       error: (err) => {
-        this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to create patient' });
+        this.messageService.add({ severity: 'error', summary: this.locale.text('ERROR', "Error"), detail: this.locale.text('FAILED_TO_CREATE_PATIENT', "Failed to create patient") });
         console.error(err);
       }
     });
@@ -263,11 +265,11 @@ export class PatientsComponent implements OnInit {
       this.patientService.updatePatient(parseInt(p.id, 10) || 0, this.editPatientForm).subscribe({
         next: () => {
           this.closeEditDrawer();
-          this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Patient profile updated' });
+          this.messageService.add({ severity: 'success', summary: this.locale.text('SUCCESS', "Success"), detail: this.locale.text('PATIENT_PROFILE_UPDATED', "Patient profile updated") });
           this.patientService.getPatients().subscribe();
         },
         error: (err) => {
-          this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to update patient' });
+          this.messageService.add({ severity: 'error', summary: this.locale.text('ERROR', "Error"), detail: this.locale.text('FAILED_TO_UPDATE_PATIENT', "Failed to update patient") });
           console.error(err);
         }
       });
@@ -275,14 +277,14 @@ export class PatientsComponent implements OnInit {
   }
 
   deletePatient(id: string) {
-    if(confirm('Are you sure you want to delete this patient?')) {
+    if(confirm(this.locale.text('ARE_YOU_SURE_YOU_WANT_TO_DELETE_THIS_PATIENT_', 'Are you sure you want to delete this patient?'))) {
       this.patientService.deletePatient(parseInt(id, 10) || 0).subscribe({
         next: () => {
-          this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Patient deleted' });
+          this.messageService.add({ severity: 'success', summary: this.locale.text('SUCCESS', "Success"), detail: this.locale.text('PATIENT_DELETED', "Patient deleted") });
           this.patientService.getPatients().subscribe();
         },
         error: (err) => {
-          this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to delete patient' });
+          this.messageService.add({ severity: 'error', summary: this.locale.text('ERROR', "Error"), detail: this.locale.text('FAILED_TO_DELETE_PATIENT', "Failed to delete patient") });
           console.error(err);
         }
       });

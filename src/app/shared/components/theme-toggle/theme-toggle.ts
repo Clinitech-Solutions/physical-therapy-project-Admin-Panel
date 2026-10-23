@@ -1,13 +1,14 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ThemeService } from '../../../core/services/theme';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-theme-toggle',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TranslateModule],
   template: `
-    <button class="theme-switch" (click)="theme.toggleTheme()" [attr.aria-label]="theme.isDarkMode() ? 'Switch to Light Mode' : 'Switch to Dark Mode'">
+    <button class="theme-switch" (click)="theme.toggleTheme()" [attr.aria-label]="(theme.isDarkMode() ? 'COMMON.SWITCH_TO_LIGHT' : 'COMMON.SWITCH_TO_DARK') | translate">
       <div class="switch-track" [class.is-dark]="theme.isDarkMode()">
         <div class="switch-thumb">
           <i class="bi" [class.bi-moon-fill]="theme.isDarkMode()" [class.bi-sun-fill]="!theme.isDarkMode()"></i>
@@ -17,6 +18,7 @@ import { ThemeService } from '../../../core/services/theme';
   `,
   styles: [`
     .theme-switch {
+      min-height: 44px;
       background: transparent;
       border: none;
       padding: 0;
@@ -58,9 +60,6 @@ import { ThemeService } from '../../../core/services/theme';
       transform: translateX(22px);
     }
     /* RTL Support */
-    html[dir="rtl"] .switch-track.is-dark .switch-thumb {
-      transform: translateX(-22px);
-    }
     .switch-thumb i {
       font-size: 12px;
       color: #F59E0B; /* Sun color */

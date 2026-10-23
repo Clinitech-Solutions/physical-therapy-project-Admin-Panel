@@ -1,3 +1,4 @@
+import { ReceptionistLocale, ReceptionistTextPipe } from '../../receptionist-locale';
 import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -18,7 +19,7 @@ import { Session, SessionStatus } from '../../../core/models/session.model';
 @Component({
   selector: 'app-patient-profile',
   standalone: true,
-  imports: [
+  imports: [ReceptionistTextPipe,
     CommonModule,
     FormsModule,
     TranslateModule,
@@ -33,6 +34,7 @@ import { Session, SessionStatus } from '../../../core/models/session.model';
   styleUrls: ['./patient-profile.component.css']
 })
 export class PatientProfileComponent {
+  readonly locale = new ReceptionistLocale();
   public clinicState = inject(ClinicStateService);
   public billingService = inject(BillingService, { optional: true }) ?? new BillingService();
   public patientService = inject(PatientService, { optional: true });
@@ -61,7 +63,7 @@ export class PatientProfileComponent {
     if (p?.treatmentPlan?.primaryDoctorId) {
       return this.clinicState.getDoctorName(p.treatmentPlan.primaryDoctorId);
     }
-    return 'Unassigned';
+    return this.locale.label('Unassigned');
   }
 
   get totalSessions(): number {
@@ -144,13 +146,13 @@ export class PatientProfileComponent {
     const statusLabel = this.billingService.mapStatusToString(invoice.status);
     switch (statusLabel) {
       case 'Paid':
-        return { label: statusLabel, severity: 'success' };
+        return { label: this.locale.label(statusLabel), severity: 'success' };
       case 'Pending':
-        return { label: statusLabel, severity: 'warn' };
+        return { label: this.locale.label(statusLabel), severity: 'warn' };
       case 'Partial':
-        return { label: statusLabel, severity: 'info' };
+        return { label: this.locale.label(statusLabel), severity: 'info' };
       default:
-        return { label: statusLabel, severity: 'secondary' };
+        return { label: this.locale.label(statusLabel), severity: 'secondary' };
     }
   }
 
@@ -178,7 +180,7 @@ export class PatientProfileComponent {
     try {
       const date = new Date(isoString);
       if (isNaN(date.getTime())) return null;
-      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      return date.toLocaleTimeString(this.locale.language, { hour: '2-digit', minute: '2-digit' });
     } catch {
       return null;
     }
@@ -189,7 +191,7 @@ export class PatientProfileComponent {
     try {
       const date = new Date(isoString);
       if (isNaN(date.getTime())) return null;
-      return date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+      return date.toLocaleDateString(this.locale.language, { month: 'short', day: 'numeric', year: 'numeric' });
     } catch {
       return null;
     }

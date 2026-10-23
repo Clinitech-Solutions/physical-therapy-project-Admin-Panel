@@ -303,10 +303,11 @@
 .slot-sessions-container {
   padding: 0.75rem 1rem;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
   gap: 0.85rem;
   align-items: stretch;
   flex-grow: 1;
+  min-width: 0;
 }
 
 /* ── Session Cards ── */
@@ -485,76 +486,6 @@
 }
 
 /* ── Distinct Visual States for Session Cards ── */
-.session-card.status-completed {
-  opacity: 0.65;
-  border-inline-start: 4px solid var(--color-neutral) !important;
-}
-
-.session-card.status-completed .session-time {
-  text-decoration: line-through;
-}
-
-.session-card.status-completed:hover {
-  opacity: 0.92;
-}
-
-.session-card.status-in-progress {
-  border-color: rgba(27, 79, 255, 0.4) !important;
-  border-inline-start: 4px solid var(--mq-blue) !important;
-  background: linear-gradient(135deg, rgba(27, 79, 255, 0.08) 0%, var(--bg-elevated) 100%) !important;
-  box-shadow: 0 4px 16px rgba(27, 79, 255, 0.14) !important;
-}
-
-.session-card.status-in-progress:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(27, 79, 255, 0.2) !important;
-}
-
-.live-indicator {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background-color: var(--mq-teal);
-  animation: pulse-live 1.8s infinite ease-in-out;
-  flex-shrink: 0;
-}
-
-@keyframes pulse-live {
-  0% {
-    transform: scale(0.9);
-    box-shadow: 0 0 0 0 rgba(0, 201, 167, 0.7);
-  }
-  70% {
-    transform: scale(1.1);
-    box-shadow: 0 0 0 6px rgba(0, 201, 167, 0);
-  }
-  100% {
-    transform: scale(0.9);
-    box-shadow: 0 0 0 0 rgba(0, 201, 167, 0);
-  }
-}
-
-.session-card.status-confirmed {
-  border-inline-start: 4px solid var(--mq-teal) !important;
-}
-
-.session-card.status-pending {
-  border-inline-start: 4px solid var(--color-warning) !important;
-}
-
-.session-card.status-cancelled {
-  opacity: 0.5;
-  border-inline-start: 4px solid var(--color-danger) !important;
-}
-
-.session-card.status-confirmed:hover,
-.session-card.status-pending:hover {
-  transform: translateY(-2px);
-  border-color: var(--border-brand);
-  box-shadow: var(--shadow-elevated);
-}
-
 .empty-slot-placeholder {
   display: flex;
   align-items: center;

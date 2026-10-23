@@ -1,3 +1,4 @@
+import { ReceptionistLocale } from '../../../shared/receptionist-locale';
 import { Component, inject, OnInit, computed } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { TranslateModule } from '@ngx-translate/core';
@@ -29,6 +30,7 @@ export interface InsuranceProvider {
   templateUrl: "./insurance.html"
 })
 export class InsuranceComponent implements OnInit {
+  readonly locale = new ReceptionistLocale();
   messageService = inject(MessageService);
   private insuranceService = inject(InsuranceService);
 
@@ -41,7 +43,7 @@ export class InsuranceComponent implements OnInit {
       ...c,
       id: c.id ?? index,
       code: `INS-${(c.id || index).toString().padStart(3, '0')}`,
-      hotline: c.hotline || '00000', // Use backend hotline or fallback
+      hotline: c.hotline || this.locale.text('NOT_PROVIDED', 'Not provided'),
       themeColor: index % 2 === 0 ? 'var(--bs-info-bg-subtle)' : 'var(--bs-primary-bg-subtle)',
       logoIcon: 'bi-shield-check text-primary'
     }));
@@ -49,7 +51,7 @@ export class InsuranceComponent implements OnInit {
 
   openPortal(url: string | null) {
     if (url) {
-      window.open(url, '_blank');
+      window.open(url, '_blank', 'noopener,noreferrer');
     }
   }
 }

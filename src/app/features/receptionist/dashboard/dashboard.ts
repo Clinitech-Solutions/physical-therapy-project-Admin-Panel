@@ -1,3 +1,4 @@
+import { ReceptionistLocale } from '../../../shared/receptionist-locale';
 import { Component, inject, signal, computed, OnInit } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { LanguageService } from "../../../core/services/language";
@@ -25,6 +26,7 @@ import { PatientProfileComponent } from '../../../shared/components/patient-prof
   styleUrl: "./dashboard.css",
 })
 export class Dashboard implements OnInit {
+  readonly locale = new ReceptionistLocale();
   langService = inject(LanguageService);
   receptionistService = inject(ReceptionistService, { optional: true }) ?? new ReceptionistService();
   clinicState = inject(ClinicStateService);
@@ -128,10 +130,9 @@ export class Dashboard implements OnInit {
   });
 
   getPatientName(patientId: string | number, fallbackName?: string): string {
-    if (fallbackName) return fallbackName;
     const idStr = patientId != null ? patientId.toString() : '';
     const p = this.allPatients().find((pt) => pt.id === idStr);
-    return p ? p.nameEn || p.nameAr || 'Unknown Patient' : this.clinicState.getPatientName(idStr);
+    return this.locale.patientName(p) || fallbackName || this.clinicState.getPatientName(idStr);
   }
 
   getPatientAvatar(patientId: string | number, patientName?: string): string {
@@ -154,7 +155,7 @@ export class Dashboard implements OnInit {
   formatTime(isoString?: string): string {
     if (!isoString) return '-';
     try {
-      return new Date(isoString).toLocaleTimeString('en-US', {
+      return new Date(isoString).toLocaleTimeString(this.locale.language, {
         hour: '2-digit',
         minute: '2-digit'
       });
@@ -185,8 +186,8 @@ export class Dashboard implements OnInit {
       this.closeAbsenceModal();
       this.messageService.add({
         severity: 'success',
-        summary: 'Success',
-        detail: 'Doctor marked absent'
+        summary: this.locale.text('SUCCESS', "Success"),
+        detail: this.locale.text('DOCTOR_MARKED_ABSENT', "Doctor marked absent")
       });
     }, 1000);
   }
@@ -200,7 +201,7 @@ export class Dashboard implements OnInit {
   getSessionBadge(session: TodaySession): string {
     if (session.packageAlert) return session.packageAlert;
     if (session.sessionNumber && session.totalSessions) {
-      return `Session ${session.sessionNumber} of ${session.totalSessions}`;
+      return this.locale.text('SESSION_PROGRESS', "Session {{number}} of {{total}}", { number: session.sessionNumber, total: session.totalSessions });
     }
     return '';
   }
@@ -304,14 +305,14 @@ export class Dashboard implements OnInit {
       );
       this.messageService.add({
         severity: 'success',
-        summary: 'Success',
-        detail: 'Patient checked in'
+        summary: this.locale.text('SUCCESS', "Success"),
+        detail: this.locale.text('PATIENT_CHECKED_IN', "Patient checked in")
       });
     } catch (e: any) {
       this.messageService.add({
         severity: 'error',
-        summary: 'Check-in Failed',
-        detail: e?.message || 'Room is not available for booking.'
+        summary: this.locale.text('CHECK_IN_FAILED', "Check-in Failed"),
+        detail: this.locale.error(e, 'ROOM_IS_NOT_AVAILABLE_FOR_BOOKING_', "Room is not available for booking.")
       });
     }
   }
@@ -330,7 +331,7 @@ export class Dashboard implements OnInit {
         );
         if (statusStr !== 'Paid' && statusStr !== 'Waived') {
           throw new Error(
-            'Cannot check out: The invoice for this session is pending. Please process payment first.'
+            this.locale.text('CANNOT_CHECK_OUT_THE_INVOICE_FOR_THIS_SESSION_IS_PENDING_PLEASE_PROCESS_PAYMENT_FIRST_', 'Cannot check out: The invoice for this session is pending. Please process payment first.')
           );
         }
       }
@@ -345,14 +346,14 @@ export class Dashboard implements OnInit {
       );
       this.messageService.add({
         severity: 'success',
-        summary: 'Success',
-        detail: 'Patient checked out'
+        summary: this.locale.text('SUCCESS', "Success"),
+        detail: this.locale.text('PATIENT_CHECKED_OUT', "Patient checked out")
       });
     } catch (error: any) {
       this.messageService.add({
         severity: 'error',
-        summary: 'Check-out Blocked',
-        detail: error?.message || 'Failed to check out'
+        summary: this.locale.text('CHECK_OUT_BLOCKED', "Check-out Blocked"),
+        detail: this.locale.error(error, 'FAILED_TO_CHECK_OUT', "Failed to check out")
       });
     }
   }
@@ -365,15 +366,15 @@ export class Dashboard implements OnInit {
       next: () => {
         this.messageService.add({
           severity: 'success',
-          summary: 'Success',
-          detail: 'Patient marked as absent and session cancelled.'
+          summary: this.locale.text('SUCCESS', "Success"),
+          detail: this.locale.text('PATIENT_MARKED_AS_ABSENT_AND_SESSION_CANCELLED_', "Patient marked as absent and session cancelled.")
         });
       },
       error: (error) => {
         this.messageService.add({
           severity: 'error',
-          summary: 'Error',
-          detail: error?.message || 'Failed to cancel session.'
+          summary: this.locale.text('ERROR', "Error"),
+          detail: this.locale.error(error, 'FAILED_TO_CANCEL_SESSION_', "Failed to cancel session.")
         });
       }
     });

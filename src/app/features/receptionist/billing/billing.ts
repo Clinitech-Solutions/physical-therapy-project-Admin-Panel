@@ -1,3 +1,4 @@
+import { ReceptionistLocale, ReceptionistTextPipe } from '../../../shared/receptionist-locale';
 import { Component, OnInit, computed, inject, signal, Input, forwardRef } from "@angular/core";
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
 import { CommonModule } from "@angular/common";
@@ -19,7 +20,7 @@ import { TabsModule } from 'primeng/tabs';
 @Component({
   selector: "p-dropdown",
   standalone: true,
-  imports: [CommonModule, FormsModule, SelectModule],
+  imports: [ReceptionistTextPipe, CommonModule, FormsModule, SelectModule],
   template: `
     <p-select 
       [options]="options" 
@@ -28,6 +29,8 @@ import { TabsModule } from 'primeng/tabs';
       [placeholder]="placeholder"
       [appendTo]="appendTo"
       [styleClass]="styleClass">
+      <ng-template pTemplate="item" let-method>{{ method | receptionistText }}</ng-template>
+      <ng-template pTemplate="selectedItem" let-method>{{ method | receptionistText }}</ng-template>
     </p-select>
   `,
   providers: [
@@ -67,7 +70,7 @@ export class DropdownComponent implements ControlValueAccessor {
 @Component({
   selector: "app-receptionist-billing",
   standalone: true,
-  imports: [
+  imports: [ReceptionistTextPipe,
     CommonModule, 
     TranslateModule, 
     FormsModule, 
@@ -85,6 +88,7 @@ export class DropdownComponent implements ControlValueAccessor {
   styleUrl: "./billing.css"
 })
 export class BillingComponent implements OnInit {
+  readonly locale = new ReceptionistLocale();
   billingService = inject(BillingService, { optional: true }) ?? new BillingService();
   patientService = inject(PatientService, { optional: true });
   appointmentService = inject(AppointmentService, { optional: true });
@@ -231,8 +235,8 @@ export class BillingComponent implements OnInit {
     if (!this.installmentAmount || this.installmentAmount <= 0) {
       this.messageService.add({
         severity: 'warn',
-        summary: 'Invalid Amount',
-        detail: 'Please enter a valid amount.'
+        summary: this.locale.text('INVALID_AMOUNT', "Invalid Amount"),
+        detail: this.locale.text('PLEASE_ENTER_A_VALID_AMOUNT_', "Please enter a valid amount.")
       });
       return;
     }
@@ -318,14 +322,14 @@ export class BillingComponent implements OnInit {
       this.installmentAmount = 0;
       this.messageService.add({
         severity: 'success',
-        summary: 'Installment Collected',
-        detail: `Installment payment recorded successfully.`
+        summary: this.locale.text('INSTALLMENT_COLLECTED', "Installment Collected"),
+        detail: this.locale.text('INSTALLMENT_PAYMENT_RECORDED_SUCCESSFULLY_', "Installment payment recorded successfully.")
       });
     } catch (error: any) {
       this.messageService.add({
         severity: 'error',
-        summary: 'Error',
-        detail: error?.message || 'Payment processing failed'
+        summary: this.locale.text('ERROR', "Error"),
+        detail: this.locale.error(error, 'PAYMENT_PROCESSING_FAILED', "Payment processing failed")
       });
     } finally {
       this.isSubmittingPayment.set(false);
@@ -348,8 +352,8 @@ export class BillingComponent implements OnInit {
     if (!this.amountToCollect || this.amountToCollect <= 0) {
       this.messageService.add({
         severity: 'warn',
-        summary: 'Invalid Amount',
-        detail: 'Please enter a valid amount to collect.'
+        summary: this.locale.text('INVALID_AMOUNT', "Invalid Amount"),
+        detail: this.locale.text('PLEASE_ENTER_A_VALID_AMOUNT_TO_COLLECT_', "Please enter a valid amount to collect.")
       });
       return;
     }
@@ -373,14 +377,14 @@ export class BillingComponent implements OnInit {
       this.amountToCollect = 0;
       this.messageService.add({
         severity: 'success',
-        summary: 'Payment Recorded',
-        detail: `${collected.toLocaleString()} EGP collected via ${method}`
+        summary: this.locale.text('PAYMENT_RECORDED', "Payment Recorded"),
+        detail: this.locale.text('PAYMENT_COLLECTED_DETAIL', "{{amount}} EGP collected via {{method}}.", { amount: collected.toLocaleString(this.locale.language), method: this.locale.label(method) })
       });
     } catch (error: any) {
       this.messageService.add({
         severity: 'error',
-        summary: 'Payment Error',
-        detail: error?.message || 'Payment processing failed'
+        summary: this.locale.text('PAYMENT_ERROR', "Payment Error"),
+        detail: this.locale.error(error, 'PAYMENT_PROCESSING_FAILED', "Payment processing failed")
       });
     } finally {
       this.isSubmittingPayment.set(false);
@@ -395,15 +399,15 @@ export class BillingComponent implements OnInit {
       next: () => {
         this.messageService.add({
           severity: 'success',
-          summary: 'Status Updated',
-          detail: 'Invoice status updated successfully.'
+          summary: this.locale.text('STATUS_UPDATED', "Status Updated"),
+          detail: this.locale.text('INVOICE_STATUS_UPDATED_SUCCESSFULLY_', "Invoice status updated successfully.")
         });
       },
       error: (err) => {
         this.messageService.add({
           severity: 'error',
-          summary: 'Update Failed',
-          detail: err?.message || 'Failed to update invoice status.'
+          summary: this.locale.text('UPDATE_FAILED', "Update Failed"),
+          detail: this.locale.error(err, 'FAILED_TO_UPDATE_INVOICE_STATUS_', "Failed to update invoice status.")
         });
       }
     });
@@ -416,15 +420,15 @@ export class BillingComponent implements OnInit {
       next: () => {
         this.messageService.add({
           severity: 'success',
-          summary: 'Invoice Deleted',
-          detail: 'Invoice removed successfully.'
+          summary: this.locale.text('INVOICE_DELETED', "Invoice Deleted"),
+          detail: this.locale.text('INVOICE_REMOVED_SUCCESSFULLY_', "Invoice removed successfully.")
         });
       },
       error: (err) => {
         this.messageService.add({
           severity: 'error',
-          summary: 'Delete Failed',
-          detail: err?.message || 'Failed to delete invoice.'
+          summary: this.locale.text('DELETE_FAILED', "Delete Failed"),
+          detail: this.locale.error(err, 'FAILED_TO_DELETE_INVOICE_', "Failed to delete invoice.")
         });
       }
     });
@@ -456,9 +460,8 @@ export class BillingComponent implements OnInit {
   }
 
   getPatientName(patientId: string | number, fallbackName?: string): string {
-    if (fallbackName) return fallbackName;
     const idStr = patientId != null ? patientId.toString() : '';
     const p = this.patients().find((p) => p.id === idStr);
-    return p ? p.nameEn || p.nameAr || 'Unknown Patient' : 'Unknown Patient';
+    return this.locale.patientName(p) || fallbackName || this.locale.label('Unknown Patient');
   }
 }
