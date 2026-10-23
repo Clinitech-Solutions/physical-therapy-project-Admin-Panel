@@ -6,7 +6,7 @@ import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 
 import { ClinicStateService } from '../../../core/services/state/clinic-state.service';
-import { AppointmentService, Appointment } from '../../../core/services/appointment.service';
+import { ReceptionistService, TodaySession } from '../../../core/services/receptionist.service';
 import { PatientService } from '../../../core/services/patient.service';
 import { BillingService } from '../../../core/services/billing.service';
 import { MessageService } from 'primeng/api';
@@ -26,40 +26,20 @@ import { PatientProfileComponent } from '../../../shared/components/patient-prof
 })
 export class Dashboard implements OnInit {
   langService = inject(LanguageService);
+  receptionistService = inject(ReceptionistService, { optional: true }) ?? new ReceptionistService();
   clinicState = inject(ClinicStateService);
-  appointmentService = inject(AppointmentService, { optional: true });
   patientService = inject(PatientService, { optional: true });
   billingService = inject(BillingService, { optional: true }) ?? new BillingService();
   messageService = inject(MessageService);
-  
+
   todayDate = new Date();
 
-  // Financial signals strictly bound to BillingService
-  expectedTodayRevenue = this.billingService.expectedTodayRevenue;
-  collectedTodayRevenue = this.billingService.collectedTodayRevenue;
-  collectionRateToday = this.billingService.collectionRateToday;
+  // Bound strictly to ReceptionistService signals
+  stats = this.receptionistService.stats;
+  todaySessions = this.receptionistService.todaySessions;
+  loading = this.receptionistService.loading;
 
-  appointments = computed<Appointment[]>(() => {
-    const apiApps = this.appointmentService?.appointments() ?? [];
-    if (apiApps.length > 0) return apiApps;
-    return this.clinicState.sessions().map((s) => ({
-      id: Number(s.id) || (s.id as any),
-      patientId: Number(s.patientId) || (s.patientId as any),
-      doctorId: (s.doctorId as any) ?? null,
-      roomId: (s.roomId as any) ?? null,
-      appointmentType: s.type,
-      startTime: s.scheduledAt || '',
-      endTime: s.scheduledAt || '',
-      status: s.status,
-      scheduledAt: s.scheduledAt
-    })) as any[];
-  });
-
-  allPatients = computed(() => {
-    const apiPatients = this.patientService?.patients() ?? [];
-    return apiPatients.length > 0 ? apiPatients : this.clinicState.patients();
-  });
-
+  allPatients = computed(() => this.patientService?.patients() ?? []);
   allDoctors = this.clinicState.doctors;
   allRooms = this.clinicState.rooms;
 
@@ -77,88 +57,107 @@ export class Dashboard implements OnInit {
     this.showProfileModal.set(true);
   }
 
-  ngOnInit() {
-    this.appointmentService?.getAppointments();
+  ngOnInit(): void {
+    this.receptionistService.getDashboardStats();
+    this.receptionistService.getTodaySessions();
     this.patientService?.getPatients().subscribe();
     this.billingService.getInvoices();
   }
 
-  /**
-   * Real-time computed signal: Filter appointments/sessions where date matches today
-   */
-  todaySessions = computed(() => {
-    const today = new Date();
-    const todayYMD = today.toISOString().split('T')[0];
-    const pad = (n: number) => n.toString().padStart(2, '0');
-    const localYMD = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+  onSearchChange(value: string): void {
+    this.searchPatient.set(value);
+    this.applySessionFilters();
+  }
 
-    return this.appointments().filter((a: any) => {
-      const timeVal = a.startTime || a.scheduledAt;
-      if (!timeVal) return false;
-      const sessionDate = new Date(timeVal);
-      const isSameDay = !isNaN(sessionDate.getTime()) &&
-        sessionDate.getFullYear() === today.getFullYear() &&
-        sessionDate.getMonth() === today.getMonth() &&
-        sessionDate.getDate() === today.getDate();
-      const sessionDatePart = timeVal.toString().split('T')[0];
-      return isSameDay || sessionDatePart === todayYMD || sessionDatePart === localYMD;
+  onDoctorFilterChange(value: string): void {
+    this.filterDoctor.set(value);
+    this.applySessionFilters();
+  }
+
+  onRoomFilterChange(value: string): void {
+    this.filterRoom.set(value);
+    this.applySessionFilters();
+  }
+
+  private applySessionFilters(): void {
+    const docId = this.filterDoctor();
+    const roomId = this.filterRoom();
+    const search = this.searchPatient().trim();
+
+    this.receptionistService.getTodaySessions({
+      search: search || undefined,
+      doctorId: !isNaN(Number(docId)) && docId !== '' ? Number(docId) : undefined,
+      roomId: !isNaN(Number(roomId)) && roomId !== '' ? Number(roomId) : undefined
     });
-  });
+  }
 
   /**
-   * Real-time computed signal: Count of todaySessions where status is 'Completed'
-   */
-  completedSessionsCount = computed(() =>
-    this.todaySessions().filter(s => String(s.status) === 'Completed').length
-  );
-
-  /**
-   * Real-time computed signal: Strictly bound to billingService.pendingPaymentsCount
-   */
-  pendingPaymentsCount = this.billingService.pendingPaymentsCount;
-
-  /**
-   * Real-time computed signal: Strictly bound to billingService.collectedTodayRevenue
-   */
-  todayRevenue = computed(() => this.billingService.collectedTodayRevenue());
-
-  /**
-   * Filtered today's sessions for the timeline table (reactive computed signal)
+   * Filtered today's sessions from receptionistService.todaySessions()
    */
   filteredTodaySessions = computed(() => {
     const docFilter = this.filterDoctor().toLowerCase();
     const roomFilter = this.filterRoom().toLowerCase();
     const search = this.searchPatient().toLowerCase();
 
-    return this.todaySessions().filter(session => {
-      const docName = (session.doctorName || this.clinicState.getDoctorName(session.doctorId?.toString() || '')).toLowerCase();
-      const roomName = (session.roomName || this.clinicState.getRoomName(session.roomId?.toString() || '')).toLowerCase();
-      const patientName = (session.patientName || this.clinicState.getPatientName(session.patientId.toString())).toLowerCase();
+    return this.todaySessions().filter((session) => {
+      const docName = (
+        session.doctorName ||
+        this.clinicState.getDoctorName(session.doctorId?.toString() || '')
+      ).toLowerCase();
+      const roomName = (
+        session.roomName ||
+        this.clinicState.getRoomName(session.roomId?.toString() || '')
+      ).toLowerCase();
+      const patientName = (
+        session.patientName ||
+        this.getPatientName(session.patientId)
+      ).toLowerCase();
 
-      const matchDoc = !docFilter || docName.includes(docFilter);
-      const matchRoom = !roomFilter || roomName.includes(roomFilter);
+      const matchDoc =
+        !docFilter ||
+        docName.includes(docFilter) ||
+        String(session.doctorId ?? '').toLowerCase() === docFilter;
+      const matchRoom =
+        !roomFilter ||
+        roomName.includes(roomFilter) ||
+        String(session.roomId ?? '').toLowerCase() === roomFilter;
       const matchPatient = !search || patientName.includes(search);
 
       return matchDoc && matchRoom && matchPatient;
     });
   });
 
-  // Live KPI stats bound directly to state signals
-  get kpis() {
-    return {
-      todaysSessions: this.todaySessions().length,
-      completedSessions: this.completedSessionsCount(),
-      presentDoctors: this.clinicState.doctors().length,
-      walkInsToday: this.todaySessions().filter(s => s.appointmentType === 'Assessment').length,
-      pendingPayments: this.pendingPaymentsCount(),
-      todayRevenue: this.todayRevenue()
-    };
+  getPatientName(patientId: string | number, fallbackName?: string): string {
+    if (fallbackName) return fallbackName;
+    const idStr = patientId != null ? patientId.toString() : '';
+    const p = this.allPatients().find((pt) => pt.id === idStr);
+    return p ? p.nameEn || p.nameAr || 'Unknown Patient' : this.clinicState.getPatientName(idStr);
   }
 
-  formatTime(isoString?: string) {
+  getPatientAvatar(patientId: string | number, patientName?: string): string {
+    const idStr = patientId != null ? patientId.toString() : '';
+    const p = this.allPatients().find((pt) => pt.id === idStr);
+    if (p?.avatar) return p.avatar;
+    const resolvedName = patientName || this.clinicState.getPatientAvatar(idStr);
+    if (resolvedName && resolvedName.length <= 2) return resolvedName;
+    if (patientName) {
+      return patientName
+        .split(' ')
+        .map((n) => n[0])
+        .join('')
+        .substring(0, 2)
+        .toUpperCase();
+    }
+    return 'PT';
+  }
+
+  formatTime(isoString?: string): string {
     if (!isoString) return '-';
     try {
-      return new Date(isoString).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+      return new Date(isoString).toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
     } catch {
       return isoString;
     }
@@ -168,7 +167,7 @@ export class Dashboard implements OnInit {
   showAbsenceModal = signal(false);
   absentDoctorName = signal('');
   isProcessing = signal(false);
-  
+
   openAbsenceModal(doctorName: string) {
     this.absentDoctorName.set(doctorName);
     this.showAbsenceModal.set(true);
@@ -184,29 +183,36 @@ export class Dashboard implements OnInit {
     setTimeout(() => {
       this.isProcessing.set(false);
       this.closeAbsenceModal();
-      this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Doctor marked absent' });
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Success',
+        detail: 'Doctor marked absent'
+      });
     }, 1000);
   }
 
   // Debt Gate State
   showDebtModal = false;
-  debtSessionId: string | null = null;
+  debtSessionId: number | null = null;
   debtAmountToCollect = 0;
   pendingDebtTotal = 0;
 
-  getSessionBadge(appointment: Appointment): string {
-    const mockSession: any = {
-      ...appointment,
-      patientId: appointment.patientId?.toString(),
-      type: appointment.appointmentType,
-      scheduledAt: appointment.startTime
-    };
-    return this.clinicState.getSessionBadge(mockSession);
+  getSessionBadge(session: TodaySession): string {
+    if (session.packageAlert) return session.packageAlert;
+    if (session.sessionNumber && session.totalSessions) {
+      return `Session ${session.sessionNumber} of ${session.totalSessions}`;
+    }
+    return '';
   }
 
-  onCheckInClick(session: Appointment) {
-    const patient = this.allPatients().find(p => p.id === session.patientId.toString());
-    const planDebt = patient?.financialPlan?.remainingDebt || patient?.treatmentPlan?.financialPlan?.remainingDebt || 0;
+  onCheckInClick(session: TodaySession) {
+    const patient = this.allPatients().find(
+      (p) => p.id === session.patientId?.toString()
+    );
+    const planDebt =
+      patient?.financialPlan?.remainingDebt ||
+      patient?.treatmentPlan?.financialPlan?.remainingDebt ||
+      0;
     const unpaidInvoicesDebt = this.billingService
       .invoices()
       .filter((inv) => {
@@ -216,22 +222,27 @@ export class Dashboard implements OnInit {
           (st === 'Pending' || st === 'Partial')
         );
       })
-      .reduce((sum, inv) => sum + (inv.remainingBalance ?? inv.patientAmount ?? 0), 0);
+      .reduce(
+        (sum, inv) => sum + (inv.remainingBalance ?? inv.patientAmount ?? 0),
+        0
+      );
 
     const debt = Math.max(planDebt, unpaidInvoicesDebt);
     if (debt > 0) {
       this.pendingDebtTotal = debt;
       this.debtAmountToCollect = debt;
-      this.debtSessionId = session.id?.toString() || null;
+      this.debtSessionId = Number(session.id);
       this.showDebtModal = true;
     } else {
-      if (session.id) this.checkIn(session.id);
+      if (session.id !== undefined) this.checkIn(Number(session.id));
     }
   }
 
   async confirmDebtPayment(collect: boolean) {
-    if (collect && this.debtAmountToCollect > 0 && this.debtSessionId) {
-      const session = this.appointments().find(s => s.id?.toString() === this.debtSessionId);
+    if (collect && this.debtAmountToCollect > 0 && this.debtSessionId !== null) {
+      const session = this.todaySessions().find(
+        (s) => Number(s.id) === this.debtSessionId
+      );
       if (session) {
         let targetInvoice =
           this.billingService.getInvoiceBySessionId(this.debtSessionId) ||
@@ -248,7 +259,7 @@ export class Dashboard implements OnInit {
         if (!targetInvoice) {
           targetInvoice = await firstValueFrom(
             this.billingService.createInvoice({
-              appointmentId: Number(this.debtSessionId),
+              appointmentId: this.debtSessionId,
               patientId: Number(session.patientId),
               type: this.billingService.mapTypeToNumber('Installment'),
               totalAmount: this.debtAmountToCollect,
@@ -269,8 +280,8 @@ export class Dashboard implements OnInit {
         }
       }
     }
-    if (this.debtSessionId) {
-      this.checkIn(Number(this.debtSessionId));
+    if (this.debtSessionId !== null) {
+      await this.checkIn(this.debtSessionId);
     }
     this.showDebtModal = false;
     this.debtSessionId = null;
@@ -278,27 +289,45 @@ export class Dashboard implements OnInit {
     this.pendingDebtTotal = 0;
   }
 
-  async checkIn(id: number) {
+  /**
+   * Check-In action wired to ReceptionistService.updateSessionStatus
+   */
+  async checkIn(appointmentId: number) {
     try {
-      if (this.appointmentService) {
-        await new Promise<void>((resolve, reject) => {
-          this.appointmentService!.updateStatus(id, 'In Progress').subscribe({
-            next: () => resolve(),
-            error: (e) => reject(e)
-          });
-        });
-      }
-      this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Patient checked in' });
+      const inProgressStatus =
+        this.receptionistService.mapStatusToNumber('In Progress');
+      await firstValueFrom(
+        this.receptionistService.updateSessionStatus(
+          appointmentId,
+          inProgressStatus
+        )
+      );
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Success',
+        detail: 'Patient checked in'
+      });
     } catch (e: any) {
-      this.messageService.add({ severity: 'error', summary: 'Check-in Failed', detail: e.message || 'Room is not available for booking.' });
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Check-in Failed',
+        detail: e?.message || 'Room is not available for booking.'
+      });
     }
   }
 
-  async checkOut(id: number) {
+  /**
+   * Check-Out action wired to ReceptionistService.updateSessionStatus
+   * (with BillingService payment gate check)
+   */
+  async checkOut(appointmentId: number) {
     try {
-      const sessionInvoice = this.billingService.getInvoiceBySessionId(id);
+      const sessionInvoice =
+        this.billingService.getInvoiceBySessionId(appointmentId);
       if (sessionInvoice) {
-        const statusStr = this.billingService.mapStatusToString(sessionInvoice.status);
+        const statusStr = this.billingService.mapStatusToString(
+          sessionInvoice.status
+        );
         if (statusStr !== 'Paid' && statusStr !== 'Waived') {
           throw new Error(
             'Cannot check out: The invoice for this session is pending. Please process payment first.'
@@ -306,49 +335,52 @@ export class Dashboard implements OnInit {
         }
       }
 
-      if (this.appointmentService) {
-        await new Promise<void>((resolve, reject) => {
-          this.appointmentService!.updateStatus(id, 'Completed').subscribe({
-            next: () => resolve(),
-            error: (e) => reject(e)
-          });
-        });
-      }
-      this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Patient checked out' });
+      const completedStatus =
+        this.receptionistService.mapStatusToNumber('Completed');
+      await firstValueFrom(
+        this.receptionistService.updateSessionStatus(
+          appointmentId,
+          completedStatus
+        )
+      );
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Success',
+        detail: 'Patient checked out'
+      });
     } catch (error: any) {
       this.messageService.add({
         severity: 'error',
         summary: 'Check-out Blocked',
-        detail: error.message || 'Failed to check out'
+        detail: error?.message || 'Failed to check out'
       });
     }
   }
 
+  /**
+   * Cancel / Mark Absent action wired to ReceptionistService.cancelSession
+   */
+  cancelSession(appointmentId: number) {
+    this.receptionistService.cancelSession(appointmentId).subscribe({
+      next: () => {
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Success',
+          detail: 'Patient marked as absent and session cancelled.'
+        });
+      },
+      error: (error) => {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: error?.message || 'Failed to cancel session.'
+        });
+      }
+    });
+  }
+
   markPatientAbsent(sessionId: number) {
-    try {
-      this.appointmentService?.updateStatus(sessionId, 'Cancelled').subscribe({
-        next: () => {
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Success',
-            detail: 'Patient marked as absent and session cancelled.'
-          });
-        },
-        error: (error) => {
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Error',
-            detail: error.message || 'Failed to mark patient absent.'
-          });
-        }
-      });
-    } catch (error: any) {
-      this.messageService.add({
-        severity: 'error',
-        summary: 'Error',
-        detail: error.message || 'Failed to mark patient absent.'
-      });
-    }
+    this.cancelSession(sessionId);
   }
 }
 

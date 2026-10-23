@@ -6,38 +6,38 @@
     </div>
   </div>
 
-  <!-- KPI Row (Bound Strictly to BillingService & Dashboard Signals) -->
+  <!-- KPI Row (Bound Strictly to receptionistService.stats()) -->
   <div class="kpi-row">
     <div class="stat-card border-start-teal">
       <div class="stat-label">{{ 'RECEPTIONIST.TODAYS_SESSIONS' | translate }}</div>
-      <div class="stat-value text-teal">{{ todaySessions().length }}</div>
+      <div class="stat-value text-teal">{{ receptionistService.stats()?.todaysSessions ?? 0 }}</div>
     </div>
     <div class="stat-card border-start-blue">
       <div class="stat-label">{{ 'RECEPTIONIST.COMPLETED_SESSIONS' | translate }}</div>
-      <div class="stat-value text-blue">{{ completedSessionsCount() }}</div>
+      <div class="stat-value text-blue">{{ receptionistService.stats()?.completedSessions ?? 0 }}</div>
     </div>
     <div class="stat-card border-start-amber">
       <div class="stat-label">{{ 'RECEPTIONIST.PENDING_PAYMENTS' | translate }}</div>
-      <div class="stat-value text-amber">{{ billingService.pendingPaymentsCount() }}</div>
+      <div class="stat-value text-amber">{{ receptionistService.stats()?.pendingPayments ?? 0 }}</div>
     </div>
     <div class="stat-card border-start-teal">
       <div class="stat-label">{{ 'RECEPTIONIST.TOTAL_TODAY_REVENUE' | translate }}</div>
       <div class="stat-value text-teal d-flex align-items-baseline gap-1" style="font-size: 1.15rem;">
-        <span>{{ billingService.collectedTodayRevenue() | currency:'EGP' }}</span>
-        <span class="text-secondary small fw-normal" style="font-size: 0.8rem;">/ {{ billingService.expectedTodayRevenue() |
+        <span>{{ (receptionistService.stats()?.collectedTodayRevenue ?? receptionistService.stats()?.todayRevenue ?? 0) | currency:'EGP' }}</span>
+        <span class="text-secondary small fw-normal" style="font-size: 0.8rem;">/ {{ (receptionistService.stats()?.expectedTodayRevenue ?? 0) |
           currency:'EGP' }}</span>
       </div>
       <div class="mt-2 w-100">
         <div class="d-flex justify-content-between align-items-center mb-1 text-muted" style="font-size: 0.7rem;">
           <span>{{ 'RECEPTIONIST.COLLECTION_RATE' | translate }}</span>
-          <span class="fw-semibold">{{ billingService.collectionRateToday() }}%</span>
+          <span class="fw-semibold">{{ receptionistService.stats()?.collectionRateToday ?? 0 }}%</span>
         </div>
-        <p-progressBar [value]="billingService.collectionRateToday()" [showValue]="false" [style]="{ height: '4px' }"></p-progressBar>
+        <p-progressBar [value]="receptionistService.stats()?.collectionRateToday ?? 0" [showValue]="false" [style]="{ height: '4px' }"></p-progressBar>
       </div>
     </div>
   </div>
 
-  <!-- Daily Timeline -->
+  <!-- Daily Timeline (Bound to receptionistService.todaySessions()) -->
   <div class="table-panel">
     <!-- Sticky toolbar lives inside the scroll container -->
     <div class="table-toolbar">
@@ -46,17 +46,17 @@
         <div class="search-bar">
           <i class="bi bi-search"></i>
           <input type="text" [placeholder]="'RECEPTIONIST.SEARCH_PLACEHOLDER' | translate" [ngModel]="searchPatient()"
-            (ngModelChange)="searchPatient.set($event)" />
+            (ngModelChange)="onSearchChange($event)" />
         </div>
         <select class="form-select form-select-sm" style="width:auto" [ngModel]="filterDoctor()"
-          (ngModelChange)="filterDoctor.set($event)">
+          (ngModelChange)="onDoctorFilterChange($event)">
           <option value="">{{ 'RECEPTIONIST.ALL_DOCTORS' | translate }}</option>
           @for (doc of allDoctors(); track doc.id) {
           <option [value]="doc.name">{{ doc.name }}</option>
           }
         </select>
         <select class="form-select form-select-sm" style="width:auto" [ngModel]="filterRoom()"
-          (ngModelChange)="filterRoom.set($event)">
+          (ngModelChange)="onRoomFilterChange($event)">
           <option value="">{{ 'RECEPTIONIST.ALL_ROOMS' | translate }}</option>
           @for (room of allRooms(); track room.id) {
           <option [value]="room.displayName">{{ room.displayName }}</option>
@@ -79,13 +79,14 @@
         </thead>
         <tbody>
           @for(session of filteredTodaySessions(); track session.id) {
+          @let statusStr = receptionistService.mapStatusToString(session.status);
           <tr>
             <td class="font-bebas" style="font-size:1rem">{{ formatTime(session.startTime?.toString()) }}</td>
             <td>
               <div class="d-flex align-items-center gap-2">
-                <div class="avatar avatar-sm">{{ clinicState.getPatientAvatar(session.patientId.toString()) }}</div>
+                <div class="avatar avatar-sm">{{ getPatientAvatar(session.patientId, session.patientName) }}</div>
                 <span class="fw-semibold text-primary-hover" role="button" (click)="openPatientProfile(session.patientId)" style="cursor: pointer;">
-                  {{ session.patientName || clinicState.getPatientName(session.patientId.toString()) }}
+                  {{ getPatientName(session.patientId, session.patientName) }}
                 </span>
                 @if(getSessionBadge(session)) {
                 <span class="badge badge-warning" role="button" (click)="openPatientProfile(session.patientId)" style="cursor: pointer;" title="Treatment Progress">
@@ -98,40 +99,40 @@
             <td><span class="badge badge-neutral">{{ session.roomName || clinicState.getRoomName(session.roomId?.toString() || '') }}</span></td>
             <td>
               <span class="badge" [ngClass]="{
-                  'badge-success': session.status === 'Confirmed' || session.status === 'Completed',
-                  'badge-info': session.status === 'In Progress' || session.status === 'Waiting',
-                  'badge-warning': session.status === 'Pending',
-                  'badge-error': session.status === 'Cancelled'
+                  'badge-success': statusStr === 'Confirmed' || statusStr === 'Completed',
+                  'badge-info': statusStr === 'In Progress' || statusStr === 'Waiting',
+                  'badge-warning': statusStr === 'Pending',
+                  'badge-error': statusStr === 'Cancelled'
                 }">
-                @if(session.status === 'Confirmed') { {{ 'RECEPTIONIST.CONFIRMED' | translate }} }
-                @if(session.status === 'In Progress') { {{ 'RECEPTIONIST.IN_PROGRESS' | translate }} }
-                @if(session.status === 'Pending') { {{ 'RECEPTIONIST.PENDING' | translate }} }
-                @if(session.status === 'Cancelled') { {{ 'RECEPTIONIST.CANCELLED' | translate }} }
-                @if(session.status === 'Waiting') { {{ 'RECEPTIONIST.WAITING' | translate }} }
-                @if(session.status === 'Completed') { {{ 'RECEPTIONIST.COMPLETED' | translate }} }
+                @if(statusStr === 'Confirmed') { {{ 'RECEPTIONIST.CONFIRMED' | translate }} }
+                @if(statusStr === 'In Progress') { {{ 'RECEPTIONIST.IN_PROGRESS' | translate }} }
+                @if(statusStr === 'Pending') { {{ 'RECEPTIONIST.PENDING' | translate }} }
+                @if(statusStr === 'Cancelled') { {{ 'RECEPTIONIST.CANCELLED' | translate }} }
+                @if(statusStr === 'Waiting') { {{ 'RECEPTIONIST.WAITING' | translate }} }
+                @if(statusStr === 'Completed') { {{ 'RECEPTIONIST.COMPLETED' | translate }} }
               </span>
             </td>
             <td style="text-align:end">
               <div class="d-flex gap-1 justify-content-end align-items-center">
-                @if(session.status === 'Confirmed' || session.status === 'Pending') {
+                @if(statusStr === 'Confirmed' || statusStr === 'Pending') {
                 <button class="btn-action action-primary" [attr.data-tip]="'RECEPTIONIST.CHECK_IN' | translate"
                   (click)="onCheckInClick(session)">
                   <i class="bi bi-box-arrow-in-right"></i>
                 </button>
                 }
-                @if(session.status === 'In Progress' || session.status === 'Waiting') {
+                @if(statusStr === 'In Progress' || statusStr === 'Waiting') {
                 <button class="btn-action action-success" [attr.data-tip]="'RECEPTIONIST.CHECK_OUT' | translate"
-                  (click)="checkOut(session.id!)">
+                  (click)="checkOut(session.id)">
                   <i class="bi bi-box-arrow-right"></i>
                 </button>
                 }
                 <p-button
-                  *ngIf="session.status === 'Pending' || session.status === 'Confirmed' || session.status === 'Waiting'"
+                  *ngIf="statusStr === 'Pending' || statusStr === 'Confirmed' || statusStr === 'Waiting'"
                   icon="bi bi-person-x" styleClass="btn-tinted-danger"
                   pTooltip="{{ 'RECEPTIONIST.MARK_ABSENT' | translate }}"
                   tooltipPosition="top"
                   tooltipStyleClass="custom-tooltip"
-                  (onClick)="markPatientAbsent(session.id!)">
+                  (onClick)="cancelSession(session.id)">
                 </p-button>
               </div>
             </td>

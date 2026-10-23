@@ -1,15 +1,17 @@
 import '@angular/compiler';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Injector, runInInjectionContext, signal } from '@angular/core';
+import { of } from 'rxjs';
 import { Dashboard } from './dashboard';
 import { ClinicStateService } from '../../../core/services/state/clinic-state.service';
-import { BillingService, Invoice } from '../../../core/services/billing.service';
+import { ReceptionistService } from '../../../core/services/receptionist.service';
+import { BillingService } from '../../../core/services/billing.service';
 import { MessageService } from 'primeng/api';
 import { LanguageService } from '../../../core/services/language';
-import { Session, SessionStatus, SessionType } from '../../../core/models/session.model';
 
-describe('Receptionist DashboardComponent Reactive Signals Suite', () => {
+describe('Receptionist DashboardComponent & ReceptionistService Suite', () => {
   let dashboard: Dashboard;
+  let receptionistService: ReceptionistService;
   let clinicState: ClinicStateService;
   let billingService: BillingService;
   let messageService: MessageService;
@@ -25,123 +27,131 @@ describe('Receptionist DashboardComponent Reactive Signals Suite', () => {
       initLang: () => {}
     };
 
-    await new Promise(resolve => setTimeout(resolve, 600));
-
     const injector = Injector.create({
       providers: [
         { provide: ClinicStateService, useValue: clinicState },
+        { provide: ReceptionistService, useFactory: () => new ReceptionistService(), deps: [] },
         { provide: BillingService, useFactory: () => new BillingService(), deps: [] },
         { provide: MessageService, useValue: messageService },
         { provide: LanguageService, useValue: mockLangService }
       ]
     });
 
+    receptionistService = injector.get(ReceptionistService);
     billingService = injector.get(BillingService);
-    billingService.invoices.set([
-      billingService.normalizeInvoice({
-        id: 1,
-        appointmentId: 101,
-        patientId: 3,
-        type: 1,
-        totalAmount: 500,
-        insuranceAmount: 0,
-        patientAmount: 500,
-        status: 0, // Pending
-        createdAt: `${today}T10:00:00Z`
+
+    receptionistService.stats.set(
+      receptionistService.normalizeStats({
+        todaysSessions: 5,
+        completedSessions: 2,
+        pendingPayments: 1,
+        collectedTodayRevenue: 1200,
+        expectedTodayRevenue: 2000,
+        collectionRateToday: 60
+      })
+    );
+
+    receptionistService.todaySessions.set([
+      receptionistService.normalizeSession({
+        id: 101,
+        patientId: 1,
+        patientName: 'Ahmed Fathy',
+        doctorId: 2,
+        doctorName: 'Dr. Omar',
+        roomId: 1,
+        roomName: 'Room 1',
+        appointmentType: 'Session',
+        startTime: `${today}T09:00:00`,
+        status: 1 // Confirmed
+      }),
+      receptionistService.normalizeSession({
+        id: 102,
+        patientId: 2,
+        patientName: 'Mona Zaki',
+        doctorId: 1,
+        doctorName: 'Dr. Sarah',
+        roomId: 2,
+        roomName: 'Room 2',
+        appointmentType: 'Session',
+        startTime: `${today}T10:00:00`,
+        status: 2 // In Progress
       })
     ]);
 
     dashboard = runInInjectionContext(injector, () => new Dashboard());
   });
 
-  it('should initialize Dashboard component and inject BillingService and ClinicStateService', () => {
+  it('should initialize Dashboard component and inject ReceptionistService', () => {
     expect(dashboard).toBeDefined();
-    expect(dashboard.clinicState).toBe(clinicState);
+    expect(dashboard.receptionistService).toBe(receptionistService);
     expect(dashboard.billingService).toBe(billingService);
   });
 
-  describe('1. Real-time KPI Computed Signals (BillingService)', () => {
-    it('todaySessions: should filter sessions where scheduledAt date matches today', () => {
-      const todaySessions = dashboard.todaySessions();
-      expect(todaySessions.length).toBeGreaterThan(0);
-
-      todaySessions.forEach((s: any) => {
-        const timeStr = s.startTime || s.scheduledAt;
-        expect(timeStr?.startsWith(today)).toBe(true);
-      });
+  describe('1. Real-time KPI Signals from ReceptionistService', () => {
+    it('stats: should bind KPI stats directly from receptionistService.stats()', () => {
+      const stats = dashboard.stats();
+      expect(stats).toBeTruthy();
+      expect(stats?.todaysSessions).toBe(5);
+      expect(stats?.completedSessions).toBe(2);
+      expect(stats?.pendingPayments).toBe(1);
+      expect(stats?.collectedTodayRevenue).toBe(1200);
+      expect(stats?.expectedTodayRevenue).toBe(2000);
+      expect(stats?.collectionRateToday).toBe(60);
     });
 
-    it('completedSessionsCount: should count todaySessions where status is Completed', () => {
-      const initialCompleted = dashboard.completedSessionsCount();
-
-      const newCompletedSession: Session = {
-        id: 'test_comp_1',
-        scheduledAt: `${today}T15:00:00`,
-        patientId: 'p1',
-        doctorId: 'doc_2',
-        roomId: 'room_1',
-        status: 'Completed' as SessionStatus,
-        type: 'Session' as SessionType
-      };
-
-      (clinicState as any).sessionsSig.update((list: Session[]) => [...list, newCompletedSession]);
-
-      expect(dashboard.completedSessionsCount()).toBe(initialCompleted + 1);
-    });
-
-    it('pendingPaymentsCount: should count billingService.invoices() where status is Pending', () => {
-      const initialPending = dashboard.pendingPaymentsCount();
-      expect(initialPending).toBe(1);
-
-      // Update invoice status to Paid (1)
-      billingService.invoices.update((list) =>
-        list.map((inv) => (inv.id === 1 ? billingService.normalizeInvoice({ ...inv, status: 1, paidAmount: 500 }) : inv))
-      );
-
-      expect(dashboard.pendingPaymentsCount()).toBe(0);
-    });
-
-    it('todayRevenue: should sum collected amount of Paid invoices created today from BillingService', () => {
-      expect(dashboard.todayRevenue()).toBe(0);
-
-      const newPaidInvoice: Invoice = billingService.normalizeInvoice({
-        id: 2,
-        appointmentId: 102,
-        patientId: 2,
-        type: 1,
-        totalAmount: 450,
-        insuranceAmount: 0,
-        patientAmount: 450,
-        paidAmount: 450,
-        status: 1, // Paid
-        createdAt: `${today}T12:00:00Z`
-      });
-
-      billingService.invoices.update((list) => [...list, newPaidInvoice]);
-
-      expect(dashboard.todayRevenue()).toBe(450);
-      expect(dashboard.collectedTodayRevenue()).toBe(450);
-      expect(dashboard.expectedTodayRevenue()).toBe(950);
+    it('todaySessions: should return sessions from receptionistService.todaySessions()', () => {
+      expect(dashboard.todaySessions().length).toBe(2);
+      expect(dashboard.todaySessions()[0].patientName).toBe('Ahmed Fathy');
     });
   });
 
-  describe('2. Reactive Filtered Today Sessions', () => {
+  describe('2. Session Actions (Check-In, Check-Out, Cancel)', () => {
+    it('checkIn: should call receptionistService.updateSessionStatus with status 2 (In Progress)', async () => {
+      let calledArgs: any = null;
+      receptionistService.updateSessionStatus = (appointmentId: number, status: number) => {
+        calledArgs = { appointmentId, status };
+        return of(null);
+      };
+
+      await dashboard.checkIn(101);
+      expect(calledArgs).toEqual({ appointmentId: 101, status: 2 });
+    });
+
+    it('checkOut: should call receptionistService.updateSessionStatus with status 3 (Completed)', async () => {
+      let calledArgs: any = null;
+      receptionistService.updateSessionStatus = (appointmentId: number, status: number) => {
+        calledArgs = { appointmentId, status };
+        return of(null);
+      };
+
+      await dashboard.checkOut(102);
+      expect(calledArgs).toEqual({ appointmentId: 102, status: 3 });
+    });
+
+    it('cancelSession: should call receptionistService.cancelSession', () => {
+      let cancelledId: number | null = null;
+      receptionistService.cancelSession = (appointmentId: number) => {
+        cancelledId = appointmentId;
+        return of(null);
+      };
+
+      dashboard.cancelSession(101);
+      expect(cancelledId).toBe(101);
+    });
+  });
+
+  describe('3. Reactive Filtered Today Sessions', () => {
     it('filteredTodaySessions: should reactively filter by doctor and patient', () => {
-      const allToday = dashboard.todaySessions();
-      expect(dashboard.filteredTodaySessions().length).toBe(allToday.length);
+      expect(dashboard.filteredTodaySessions().length).toBe(2);
 
       dashboard.filterDoctor.set('Omar');
-      const filteredByDoc = dashboard.filteredTodaySessions();
-      filteredByDoc.forEach(s => {
-        expect(clinicState.getDoctorName(s.doctorId?.toString()).toLowerCase()).toContain('omar');
-      });
+      expect(dashboard.filteredTodaySessions().length).toBe(1);
+      expect(dashboard.filteredTodaySessions()[0].doctorName).toContain('Omar');
 
       dashboard.filterDoctor.set('');
-      dashboard.searchPatient.set('Ahmed');
-      const filteredByPatient = dashboard.filteredTodaySessions();
-      filteredByPatient.forEach(s => {
-        expect(clinicState.getPatientName(s.patientId?.toString()).toLowerCase()).toContain('ahmed');
-      });
+      dashboard.searchPatient.set('Mona');
+      expect(dashboard.filteredTodaySessions().length).toBe(1);
+      expect(dashboard.filteredTodaySessions()[0].patientName).toContain('Mona');
     });
   });
 });
