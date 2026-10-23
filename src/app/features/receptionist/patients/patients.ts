@@ -21,6 +21,7 @@ import { PatientProfileComponent } from '../../../shared/components/patient-prof
   standalone: true,
   imports: [ReceptionistTextPipe, CommonModule, TranslateModule, FormsModule, ReactiveFormsModule, DialogModule, ButtonModule, SharedModule, PatientProfileComponent],
   templateUrl: "./patients.html",
+  styleUrl: "./patients.css",
 })
 export class PatientsComponent implements OnInit {
   readonly locale = new ReceptionistLocale();

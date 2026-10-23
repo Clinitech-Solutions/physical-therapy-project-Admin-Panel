@@ -11,16 +11,18 @@
 
   <div class="table-panel">
     <!-- Search and Filter -->
-    <div class="table-toolbar">
-      <div class="row g-3 align-items-center w-100">
+    <div class="table-toolbar patients-toolbar">
+      <div class="row g-3 align-items-center w-100 patient-filters">
         <div class="col-md-4">
           <div class="search-bar w-100">
             <i class="bi bi-search search-icon"></i>
-            <input type="text" class="search-input" [placeholder]="'RECEPTIONIST.SEARCH_PLACEHOLDER' | translate" dir="auto" [(ngModel)]="searchQuery">
+            <input type="text" class="search-input" [placeholder]="'COMMON.SEARCH' | translate"
+              [attr.aria-label]="'RECEPTIONIST.SEARCH_PLACEHOLDER' | translate"
+              [title]="'RECEPTIONIST.SEARCH_PLACEHOLDER' | translate" dir="auto" [(ngModel)]="searchQuery">
           </div>
         </div>
         <div class="col-md-3">
-          <select class="form-select" [(ngModel)]="filterPayment">
+          <select class="form-select" [attr.aria-label]="'RECEPTIONIST.ALL_PAYMENT_TYPES' | translate" [(ngModel)]="filterPayment">
             <option value="All">{{ 'RECEPTIONIST.ALL_PAYMENT_TYPES' | translate }}</option>
             <option value="Cash">{{ 'RECEPTIONIST.CASH' | translate }}</option>
             <option value="Insurance">{{ 'RECEPTIONIST.INSURANCE_PAYMENT' | translate }}</option>
@@ -28,7 +30,7 @@
           </select>
         </div>
         <div class="col-md-3">
-          <select class="form-select" [(ngModel)]="filterCompany">
+          <select class="form-select" [attr.aria-label]="'RECEPTIONIST.ALL_COMPANIES' | translate" [(ngModel)]="filterCompany">
             <option value="All">{{ 'RECEPTIONIST.ALL_COMPANIES' | translate }}</option>
             @for (company of insuranceCompanies(); track company.id) {
               <option [value]="company.name">{{ company.name }}</option>

@@ -201,6 +201,31 @@
 }
 
 /* ── Free Assessment Card Toggle ── */
+.assessment-fee-field {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.assessment-fee-field .free-assessment-card {
+  flex: 1;
+  min-height: 4.5rem;
+  gap: 0.75rem;
+}
+
+.assessment-price-input {
+  display: flex;
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  min-height: 4.5rem;
+}
+
+:host ::ng-deep .assessment-price-input .p-inputnumber-input {
+  width: 100%;
+  min-width: 0;
+}
+
 .free-assessment-card {
   display: flex;
   align-items: center;
@@ -211,6 +236,10 @@
   background: var(--bg-elevated);
   cursor: pointer;
   transition: all 0.2s ease;
+}
+
+.free-assessment-card > .form-switch {
+  flex-shrink: 0;
 }
 
 .free-assessment-card.active {
@@ -237,7 +266,7 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.75rem 1rem;
+  padding: 16px;
   border-radius: 10px;
   background: var(--bg-elevated);
   border: 1px dashed var(--border-color-strong);

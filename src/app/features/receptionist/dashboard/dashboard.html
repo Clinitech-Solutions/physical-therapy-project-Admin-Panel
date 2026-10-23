@@ -40,22 +40,24 @@
   <!-- Daily Timeline (Bound to receptionistService.todaySessions()) -->
   <div class="table-panel">
     <!-- Sticky toolbar lives inside the scroll container -->
-    <div class="table-toolbar">
+    <div class="table-toolbar timeline-toolbar">
       <h4 class="mb-0">{{ 'RECEPTIONIST.TIMELINE_TITLE' | translate }}</h4>
-      <div class="d-flex gap-2 align-items-center">
+      <div class="timeline-filters">
         <div class="search-bar">
           <i class="bi bi-search"></i>
-          <input type="text" [placeholder]="'RECEPTIONIST.SEARCH_PLACEHOLDER' | translate" [ngModel]="searchPatient()"
+          <input type="text" [placeholder]="'COMMON.SEARCH' | translate"
+            [attr.aria-label]="'RECEPTIONIST.SEARCH_PLACEHOLDER' | translate"
+            [title]="'RECEPTIONIST.SEARCH_PLACEHOLDER' | translate" [ngModel]="searchPatient()"
             (ngModelChange)="onSearchChange($event)" />
         </div>
-        <select class="form-select form-select-sm" style="width:auto" [ngModel]="filterDoctor()"
+        <select class="form-select form-select-sm" [attr.aria-label]="'RECEPTIONIST.ALL_DOCTORS' | translate" [ngModel]="filterDoctor()"
           (ngModelChange)="onDoctorFilterChange($event)">
           <option value="">{{ 'RECEPTIONIST.ALL_DOCTORS' | translate }}</option>
           @for (doc of allDoctors(); track doc.id) {
           <option [value]="doc.name">{{ doc.name }}</option>
           }
         </select>
-        <select class="form-select form-select-sm" style="width:auto" [ngModel]="filterRoom()"
+        <select class="form-select form-select-sm" [attr.aria-label]="'RECEPTIONIST.ALL_ROOMS' | translate" [ngModel]="filterRoom()"
           (ngModelChange)="onRoomFilterChange($event)">
           <option value="">{{ 'RECEPTIONIST.ALL_ROOMS' | translate }}</option>
           @for (room of allRooms(); track room.id) {

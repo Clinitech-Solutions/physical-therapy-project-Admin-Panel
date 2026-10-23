@@ -83,9 +83,22 @@ html:not(.light) .receptionist-modal {
 .receptionist-page .stat-card { min-width: 0; }
 .receptionist-page .stat-value { flex-wrap: wrap; }
 .receptionist-page .insurance-portal-grid {
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
 }
-.receptionist-page .portal-card-header > .d-flex { flex: 1 1 180px; }
+.receptionist-page .portal-card-header > .portal-provider-identity { flex: 1 1 140px; }
+.receptionist-page .portal-card-header > .portal-provider-status {
+  flex: 0 1 auto;
+  max-width: 100%;
+  white-space: normal;
+}
+.receptionist-page .portal-brand-avatar { flex-shrink: 0; }
+
+@media (min-width: 576px) and (max-width: 1199px) {
+  .receptionist-page.insurance-page .portal-card-header,
+  .receptionist-page.insurance-page .portal-card-body { padding: 1rem; }
+  .receptionist-page.insurance-page .portal-card-footer { padding: 0 1rem 1rem; }
+  .receptionist-page.insurance-page .portal-brand-avatar { width: 44px; height: 44px; }
+}
 
 .receptionist-page :is(button, a, input, select):focus-visible,
 .receptionist-modal :is(button, a, input, select):focus-visible {

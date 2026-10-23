@@ -1,13 +1,13 @@
 <div class="page-content receptionist-page fade-in schedule-page">
   <!-- Modern Page Header -->
-  <div class="schedule-hero-header mb-4">
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
-      <div class="d-flex align-items-center gap-3">
+  <div class="schedule-hero-header">
+    <div class="schedule-header-layout d-flex flex-wrap justify-content-between align-items-center gap-3">
+      <div class="schedule-heading d-flex align-items-center gap-3">
         <div class="header-icon-box">
           <i class="bi bi-calendar-event"></i>
         </div>
-        <div>
-          <div class="d-flex align-items-center gap-2">
+        <div class="schedule-heading-copy">
+          <div class="schedule-title-row d-flex flex-wrap align-items-center gap-2">
             <h2 class="font-clash mb-0">{{ 'SIDEBAR.TODAYS_SCHEDULE' | translate }}</h2>
             <span class="date-chip">
               <i class="bi bi-calendar3 me-1"></i>{{ locale.date(todayDate) }}
@@ -19,7 +19,7 @@
         </div>
       </div>
 
-      <div class="d-flex align-items-center gap-2 flex-wrap">
+      <div class="schedule-header-actions d-flex align-items-center gap-2 flex-wrap">
         <button type="button" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-2 px-3 py-2"
           (click)="onSearchOrFilterChange()" [disabled]="isLoading()">
           <i class="bi bi-arrow-clockwise" [class.spin]="isLoading()"></i>
@@ -34,7 +34,7 @@
   </div>
 
   <!-- Interactive Summary KPI Strip (Bound to ReceptionistService API) -->
-  <div class="schedule-kpi-grid mb-4">
+  <div class="schedule-kpi-grid">
     <div class="schedule-kpi-card" [class.active-kpi]="selectedFilter === 'All'" (click)="selectedFilter = 'All'">
       <div class="kpi-icon-wrap kpi-teal">
         <i class="bi bi-calendar2-week"></i>
@@ -82,12 +82,13 @@
   <div class="schedule-panel">
     <!-- Refined Filter & Search Toolbar (Queries /api/Receptionist/today-sessions) -->
     <div class="schedule-toolbar">
-      <div class="d-flex flex-wrap align-items-center gap-2">
+      <div class="schedule-status-filters">
         <!-- Segmented Status Pills -->
         <div class="status-pill-group">
           @for (opt of filterOptions; track opt.value) {
             <button type="button" class="status-pill-btn"
               [class.active]="selectedFilter === opt.value"
+              [attr.aria-pressed]="selectedFilter === opt.value"
               (click)="selectedFilter = $any(opt.value)">
               <i [class]="opt.icon"></i>
               <span>{{ opt.label | receptionistText }}</span>
@@ -96,12 +97,15 @@
         </div>
       </div>
 
-      <div class="d-flex flex-wrap align-items-center gap-2">
+      <div class="schedule-filter-tools">
+        <div class="schedule-filter-fields">
         <!-- Search Input -->
         <div class="search-bar schedule-search">
           <i class="bi bi-search"></i>
           <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="onSearchOrFilterChange()"
-            [placeholder]="'RECEPTIONIST.SEARCH_PLACEHOLDER' | translate" />
+            [placeholder]="'COMMON.SEARCH' | translate"
+            [attr.aria-label]="'RECEPTIONIST.SEARCH_PLACEHOLDER' | translate"
+            [title]="'RECEPTIONIST.SEARCH_PLACEHOLDER' | translate" />
           @if (searchQuery) {
             <button type="button" class="btn-clear-search" (click)="searchQuery = ''; onSearchOrFilterChange()" [title]="'RECEPTIONIST.UI.CLEAR_SEARCH' | translate">
               <i class="bi bi-x-lg"></i>
@@ -110,7 +114,7 @@
         </div>
 
         <!-- Doctor Filter -->
-        <select class="form-select form-select-sm schedule-filter-select" [(ngModel)]="selectedDoctorFilter"
+        <select class="form-select form-select-sm schedule-filter-select" [attr.aria-label]="'RECEPTIONIST.ALL_DOCTORS' | translate" [(ngModel)]="selectedDoctorFilter"
           (ngModelChange)="onSearchOrFilterChange()">
           <option value="">{{ 'RECEPTIONIST.ALL_DOCTORS' | translate }}</option>
           @for (doc of allDoctors(); track doc.id) {
@@ -119,28 +123,32 @@
         </select>
 
         <!-- Room Filter -->
-        <select class="form-select form-select-sm schedule-filter-select" [(ngModel)]="selectedRoomFilter"
+        <select class="form-select form-select-sm schedule-filter-select" [attr.aria-label]="'RECEPTIONIST.ALL_ROOMS' | translate" [(ngModel)]="selectedRoomFilter"
           (ngModelChange)="onSearchOrFilterChange()">
           <option value="">{{ 'RECEPTIONIST.ALL_ROOMS' | translate }}</option>
           @for (room of allRooms(); track room.id) {
             <option [value]="room.id">{{ room.displayName }}</option>
           }
         </select>
+        </div>
 
+        <div class="schedule-view-controls">
         @if (searchQuery || selectedDoctorFilter || selectedRoomFilter || selectedFilter !== 'All') {
-          <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-1" (click)="resetFilters()" [title]="'RECEPTIONIST.UI.RESET_FILTERS' | translate">
+          <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-1" (click)="resetFilters()"
+            [attr.aria-label]="'RECEPTIONIST.UI.RESET_FILTERS' | translate" [title]="'RECEPTIONIST.UI.RESET_FILTERS' | translate">
             <i class="bi bi-arrow-counterclockwise"></i>
           </button>
         }
 
         <!-- View Mode Toggle -->
-        <div class="view-mode-toggle ms-1">
-          <button type="button" class="view-btn" [class.active]="viewMode() === 'Day'" (click)="viewMode.set('Day')">
+        <div class="view-mode-toggle">
+          <button type="button" class="view-btn" [class.active]="viewMode() === 'Day'" [attr.aria-pressed]="viewMode() === 'Day'" (click)="viewMode.set('Day')">
             {{ 'RECEPTIONIST.DAY' | translate }}
           </button>
-          <button type="button" class="view-btn" [class.active]="viewMode() === 'Week'" (click)="viewMode.set('Week')">
+          <button type="button" class="view-btn" [class.active]="viewMode() === 'Week'" [attr.aria-pressed]="viewMode() === 'Week'" (click)="viewMode.set('Week')">
             {{ 'RECEPTIONIST.WEEK' | translate }}
           </button>
+        </div>
         </div>
       </div>
     </div>

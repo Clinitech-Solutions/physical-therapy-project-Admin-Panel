@@ -1,4 +1,4 @@
-<div class="page-content receptionist-page fade-in">
+<div class="page-content receptionist-page insurance-page fade-in">
   <div class="page-header">
     <div>
       <h2 class="font-clash">{{ 'RECEPTIONIST.INSURANCE_TITLE' | translate }}</h2>
@@ -26,7 +26,7 @@
     @for(provider of providers(); track provider.id) {
       <div class="portal-card">
         <div class="portal-card-header">
-          <div class="d-flex align-items-center gap-3">
+          <div class="portal-provider-identity d-flex align-items-center gap-3">
             <div class="portal-brand-avatar" [style.background]="provider.themeColor">
               <i class="bi" [ngClass]="provider.logoIcon"></i>
             </div>
@@ -35,8 +35,7 @@
               <span class="badge border text-muted mt-1" style="font-size: 10px;">{{ provider.code }}</span>
             </div>
           </div>
-          <span class="badge badge-success d-flex align-items-center gap-1">
-            <span class="p-tag-icon bi bi-circle-fill" style="font-size: 6px;"></span>
+          <span class="portal-provider-status badge badge-success d-inline-flex align-items-center gap-1">
             <span>{{ (provider.isActive && provider.portalUrl ? 'RECEPTIONIST.PORTAL_ACTIVE' : 'RECEPTIONIST.UI.PORTAL_UNAVAILABLE') | translate }}</span>
           </span>
         </div>
@@ -45,7 +44,7 @@
 
         
 
-          <div class="d-flex justify-content-between align-items-center p-2 rounded bg-body-tertiary">
+          <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 p-2 rounded bg-body-tertiary">
             <span class="text-muted small d-inline-flex align-items-center gap-1">
               <i class="bi bi-telephone text-secondary"></i>
               <span>{{ 'RECEPTIONIST.HOTLINE' | translate }}:</span>

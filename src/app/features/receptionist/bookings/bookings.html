@@ -188,7 +188,7 @@
 
               <!-- Free Assessment Toggle & Assessment Price (Visible when sessionType === 'Assessment') -->
               @if (sessionType === 'Assessment') {
-                <div class="col-md-6">
+                <div class="col-12 col-md-6 col-lg-12 col-xl-6 assessment-fee-field">
                   <label class="form-label mb-1 fw-semibold text-secondary small">{{ 'RECEPTIONIST.UI.ASSESSMENT_FEE_OPTION' | translate }}</label>
                   <div class="free-assessment-card" [class.active]="isFreeAssessment"
                     (click)="isFreeAssessment = !isFreeAssessment">
@@ -207,11 +207,11 @@
                 </div>
 
                 @if (!isFreeAssessment) {
-                  <div class="col-md-6">
+                  <div class="col-12 col-md-6 col-lg-12 col-xl-6 assessment-fee-field">
                     <label class="form-label mb-1 fw-semibold text-secondary small">
                       {{ 'RECEPTIONIST.UI.ASSESSMENT_PRICE_EGP_' | translate }} <span class="text-danger">*</span>
                     </label>
-                    <p-inputNumber [(ngModel)]="assessmentPrice" mode="currency" currency="EGP" [locale]="locale.language"
+                    <p-inputNumber class="assessment-price-input" [(ngModel)]="assessmentPrice" mode="currency" currency="EGP" [locale]="locale.language"
                       styleClass="w-100" inputId="assessmentPriceInput" [placeholder]="'RECEPTIONIST.UI.ENTER_ASSESSMENT_PRICE' | translate" [min]="0">
                     </p-inputNumber>
                   </div>
