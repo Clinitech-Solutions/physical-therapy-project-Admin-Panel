@@ -349,3 +349,7 @@
   background: var(--color-warning);
   color: #0A1628;
 }
+
+::ng-deep .p-inputtext{
+  padding:15px !important; 
+}

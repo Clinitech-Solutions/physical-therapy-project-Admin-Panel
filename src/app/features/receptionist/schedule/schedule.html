@@ -20,10 +20,10 @@
       </div>
 
       <div class="d-flex align-items-center gap-2 flex-wrap">
-        <button type="button" class="btn btn-outline-danger btn-sm d-flex align-items-center gap-2 px-3 py-2"
-          (click)="showAbsenceModal = true">
-          <i class="bi bi-person-fill-slash"></i>
-          <span>{{ 'RECEPTIONIST.MARK_ABSENT' | translate }}</span>
+        <button type="button" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-2 px-3 py-2"
+          (click)="onSearchOrFilterChange()" [disabled]="isLoading()">
+          <i class="bi bi-arrow-clockwise" [class.spin]="isLoading()"></i>
+          <span>Refresh</span>
         </button>
         <a routerLink="/receptionist/bookings" class="btn btn-primary btn-sm d-flex align-items-center gap-2 px-3 py-2">
           <i class="bi bi-calendar2-plus"></i>
@@ -33,14 +33,14 @@
     </div>
   </div>
 
-  <!-- Interactive Summary KPI Strip -->
+  <!-- Interactive Summary KPI Strip (Bound to ReceptionistService API) -->
   <div class="schedule-kpi-grid mb-4">
     <div class="schedule-kpi-card" [class.active-kpi]="selectedFilter === 'All'" (click)="selectedFilter = 'All'">
       <div class="kpi-icon-wrap kpi-teal">
         <i class="bi bi-calendar2-week"></i>
       </div>
       <div class="kpi-info">
-        <span class="kpi-label">Total Scheduled</span>
+        <span class="kpi-label">{{ 'RECEPTIONIST.TODAYS_SESSIONS' | translate }}</span>
         <span class="kpi-value">{{ totalTodayCount }}</span>
       </div>
     </div>
@@ -61,7 +61,7 @@
       </div>
       <div class="kpi-info">
         <span class="kpi-label d-flex align-items-center gap-1">
-          In Progress <span class="live-dot"></span>
+          {{ 'RECEPTIONIST.IN_PROGRESS' | translate }} <span class="live-dot"></span>
         </span>
         <span class="kpi-value text-blue">{{ inProgressCount }}</span>
       </div>
@@ -72,7 +72,7 @@
         <i class="bi bi-check2-circle"></i>
       </div>
       <div class="kpi-info">
-        <span class="kpi-label">Completed</span>
+        <span class="kpi-label">{{ 'RECEPTIONIST.COMPLETED_SESSIONS' | translate }}</span>
         <span class="kpi-value text-teal">{{ completedCount }}</span>
       </div>
     </div>
@@ -80,7 +80,7 @@
 
   <!-- Main Schedule Panel -->
   <div class="schedule-panel">
-    <!-- Refined Filter & Search Toolbar -->
+    <!-- Refined Filter & Search Toolbar (Queries /api/Receptionist/today-sessions) -->
     <div class="schedule-toolbar">
       <div class="d-flex flex-wrap align-items-center gap-2">
         <!-- Segmented Status Pills -->
@@ -100,17 +100,18 @@
         <!-- Search Input -->
         <div class="search-bar schedule-search">
           <i class="bi bi-search"></i>
-          <input type="text" [(ngModel)]="searchQuery"
+          <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="onSearchOrFilterChange()"
             [placeholder]="'RECEPTIONIST.SEARCH_PLACEHOLDER' | translate" />
           @if (searchQuery) {
-            <button type="button" class="btn-clear-search" (click)="searchQuery = ''" title="Clear search">
+            <button type="button" class="btn-clear-search" (click)="searchQuery = ''; onSearchOrFilterChange()" title="Clear search">
               <i class="bi bi-x-lg"></i>
             </button>
           }
         </div>
 
         <!-- Doctor Filter -->
-        <select class="form-select form-select-sm schedule-filter-select" [(ngModel)]="selectedDoctorFilter">
+        <select class="form-select form-select-sm schedule-filter-select" [(ngModel)]="selectedDoctorFilter"
+          (ngModelChange)="onSearchOrFilterChange()">
           <option value="">{{ 'RECEPTIONIST.ALL_DOCTORS' | translate }}</option>
           @for (doc of allDoctors(); track doc.id) {
             <option [value]="doc.id">{{ doc.name }}</option>
@@ -118,7 +119,8 @@
         </select>
 
         <!-- Room Filter -->
-        <select class="form-select form-select-sm schedule-filter-select" [(ngModel)]="selectedRoomFilter">
+        <select class="form-select form-select-sm schedule-filter-select" [(ngModel)]="selectedRoomFilter"
+          (ngModelChange)="onSearchOrFilterChange()">
           <option value="">{{ 'RECEPTIONIST.ALL_ROOMS' | translate }}</option>
           @for (room of allRooms(); track room.id) {
             <option [value]="room.id">{{ room.displayName }}</option>
@@ -143,7 +145,7 @@
       </div>
     </div>
 
-    <!-- Timeline Rows -->
+    <!-- Timeline Rows (Strictly Bound to ReceptionistService API) -->
     <div class="timeline-scroll-area">
       @for (slot of filteredSchedule; track slot.time) {
         <div class="calendar-slot-row" [class.slot-has-sessions]="slot.sessions.length > 0">
@@ -158,6 +160,7 @@
           <!-- Session Cards Container -->
           <div class="slot-sessions-container">
             @for (session of slot.sessions; track session.id) {
+              @let statusStr = getMappedStatus(session.status);
               <div class="session-card" [ngClass]="getStatusClass(session.status)">
                 <!-- Card Top: Patient Info & Status -->
                 <div class="session-card-top">
@@ -168,12 +171,12 @@
                     </div>
                     <div class="min-w-0">
                       <div class="d-flex align-items-center gap-1">
-                        @if (session.status === 'In Progress') {
+                        @if (statusStr === 'In Progress' || statusStr === 'Waiting') {
                           <span class="live-indicator"></span>
                         }
                         <span class="patient-name text-truncate" role="button"
                           (click)="openPatientProfile(session.patientId); $event.stopPropagation()">
-                          {{ session.patientName || clinicState.getPatientName(session.patientId.toString()) }}
+                          {{ getPatientName(session) }}
                         </span>
                       </div>
                       @if (getSessionBadge(session)) {
@@ -187,13 +190,13 @@
                   </div>
 
                   <span class="badge session-status-badge" [ngClass]="{
-                    'badge-warning': session.status === 'Confirmed',
-                    'badge-info': session.status === 'In Progress',
-                    'badge-success': session.status === 'Completed',
-                    'badge-neutral': session.status === 'Pending',
-                    'badge-error': session.status === 'Cancelled'
+                    'badge-warning': statusStr === 'Confirmed',
+                    'badge-info': statusStr === 'In Progress' || statusStr === 'Waiting',
+                    'badge-success': statusStr === 'Completed',
+                    'badge-neutral': statusStr === 'Pending',
+                    'badge-error': statusStr === 'Cancelled'
                   }">
-                    {{ session.status }}
+                    {{ statusStr }}
                   </span>
                 </div>
 
@@ -201,19 +204,19 @@
                 <div class="session-meta-row">
                   <div class="meta-chip" title="Assigned Doctor">
                     <i class="bi bi-person-badge text-teal"></i>
-                    <span class="text-truncate">{{ session.doctorName || clinicState.getDoctorName(session.doctorId?.toString() || '') }}</span>
+                    <span class="text-truncate">{{ getDoctorName(session) }}</span>
                   </div>
                   <div class="meta-chip" title="Assigned Room">
                     <i class="bi bi-door-open text-blue"></i>
-                    <span class="text-truncate">{{ session.roomName || clinicState.getRoomName(session.roomId?.toString() || '') }}</span>
+                    <span class="text-truncate">{{ getRoomName(session) }}</span>
                   </div>
                 </div>
 
                 <!-- Card Footer: Type, Time & Actions -->
                 <div class="session-card-footer">
                   <div class="d-flex align-items-center gap-2">
-                    <span class="type-pill" [class.type-assessment]="session.appointmentType === 'Assessment'">
-                      {{ session.appointmentType }}
+                    <span class="type-pill" [class.type-assessment]="(session.appointmentType || session.type) === 'Assessment'">
+                      {{ session.appointmentType || session.type || 'Session' }}
                     </span>
                     <span class="session-time">
                       <i class="bi bi-clock me-1"></i>{{ formatTime(session.startTime?.toString()) }}
@@ -221,13 +224,13 @@
                   </div>
 
                   <div class="session-actions">
-                    @if (session.status === 'In Progress') {
+                    @if (statusStr === 'In Progress' || statusStr === 'Waiting') {
                       <button type="button" class="btn-session-action btn-checkout"
                         (click)="checkoutSession(session.id); $event.stopPropagation()">
                         <i class="bi bi-box-arrow-right"></i>
                         <span>{{ 'RECEPTIONIST.CHECK_OUT' | translate }}</span>
                       </button>
-                    } @else if (session.status === 'Confirmed' || session.status === 'Pending') {
+                    } @else if (statusStr === 'Confirmed' || statusStr === 'Pending') {
                       <button type="button" class="btn-session-action btn-checkin"
                         (click)="checkInSession(session.id); $event.stopPropagation()">
                         <i class="bi bi-box-arrow-in-right"></i>
@@ -257,70 +260,6 @@
   </div>
 </div>
 
-<!-- Report Doctor Absence Modal -->
-<p-dialog [(visible)]="showAbsenceModal" [modal]="true" appendTo="body" [draggable]="false" [resizable]="false"
-  [closable]="true" styleClass="clean-modal" [style]="{width: '450px'}" header="Report Doctor Absence"
-  (onHide)="closeAbsenceModal()">
-
-  <div style="display: flex; flex-direction: column; gap: 1rem;">
-    <div class="form-group">
-      <label class="form-label mb-1 fw-semibold text-secondary small">
-        Absent Doctor <span class="text-danger">*</span>
-      </label>
-      <p-select [options]="allDoctors()" [(ngModel)]="absentDoctorId" (ngModelChange)="onAbsentDoctorChange()"
-        optionLabel="name" optionValue="id" placeholder="Select Absent Doctor..." appendTo="body"
-        styleClass="w-100 p-select-sm">
-        <ng-template pTemplate="item" let-doc>
-          <div class="d-flex justify-content-between align-items-center w-100">
-            <span>{{ doc.name }}</span>
-            <span class="badge bg-secondary bg-opacity-10 text-secondary" style="font-size: 0.65rem;">{{ doc.gender }}</span>
-          </div>
-        </ng-template>
-      </p-select>
-    </div>
-
-    <div class="form-group">
-      <div class="d-flex justify-content-between align-items-center mb-1">
-        <label class="form-label mb-0 fw-semibold text-secondary small">
-          Covering Senior <span class="text-danger">*</span>
-        </label>
-        @if (absentDoctorId && getDoctorGender(absentDoctorId)) {
-          <span class="badge bg-primary bg-opacity-10 text-primary" style="font-size: 0.65rem;">
-            Same Gender: {{ getDoctorGender(absentDoctorId) }}
-          </span>
-        }
-      </div>
-      <p-select [options]="coveringSeniors" [(ngModel)]="coveringSeniorId" optionLabel="name" optionValue="id"
-        [placeholder]="absentDoctorId ? 'Select Covering Senior...' : 'Select Absent Doctor First'"
-        [emptyMessage]="absentDoctorId ? 'No matching doctors with same gender' : 'Select absent doctor first'"
-        [disabled]="!absentDoctorId || coveringSeniors.length === 0" appendTo="body" styleClass="w-100 p-select-sm">
-        <ng-template pTemplate="item" let-doc>
-          <div class="d-flex justify-content-between align-items-center w-100">
-            <span>{{ doc.name }}</span>
-            <span class="badge bg-secondary bg-opacity-10 text-secondary" style="font-size: 0.65rem;">{{ doc.gender }}</span>
-          </div>
-        </ng-template>
-      </p-select>
-      @if (absentDoctorId && coveringSeniors.length === 0) {
-        <small class="text-danger mt-1 d-block" style="font-size: 0.72rem;">
-          No other doctors available with the same gender ({{ getDoctorGender(absentDoctorId) }}).
-        </small>
-      }
-    </div>
-  </div>
-
-  <ng-template pTemplate="footer">
-    <div class="modal-footer-actions">
-      <p-button [label]="'COMMON.CANCEL' | translate" [outlined]="true" severity="secondary"
-        (onClick)="closeAbsenceModal()">
-      </p-button>
-      <p-button [label]="'RECEPTIONIST.CONFIRM_COVERAGE' | translate" severity="danger" (onClick)="confirmAbsence()"
-        [disabled]="!absentDoctorId || !coveringSeniorId">
-      </p-button>
-    </div>
-  </ng-template>
-</p-dialog>
-
 <!-- Patient Profile Modal -->
 <app-patient-profile
   [visible]="showProfileModal()"
@@ -328,7 +267,7 @@
   [patientId]="selectedProfilePatientId()">
 </app-patient-profile>
 
-<!-- Check-In Debt Gate Modal -->
+<!-- Check-In Debt Gate Modal (Wired to BillingService & ReceptionistService) -->
 <p-dialog [(visible)]="showDebtModal" [modal]="true" appendTo="body" [draggable]="false" [resizable]="false"
   [closable]="true" styleClass="clean-modal" [style]="{width: '450px'}" [header]="'Outstanding Balance'"
   (onHide)="showDebtModal = false; pendingCheckInSessionId = null">
@@ -374,4 +313,3 @@
     </div>
   </ng-template>
 </p-dialog>
-
