@@ -1,3 +1,4 @@
+import { ReceptionistLocale } from '../../../shared/receptionist-locale';
 import { Component, signal, inject, HostListener } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { TranslateModule } from '@ngx-translate/core';
@@ -16,10 +17,10 @@ import { DialogModule } from 'primeng/dialog';
   styleUrl: "./rooms.css"
 })
 export class RoomsComponent {
+  readonly locale = new ReceptionistLocale();
   clinicState = inject(ClinicStateService);
   messageService = inject(MessageService);
   
-  // Forcing angular to recompile to refresh assets cache
   rooms = this.clinicState.rooms;
   allDoctors = this.clinicState.doctors;
 
@@ -63,15 +64,15 @@ export class RoomsComponent {
       });
       this.messageService.add({
         severity: 'success',
-        summary: 'Room Added',
-        detail: 'New room has been successfully added.'
+        summary: this.locale.text('ROOM_ADDED', "Room Added"),
+        detail: this.locale.text('NEW_ROOM_HAS_BEEN_SUCCESSFULLY_ADDED_', "New room has been successfully added.")
       });
       this.closeAddRoomModal();
     } catch (e: any) {
       this.messageService.add({
         severity: 'error',
-        summary: 'Error',
-        detail: e?.message || 'Failed to add room.'
+        summary: this.locale.text('ERROR', "Error"),
+        detail: this.locale.error(e, 'FAILED_TO_ADD_ROOM_', "Failed to add room.")
       });
     } finally {
       this.isSubmitting.set(false);
@@ -80,15 +81,17 @@ export class RoomsComponent {
 
   // Determines visual state for the floor plan
   getRoomStatusCssClass(room: Room): string {
-    if (room.status === 'Maintenance') return 'room-maintenance';
-    if (room.status === 'Occupied') return 'room-occupied';
-    return 'room-available';
+    if (room.status === 'Maintenance') return 'maintenance';
+    if (room.status === 'Occupied') return 'occupied';
+    if (room.status === 'Available') return 'available';
+    return 'unknown';
   }
 
   getRoomStatusLabel(room: Room): string {
-    if (room.status === 'Maintenance') return 'Maintenance';
-    if (room.status === 'Occupied') return 'Occupied';
-    return 'Available';
+    if (room.status === 'Maintenance') return 'RECEPTIONIST.MAINTENANCE';
+    if (room.status === 'Occupied') return 'RECEPTIONIST.OCCUPIED';
+    if (room.status === 'Available') return 'RECEPTIONIST.AVAILABLE';
+    return 'RECEPTIONIST.ROOMS.UNKNOWN_STATUS';
   }
 
   // Identifies doctors managing multiple rooms and assigns a distinct theme color to visually link them
@@ -118,15 +121,15 @@ export class RoomsComponent {
   async assignDoctor(roomId: string, doctorId: string | null) {
     try {
       await this.clinicState.reassignRoom(roomId, doctorId);
-      this.messageService.add({ severity: 'success', summary: 'Doctor Assigned', detail: 'Room assignment updated.' });
+      this.messageService.add({ severity: 'success', summary: this.locale.text('DOCTOR_ASSIGNED', "Doctor Assigned"), detail: this.locale.text('ROOM_ASSIGNMENT_UPDATED_', "Room assignment updated.") });
     } catch (e: any) {
-      this.messageService.add({ severity: 'error', summary: 'Assignment Failed', detail: e.message });
+      this.messageService.add({ severity: 'error', summary: this.locale.text('ASSIGNMENT_FAILED', "Assignment Failed"), detail: this.locale.error(e, 'ASSIGNMENT_FAILED', 'Assignment Failed') });
       // We might want to refresh the rooms list here or rely on signals
     }
   }
 
   async toggleMaintenance(roomId: string) {
     await this.clinicState.toggleRoomMaintenance(roomId);
-    this.messageService.add({ severity: 'success', summary: 'Status Updated', detail: 'Maintenance status toggled' });
+    this.messageService.add({ severity: 'success', summary: this.locale.text('STATUS_UPDATED', "Status Updated"), detail: this.locale.text('MAINTENANCE_STATUS_TOGGLED', "Maintenance status toggled") });
   }
 }

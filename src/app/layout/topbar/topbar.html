@@ -1,6 +1,8 @@
 <div class="topbar w-full">
   <!-- Mobile toggle -->
-  <button class="btn btn-ghost btn-icon d-md-none me-auto">
+  <button class="btn btn-ghost btn-icon mobile-menu-toggle" (click)="menuToggle.emit()"
+    aria-controls="main-navigation" [attr.aria-expanded]="menuOpen"
+    [attr.aria-label]="'COMMON.TOGGLE_NAVIGATION' | translate">
     <i class="bi bi-list"></i>
   </button>
 

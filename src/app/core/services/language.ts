@@ -1,6 +1,8 @@
 import { Injectable, signal, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { TranslateService } from '@ngx-translate/core';
+import { PrimeNG } from 'primeng/config';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 export type LanguageCode = 'en' | 'ar';
 
@@ -11,8 +13,13 @@ export class LanguageService {
   currentLang = signal<LanguageCode>('en');
   private platformId = inject(PLATFORM_ID);
   private translate = inject(TranslateService);
+  private primeNG = inject(PrimeNG, { optional: true });
 
   constructor() {
+    this.translate.onLangChange.pipe(takeUntilDestroyed()).subscribe(event => {
+      const locale = event.translations['PRIMENG'];
+      if (locale) this.primeNG?.setTranslation(locale);
+    });
     this.translate.setDefaultLang('en');
     this.initLang();
   }

@@ -1,0 +1,321 @@
+/* Scoped page styles and body-mounted overlays share the app theme tokens. */
+.receptionist-page,
+.receptionist-modal {
+  --bs-body-color: var(--text-primary);
+  --bs-body-bg: var(--bg-card);
+  --bs-secondary-color: var(--text-secondary);
+  --bs-tertiary-bg: var(--bg-elevated);
+  --bs-border-color: var(--border-color);
+  color: var(--text-primary);
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color-scheme: dark;
+}
+
+html.light .receptionist-page,
+html.light .receptionist-modal {
+  --mq-teal: #007d69;
+  --color-success: #007d69;
+  --color-warning: #956000;
+  --color-danger: #c62d3c;
+  --color-info: #244fc3;
+  color-scheme: light;
+}
+
+html:not(.light) .receptionist-page,
+html:not(.light) .receptionist-modal {
+  --color-info: #8eb5ff;
+  --text-muted: #a1b0ca;
+}
+
+.page-content.receptionist-page { padding: 0; }
+.receptionist-page .row > *,
+.receptionist-page .d-flex > *,
+.receptionist-modal .d-flex > * { min-width: 0; }
+
+.receptionist-page .card,
+.receptionist-page .bg-card,
+.receptionist-page .card-bg {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+.receptionist-page .text-body,
+.receptionist-modal .text-body,
+.receptionist-modal .text-700 { color: var(--text-primary) !important; }
+.receptionist-page .text-muted,
+.receptionist-page .text-secondary,
+.receptionist-modal .text-muted,
+.receptionist-modal .text-secondary { color: var(--text-secondary) !important; }
+.receptionist-page .text-primary,
+.receptionist-modal .text-primary { color: var(--color-info) !important; }
+.receptionist-page .text-success,
+.receptionist-modal .text-success { color: var(--color-success) !important; }
+.receptionist-page .text-warning,
+.receptionist-modal .text-warning { color: var(--color-warning) !important; }
+.receptionist-page .text-danger,
+.receptionist-modal .text-danger { color: var(--color-danger) !important; }
+.receptionist-page .text-info,
+.receptionist-modal .text-info { color: var(--color-info) !important; }
+
+.receptionist-page :is(.page-header, .table-toolbar, .portal-card-header) {
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.receptionist-page .table-toolbar > .d-flex { flex-wrap: wrap; }
+.receptionist-page .search-bar input { min-width: 0; }
+.receptionist-page .table-toolbar .search-bar { flex: 1 1 200px; }
+.receptionist-page .table-toolbar select { max-width: 100%; }
+.receptionist-page .table-scroll-area {
+  overflow-x: auto !important;
+  max-width: 100%;
+  overscroll-behavior-inline: contain;
+}
+.receptionist-page .table-scroll-area > table { min-width: 720px; }
+.receptionist-page .p-datatable-table-container,
+.receptionist-modal .p-datatable-table-container { overflow-x: auto !important; }
+.receptionist-page .p-datatable-table { min-width: 760px; }
+.receptionist-modal .p-datatable-table { min-width: 700px; }
+.receptionist-page .p-tab { flex-shrink: 0; white-space: normal; }
+.receptionist-page .p-tablist-content { overflow-x: auto; }
+.receptionist-page .kpi-row { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.receptionist-page .stat-card { min-width: 0; }
+.receptionist-page .stat-value { flex-wrap: wrap; }
+.receptionist-page .insurance-portal-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+}
+.receptionist-page .portal-card-header > .portal-provider-identity { flex: 1 1 140px; }
+.receptionist-page .portal-card-header > .portal-provider-status {
+  flex: 0 1 auto;
+  max-width: 100%;
+  white-space: normal;
+}
+.receptionist-page .portal-brand-avatar { flex-shrink: 0; }
+
+@media (min-width: 576px) and (max-width: 1199px) {
+  .receptionist-page.insurance-page .portal-card-header,
+  .receptionist-page.insurance-page .portal-card-body { padding: 1rem; }
+  .receptionist-page.insurance-page .portal-card-footer { padding: 0 1rem 1rem; }
+  .receptionist-page.insurance-page .portal-brand-avatar { width: 44px; height: 44px; }
+}
+
+.receptionist-page :is(button, a, input, select):focus-visible,
+.receptionist-modal :is(button, a, input, select):focus-visible {
+  outline: 2px solid var(--color-info) !important;
+  outline-offset: 3px;
+}
+.receptionist-modal.p-dialog {
+  max-width: calc(100vw - 1.5rem) !important;
+  max-height: calc(100dvh - 1.5rem) !important;
+}
+.receptionist-modal.p-dialog .p-dialog-content {
+  overflow-y: auto !important;
+  min-height: 0;
+}
+.receptionist-modal .p-dialog-header,
+.receptionist-modal .p-dialog-footer { flex-shrink: 0; }
+.receptionist-modal .p-dialog-header { gap: 0.75rem; align-items: flex-start; }
+.receptionist-modal .p-dialog-title { white-space: normal; }
+.receptionist-modal :is(.p-select, .p-datepicker, .p-inputnumber, .p-multiselect) {
+  max-width: 100%;
+  min-width: 0;
+}
+.receptionist-modal .p-inputnumber-input,
+.receptionist-page .p-inputnumber-input { width: 100%; min-width: 0; }
+.receptionist-modal .modal-footer-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+.receptionist-modal .treatment-meta-box { min-width: 0; max-width: 100%; }
+.receptionist-modal .patient-profile-body > .d-flex { flex-wrap: wrap; gap: 0.75rem; }
+
+html[dir='rtl'] :is(.receptionist-page, .receptionist-modal),
+html[dir='rtl'] :is(.receptionist-page, .receptionist-modal) .font-clash {
+  font-family: var(--font-arabic);
+}
+html[dir='rtl'] :is(.receptionist-page, .receptionist-modal) .me-1 { margin-right: 0 !important; margin-inline-end: 0.25rem !important; }
+html[dir='rtl'] :is(.receptionist-page, .receptionist-modal) .me-2 { margin-right: 0 !important; margin-inline-end: 0.5rem !important; }
+html[dir='rtl'] :is(.receptionist-page, .receptionist-modal) .ms-2 { margin-left: 0 !important; margin-inline-start: 0.5rem !important; }
+html[dir='rtl'] :is(.receptionist-page, .receptionist-modal) .pe-4 { padding-right: 0 !important; padding-inline-end: 1.5rem !important; }
+html[dir='rtl'] .receptionist-page .border-start { border-left: 0 !important; border-inline-start: var(--bs-border-width) var(--bs-border-style) var(--bs-border-color) !important; }
+
+@media (max-width: 1199px) {
+  .receptionist-page .kpi-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 767px) {
+  .receptionist-page .page-header { align-items: stretch; }
+  .receptionist-page .table-toolbar > .d-flex { width: 100%; }
+  .receptionist-page .table-toolbar select { flex: 1 1 140px; }
+  .receptionist-modal .modal-form-grid { grid-template-columns: minmax(0, 1fr) !important; }
+  .receptionist-modal .p-dialog-header,
+  .receptionist-modal .p-dialog-content,
+  .receptionist-modal .p-dialog-footer { padding-inline: 1rem !important; }
+}
+@media (max-width: 575px) {
+  .receptionist-page .kpi-row { grid-template-columns: minmax(0, 1fr); }
+  .receptionist-page :is(.table-toolbar, .portal-card-header, .portal-card-body) { padding: 1rem; }
+  .receptionist-page .table-toolbar select { flex-basis: 100%; width: 100% !important; }
+  .receptionist-modal .modal-footer-actions { width: 100%; }
+  .receptionist-modal .modal-footer-actions > * { flex: 1 1 100%; }
+  .receptionist-modal .modal-footer-actions .p-button { width: 100%; }
+  .receptionist-modal .patient-profile-header .d-flex { flex-wrap: wrap; }
+}
+
+/* Schedule states and narrow layouts share the scoped page styles. */
+.receptionist-page.schedule-page .session-card.status-completed {
+  opacity: 0.65;
+  border-inline-start: 4px solid var(--color-neutral) !important;
+}
+
+.receptionist-page.schedule-page .session-card.status-completed .session-time {
+  text-decoration: line-through;
+}
+
+.receptionist-page.schedule-page .session-card.status-completed:hover {
+  opacity: 0.92;
+}
+
+.receptionist-page.schedule-page .session-card.status-in-progress {
+  border-color: rgba(27, 79, 255, 0.4) !important;
+  border-inline-start: 4px solid var(--mq-blue) !important;
+  background: linear-gradient(135deg, rgba(27, 79, 255, 0.08) 0%, var(--bg-elevated) 100%) !important;
+  box-shadow: 0 4px 16px rgba(27, 79, 255, 0.14) !important;
+}
+
+.receptionist-page.schedule-page .session-card.status-in-progress:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(27, 79, 255, 0.2) !important;
+}
+
+.receptionist-page.schedule-page .live-indicator {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--mq-teal);
+  animation: pulse-live 1.8s infinite ease-in-out;
+  flex-shrink: 0;
+}
+
+@keyframes pulse-live {
+  0% {
+    transform: scale(0.9);
+    box-shadow: 0 0 0 0 rgba(0, 201, 167, 0.7);
+  }
+  70% {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 6px rgba(0, 201, 167, 0);
+  }
+  100% {
+    transform: scale(0.9);
+    box-shadow: 0 0 0 0 rgba(0, 201, 167, 0);
+  }
+}
+
+.receptionist-page.schedule-page .session-card.status-confirmed {
+  border-inline-start: 4px solid var(--mq-teal) !important;
+}
+
+.receptionist-page.schedule-page .session-card.status-pending {
+  border-inline-start: 4px solid var(--color-warning) !important;
+}
+
+.receptionist-page.schedule-page .session-card.status-cancelled {
+  opacity: 0.5;
+  border-inline-start: 4px solid var(--color-danger) !important;
+}
+
+.receptionist-page.schedule-page .session-card.status-confirmed:hover,
+.receptionist-page.schedule-page .session-card.status-pending:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-brand);
+  box-shadow: var(--shadow-elevated);
+}
+
+
+@media (max-width: 991px) {
+  .receptionist-page.schedule-page .status-pill-group { flex-wrap: wrap; }
+  .receptionist-page.schedule-page .schedule-search { min-width: 0; max-width: none; flex: 1 1 200px; }
+  .receptionist-page.schedule-page .schedule-filter-select { min-width: 0; flex: 1 1 140px; }
+}
+@media (max-width: 575px) {
+  .receptionist-page.schedule-page .schedule-hero-header { padding: 1rem; flex-wrap: wrap; gap: 1rem; }
+  .receptionist-page.schedule-page .calendar-slot-row { flex-direction: column; }
+  .receptionist-page.schedule-page .time-badge-col {
+    width: 100%; min-width: 0; flex-direction: row;
+    justify-content: flex-start; gap: 0.75rem;
+    border-inline-end: 0; border-bottom: 1px solid var(--border-color);
+  }
+  .receptionist-page.schedule-page .slot-sessions-container { width: 100%; padding: 0.75rem; grid-template-columns: minmax(0, 1fr); }
+  .receptionist-page.schedule-page .session-card-top, .receptionist-page.schedule-page .session-card-footer, .receptionist-page.schedule-page .session-meta-row, .receptionist-page.schedule-page .session-actions { flex-wrap: wrap; }
+  .receptionist-page.schedule-page .session-status-badge { white-space: normal; }
+  .receptionist-page.schedule-page .btn-session-action, .receptionist-page.schedule-page .btn-absent-icon { min-height: 40px; }
+  .receptionist-page.schedule-page .btn-absent-icon { min-width: 40px; }
+  .receptionist-page.schedule-page .schedule-search, .receptionist-page.schedule-page .schedule-filter-select { width: 100%; flex-basis: 100%; }
+  .receptionist-page.schedule-page .timeline-scroll-area { max-height: none; }
+}
+
+/* Compact schedule layout on phones and narrow tablets. */
+@media (max-width: 767px) {
+  .receptionist-page.schedule-page .schedule-hero-header {
+    padding: 0.875rem;
+    margin-bottom: 0.875rem;
+  }
+
+  .receptionist-page.schedule-page .schedule-heading { width: 100%; }
+  .receptionist-page.schedule-page .schedule-heading-copy { min-width: 0; }
+  .receptionist-page.schedule-page .schedule-title-row h2 { font-size: 1.35rem; }
+  .receptionist-page.schedule-page .header-icon-box { width: 34px; height: 34px; font-size: 1.1rem; }
+  .receptionist-page.schedule-page .date-chip { padding: 0.2rem 0.5rem; font-size: 0.7rem; }
+
+  .receptionist-page.schedule-page .schedule-header-actions { width: 100%; }
+  .receptionist-page.schedule-page .schedule-header-actions > .btn { flex: 1; justify-content: center; min-height: 36px; }
+
+  .receptionist-page.schedule-page .schedule-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.625rem;
+    margin-bottom: 0.875rem;
+  }
+
+  .receptionist-page.schedule-page .schedule-kpi-card { min-width: 0; padding: 0.625rem; gap: 0.5rem; }
+  .receptionist-page.schedule-page .kpi-icon-wrap { width: 30px; height: 30px; font-size: 1rem; }
+  .receptionist-page.schedule-page .kpi-info { min-width: 0; }
+  .receptionist-page.schedule-page .kpi-label { min-height: 2.7em; line-height: 1.35; font-size: 0.7rem; letter-spacing: 0; }
+  .receptionist-page.schedule-page .kpi-value { font-size: 1.5rem; }
+
+  .receptionist-page.schedule-page .schedule-toolbar { padding: 0.75rem; gap: 0.5rem; }
+  .receptionist-page.schedule-page .schedule-status-filters, .receptionist-page.schedule-page .schedule-filter-tools { width: 100%; }
+  .receptionist-page.schedule-page .schedule-status-filters .status-pill-group {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    width: 100%;
+    gap: 2px;
+    padding: 3px;
+  }
+  .receptionist-page.schedule-page .status-pill-btn { min-width: 0; min-height: 36px; justify-content: center; padding: 0.25rem; font-size: 0.75rem; line-height: 1.25; }
+  .receptionist-page.schedule-page .status-pill-btn i { display: none; }
+
+  .receptionist-page.schedule-page .schedule-filter-tools { flex-direction: column; align-items: stretch; }
+  .receptionist-page.schedule-page .schedule-filter-fields {
+    display: grid;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr) minmax(0, 1fr);
+    gap: 0.375rem;
+    width: 100%;
+  }
+  .receptionist-page.schedule-page .schedule-filter-fields > * { min-width: 0; max-width: 100%; width: 100%; height: 36px; }
+  .receptionist-page.schedule-page .schedule-search > i { padding-inline: 0.375rem; font-size: 0.75rem; }
+  .receptionist-page.schedule-page .schedule-search input { width: 0; height: 100%; padding-inline-end: 0.375rem; font-size: 0.75rem; }
+  .receptionist-page.schedule-page .btn-clear-search { padding-inline: 0.25rem; }
+  .receptionist-page.schedule-page .btn-clear-search i { padding: 0; font-size: 0.65rem; }
+  .receptionist-page.schedule-page .schedule-filter-fields select {
+    padding-block: 0.375rem;
+    padding-inline: 0.5rem 1.25rem;
+    background-position: right 0.25rem center;
+    background-size: 12px 9px;
+    font-size: 0.75rem;
+    text-overflow: ellipsis;
+  }
+  html[dir='rtl'] .receptionist-page.schedule-page .schedule-filter-fields select { background-position: left 0.25rem center; }
+  .receptionist-page.schedule-page .schedule-view-controls { justify-content: flex-end; }
+  .receptionist-page.schedule-page .schedule-view-controls > .btn { min-width: 36px; min-height: 36px; }
+  .receptionist-page.schedule-page .view-btn { min-height: 30px; }
+}
+

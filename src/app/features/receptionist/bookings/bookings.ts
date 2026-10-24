@@ -1,7 +1,10 @@
-import { Component, signal, computed, inject } from "@angular/core";
+import { ReceptionistLocale, ReceptionistTextPipe } from '../../../shared/receptionist-locale';
+import { Component, signal, computed, inject, OnInit } from "@angular/core";
 import { CommonModule } from "@angular/common";
+import { RouterModule } from "@angular/router";
 import { TranslateModule } from '@ngx-translate/core';
 import { FormsModule } from '@angular/forms';
+import { firstValueFrom } from 'rxjs';
 import { ClinicStateService } from '../../../core/services/state/clinic-state.service';
 import { MessageService } from 'primeng/api';
 import { SelectModule } from 'primeng/select';
@@ -16,12 +19,16 @@ import { Session, SessionType } from '../../../core/models/session.model';
 import { Doctor } from '../../../core/models/doctor.model';
 import { Patient } from '../../../core/models/patient.model';
 import { PatientProfileComponent } from '../../../shared/components/patient-profile/patient-profile.component';
+import { AppointmentService, Appointment } from '../../../core/services/appointment.service';
+import { PatientService } from '../../../core/services/patient.service';
+import { BillingService, CreateInvoiceDto } from '../../../core/services/billing.service';
 
 @Component({
   selector: "app-receptionist-bookings",
   standalone: true,
-  imports: [
+  imports: [ReceptionistTextPipe,
     CommonModule, 
+    RouterModule,
     TranslateModule, 
     FormsModule, 
     SelectModule, 
@@ -37,16 +44,20 @@ import { PatientProfileComponent } from '../../../shared/components/patient-prof
   templateUrl: "./bookings.html",
   styleUrls: ["./bookings.css"]
 })
-export class BookingsComponent {
+export class BookingsComponent implements OnInit {
+  readonly locale = new ReceptionistLocale();
   clinicState = inject(ClinicStateService);
   messageService = inject(MessageService);
+  appointmentService = inject(AppointmentService, { optional: true })!;
+  patientService = inject(PatientService, { optional: true })!;
+  billingService = inject(BillingService, { optional: true }) ?? new BillingService();
 
   viewMode = signal<'Week' | 'Day'>('Day');
-  isLoading = this.clinicState.isLoading;
+  isLoading = this.appointmentService?.loading ?? this.clinicState.isLoading;
 
-  // Global State Signals from ClinicStateService
-  sessions = this.clinicState.sessions;
-  allPatients = this.clinicState.patients;
+  // Global State Signals
+  appointments = this.appointmentService?.appointments ?? signal<Appointment[]>([]);
+  allPatients = this.patientService?.patients ?? this.clinicState.patients;
   allDoctors = this.clinicState.doctors;
   allRooms = this.clinicState.rooms;
   availableRooms = this.clinicState.availableRooms;
@@ -55,9 +66,15 @@ export class BookingsComponent {
   selectedProfilePatientId = signal<string | null>(null);
   showProfileModal = signal<boolean>(false);
 
-  openPatientProfile(patientId: string) {
-    this.selectedProfilePatientId.set(patientId);
+  openPatientProfile(patientId: string | number) {
+    this.selectedProfilePatientId.set(patientId.toString());
     this.showProfileModal.set(true);
+  }
+
+  ngOnInit() {
+    this.appointmentService?.getAppointments();
+    this.patientService?.getPatients().subscribe();
+    this.billingService.getInvoices();
   }
 
   // Unified Booking State Variables
@@ -87,6 +104,7 @@ export class BookingsComponent {
     { label: 'Wed', value: 3 },
     { label: 'Thu', value: 4 }
   ];
+  get localizedWeekDays() { return this.weekDays.map(day => ({ ...day, label: this.locale.label(day.label) })); }
   selectedDays: number[] = [6, 0, 1, 2, 3, 4]; // Friday (5) excluded by default
 
   get calculatedInsuranceShare(): { patientShare: number, insuranceShare: number } {
@@ -195,8 +213,8 @@ export class BookingsComponent {
     if (!this.absentDoctorId || !this.coveringSeniorId) {
       this.messageService.add({
         severity: 'warn',
-        summary: 'Incomplete Selection',
-        detail: 'Please select both an absent doctor and a covering senior doctor.'
+        summary: this.locale.text('INCOMPLETE_SELECTION', "Incomplete Selection"),
+        detail: this.locale.text('PLEASE_SELECT_BOTH_AN_ABSENT_DOCTOR_AND_A_COVERING_SENIOR_DOCTOR_', "Please select both an absent doctor and a covering senior doctor.")
       });
       return;
     }
@@ -205,15 +223,15 @@ export class BookingsComponent {
       this.clinicState.handleDoctorAbsence(this.absentDoctorId, this.coveringSeniorId);
       this.messageService.add({
         severity: 'success',
-        summary: 'Absence Recorded',
-        detail: 'Absence recorded. 50% of sessions reassigned to Senior, remainder distributed to available doctors.'
+        summary: this.locale.text('ABSENCE_RECORDED', "Absence Recorded"),
+        detail: this.locale.text('ABSENCE_RECORDED_50_OF_SESSIONS_REASSIGNED_TO_SENIOR_REMAINDER_DISTRIBUTED_TO_AVAILABLE_DOCTORS_', "Absence recorded. 50% of sessions reassigned to Senior, remainder distributed to available doctors.")
       });
       this.closeAbsenceModal();
     } catch (error: any) {
       this.messageService.add({
         severity: 'error',
-        summary: 'Absence Error',
-        detail: error?.message || 'Failed to record doctor absence.'
+        summary: this.locale.text('ABSENCE_ERROR', "Absence Error"),
+        detail: this.locale.error(error, 'FAILED_TO_RECORD_DOCTOR_ABSENCE_', "Failed to record doctor absence.")
       });
     }
   }
@@ -230,11 +248,24 @@ export class BookingsComponent {
   }
 
   get selectedPatient(): Patient | undefined {
-    return this.clinicState.getPatientById(this.selectedPatientId);
+    return (
+      this.allPatients().find((p) => p.id === this.selectedPatientId) ||
+      this.clinicState.getPatientById(this.selectedPatientId)
+    );
   }
 
   get isInsurancePending(): boolean {
     return this.selectedPatient?.paymentType === 'Insurance' && this.selectedPatient?.insuranceDetails?.status !== 'Approved';
+  }
+
+  get selectedDoctorName(): string {
+    if (!this.selectedDoctorId) return '';
+    return this.allDoctors().find((d) => d.id === this.selectedDoctorId)?.name || this.clinicState.getDoctorName(this.selectedDoctorId);
+  }
+
+  get selectedRoomName(): string {
+    if (!this.selectedRoomId) return '';
+    return this.allRooms().find((r) => r.id === this.selectedRoomId)?.displayName || this.clinicState.getRoomName(this.selectedRoomId);
   }
 
   /**
@@ -245,7 +276,9 @@ export class BookingsComponent {
     if (!this.selectedPatientId) {
       return [];
     }
-    const patientGender = this.clinicState.getPatientGender(this.selectedPatientId);
+    const patientGender =
+      this.selectedPatient?.gender ||
+      this.clinicState.getPatientGender(this.selectedPatientId);
     if (!patientGender) {
       return [];
     }
@@ -268,7 +301,6 @@ export class BookingsComponent {
       if (isAssignedDocValid) {
         this.selectedDoctorId = patient.assignedDoctorId;
       } else {
-        // Assigned doctor doesn't match gender filter — clear so receptionist picks manually
         this.selectedDoctorId = '';
       }
     } else if (this.selectedDoctorId) {
@@ -283,8 +315,8 @@ export class BookingsComponent {
     if (!this.selectedPatientId) {
       this.messageService.add({
         severity: 'warn',
-        summary: 'Select Patient',
-        detail: 'Please select or add a patient first to find the nearest walk-in slot.'
+        summary: this.locale.text('SELECT_PATIENT', "Select Patient"),
+        detail: this.locale.text('PLEASE_SELECT_OR_ADD_A_PATIENT_FIRST_TO_FIND_THE_NEAREST_WALK_IN_SLOT_', "Please select or add a patient first to find the nearest walk-in slot.")
       });
       return;
     }
@@ -292,19 +324,19 @@ export class BookingsComponent {
     if (this.isInsurancePending) {
       this.messageService.add({
         severity: 'error',
-        summary: 'Insurance Pending',
-        detail: 'Insurance approval is pending. Cannot book sessions.'
+        summary: this.locale.text('INSURANCE_PENDING', "Insurance Pending"),
+        detail: this.locale.text('INSURANCE_APPROVAL_IS_PENDING_CANNOT_BOOK_SESSIONS_', "Insurance approval is pending. Cannot book sessions.")
       });
       return;
     }
 
     const eligibleDoctors = this.filteredDoctors;
     if (!eligibleDoctors || eligibleDoctors.length === 0) {
-      const patientGender = this.clinicState.getPatientGender(this.selectedPatientId);
+      const patientGender = this.selectedPatient?.gender || this.clinicState.getPatientGender(this.selectedPatientId);
       this.messageService.add({
         severity: 'error',
-        summary: 'No Matching Doctors',
-        detail: `No available ${patientGender ? patientGender.toLowerCase() : ''} doctors found to treat this patient.`
+        summary: this.locale.text('NO_MATCHING_DOCTORS', "No Matching Doctors"),
+        detail: this.locale.text('NO_GENDER_MATCH', "No available doctors matching the patient’s gender were found.")
       });
       return;
     }
@@ -321,51 +353,51 @@ export class BookingsComponent {
 
       this.messageService.add({
         severity: 'success',
-        summary: 'Walk-In Slot Found',
-        detail: `Auto-assigned Dr. ${this.clinicState.getDoctorName(slot.doctorId)} (${this.clinicState.getDoctorGender(slot.doctorId)}) in ${this.clinicState.getRoomName(slot.roomId)} at ${this.formatTime(slot.scheduledAt)}.`
+        summary: this.locale.text('WALK_IN_SLOT_FOUND', "Walk-In Slot Found"),
+        detail: this.locale.text('SLOT_ASSIGNED', "Assigned {{doctor}} in {{room}} at {{time}}.", { doctor: this.clinicState.getDoctorName(slot.doctorId), room: this.clinicState.getRoomName(slot.roomId), time: this.formatTime(slot.scheduledAt) })
       });
     } catch (error: any) {
       this.messageService.add({
         severity: 'error',
-        summary: 'Slot Search Failed',
-        detail: error.message || 'No suitable slot found matching gender and load criteria.'
+        summary: this.locale.text('SLOT_SEARCH_FAILED', "Slot Search Failed"),
+        detail: this.locale.error(error, 'NO_SUITABLE_SLOT_FOUND_MATCHING_GENDER_AND_LOAD_CRITERIA_', "No suitable slot found matching gender and load criteria.")
       });
     }
   }
 
   async submitBooking() {
     if (!this.selectedPatientId) {
-      this.messageService.add({ severity: 'error', summary: 'Validation Error', detail: 'Please select a patient.' });
+      this.messageService.add({ severity: 'error', summary: this.locale.text('VALIDATION_ERROR', "Validation Error"), detail: this.locale.text('PLEASE_SELECT_A_PATIENT_', "Please select a patient.") });
       return;
     }
     if (this.isInsurancePending) {
       this.messageService.add({
         severity: 'error',
-        summary: 'Insurance Pending',
-        detail: 'Insurance approval is pending. Cannot book sessions.'
+        summary: this.locale.text('INSURANCE_PENDING', "Insurance Pending"),
+        detail: this.locale.text('INSURANCE_APPROVAL_IS_PENDING_CANNOT_BOOK_SESSIONS_', "Insurance approval is pending. Cannot book sessions.")
       });
       return;
     }
     if (!this.selectedDoctorId) {
-      this.messageService.add({ severity: 'error', summary: 'Validation Error', detail: 'Please select a doctor.' });
+      this.messageService.add({ severity: 'error', summary: this.locale.text('VALIDATION_ERROR', "Validation Error"), detail: this.locale.text('PLEASE_SELECT_A_DOCTOR_', "Please select a doctor.") });
       return;
     }
     if (!this.selectedRoomId) {
-      this.messageService.add({ severity: 'error', summary: 'Validation Error', detail: 'Please select an available room.' });
+      this.messageService.add({ severity: 'error', summary: this.locale.text('VALIDATION_ERROR', "Validation Error"), detail: this.locale.text('PLEASE_SELECT_AN_AVAILABLE_ROOM_', "Please select an available room.") });
       return;
     }
     if (!this.scheduledDate) {
-      this.messageService.add({ severity: 'error', summary: 'Validation Error', detail: 'Please select date and time.' });
+      this.messageService.add({ severity: 'error', summary: this.locale.text('VALIDATION_ERROR', "Validation Error"), detail: this.locale.text('PLEASE_SELECT_DATE_AND_TIME_', "Please select date and time.") });
       return;
     }
 
     const isDocGenderValid = this.filteredDoctors.some(d => d.id === this.selectedDoctorId);
     if (!isDocGenderValid) {
-      const patientGender = this.clinicState.getPatientGender(this.selectedPatientId);
+      const patientGender = this.selectedPatient?.gender || this.clinicState.getPatientGender(this.selectedPatientId);
       this.messageService.add({
         severity: 'error',
-        summary: 'Gender Mismatch',
-        detail: `Strict policy: Male doctors treat male patients, and female doctors treat female patients. Please select a ${patientGender?.toLowerCase()} doctor.`
+        summary: this.locale.text('GENDER_MISMATCH', "Gender Mismatch"),
+        detail: this.locale.text('GENDER_POLICY', "Please select a doctor of the same gender as the patient.")
       });
       return;
     }
@@ -373,7 +405,7 @@ export class BookingsComponent {
     const finalType: SessionType = this.isNewPatient ? 'Assessment' : this.sessionType;
 
     if (finalType === 'Assessment' && !this.isFreeAssessment && this.assessmentPrice == null) {
-      this.messageService.add({ severity: 'error', summary: 'Validation Error', detail: 'Please enter the Assessment Price.' });
+      this.messageService.add({ severity: 'error', summary: this.locale.text('VALIDATION_ERROR', "Validation Error"), detail: this.locale.text('PLEASE_ENTER_THE_ASSESSMENT_PRICE_', "Please enter the Assessment Price.") });
       return;
     }
 
@@ -382,47 +414,120 @@ export class BookingsComponent {
     const scheduledIso = `${dateObj.getFullYear()}-${pad(dateObj.getMonth() + 1)}-${pad(dateObj.getDate())}T${pad(dateObj.getHours())}:${pad(dateObj.getMinutes())}:00`;
 
     const shares = this.calculatedInsuranceShare;
+    const patient = this.selectedPatient;
+    const financialPlan = patient?.financialPlan || patient?.treatmentPlan?.financialPlan;
+
+    let totalAmount = 500;
+    let insuranceAmount = 0;
+    let patientAmount = 500;
+
+    if (finalType === 'Assessment') {
+      if (this.isFreeAssessment) {
+        totalAmount = 0;
+        insuranceAmount = 0;
+        patientAmount = 0;
+      } else {
+        totalAmount = this.assessmentPrice || 0;
+        insuranceAmount = shares.insuranceShare;
+        patientAmount = shares.patientShare;
+      }
+    } else if (financialPlan) {
+      if (financialPlan.paymentMode === 'Package' || financialPlan.paymentMode === 'Upfront-Copay') {
+        totalAmount = 0;
+        insuranceAmount = 0;
+        patientAmount = 0;
+      } else if (financialPlan.paymentMode === 'Per-Session') {
+        totalAmount = financialPlan.sessionPrice || 500;
+        patientAmount = totalAmount;
+        insuranceAmount = 0;
+      }
+    } else if (patient?.paymentType === 'Insurance' && patient.insuranceDetails?.copayPercentage != null) {
+      const copay = patient.insuranceDetails.copayPercentage;
+      patientAmount = Math.round(totalAmount * (copay / 100));
+      insuranceAmount = totalAmount - patientAmount;
+    }
 
     try {
-      await this.clinicState.addSession({
-        patientId: this.selectedPatientId,
-        doctorId: this.selectedDoctorId,
-        roomId: this.selectedRoomId,
-        scheduledAt: scheduledIso,
-        type: finalType,
-        isFreeAssessment: finalType === 'Assessment' && this.isFreeAssessment,
-        assessmentPrice: this.assessmentPrice,
-        patientShare: shares.patientShare,
-        insuranceShare: shares.insuranceShare
+      let appointmentId = 0;
+
+      if (this.appointmentService) {
+        const createdAppointment = await new Promise<any>((resolve, reject) => {
+          this.appointmentService.addAppointment({
+            patientId: Number(this.selectedPatientId),
+            doctorId: Number(this.selectedDoctorId),
+            roomId: Number(this.selectedRoomId),
+            appointmentType: finalType,
+            startTime: scheduledIso,
+            endTime: scheduledIso
+          }).subscribe({
+            next: (res) => resolve(res),
+            error: (err) => reject(err)
+          });
+        });
+
+        appointmentId = Number(
+          createdAppointment?.id ??
+            createdAppointment?.value?.id ??
+            createdAppointment?.data?.id ??
+            0
+        );
+      }
+
+      // Construct exact CreateInvoiceDto expected by /api/Billing/invoices
+      const invoiceDto: CreateInvoiceDto = {
+        appointmentId,
+        patientId: Number(this.selectedPatientId),
+        type: this.billingService.mapTypeToNumber(finalType),
+        totalAmount,
+        insuranceAmount,
+        patientAmount
+      };
+
+      this.billingService.createInvoice(invoiceDto).subscribe({
+        next: (createdInv) => {
+          if (createdInv?.id && (this.isFreeAssessment || patientAmount === 0)) {
+            const targetStatus = this.billingService.mapStatusToNumber(
+              this.isFreeAssessment ? 'Waived' : 'Paid'
+            );
+            this.billingService
+              .updateInvoiceStatus(createdInv.id, targetStatus)
+              .subscribe();
+          }
+        },
+        error: () => {}
       });
+
+      const patientDisplayName =
+        this.locale.patientName(this.selectedPatient) ||
+        this.clinicState.getPatientName(this.selectedPatientId);
 
       this.messageService.add({
         severity: 'success',
-        summary: 'Booking Successful',
-        detail: `${finalType} booked for ${this.clinicState.getPatientName(this.selectedPatientId)} with Dr. ${this.clinicState.getDoctorName(this.selectedDoctorId)}!`
+        summary: this.locale.text('BOOKING_SUCCESSFUL', "Booking Successful"),
+        detail: this.locale.text('BOOKING_CREATED', "{{type}} booked for {{patient}} with {{doctor}}.", { type: this.locale.label(finalType), patient: patientDisplayName, doctor: this.clinicState.getDoctorName(this.selectedDoctorId) })
       });
 
       this.resetBookingForm();
     } catch (e: any) {
       this.messageService.add({
         severity: 'error',
-        summary: 'Booking Failed',
-        detail: e.message || 'Room is not available for booking.'
+        summary: this.locale.text('BOOKING_FAILED', "Booking Failed"),
+        detail: this.locale.error(e, 'ROOM_IS_NOT_AVAILABLE_FOR_BOOKING_', "Room is not available for booking.")
       });
     }
   }
 
   async submitTreatmentPlan() {
     if (!this.selectedPatientId || !this.selectedDoctorId || !this.selectedRoomId) {
-      this.messageService.add({ severity: 'error', summary: 'Validation Error', detail: 'Please select patient, doctor, and room.' });
+      this.messageService.add({ severity: 'error', summary: this.locale.text('VALIDATION_ERROR', "Validation Error"), detail: this.locale.text('PLEASE_SELECT_PATIENT_DOCTOR_AND_ROOM_', "Please select patient, doctor, and room.") });
       return;
     }
     if (this.planPaymentMode === 'Package' && (this.packageTotalPrice == null || this.packagePayingNow == null)) {
-      this.messageService.add({ severity: 'error', summary: 'Validation Error', detail: 'Please fill in package financial details.' });
+      this.messageService.add({ severity: 'error', summary: this.locale.text('VALIDATION_ERROR', "Validation Error"), detail: this.locale.text('PLEASE_FILL_IN_PACKAGE_FINANCIAL_DETAILS_', "Please fill in package financial details.") });
       return;
     }
     if (this.selectedDays.length === 0) {
-      this.messageService.add({ severity: 'error', summary: 'Validation Error', detail: 'Please select at least one preferred day.' });
+      this.messageService.add({ severity: 'error', summary: this.locale.text('VALIDATION_ERROR', "Validation Error"), detail: this.locale.text('PLEASE_SELECT_AT_LEAST_ONE_PREFERRED_DAY_', "Please select at least one preferred day.") });
       return;
     }
 
@@ -441,18 +546,147 @@ export class BookingsComponent {
         payingNow: this.packagePayingNow || undefined
       });
 
+      const numericPatientId = Number(this.selectedPatientId);
+      const pad = (n: number) => n.toString().padStart(2, '0');
+      let firstAppointmentId = 0;
+
+      // 1. Create each session appointment and its corresponding session invoice
+      for (const date of dates) {
+        const scheduledIso = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:00`;
+        let sessionApptId = 0;
+
+        if (this.appointmentService) {
+          try {
+            const createdAppt: any = await firstValueFrom(
+              this.appointmentService.addAppointment({
+                patientId: numericPatientId,
+                doctorId: Number(this.selectedDoctorId),
+                roomId: Number(this.selectedRoomId),
+                appointmentType: 'Session',
+                startTime: scheduledIso,
+                endTime: scheduledIso
+              })
+            );
+            sessionApptId = Number(
+              createdAppt?.id ?? createdAppt?.value?.id ?? createdAppt?.data?.id ?? 0
+            );
+            if (!firstAppointmentId && sessionApptId) {
+              firstAppointmentId = sessionApptId;
+            }
+          } catch {
+            // Continue creating invoices if appointment creation partially succeeds
+          }
+        }
+
+        if (this.planPaymentMode === 'Package') {
+          // Package session invoices: patientAmount = 0 and status mapped to 'Paid' (covered by package)
+          const sessionInvoiceDto: CreateInvoiceDto = {
+            appointmentId: sessionApptId,
+            patientId: numericPatientId,
+            type: this.billingService.mapTypeToNumber('Session'),
+            totalAmount: 0,
+            insuranceAmount: 0,
+            patientAmount: 0
+          };
+
+          this.billingService.createInvoice(sessionInvoiceDto).subscribe({
+            next: (createdSessionInv) => {
+              if (createdSessionInv?.id) {
+                this.billingService
+                  .updateInvoiceStatus(
+                    createdSessionInv.id,
+                    this.billingService.mapStatusToNumber('Paid')
+                  )
+                  .subscribe();
+              }
+            },
+            error: () => {}
+          });
+        } else {
+          // Per-Session mode: create Pending session invoice with per-session price
+          const sessionTotal = this.packageTotalPrice || 500;
+          const copay = this.selectedPatient?.insuranceDetails?.copayPercentage;
+          const isIns =
+            this.selectedPatient?.paymentType === 'Insurance' && copay != null;
+          const patAmount = isIns
+            ? Math.round(sessionTotal * (copay! / 100))
+            : sessionTotal;
+          const insAmount = isIns ? sessionTotal - patAmount : 0;
+
+          const sessionInvoiceDto: CreateInvoiceDto = {
+            appointmentId: sessionApptId,
+            patientId: numericPatientId,
+            type: this.billingService.mapTypeToNumber('Session'),
+            totalAmount: sessionTotal,
+            insuranceAmount: insAmount,
+            patientAmount: patAmount
+          };
+
+          this.billingService.createInvoice(sessionInvoiceDto).subscribe();
+        }
+      }
+
+      // 2. If Package mode, create initial Installment invoice and record upfront payment via recordPayment
+      if (this.planPaymentMode === 'Package') {
+        const netTotal = Math.max(
+          0,
+          (this.packageTotalPrice || 0) - (this.packageDiscount || 0)
+        );
+        const shares = this.calculatedInsuranceShare;
+        const insuranceAmount =
+          this.selectedPatient?.paymentType === 'Insurance'
+            ? shares.insuranceShare
+            : 0;
+        const patientAmount =
+          this.selectedPatient?.paymentType === 'Insurance'
+            ? Math.max(0, netTotal - insuranceAmount)
+            : netTotal;
+
+        const installmentDto: CreateInvoiceDto = {
+          appointmentId: firstAppointmentId,
+          patientId: numericPatientId,
+          type: this.billingService.mapTypeToNumber('Installment'),
+          totalAmount: netTotal,
+          insuranceAmount,
+          patientAmount
+        };
+
+        this.billingService.createInvoice(installmentDto).subscribe({
+          next: (createdInstallmentInv) => {
+            if (
+              createdInstallmentInv?.id &&
+              this.packagePayingNow &&
+              this.packagePayingNow > 0
+            ) {
+              this.billingService
+                .recordPayment({
+                  invoiceId: Number(createdInstallmentInv.id),
+                  amount: this.packagePayingNow,
+                  method: this.billingService.mapPaymentMethodToNumber('Cash')
+                })
+                .subscribe();
+            }
+          },
+          error: () => {}
+        });
+      }
+
+      const patientDisplayName =
+        this.selectedPatient?.nameEn ||
+        this.clinicState.getPatientName(this.selectedPatientId);
+
       this.messageService.add({
         severity: 'success',
-        summary: 'Treatment Plan Created',
-        detail: `Successfully booked ${dates.length} sessions for ${this.clinicState.getPatientName(this.selectedPatientId)}.`
+        summary: this.locale.text('TREATMENT_PLAN_CREATED', "Treatment Plan Created"),
+        detail: this.locale.text('PLAN_CREATED', "Successfully booked {{count}} sessions for {{patient}}.", { count: dates.length, patient: patientDisplayName })
       });
 
       this.resetBookingForm();
     } catch (e: any) {
       this.messageService.add({
         severity: 'error',
-        summary: 'Plan Creation Failed',
-        detail: e.message || 'Error generating treatment plan.'
+        summary: this.locale.text('PLAN_CREATION_FAILED', "Plan Creation Failed"),
+        detail: this.locale.error(e, 'ERROR_GENERATING_TREATMENT_PLAN_', "Error generating treatment plan.")
       });
     }
   }
@@ -491,35 +725,48 @@ export class BookingsComponent {
     if (!this.quickPatient.nameEn.trim() || !this.quickPatient.phone.trim()) {
       this.messageService.add({
         severity: 'error',
-        summary: 'Required Fields',
-        detail: 'Please enter patient name and phone number.'
+        summary: this.locale.text('REQUIRED_FIELDS', "Required Fields"),
+        detail: this.locale.text('PLEASE_ENTER_PATIENT_NAME_AND_PHONE_NUMBER_', "Please enter patient name and phone number.")
       });
       return;
     }
 
-    await this.clinicState.createPatient({
-      nameEn: this.quickPatient.nameEn.trim(),
-      nameAr: this.quickPatient.nameAr.trim() || this.quickPatient.nameEn.trim(),
-      phone: this.quickPatient.phone.trim(),
-      gender: this.quickPatient.gender,
-      paymentType: this.quickPatient.paymentType,
-      dob: '1995-01-01',
-      insuranceCompany: '',
-      docs: { medicalConsent: true, liabilityWaiver: true, idCard: true }
-    });
+    try {
+      await new Promise<void>((resolve, reject) => {
+        this.patientService.addPatient({
+          nameEn: this.quickPatient.nameEn.trim(),
+          nameAr: this.quickPatient.nameAr.trim() || this.quickPatient.nameEn.trim(),
+          phone: this.quickPatient.phone.trim(),
+          gender: this.quickPatient.gender,
+          paymentType: this.quickPatient.paymentType,
+          dob: '1995-01-01',
+          insuranceCompany: '',
+          docs: { medicalConsent: true, liabilityWaiver: true, idCard: true }
+        }).subscribe({
+          next: (res) => {
+            const newPatientId = res?.id || res?.data?.id || (res?.items && res.items[0]?.id) || Date.now();
+            this.selectedPatientId = newPatientId.toString();
+            this.onPatientChange(this.selectedPatientId);
+            resolve();
+          },
+          error: (err) => reject(err)
+        });
+      });
 
-    const newPatient = this.allPatients()[0];
-    if (newPatient) {
-      this.selectedPatientId = newPatient.id;
-      this.onPatientChange(newPatient.id);
+      this.patientService.getPatients().subscribe();
+      this.closeQuickAddModal();
+      this.messageService.add({
+        severity: 'success',
+        summary: this.locale.text('PATIENT_REGISTERED', "Patient Registered"),
+        detail: this.locale.text('NEW_PATIENT_CREATED_AND_SELECTED_', "New patient created and selected.")
+      });
+    } catch (error) {
+      this.messageService.add({
+        severity: 'error',
+        summary: this.locale.text('REGISTRATION_FAILED', "Registration Failed"),
+        detail: this.locale.text('COULD_NOT_REGISTER_NEW_PATIENT_', "Could not register new patient.")
+      });
     }
-
-    this.closeQuickAddModal();
-    this.messageService.add({
-      severity: 'success',
-      summary: 'Patient Registered',
-      detail: 'New patient created and selected.'
-    });
   }
 
   // Timeline slots
@@ -530,7 +777,7 @@ export class BookingsComponent {
   formatTime(isoString?: string) {
     if (!isoString) return '-';
     try {
-      return new Date(isoString).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+      return new Date(isoString).toLocaleTimeString(this.locale.language, { hour: '2-digit', minute: '2-digit' });
     } catch {
       return isoString;
     }
@@ -539,17 +786,32 @@ export class BookingsComponent {
   todayDate = new Date();
 
   /**
-   * Strictly filters clinicState.sessions() to only include sessions
-   * where the date part of scheduledAt matches today's date.
+   * Strictly filters sessions/appointments to only include sessions
+   * where the date part matches today's date.
    */
-  get todaySessions(): Session[] {
+  get todaySessions(): Appointment[] {
     const todayYMD = this.todayDate.toISOString().split('T')[0];
     const pad = (n: number) => n.toString().padStart(2, '0');
     const localYMD = `${this.todayDate.getFullYear()}-${pad(this.todayDate.getMonth() + 1)}-${pad(this.todayDate.getDate())}`;
 
-    return this.sessions().filter(s => {
-      if (!s.scheduledAt) return false;
-      const sessionDatePart = s.scheduledAt.split('T')[0];
+    const apiApps = this.appointments();
+    const source: Appointment[] =
+      apiApps.length > 0
+        ? apiApps
+        : (this.clinicState.sessions().map((s) => ({
+            id: s.id as any,
+            patientId: s.patientId as any,
+            doctorId: s.doctorId as any,
+            roomId: s.roomId as any,
+            appointmentType: s.type,
+            startTime: s.scheduledAt || '',
+            endTime: s.scheduledAt || '',
+            status: s.status
+          })) as Appointment[]);
+
+    return source.filter(a => {
+      if (!a.startTime) return false;
+      const sessionDatePart = a.startTime.toString().split('T')[0];
       return sessionDatePart === todayYMD || sessionDatePart === localYMD;
     });
   }
@@ -559,26 +821,25 @@ export class BookingsComponent {
    * Filters today's sessions based on selectedFilter.
    * 'Upcoming' includes 'Pending' and 'Confirmed'.
    */
-  get filteredSchedule(): { time: string; sessions: Session[] }[] {
+  get filteredSchedule(): { time: string; sessions: Appointment[] }[] {
     const all = this.todaySessions;
     let filtered = all;
 
     if (this.selectedFilter === 'Upcoming') {
-      filtered = all.filter(s => s.status === 'Pending' || s.status === 'Confirmed');
+      filtered = all.filter(s => String(s.status) === 'Pending' || String(s.status) === 'Confirmed');
     } else if (this.selectedFilter === 'In Progress') {
-      filtered = all.filter(s => s.status === 'In Progress');
+      filtered = all.filter(s => String(s.status) === 'In Progress');
     } else if (this.selectedFilter === 'Completed') {
-      filtered = all.filter(s => s.status === 'Completed');
+      filtered = all.filter(s => String(s.status) === 'Completed');
     }
 
-    const grid: { time: string; sessions: Session[] }[] = this.timeSlots.map(t => ({ time: t, sessions: [] }));
+    const grid: { time: string; sessions: Appointment[] }[] = this.timeSlots.map(t => ({ time: t, sessions: [] }));
     filtered.forEach(session => {
-      if (!session.scheduledAt) return;
-      let slot = grid.find(g => g.time === this.formatTime(session.scheduledAt));
+      if (!session.startTime) return;
+      let slot = grid.find(g => g.time === this.formatTime(session.startTime as string));
       if (!slot) {
-        // Match to the corresponding hour bucket (e.g. 09:30 AM maps into 09:00 AM slot)
         try {
-          const d = new Date(session.scheduledAt);
+          const d = new Date(session.startTime);
           d.setMinutes(0, 0, 0);
           const hourStr = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
           slot = grid.find(g => g.time === hourStr);
@@ -594,14 +855,19 @@ export class BookingsComponent {
   // Alias for backward compatibility
   calendarGrid = computed(() => this.filteredSchedule);
 
-  /**
-   * Distinct visual class for session cards:
-   * - status-completed: faded/grayscale, strike-through
-   * - status-in-progress: highlighted active border & shadow
-   * - status-pending / status-confirmed: clean standard border
-   */
-  getStatusClass(status: string): string {
-    switch (status) {
+  getSessionBadge(appointment: Appointment): string {
+    const mockSession: any = {
+      ...appointment,
+      patientId: appointment.patientId?.toString(),
+      type: appointment.appointmentType,
+      scheduledAt: appointment.startTime
+    };
+    return this.clinicState.getSessionBadge(mockSession);
+  }
+
+  getStatusClass(status: string | number): string {
+    const strStatus = String(status);
+    switch (strStatus) {
       case 'Completed':
         return 'status-completed';
       case 'In Progress':
@@ -620,70 +886,128 @@ export class BookingsComponent {
   /**
    * Check-in patient action with Debt Gate interceptor
    */
-  // Check-In Debt Modal State
   showDebtModal = false;
-  pendingCheckInSessionId: string | null = null;
+  pendingCheckInSessionId: number | null = null;
   installmentAmount: number = 0;
   installmentPaymentMethod: string = 'Cash';
-  paymentMethods = ['Cash', 'Credit Card', 'E-Wallet'];
+  paymentMethods = ['Cash', 'Credit Card', 'E-Wallet', 'InstaPay'];
   debtAmount: number = 0;
 
-  async checkInSession(sessionId: string) {
-    const session = this.sessions().find(s => s.id === sessionId);
+  async checkInSession(sessionId: number | undefined) {
+    if (sessionId === undefined) return;
+    const session = this.appointments().find(s => s.id === sessionId);
     if (!session) return;
 
-    const patient = this.allPatients().find(p => p.id === session.patientId);
+    const patient =
+      this.allPatients().find(p => p.id === session.patientId.toString()) ||
+      this.clinicState.getPatientById(session.patientId.toString());
     const plan = patient?.financialPlan || patient?.treatmentPlan?.financialPlan;
-    
-    // If the patient has remaining debt, intercept the check-in
-    if (plan && plan.remainingDebt && plan.remainingDebt > 0) {
-      this.debtAmount = plan.remainingDebt;
+
+    // Calculate debt from patient's plan OR unpaid/partial invoices in BillingService
+    const unpaidInvoicesDebt = this.billingService
+      .invoices()
+      .filter((inv) => {
+        const st = this.billingService.mapStatusToString(inv.status);
+        return (
+          Number(inv.patientId) === Number(session.patientId) &&
+          (st === 'Pending' || st === 'Partial')
+        );
+      })
+      .reduce(
+        (sum, inv) => sum + (inv.remainingBalance ?? inv.patientAmount ?? 0),
+        0
+      );
+
+    const totalOutstandingDebt = Math.max(
+      plan?.remainingDebt ?? 0,
+      unpaidInvoicesDebt
+    );
+
+    if (totalOutstandingDebt > 0) {
+      this.debtAmount = totalOutstandingDebt;
       this.pendingCheckInSessionId = sessionId;
-      this.installmentAmount = 0;
+      this.installmentAmount = totalOutstandingDebt;
       this.installmentPaymentMethod = 'Cash';
       this.showDebtModal = true;
       return;
     }
 
-    // Otherwise proceed normally
     await this.executeCheckIn(sessionId);
   }
 
-  async executeCheckIn(sessionId: string) {
+  async executeCheckIn(sessionId: number) {
     try {
-      await this.clinicState.checkInPatient(sessionId);
-      this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Patient checked in' });
+      await new Promise<void>((resolve, reject) => {
+        this.appointmentService.updateStatus(sessionId, 'In Progress').subscribe({
+          next: () => resolve(),
+          error: (e) => reject(e)
+        });
+      });
+      this.messageService.add({ severity: 'success', summary: this.locale.text('SUCCESS', "Success"), detail: this.locale.text('PATIENT_CHECKED_IN', "Patient checked in") });
     } catch (error: any) {
       this.messageService.add({
         severity: 'error',
-        summary: 'Check-in Error',
-        detail: error?.message || 'Check-in failed'
+        summary: this.locale.text('CHECK_IN_ERROR', "Check-in Error"),
+        detail: this.locale.error(error, 'CHECK_IN_FAILED', "Check-in failed")
       });
     }
   }
 
   async confirmCheckIn(withInstallment: boolean) {
-    if (!this.pendingCheckInSessionId) return;
+    if (this.pendingCheckInSessionId === null) return;
     const sessionId = this.pendingCheckInSessionId;
     
-    const session = this.sessions().find(s => s.id === sessionId);
+    const session = this.appointments().find(s => s.id === sessionId);
     if (!session) return;
 
     if (withInstallment && this.installmentAmount > 0) {
       try {
-        await this.clinicState.collectInstallment(
-          session.patientId, 
-          this.installmentAmount, 
-          this.installmentPaymentMethod, 
-          sessionId
+        const methodNum = this.billingService.mapPaymentMethodToNumber(
+          this.installmentPaymentMethod
         );
+
+        let targetInvoice =
+          this.billingService.getInvoiceBySessionId(sessionId) ||
+          this.billingService
+            .invoices()
+            .find((inv) => {
+              const st = this.billingService.mapStatusToString(inv.status);
+              return (
+                Number(inv.patientId) === Number(session.patientId) &&
+                (st === 'Pending' || st === 'Partial')
+              );
+            });
+
+        if (!targetInvoice) {
+          targetInvoice = await firstValueFrom(
+            this.billingService.createInvoice({
+              appointmentId: sessionId,
+              patientId: Number(session.patientId),
+              type: this.billingService.mapTypeToNumber('Installment'),
+              totalAmount: this.installmentAmount,
+              insuranceAmount: 0,
+              patientAmount: this.installmentAmount
+            })
+          );
+        }
+
+        if (targetInvoice?.id) {
+          await firstValueFrom(
+            this.billingService.recordPayment({
+              invoiceId: Number(targetInvoice.id),
+              amount: this.installmentAmount,
+              method: methodNum
+            })
+          );
+        }
+
         this.messageService.add({ 
           severity: 'success', 
-          summary: 'Payment Collected', 
-          detail: `${this.installmentAmount} EGP installment collected.` 
+          summary: this.locale.text('PAYMENT_COLLECTED', "Payment Collected"),
+          detail: this.locale.text('INSTALLMENT_COLLECTED_DETAIL', "{{amount}} EGP installment collected.", { amount: this.installmentAmount.toLocaleString(this.locale.language) })
         });
       } catch (error: any) {
-        this.messageService.add({ severity: 'error', summary: 'Payment Error', detail: 'Failed to process installment' });
+        this.messageService.add({ severity: 'error', summary: this.locale.text('PAYMENT_ERROR', "Payment Error"), detail: this.locale.text('FAILED_TO_PROCESS_INSTALLMENT', "Failed to process installment") });
         return; // Halt check-in on payment failure
       }
     }
@@ -694,41 +1018,69 @@ export class BookingsComponent {
   }
 
   /**
-   * Check-out patient action with payment gate error handling
+   * Check-out Gate:
+   * Strictly checks BillingService.getInvoiceBySessionId(sessionId) and halts
+   * if the invoice status is not 'Paid' or 'Waived'.
    */
-  async checkoutSession(sessionId: string) {
+  async checkoutSession(sessionId: number | undefined) {
+    if (sessionId === undefined) return;
     try {
-      await this.clinicState.checkOutPatient(sessionId);
-      this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Patient checked out' });
+      const sessionInvoice = this.billingService.getInvoiceBySessionId(sessionId);
+      if (sessionInvoice) {
+        const statusStr = this.billingService.mapStatusToString(sessionInvoice.status);
+        if (statusStr !== 'Paid' && statusStr !== 'Waived') {
+          throw new Error(
+            this.locale.text('CANNOT_CHECK_OUT_THE_INVOICE_FOR_THIS_SESSION_IS_PENDING_PLEASE_PROCESS_PAYMENT_FIRST_', 'Cannot check out: The invoice for this session is pending. Please process payment first.')
+          );
+        }
+      }
+
+      await new Promise<void>((resolve, reject) => {
+        this.appointmentService.updateStatus(sessionId, 'Completed').subscribe({
+          next: () => resolve(),
+          error: (e) => reject(e)
+        });
+      });
+      this.messageService.add({ severity: 'success', summary: this.locale.text('SUCCESS', "Success"), detail: this.locale.text('PATIENT_CHECKED_OUT', "Patient checked out") });
     } catch (error: any) {
       this.messageService.add({
         severity: 'error',
-        summary: 'Check-out Blocked',
-        detail: error.message
+        summary: this.locale.text('CHECK_OUT_BLOCKED', "Check-out Blocked"),
+        detail: this.locale.error(error, 'FAILED_TO_CHECK_OUT', "Failed to check out")
       });
     }
   }
 
   // Alias for backward compatibility
-  async checkOutPatient(sessionId: string) {
+  async checkOutPatient(sessionId: number) {
     return this.checkoutSession(sessionId);
   }
 
-  markPatientAbsent(sessionId: string) {
+  markPatientAbsent(sessionId: number | undefined) {
+    if (sessionId === undefined) return;
     try {
-      this.clinicState.markPatientAbsent(sessionId);
-      this.messageService.add({
-        severity: 'success',
-        summary: 'Success',
-        detail: 'Patient marked as absent and session cancelled.'
+      this.appointmentService.updateStatus(sessionId, 'Cancelled').subscribe({
+        next: () => {
+          this.messageService.add({
+            severity: 'success',
+            summary: this.locale.text('SUCCESS', "Success"),
+            detail: this.locale.text('PATIENT_MARKED_AS_ABSENT_AND_SESSION_CANCELLED_', "Patient marked as absent and session cancelled.")
+          });
+        },
+        error: (error) => {
+          this.messageService.add({
+            severity: 'error',
+            summary: this.locale.text('ERROR', "Error"),
+            detail: this.locale.error(error, 'FAILED_TO_MARK_PATIENT_ABSENT_', "Failed to mark patient absent.")
+          });
+        }
       });
     } catch (error: any) {
       this.messageService.add({
         severity: 'error',
-        summary: 'Error',
-        detail: error.message || 'Failed to mark patient absent.'
+        summary: this.locale.text('ERROR', "Error"),
+        detail: this.locale.error(error, 'FAILED_TO_MARK_PATIENT_ABSENT_', "Failed to mark patient absent.")
       });
     }
   }
 }
-

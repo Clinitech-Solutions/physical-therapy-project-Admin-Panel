@@ -1,4 +1,4 @@
-<div class="rooms-container fade-in">
+<div class="receptionist-page rooms-container fade-in">
   <!-- Top Action Bar -->
   <div class="d-flex justify-content-between align-items-center mb-3">
     <div>
@@ -10,16 +10,24 @@
     </button>
   </div>
 
+  @if (rooms().length === 0) {
+    <div class="card p-4 text-center" role="status">
+      <i class="bi bi-door-open fs-2 text-secondary mb-3" aria-hidden="true"></i>
+      <h5>{{ 'RECEPTIONIST.ROOMS.EMPTY_TITLE' | translate }}</h5>
+      <p class="text-secondary mb-0">{{ 'RECEPTIONIST.ROOMS.EMPTY_DESCRIPTION' | translate }}</p>
+    </div>
+  }
+
   <div class="rooms-grid">
-    <div *ngFor="let room of clinicState.rooms()" class="room-card" [ngClass]="room.status.toLowerCase()">
+    <div *ngFor="let room of rooms()" class="room-card" [ngClass]="getRoomStatusCssClass(room)">
 
       <!-- Top Section -->
       <div class="room-header">
         <div class="room-title" style="display: flex; align-items: center; gap: 1rem;">
-          <span class="font-bold text-lg">{{ room.displayName }}</span>
+          <span class="font-bold text-lg">{{ room.displayName || ('RECEPTIONIST.ROOMS.UNNAMED_ROOM' | translate) }}</span>
         </div>
         <!-- Animated Pulse Status -->
-        <div class="status-indicator-wrapper" [title]="'RECEPTIONIST.' + room.status.toUpperCase() | translate">
+        <div class="status-indicator-wrapper" [title]="getRoomStatusLabel(room) | translate">
           <div class="status-indicator"></div>
           <div class="status-pulse" *ngIf="room.status !== 'Maintenance'"></div>
         </div>
@@ -38,7 +46,7 @@
         <ng-template #noDoctor>
           <div class="doctor-info empty">
             <div class="doctor-details">
-              <span class="text-sm text-gray-400 italic">{{ 'RECEPTIONIST.NO_DOCTOR' | translate }}</span>
+              <span class="text-sm text-secondary italic">{{ 'RECEPTIONIST.NO_DOCTOR' | translate }}</span>
             </div>
           </div>
         </ng-template>
@@ -48,7 +56,7 @@
       <div class="room-footer">
         <div class="maintenance-toggle">
           <span class="text-sm font-medium">{{ 'RECEPTIONIST.MAINTENANCE' | translate }}</span>
-          <p-toggleSwitch [ngModel]="room.status === 'Maintenance'"
+          <p-toggleSwitch [ariaLabel]="'RECEPTIONIST.MAINTENANCE' | translate" [ngModel]="room.status === 'Maintenance'"
             (onChange)="clinicState.toggleRoomMaintenance(room.id)">
           </p-toggleSwitch>
         </div>
@@ -60,14 +68,14 @@
 
 <!-- Add Room Modal (Standard Clean Modal) -->
 <p-dialog 
-  [(visible)]="isAddRoomModalOpen" 
+  [visible]="isAddRoomModalOpen()" (visibleChange)="isAddRoomModalOpen.set($event)"
   [modal]="true" 
   appendTo="body"
   [draggable]="false" 
   [resizable]="false" 
   [closable]="true" 
   [showHeader]="true" 
-  styleClass="clean-modal"
+  styleClass="clean-modal receptionist-modal"
   [style]="{ width: '450px' }"
   [header]="'RECEPTIONIST.ADD_ROOM' | translate">
 
@@ -80,7 +88,7 @@
         type="text" 
         class="form-control" 
         [(ngModel)]="newRoom.displayName" 
-        placeholder="e.g. Therapy Room 4">
+        [placeholder]="'RECEPTIONIST.UI.E_G_THERAPY_ROOM_4' | translate">
     </div>
 
     <div class="modal-form-grid">

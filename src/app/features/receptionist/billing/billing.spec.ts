@@ -1,66 +1,133 @@
 import '@angular/compiler';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Injector, runInInjectionContext } from '@angular/core';
+import { of } from 'rxjs';
 import { BillingComponent } from './billing';
-import { ClinicStateService } from '../../../core/services/state/clinic-state.service';
+import { BillingService, Invoice } from '../../../core/services/billing.service';
+import { PatientService } from '../../../core/services/patient.service';
+import { AppointmentService } from '../../../core/services/appointment.service';
 import { MessageService } from 'primeng/api';
-import { Invoice } from '../../../core/models/invoice.model';
-import { SessionType } from '../../../core/models/session.model';
 
-describe('Receptionist BillingComponent Reactive Signals & Payment Suite', () => {
+describe('Receptionist BillingComponent & BillingService Suite', () => {
   let billing: BillingComponent;
-  let clinicState: ClinicStateService;
+  let billingService: BillingService;
   let messageService: MessageService;
   let toastMessages: any[] = [];
+  const todayIso = new Date().toISOString();
 
-  beforeEach(async () => {
-    clinicState = new ClinicStateService();
-    messageService = new MessageService();
+  const initialInvoices: Invoice[] = [
+    {
+      id: 1001,
+      appointmentId: 1,
+      patientId: 1,
+      type: 1, // Session
+      totalAmount: 500,
+      insuranceAmount: 0,
+      patientAmount: 500,
+      paidAmount: 0,
+      remainingBalance: 500,
+      status: 0, // Pending
+      createdAt: todayIso
+    },
+    {
+      id: 1002,
+      appointmentId: 2,
+      patientId: 2,
+      type: 0, // Assessment
+      totalAmount: 1000,
+      insuranceAmount: 800,
+      patientAmount: 200,
+      paidAmount: 0,
+      remainingBalance: 200,
+      status: 0, // Pending
+      createdAt: todayIso
+    }
+  ];
+
+  beforeEach(() => {
     toastMessages = [];
-    messageService.add = (msg: any) => { toastMessages.push(msg); };
-
-    // Wait for mock async initialization
-    await new Promise(resolve => setTimeout(resolve, 600));
+    messageService = new MessageService();
+    messageService.add = (msg: any) => {
+      toastMessages.push(msg);
+    };
 
     const injector = Injector.create({
       providers: [
-        { provide: ClinicStateService, useValue: clinicState },
+        { provide: BillingService, useFactory: () => new BillingService(), deps: [] },
+        { provide: PatientService, useValue: { patients: () => [], getPatients: () => of([]) } },
+        { provide: AppointmentService, useValue: { appointments: () => [], getAppointments: () => {} } },
         { provide: MessageService, useValue: messageService }
       ]
     });
 
+    billingService = injector.get(BillingService);
+    billingService.invoices.set(
+      initialInvoices.map((inv) => billingService.normalizeInvoice(inv))
+    );
+
+    // Mock recordPayment to update the target invoice in the signal
+    billingService.recordPayment = (payload) => {
+      const methodLabel = billingService.mapMethodToString(payload.method);
+      billingService.invoices.update((list) =>
+        list.map((inv) => {
+          if (inv.id !== payload.invoiceId) return inv;
+          const newPaid = (inv.paidAmount || 0) + payload.amount;
+          const newRem = Math.max(0, inv.patientAmount - newPaid);
+          return {
+            ...inv,
+            paidAmount: newPaid,
+            remainingBalance: newRem,
+            status: newRem <= 0 ? 'Paid' : 'Partial',
+            paymentMethod: methodLabel
+          };
+        })
+      );
+      return of({
+        id: 1,
+        invoiceId: payload.invoiceId,
+        amount: payload.amount,
+        method: methodLabel
+      });
+    };
+
     billing = runInInjectionContext(injector, () => new BillingComponent());
   });
 
-  it('should create BillingComponent and inject ClinicStateService and MessageService', () => {
+  it('should create BillingComponent and inject BillingService and MessageService', () => {
     expect(billing).toBeDefined();
-    expect(billing.clinicState).toBe(clinicState);
+    expect(billing.billingService).toBe(billingService);
     expect(billing.messageService).toBe(messageService);
   });
 
-  describe('1. Reactive Computed Signal: invoices', () => {
-    it('should reactively return all invoices from clinicState', () => {
-      const stateInvoices = clinicState.invoices();
+  describe('1. Reactive Computed Signal: invoices & Enum Mappings', () => {
+    it('should reactively return all normalized invoices from BillingService', () => {
+      const stateInvoices = billingService.invoices();
       expect(billing.invoices()).toEqual(stateInvoices);
-      expect(billing.invoices().length).toBe(stateInvoices.length);
+      expect(billing.invoices().length).toBe(2);
+      expect(billingService.mapTypeToString(1)).toBe('Session');
+      expect(billingService.mapTypeToString(0)).toBe('Assessment');
+      expect(billingService.mapStatusToString(0)).toBe('Pending');
+      expect(billingService.mapStatusToString(1)).toBe('Paid');
     });
 
-    it('should update reactively when a new invoice is added to state', () => {
+    it('should update reactively when a new invoice is added to BillingService', () => {
       const initialCount = billing.invoices().length;
-      const newInv: Invoice = {
-        id: 'INV-NEW-99',
-        patientId: '3',
-        amount: 800,
-        currency: 'EGP',
-        status: 'Pending',
-        type: 'Session',
-        createdAt: new Date().toISOString()
-      };
+      const newInv: Invoice = billingService.normalizeInvoice({
+        id: 1099,
+        appointmentId: 99,
+        patientId: 3,
+        type: 1,
+        totalAmount: 800,
+        insuranceAmount: 0,
+        patientAmount: 800,
+        status: 0,
+        createdAt: todayIso
+      });
 
-      (clinicState as any).invoicesSig.update((list: Invoice[]) => [...list, newInv]);
+      billingService.invoices.update((list) => [...list, newInv]);
 
       expect(billing.invoices().length).toBe(initialCount + 1);
-      expect(billing.invoices().find(i => i.id === 'INV-NEW-99')).toBeDefined();
+      expect(billing.invoices().find((i) => i.id === 1099)).toBeDefined();
     });
   });
 
@@ -69,44 +136,37 @@ describe('Receptionist BillingComponent Reactive Signals & Payment Suite', () =>
       expect(billing.showPaymentModal).toBe(false);
       expect(billing.selectedInvoiceId).toBeNull();
 
-      billing.payInvoice('INV-1002');
+      billing.payInvoice(1002);
 
       expect(billing.showPaymentModal).toBe(true);
-      expect(billing.selectedInvoiceId).toBe('INV-1002');
+      expect(billing.selectedInvoiceId).toBe(1002);
+      expect(billing.amountToCollect).toBe(200); // patientAmount
       expect(billing.selectedPaymentMethod).toBe('Cash');
       expect(billing.paymentMethods).toEqual(['Cash', 'Credit Card', 'E-Wallet', 'InstaPay']);
     });
 
-    it('should confirm payment with chosen payment method, close modal, update status to Paid, and show toast', async () => {
-      const pendingInvoice = billing.invoices().find(i => i.status === 'Pending');
+    it('should confirm payment with chosen payment method via BillingService.recordPayment, close modal, update status to Paid, and show toast', async () => {
+      const pendingInvoice = billing
+        .invoices()
+        .find((i) => billingService.mapStatusToString(i.status) === 'Pending');
       expect(pendingInvoice).toBeDefined();
 
       const invoiceId = pendingInvoice!.id;
 
-      // Open modal
       billing.openPaymentModal(invoiceId);
       expect(billing.showPaymentModal).toBe(true);
 
-      // Select 'Credit Card' method
       billing.selectedPaymentMethod = 'Credit Card';
 
-      // Confirm payment
       await billing.confirmPayment();
 
-      // Modal is closed
       expect(billing.showPaymentModal).toBe(false);
       expect(billing.selectedInvoiceId).toBeNull();
 
-      // Verify invoice in state has status 'Paid' and paymentMethod 'Credit Card'
-      const updatedInvoice = clinicState.invoices().find(i => i.id === invoiceId);
-      expect(updatedInvoice?.status).toBe('Paid');
+      const updatedInvoice = billingService.findInvoiceById(invoiceId);
+      expect(billingService.mapStatusToString(updatedInvoice?.status)).toBe('Paid');
       expect(updatedInvoice?.paymentMethod).toBe('Credit Card');
 
-      // Verify reactive signal in component updated
-      const compInvoice = billing.invoices().find(i => i.id === invoiceId);
-      expect(compInvoice?.status).toBe('Paid');
-
-      // Verify success toast
       expect(toastMessages.length).toBeGreaterThan(0);
       const lastToast = toastMessages[toastMessages.length - 1];
       expect(lastToast.severity).toBe('success');
@@ -114,125 +174,48 @@ describe('Receptionist BillingComponent Reactive Signals & Payment Suite', () =>
     });
   });
 
-  describe('3. Auto-Invoice Generation on Booking (ClinicStateService)', () => {
-    it('should automatically generate a new pending invoice when addSession is called for regular patient', async () => {
-      const initialInvoiceCount = clinicState.invoices().length;
-      const openRoom = clinicState.availableRooms()[0];
-
-      // Patient 4 is Laila Tarek (Cash, no prepaid package)
-      await clinicState.addSession({
-        patientId: '4',
-        doctorId: 'doc_1',
-        roomId: openRoom.id,
-        scheduledAt: new Date().toISOString(),
-        type: 'Session' as SessionType
-      });
-
-      expect(clinicState.invoices().length).toBe(initialInvoiceCount + 1);
-      const latestInvoice = clinicState.invoices()[0];
-      expect(latestInvoice.patientId).toBe('4');
-      expect(latestInvoice.sessionId).toBeTruthy();
-      expect(latestInvoice.status).toBe('Pending');
-      expect(latestInvoice.amount).toBe(500); // Default amount
-      expect(latestInvoice.currency).toBe('EGP');
-      expect(latestInvoice.type).toBe('Session');
-      expect(latestInvoice.id.startsWith('INV-')).toBe(true);
-    });
-
-    it('should automatically generate covered Paid invoice for Package patient', async () => {
-      const initialInvoiceCount = clinicState.invoices().length;
-      const openRoom = clinicState.availableRooms()[0];
-
-      // Patient 1 is Ahmed Fathy (Package)
-      await clinicState.addSession({
-        patientId: '1',
-        doctorId: 'doc_2',
-        roomId: openRoom.id,
-        scheduledAt: new Date().toISOString(),
-        type: 'Session' as SessionType
-      });
-
-      expect(clinicState.invoices().length).toBe(initialInvoiceCount + 1);
-      const latestInvoice = clinicState.invoices()[0];
-      expect(latestInvoice.patientId).toBe('1');
-      expect(latestInvoice.sessionId).toBeTruthy();
-      expect(latestInvoice.status).toBe('Paid');
-      expect(latestInvoice.amount).toBe(0); // Covered by package
-    });
-
-    it('should automatically generate covered Paid invoice for upfront copay insurance patient', async () => {
-      const initialInvoiceCount = clinicState.invoices().length;
-      const openRoom = clinicState.availableRooms()[0];
-
-      // Patient 2 is Mona Zaki (Insurance, Upfront-Copay)
-      await clinicState.addSession({
-        patientId: '2',
-        doctorId: 'doc_1',
-        roomId: openRoom.id,
-        scheduledAt: new Date().toISOString(),
-        type: 'Session' as SessionType
-      });
-
-      expect(clinicState.invoices().length).toBe(initialInvoiceCount + 1);
-      const latestInvoice = clinicState.invoices()[0];
-      expect(latestInvoice.patientId).toBe('2');
-      expect(latestInvoice.sessionId).toBeTruthy();
-      expect(latestInvoice.status).toBe('Paid');
-      expect(latestInvoice.amount).toBe(0); // Covered by upfront copay
-    });
-
-    it('should generate Waived invoice with 0 amount for free assessment', async () => {
-      const openRoom = clinicState.availableRooms()[0];
-
-      // Patient 5 is Youssef Ali (New patient -> Assessment)
-      await clinicState.addSession({
-        patientId: '5',
-        doctorId: 'doc_2',
-        roomId: openRoom.id,
-        scheduledAt: new Date().toISOString(),
-        type: 'Assessment' as SessionType,
-        isFreeAssessment: true
-      });
-
-      const latestInvoice = clinicState.invoices()[0];
-      expect(latestInvoice.status).toBe('Waived');
-      expect(latestInvoice.amount).toBe(0);
-    });
-  });
-
-  describe('4. Status Tag Severity Helper: getStatusSeverity', () => {
-    it('should map Paid to success (Green)', () => {
+  describe('3. Status Tag Severity Helper: getStatusSeverity', () => {
+    it('should map Paid (or 1) to success (Green)', () => {
       expect(billing.getStatusSeverity('Paid')).toBe('success');
+      expect(billing.getStatusSeverity(1)).toBe('success');
     });
 
-    it('should map Pending to warn (Orange/Warning)', () => {
+    it('should map Pending (or 0) to warn (Orange/Warning)', () => {
       expect(billing.getStatusSeverity('Pending')).toBe('warn');
+      expect(billing.getStatusSeverity(0)).toBe('warn');
     });
 
-    it('should map Partial to info (Blue)', () => {
+    it('should map Partial (or 2) to info (Blue)', () => {
       expect(billing.getStatusSeverity('Partial')).toBe('info');
+      expect(billing.getStatusSeverity(2)).toBe('info');
     });
 
-    it('should map unknown status to secondary', () => {
+    it('should map Waived (or unknown status) to secondary', () => {
+      expect(billing.getStatusSeverity('Waived')).toBe('secondary');
       expect(billing.getStatusSeverity('Unknown')).toBe('secondary');
     });
   });
 
-  describe('5. Dynamic Revenue & KPI Computed Signals', () => {
-    it('should compute totalRevenue as sum of all Paid invoices', () => {
-      const expectedRevenue = billing.invoices()
-        .filter(i => i.status === 'Paid')
-        .reduce((sum, i) => sum + i.amount, 0);
-
-      expect(billing.totalRevenue()).toBe(expectedRevenue);
+  describe('4. Dynamic Revenue & KPI Computed Signals (totalAmount & patientAmount)', () => {
+    it('should compute expectedTodayRevenue and pendingPaymentsTotal using totalAmount', () => {
+      expect(billing.expectedTodayRevenue()).toBe(1500);
+      expect(billing.pendingPaymentsTotal()).toBe(1500);
     });
 
-    it('should compute pendingPaymentsTotal as sum of all Pending invoices', () => {
-      const expectedPending = billing.invoices()
-        .filter(i => i.status === 'Pending')
-        .reduce((sum, i) => sum + i.amount, 0);
+    it('should compute collectedTodayRevenue and totalRevenue when invoice is Paid', async () => {
+      billing.openPaymentModal(1001);
+      await billing.confirmPayment();
 
-      expect(billing.pendingPaymentsTotal()).toBe(expectedPending);
+      expect(billing.collectedTodayRevenue()).toBe(500);
+      expect(billing.totalRevenue()).toBe(500);
+      expect(billing.cashCollectedToday()).toBe(500);
+    });
+
+    it('should filter insuranceClaims where insuranceAmount > 0', () => {
+      const claims = billing.insuranceClaims();
+      expect(claims.length).toBe(1);
+      expect(claims[0].id).toBe(1002);
+      expect(claims[0].insuranceAmount).toBe(800);
     });
   });
 });

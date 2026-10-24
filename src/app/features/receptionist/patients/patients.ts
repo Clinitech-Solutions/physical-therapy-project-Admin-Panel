@@ -1,9 +1,14 @@
-import { Component, signal, computed, inject } from "@angular/core";
+import { ReceptionistLocale, ReceptionistTextPipe } from '../../../shared/receptionist-locale';
+import { Component, signal, computed, inject, OnInit } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { TranslateModule } from '@ngx-translate/core';
 import { FormsModule, ReactiveFormsModule, FormBuilder } from '@angular/forms';
 
 import { ClinicStateService } from '../../../core/services/state/clinic-state.service';
+import { InsuranceService } from '../../../core/services/insurance.service';
+import { PatientService } from '../../../core/services/patient.service';
+import { InsuranceDocumentService } from '../../../core/services/insurance-document.service';
+import { BillingService } from '../../../core/services/billing.service';
 import { Patient, NewPatient, PaymentMethod, InsuranceDetails } from '../../../core/models/patient.model';
 import { MessageService, SharedModule } from 'primeng/api';
 import { DialogModule } from 'primeng/dialog';
@@ -14,13 +19,33 @@ import { PatientProfileComponent } from '../../../shared/components/patient-prof
 @Component({
   selector: "app-receptionist-patients",
   standalone: true,
-  imports: [CommonModule, TranslateModule, FormsModule, ReactiveFormsModule, DialogModule, ButtonModule, SharedModule, PatientProfileComponent],
+  imports: [ReceptionistTextPipe, CommonModule, TranslateModule, FormsModule, ReactiveFormsModule, DialogModule, ButtonModule, SharedModule, PatientProfileComponent],
   templateUrl: "./patients.html",
+  styleUrl: "./patients.css",
 })
-export class PatientsComponent {
+export class PatientsComponent implements OnInit {
+  readonly locale = new ReceptionistLocale();
   clinicState = inject(ClinicStateService);
   messageService = inject(MessageService);
+  private insuranceService = inject(InsuranceService);
+  private patientService = inject(PatientService);
+  private insuranceDocService = inject(InsuranceDocumentService);
+  private billingService = inject(BillingService, { optional: true });
   private fb = inject(FormBuilder);
+
+  selectedFiles: File[] = [];
+
+  onFilesSelected(event: any) {
+    if (event.target.files) {
+      this.selectedFiles = Array.from(event.target.files);
+    }
+  }
+
+  ngOnInit() {
+    this.insuranceService.getCompanies();
+    this.patientService.getPatients().subscribe();
+    this.billingService?.getInvoices();
+  }
 
   // Main patientForm builder (Reactive Forms) — basic info + insurance only
   patientForm = this.fb.group({
@@ -32,6 +57,7 @@ export class PatientsComponent {
     address: [''],
     occupation: [''],
     paymentType: ['Cash'],
+    insuranceCompanyId: [null],
     insuranceCompany: ['Bupa'],
     insuranceDetails: this.fb.group({
       company: ['Bupa'],
@@ -54,10 +80,10 @@ export class PatientsComponent {
   filterCompany = signal<string>('All');
   
   // Available Insurance Companies
-  insuranceCompanies = ['Bupa', 'AXA', 'MetLife', 'Allianz'];
+  insuranceCompanies = this.insuranceService.companies;
 
   // Base Data
-  patients = this.clinicState.patients;
+  patients = this.patientService.patients;
   isLoading = this.clinicState.isLoading;
 
   // Computed Filtered Data
@@ -194,30 +220,75 @@ export class PatientsComponent {
     this.createProfile();
   }
 
-  async createProfile() {
+  createProfile() {
     if (!this.newPatient.nameEn) {
-      this.messageService.add({ severity: 'error', summary: 'Validation Error', detail: 'Patient English name is required' });
+      this.messageService.add({ severity: 'error', summary: this.locale.text('VALIDATION_ERROR', "Validation Error"), detail: this.locale.text('PATIENT_ENGLISH_NAME_IS_REQUIRED', "Patient English name is required") });
       return;
     }
     if (this.newPatient.paymentType === 'Insurance' && this.newPatient.insuranceDetails) {
       this.newPatient.insuranceCompany = this.newPatient.insuranceDetails.company;
     }
-    // Financial Agreement is handled in the Booking screen (Treatment Plan mode), not here
-    await this.clinicState.createPatient(this.newPatient);
-    this.closeDrawer();
-    this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Patient profile created' });
+
+    this.patientService.addPatient(this.newPatient).subscribe({
+      next: (res) => {
+        const newPatientId = res?.id || res?.data?.id || (res?.items && res.items[0]?.id) || Date.now(); // Fallback for mock backend
+        if (this.newPatient.paymentType === 'Insurance' && this.selectedFiles.length > 0) {
+          this.insuranceDocService.uploadDocuments(newPatientId, this.selectedFiles).subscribe({
+            next: () => {
+              this.messageService.add({ severity: 'success', summary: this.locale.text('SUCCESS', "Success"), detail: this.locale.text('PATIENT_AND_DOCUMENT_CREATED', "Patient and document created") });
+              this.closeDrawer();
+              this.patientService.getPatients().subscribe();
+            },
+            error: (err) => {
+              this.messageService.add({ severity: 'error', summary: this.locale.text('ERROR', "Error"), detail: this.locale.text('PATIENT_CREATED_BUT_DOCUMENT_UPLOAD_FAILED', "Patient created but document upload failed") });
+              console.error(err);
+            }
+          });
+        } else {
+          this.messageService.add({ severity: 'success', summary: this.locale.text('SUCCESS', "Success"), detail: this.locale.text('PATIENT_PROFILE_CREATED', "Patient profile created") });
+          this.closeDrawer();
+          this.patientService.getPatients().subscribe();
+        }
+      },
+      error: (err) => {
+        this.messageService.add({ severity: 'error', summary: this.locale.text('ERROR', "Error"), detail: this.locale.text('FAILED_TO_CREATE_PATIENT', "Failed to create patient") });
+        console.error(err);
+      }
+    });
   }
 
-  async updateProfile() {
+  updateProfile() {
     const p = this.selectedPatient();
     if (p) {
       if (this.editPatientForm.paymentType !== 'Insurance') {
         this.editPatientForm.insuranceDetails = undefined;
       }
-      await this.clinicState.updatePatient(p.id, this.editPatientForm);
-      this.closeEditDrawer();
-      this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Patient profile updated' });
+      this.patientService.updatePatient(parseInt(p.id, 10) || 0, this.editPatientForm).subscribe({
+        next: () => {
+          this.closeEditDrawer();
+          this.messageService.add({ severity: 'success', summary: this.locale.text('SUCCESS', "Success"), detail: this.locale.text('PATIENT_PROFILE_UPDATED', "Patient profile updated") });
+          this.patientService.getPatients().subscribe();
+        },
+        error: (err) => {
+          this.messageService.add({ severity: 'error', summary: this.locale.text('ERROR', "Error"), detail: this.locale.text('FAILED_TO_UPDATE_PATIENT', "Failed to update patient") });
+          console.error(err);
+        }
+      });
+    }
+  }
+
+  deletePatient(id: string) {
+    if(confirm(this.locale.text('ARE_YOU_SURE_YOU_WANT_TO_DELETE_THIS_PATIENT_', 'Are you sure you want to delete this patient?'))) {
+      this.patientService.deletePatient(parseInt(id, 10) || 0).subscribe({
+        next: () => {
+          this.messageService.add({ severity: 'success', summary: this.locale.text('SUCCESS', "Success"), detail: this.locale.text('PATIENT_DELETED', "Patient deleted") });
+          this.patientService.getPatients().subscribe();
+        },
+        error: (err) => {
+          this.messageService.add({ severity: 'error', summary: this.locale.text('ERROR', "Error"), detail: this.locale.text('FAILED_TO_DELETE_PATIENT', "Failed to delete patient") });
+          console.error(err);
+        }
+      });
     }
   }
 }
-

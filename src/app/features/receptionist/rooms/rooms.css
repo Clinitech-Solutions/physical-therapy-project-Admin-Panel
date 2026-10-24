@@ -16,49 +16,34 @@
 }
 
 .room-card {
-  background: var(--surface-card, #ffffff);
-  border: 1px solid var(--surface-border, #e2e8f0);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 1.25rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-}
-
-:host-context(.p-dark) .room-card,
-html.p-dark .room-card,
-html.dark .room-card {
-  background: var(--surface-card, #1e293b);
-  border-color: var(--surface-border, #334155);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-card);
 }
 
 .room-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
-  border-color: var(--surface-border, #cbd5e1);
-}
-
-:host-context(.p-dark) .room-card:hover,
-html.p-dark .room-card:hover,
-html.dark .room-card:hover {
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
-  border-color: var(--surface-border, #475569);
+  box-shadow: var(--shadow-elevated);
+  border-color: var(--border-color-strong);
 }
 
 .room-card.available {
-  border-top: 4px solid #10b981;
+  border-top: 4px solid var(--color-success);
 }
 
 .room-card.occupied {
-  border-top: 4px solid #f59e0b;
+  border-top: 4px solid var(--color-warning);
 }
 
 .room-card.maintenance {
-  border-top: 4px solid #64748b;
-  opacity: 0.85;
+  border-top: 4px solid var(--color-neutral);
 }
 
 .room-header {
@@ -68,13 +53,7 @@ html.dark .room-card:hover {
 }
 
 .room-title {
-  color: var(--text-color, #1e293b);
-}
-
-:host-context(.p-dark) .room-title,
-html.p-dark .room-title,
-html.dark .room-title {
-  color: var(--text-color, #f8fafc);
+  color: var(--text-primary);
 }
 
 .status-indicator-wrapper {
@@ -95,16 +74,16 @@ html.dark .room-title {
 
 .room-card.available .status-indicator,
 .room-card.available .status-pulse {
-  background: #10b981;
+  background: var(--color-success);
 }
 
 .room-card.occupied .status-indicator,
 .room-card.occupied .status-pulse {
-  background: #f59e0b;
+  background: var(--color-warning);
 }
 
 .room-card.maintenance .status-indicator {
-  background: #64748b;
+  background: var(--color-neutral);
 }
 
 .status-pulse {
@@ -120,15 +99,9 @@ html.dark .room-title {
 
 .room-divider {
   height: 1px;
-  background: var(--surface-border, #e2e8f0);
+  background: var(--border-color);
   width: 100%;
   margin: 0.25rem 0;
-}
-
-:host-context(.p-dark) .room-divider,
-html.p-dark .room-divider,
-html.dark .room-divider {
-  background: var(--surface-border, #334155);
 }
 
 .room-body {
@@ -145,17 +118,11 @@ html.dark .room-divider {
   flex-direction: row;
   align-items: center;
   gap: 0.5rem;
-  color: var(--text-color, #1e293b);
-}
-
-:host-context(.p-dark) .doctor-details,
-html.p-dark .doctor-details,
-html.dark .doctor-details {
-  color: var(--text-color, #f8fafc);
+  color: var(--text-primary);
 }
 
 .doctor-details .label {
-  color: var(--text-color-secondary, #64748b);
+  color: var(--text-secondary);
   font-size: 0.85rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -171,19 +138,13 @@ html.dark .doctor-details {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  color: var(--text-color-secondary, #475569);
-}
-
-:host-context(.p-dark) .maintenance-toggle,
-html.p-dark .maintenance-toggle,
-html.dark .maintenance-toggle {
-  color: var(--text-color-secondary, #94a3b8);
+  color: var(--text-secondary);
 }
 
 .room-icon-placeholder {
   width: 36px;
   height: 36px;
-  background-color: #f1f5f9;
+  background-color: var(--bg-elevated);
   border-radius: 8px;
   flex-shrink: 0;
 }
@@ -191,15 +152,16 @@ html.dark .maintenance-toggle {
 .doctor-avatar-placeholder {
   width: 40px;
   height: 40px;
-  background-color: #f1f5f9;
+  background-color: var(--bg-elevated);
   border-radius: 50%;
   flex-shrink: 0;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color);
 }
 
 .minimal-select {
   appearance: none;
   background-color: transparent;
+  color: var(--text-primary);
   border: none;
   outline: none;
   cursor: pointer;
@@ -210,19 +172,14 @@ html.dark .maintenance-toggle {
   background-position: right center;
   background-repeat: no-repeat;
   background-size: 1.2em 1.2em;
-  padding-right: 1.5em; 
+  padding-right: 1.5em;
 }
 
 .minimal-select:focus {
-  color: var(--primary-color, #3b82f6);
+  color: var(--color-info);
 }
 
-:host-context(.p-dark) .room-icon-placeholder,
-html.p-dark .room-icon-placeholder,
-html.dark .room-icon-placeholder,
-:host-context(.p-dark) .doctor-avatar-placeholder,
-html.p-dark .doctor-avatar-placeholder,
-html.dark .doctor-avatar-placeholder {
-  background-color: #1e293b;
-  border-color: #334155;
+.minimal-select option {
+  background: var(--bg-card);
+  color: var(--text-primary);
 }

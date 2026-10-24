@@ -1,23 +1,26 @@
-import { Component, inject } from "@angular/core";
+import { ReceptionistLocale } from '../../../shared/receptionist-locale';
+import { Component, inject, OnInit, computed } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { TranslateModule } from '@ngx-translate/core';
 import { FormsModule } from '@angular/forms';
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 import { MessageService } from 'primeng/api';
+import { InsuranceService } from "../../../core/services/insurance.service";
 
 export interface InsuranceProvider {
-  id: string;
+  id: string | number;
   name: string;
-  brandName: string;
+  brandName?: string;
   code: string;
   logoIcon: string;
   themeColor: string;
-  portalUrl: string;
-  taglineKey: string;
+  portalUrl: string | null;
+  taglineKey?: string;
   hotline: string;
-  networkTypeKey: string;
-  featuresKeys: string[];
+  networkTypeKey?: string;
+  featuresKeys?: string[];
+  isActive?: boolean;
 }
 
 @Component({
@@ -26,66 +29,30 @@ export interface InsuranceProvider {
   imports: [CommonModule, TranslateModule, FormsModule, CardModule, ButtonModule],
   templateUrl: "./insurance.html"
 })
-export class InsuranceComponent {
+export class InsuranceComponent implements OnInit {
+  readonly locale = new ReceptionistLocale();
   messageService = inject(MessageService);
+  private insuranceService = inject(InsuranceService);
 
-  providers: InsuranceProvider[] = [
-    {
-      id: 'bupa',
-      name: 'Bupa',
-      brandName: 'Bupa Egypt Insurance',
-      code: 'BUPA-EG',
-      logoIcon: 'bi-shield-shaded',
-      themeColor: '#0079C8',
-      portalUrl: 'https://www.bupa.com.eg/',
-      taglineKey: 'RECEPTIONIST.PORTAL_BUPA_DESC',
-      hotline: '16111',
-      networkTypeKey: 'RECEPTIONIST.NETWORK_GOLD_CLASSIC',
-      featuresKeys: ['RECEPTIONIST.FEATURE_PREAUTH', 'RECEPTIONIST.FEATURE_COPAY_CHECK', 'RECEPTIONIST.FEATURE_CLAIMS']
-    },
-    {
-      id: 'axa',
-      name: 'AXA',
-      brandName: 'AXA Healthcare OneHealth',
-      code: 'AXA-EGY',
-      logoIcon: 'bi-heart-pulse-fill',
-      themeColor: '#00008F',
-      portalUrl: 'https://axa.com.eg/',
-      taglineKey: 'RECEPTIONIST.PORTAL_AXA_DESC',
-      hotline: '16363',
-      networkTypeKey: 'RECEPTIONIST.NETWORK_SMART_CARE',
-      featuresKeys: ['RECEPTIONIST.FEATURE_PT_COVERAGE', 'RECEPTIONIST.FEATURE_ELECTRONIC_VOUCHERS', 'RECEPTIONIST.FEATURE_APPROVAL_TRACKER']
-    },
-    {
-      id: 'metlife',
-      name: 'MetLife',
-      brandName: 'MetLife Alico',
-      code: 'METLIFE-MEA',
-      logoIcon: 'bi-hospital-fill',
-      themeColor: '#0090DA',
-      portalUrl: 'https://www.metlife.com.eg/',
-      taglineKey: 'RECEPTIONIST.PORTAL_METLIFE_DESC',
-      hotline: '19798',
-      networkTypeKey: 'RECEPTIONIST.NETWORK_EXECUTIVE',
-      featuresKeys: ['RECEPTIONIST.FEATURE_CORP_ELIGIBILITY', 'RECEPTIONIST.FEATURE_DIRECT_SETTLEMENT', 'RECEPTIONIST.FEATURE_RAPID_AUTH']
-    },
-    {
-      id: 'allianz',
-      name: 'Allianz',
-      brandName: 'Allianz Care Egypt',
-      code: 'ALLIANZ-EG',
-      logoIcon: 'bi-award-fill',
-      themeColor: '#003781',
-      portalUrl: 'https://www.allianz.com.eg/',
-      taglineKey: 'RECEPTIONIST.PORTAL_ALLIANZ_DESC',
-      hotline: '19909',
-      networkTypeKey: 'RECEPTIONIST.NETWORK_COMPREHENSIVE',
-      featuresKeys: ['RECEPTIONIST.FEATURE_GLOBAL_CARD', 'RECEPTIONIST.FEATURE_BALANCE_CHECK', 'RECEPTIONIST.FEATURE_PAPERLESS']
+  ngOnInit() {
+    this.insuranceService.getCompanies();
+  }
+
+  providers = computed(() => {
+    return this.insuranceService.companies().map((c, index) => ({
+      ...c,
+      id: c.id ?? index,
+      code: `INS-${(c.id || index).toString().padStart(3, '0')}`,
+      hotline: c.hotline || this.locale.text('NOT_PROVIDED', 'Not provided'),
+      themeColor: index % 2 === 0 ? 'var(--bs-info-bg-subtle)' : 'var(--bs-primary-bg-subtle)',
+      logoIcon: 'bi-shield-check text-primary'
+    }));
+  });
+
+  openPortal(url: string | null) {
+    if (url) {
+      window.open(url, '_blank', 'noopener,noreferrer');
     }
-  ];
-
-  openPortal(url: string) {
-    window.open(url, '_blank');
   }
 }
 

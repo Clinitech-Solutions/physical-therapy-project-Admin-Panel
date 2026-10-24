@@ -1,4 +1,4 @@
-<div class="page-content fade-in">
+<div class="page-content receptionist-page fade-in">
   <div class="page-header">
     <div>
       <h2 class="font-clash">{{ 'RECEPTIONIST.DASHBOARD_TITLE' | translate }}</h2>
@@ -6,57 +6,59 @@
     </div>
   </div>
 
-  <!-- KPI Row (Bound Directly to State Signals) -->
+  <!-- KPI Row (Bound Strictly to receptionistService.stats()) -->
   <div class="kpi-row">
     <div class="stat-card border-start-teal">
       <div class="stat-label">{{ 'RECEPTIONIST.TODAYS_SESSIONS' | translate }}</div>
-      <div class="stat-value text-teal">{{ todaySessions().length }}</div>
+      <div class="stat-value text-teal">{{ receptionistService.stats()?.todaysSessions ?? 0 }}</div>
     </div>
     <div class="stat-card border-start-blue">
       <div class="stat-label">{{ 'RECEPTIONIST.COMPLETED_SESSIONS' | translate }}</div>
-      <div class="stat-value text-blue">{{ completedSessionsCount() }}</div>
+      <div class="stat-value text-blue">{{ receptionistService.stats()?.completedSessions ?? 0 }}</div>
     </div>
     <div class="stat-card border-start-amber">
       <div class="stat-label">{{ 'RECEPTIONIST.PENDING_PAYMENTS' | translate }}</div>
-      <div class="stat-value text-amber">{{ pendingPaymentsCount() }}</div>
+      <div class="stat-value text-amber">{{ receptionistService.stats()?.pendingPayments ?? 0 }}</div>
     </div>
     <div class="stat-card border-start-teal">
       <div class="stat-label">{{ 'RECEPTIONIST.TOTAL_TODAY_REVENUE' | translate }}</div>
       <div class="stat-value text-teal d-flex align-items-baseline gap-1" style="font-size: 1.15rem;">
-        <span>{{ collectedTodayRevenue() | currency:'EGP' }}</span>
-        <span class="text-secondary small fw-normal" style="font-size: 0.8rem;">/ {{ expectedTodayRevenue() |
+        <span>{{ (receptionistService.stats()?.collectedTodayRevenue ?? receptionistService.stats()?.todayRevenue ?? 0) | currency:'EGP':'symbol':'1.2-2':locale.language }}</span>
+        <span class="text-secondary small fw-normal" style="font-size: 0.8rem;">/ {{ (receptionistService.stats()?.expectedTodayRevenue ?? 0) |
           currency:'EGP' }}</span>
       </div>
       <div class="mt-2 w-100">
         <div class="d-flex justify-content-between align-items-center mb-1 text-muted" style="font-size: 0.7rem;">
           <span>{{ 'RECEPTIONIST.COLLECTION_RATE' | translate }}</span>
-          <span class="fw-semibold">{{ collectionRateToday() }}%</span>
+          <span class="fw-semibold">{{ receptionistService.stats()?.collectionRateToday ?? 0 }}%</span>
         </div>
-        <p-progressBar [value]="collectionRateToday()" [showValue]="false" [style]="{ height: '4px' }"></p-progressBar>
+        <p-progressBar [value]="receptionistService.stats()?.collectionRateToday ?? 0" [showValue]="false" [style]="{ height: '4px' }"></p-progressBar>
       </div>
     </div>
   </div>
 
-  <!-- Daily Timeline -->
+  <!-- Daily Timeline (Bound to receptionistService.todaySessions()) -->
   <div class="table-panel">
     <!-- Sticky toolbar lives inside the scroll container -->
-    <div class="table-toolbar">
+    <div class="table-toolbar timeline-toolbar">
       <h4 class="mb-0">{{ 'RECEPTIONIST.TIMELINE_TITLE' | translate }}</h4>
-      <div class="d-flex gap-2 align-items-center">
+      <div class="timeline-filters">
         <div class="search-bar">
           <i class="bi bi-search"></i>
-          <input type="text" [placeholder]="'RECEPTIONIST.SEARCH_PLACEHOLDER' | translate" [ngModel]="searchPatient()"
-            (ngModelChange)="searchPatient.set($event)" />
+          <input type="text" [placeholder]="'COMMON.SEARCH' | translate"
+            [attr.aria-label]="'RECEPTIONIST.SEARCH_PLACEHOLDER' | translate"
+            [title]="'RECEPTIONIST.SEARCH_PLACEHOLDER' | translate" [ngModel]="searchPatient()"
+            (ngModelChange)="onSearchChange($event)" />
         </div>
-        <select class="form-select form-select-sm" style="width:auto" [ngModel]="filterDoctor()"
-          (ngModelChange)="filterDoctor.set($event)">
+        <select class="form-select form-select-sm" [attr.aria-label]="'RECEPTIONIST.ALL_DOCTORS' | translate" [ngModel]="filterDoctor()"
+          (ngModelChange)="onDoctorFilterChange($event)">
           <option value="">{{ 'RECEPTIONIST.ALL_DOCTORS' | translate }}</option>
           @for (doc of allDoctors(); track doc.id) {
           <option [value]="doc.name">{{ doc.name }}</option>
           }
         </select>
-        <select class="form-select form-select-sm" style="width:auto" [ngModel]="filterRoom()"
-          (ngModelChange)="filterRoom.set($event)">
+        <select class="form-select form-select-sm" [attr.aria-label]="'RECEPTIONIST.ALL_ROOMS' | translate" [ngModel]="filterRoom()"
+          (ngModelChange)="onRoomFilterChange($event)">
           <option value="">{{ 'RECEPTIONIST.ALL_ROOMS' | translate }}</option>
           @for (room of allRooms(); track room.id) {
           <option [value]="room.displayName">{{ room.displayName }}</option>
@@ -79,59 +81,60 @@
         </thead>
         <tbody>
           @for(session of filteredTodaySessions(); track session.id) {
+          @let statusStr = receptionistService.mapStatusToString(session.status);
           <tr>
-            <td class="font-bebas" style="font-size:1rem">{{ formatTime(session.scheduledAt) }}</td>
+            <td class="font-bebas" style="font-size:1rem">{{ formatTime(session.startTime.toString()) }}</td>
             <td>
               <div class="d-flex align-items-center gap-2">
-                <div class="avatar avatar-sm">{{ clinicState.getPatientAvatar(session.patientId) }}</div>
+                <div class="avatar avatar-sm">{{ getPatientAvatar(session.patientId, session.patientName) }}</div>
                 <span class="fw-semibold text-primary-hover" role="button" (click)="openPatientProfile(session.patientId)" style="cursor: pointer;">
-                  {{ clinicState.getPatientName(session.patientId) }}
+                  {{ getPatientName(session.patientId, session.patientName) }}
                 </span>
-                @if(clinicState.getSessionBadge(session)) {
-                <span class="badge badge-warning" role="button" (click)="openPatientProfile(session.patientId)" style="cursor: pointer;" title="Treatment Progress">
-                  <i class="bi bi-clock-history"></i> {{ clinicState.getSessionBadge(session) }}
+                @if(getSessionBadge(session)) {
+                <span class="badge badge-warning" role="button" (click)="openPatientProfile(session.patientId)" style="cursor: pointer;" [title]="'RECEPTIONIST.DASHBOARD.TREATMENT_PROGRESS' | translate">
+                  <i class="bi bi-clock-history"></i> {{ getSessionBadge(session) }}
                 </span>
                 }
               </div>
             </td>
-            <td>{{ clinicState.getDoctorName(session.doctorId) }}</td>
-            <td><span class="badge badge-neutral">{{ clinicState.getRoomName(session.roomId) }}</span></td>
+            <td>{{ session.doctorName || clinicState.getDoctorName(session.doctorId?.toString() || '') }}</td>
+            <td><span class="badge badge-neutral">{{ session.roomName || clinicState.getRoomName(session.roomId?.toString() || '') }}</span></td>
             <td>
               <span class="badge" [ngClass]="{
-                  'badge-success': session.status === 'Confirmed' || session.status === 'Completed',
-                  'badge-info': session.status === 'In Progress' || session.status === 'Waiting',
-                  'badge-warning': session.status === 'Pending',
-                  'badge-error': session.status === 'Cancelled'
+                  'badge-success': statusStr === 'Confirmed' || statusStr === 'Completed',
+                  'badge-info': statusStr === 'In Progress' || statusStr === 'Waiting',
+                  'badge-warning': statusStr === 'Pending',
+                  'badge-error': statusStr === 'Cancelled'
                 }">
-                @if(session.status === 'Confirmed') { {{ 'RECEPTIONIST.CONFIRMED' | translate }} }
-                @if(session.status === 'In Progress') { {{ 'RECEPTIONIST.IN_PROGRESS' | translate }} }
-                @if(session.status === 'Pending') { {{ 'RECEPTIONIST.PENDING' | translate }} }
-                @if(session.status === 'Cancelled') { {{ 'RECEPTIONIST.CANCELLED' | translate }} }
-                @if(session.status === 'Waiting') { {{ 'RECEPTIONIST.WAITING' | translate }} }
-                @if(session.status === 'Completed') { {{ 'RECEPTIONIST.COMPLETED' | translate }} }
+                @if(statusStr === 'Confirmed') { {{ 'RECEPTIONIST.CONFIRMED' | translate }} }
+                @if(statusStr === 'In Progress') { {{ 'RECEPTIONIST.IN_PROGRESS' | translate }} }
+                @if(statusStr === 'Pending') { {{ 'RECEPTIONIST.PENDING' | translate }} }
+                @if(statusStr === 'Cancelled') { {{ 'RECEPTIONIST.CANCELLED' | translate }} }
+                @if(statusStr === 'Waiting') { {{ 'RECEPTIONIST.WAITING' | translate }} }
+                @if(statusStr === 'Completed') { {{ 'RECEPTIONIST.COMPLETED' | translate }} }
               </span>
             </td>
             <td style="text-align:end">
               <div class="d-flex gap-1 justify-content-end align-items-center">
-                @if(session.status === 'Confirmed' || session.status === 'Pending') {
+                @if(statusStr === 'Confirmed' || statusStr === 'Pending') {
                 <button class="btn-action action-primary" [attr.data-tip]="'RECEPTIONIST.CHECK_IN' | translate"
                   (click)="onCheckInClick(session)">
                   <i class="bi bi-box-arrow-in-right"></i>
                 </button>
                 }
-                @if(session.status === 'In Progress' || session.status === 'Waiting') {
+                @if(statusStr === 'In Progress' || statusStr === 'Waiting') {
                 <button class="btn-action action-success" [attr.data-tip]="'RECEPTIONIST.CHECK_OUT' | translate"
                   (click)="checkOut(session.id)">
                   <i class="bi bi-box-arrow-right"></i>
                 </button>
                 }
                 <p-button
-                  *ngIf="session.status === 'Pending' || session.status === 'Confirmed' || session.status === 'Waiting'"
+                  *ngIf="statusStr === 'Pending' || statusStr === 'Confirmed' || statusStr === 'Waiting'"
                   icon="bi bi-person-x" styleClass="btn-tinted-danger"
                   pTooltip="{{ 'RECEPTIONIST.MARK_ABSENT' | translate }}"
                   tooltipPosition="top"
                   tooltipStyleClass="custom-tooltip"
-                  (onClick)="markPatientAbsent(session.id)">
+                  (onClick)="cancelSession(session.id)">
                 </p-button>
               </div>
             </td>
@@ -140,7 +143,7 @@
           @if (filteredTodaySessions().length === 0) {
           <tr>
             <td colspan="6" class="text-center py-4 text-muted">
-              No sessions scheduled for today matching your criteria.
+              {{ 'RECEPTIONIST.DASHBOARD.NO_SESSIONS_MATCHING' | translate }}
             </td>
           </tr>
           }
@@ -153,12 +156,12 @@
 <!-- Absence Modal -->
 @if(showAbsenceModal()) {
 <div class="modal-backdrop fade show"></div>
-<div class="modal fade show d-block" tabindex="-1">
+<div class="modal receptionist-modal fade show d-block" tabindex="-1">
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content border-0 shadow-lg">
       <div class="modal-header p-3">
-        <h5 class="modal-title font-clash">{{ absentDoctorName() }} is absent today</h5>
-        <button type="button" class="btn-close" (click)="closeAbsenceModal()"></button>
+        <h5 class="modal-title font-clash">{{ 'RECEPTIONIST.DASHBOARD.DOCTOR_ABSENT_TODAY' | translate:{ doctor: absentDoctorName() } }}</h5>
+        <button type="button" class="btn-close" [attr.aria-label]="'RECEPTIONIST.DASHBOARD.CLOSE' | translate" (click)="closeAbsenceModal()"></button>
       </div>
       <div class="modal-body p-3">
         <div class="alert alert-warning d-flex align-items-center gap-3 mb-3">
@@ -168,7 +171,7 @@
 
         <div class="row g-3">
           <div class="col-md-6">
-            <p class="section-label text-teal">Auto-Assigned to Senior (50%)</p>
+            <p class="section-label text-teal">{{ 'RECEPTIONIST.DASHBOARD.AUTO_ASSIGNED_TO_SENIOR_50_' | translate }}</p>
             <div class="card card-bg border-0 mb-2">
               <div class="card-body p-3 d-flex justify-content-between align-items-center">
                 <span class="fw-medium">Ahmed Fathy</span>
@@ -222,7 +225,7 @@
   [resizable]="false" 
   [closable]="false" 
   [showHeader]="true" 
-  styleClass="clean-modal"
+  styleClass="clean-modal receptionist-modal"
   [style]="{ width: '400px' }"
   [header]="'DEBT_GATE_TITLE' | translate">
 
@@ -231,14 +234,14 @@
       <i class="bi bi-exclamation-triangle-fill fs-4 me-2"></i>
       <div>
         <div class="fw-bold">{{ 'RECEPTIONIST.REMAINING_DEBT' | translate }}</div>
-        <div class="fs-5">{{ pendingDebtTotal | currency:'EGP' }}</div>
+        <div class="fs-5">{{ pendingDebtTotal | currency:'EGP':'symbol':'1.2-2':locale.language }}</div>
       </div>
     </div>
     <div class="form-group mb-3">
       <label class="form-label mb-2">
         {{ 'AMOUNT_TO_COLLECT' | translate }}
       </label>
-      <p-inputNumber [(ngModel)]="debtAmountToCollect" mode="currency" currency="EGP" styleClass="w-100" class="w-full d-block"></p-inputNumber>
+      <p-inputNumber [(ngModel)]="debtAmountToCollect" mode="currency" currency="EGP" [locale]="locale.language" styleClass="w-100" class="w-full d-block"></p-inputNumber>
     </div>
   </div>
 
@@ -248,7 +251,7 @@
         type="button" 
         class="btn btn-outline-secondary btn-cancel" 
         (click)="confirmDebtPayment(false)">
-        Check-In Only
+        {{ 'RECEPTIONIST.DASHBOARD.CHECK_IN_ONLY' | translate }}
       </button>
       <button 
         type="button" 
@@ -259,7 +262,6 @@
     </div>
   </ng-template>
 </p-dialog>
-
 
 <!-- Patient Profile Modal -->
 <app-patient-profile

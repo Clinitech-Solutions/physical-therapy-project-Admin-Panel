@@ -1,0 +1,325 @@
+<div class="page-content receptionist-page fade-in schedule-page">
+  <!-- Modern Page Header -->
+  <div class="schedule-hero-header">
+    <div class="schedule-header-layout d-flex flex-wrap justify-content-between align-items-center gap-3">
+      <div class="schedule-heading d-flex align-items-center gap-3">
+        <div class="header-icon-box">
+          <i class="bi bi-calendar-event"></i>
+        </div>
+        <div class="schedule-heading-copy">
+          <div class="schedule-title-row d-flex flex-wrap align-items-center gap-2">
+            <h2 class="font-clash mb-0">{{ 'SIDEBAR.TODAYS_SCHEDULE' | translate }}</h2>
+            <span class="date-chip">
+              <i class="bi bi-calendar3 me-1"></i>{{ locale.date(todayDate) }}
+            </span>
+          </div>
+          <p class="text-muted small mb-0 mt-1">
+            {{ 'RECEPTIONIST.UI.REAL_TIME_HOURLY_CLINIC_TIMELINE_PATIENT_CHECK_INS_AND_SESSION_STATUS_TRACKING' | translate }}
+          </p>
+        </div>
+      </div>
+
+      <div class="schedule-header-actions d-flex align-items-center gap-2 flex-wrap">
+        <button type="button" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-2 px-3 py-2"
+          (click)="onSearchOrFilterChange()" [disabled]="isLoading()">
+          <i class="bi bi-arrow-clockwise" [class.spin]="isLoading()"></i>
+          <span>{{ 'RECEPTIONIST.UI.REFRESH' | translate }}</span>
+        </button>
+        <a routerLink="/receptionist/bookings" class="btn btn-primary btn-sm d-flex align-items-center gap-2 px-3 py-2">
+          <i class="bi bi-calendar2-plus"></i>
+          <span>{{ 'RECEPTIONIST.BOOK_SESSION' | translate }}</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Interactive Summary KPI Strip (Bound to ReceptionistService API) -->
+  <div class="schedule-kpi-grid">
+    <div class="schedule-kpi-card" [class.active-kpi]="selectedFilter === 'All'" (click)="selectedFilter = 'All'">
+      <div class="kpi-icon-wrap kpi-teal">
+        <i class="bi bi-calendar2-week"></i>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-label">{{ 'RECEPTIONIST.TODAYS_SESSIONS' | translate }}</span>
+        <span class="kpi-value">{{ totalTodayCount }}</span>
+      </div>
+    </div>
+
+    <div class="schedule-kpi-card" [class.active-kpi]="selectedFilter === 'Upcoming'" (click)="selectedFilter = 'Upcoming'">
+      <div class="kpi-icon-wrap kpi-amber">
+        <i class="bi bi-hourglass-split"></i>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-label">{{ 'RECEPTIONIST.UI.UPCOMING' | translate }}</span>
+        <span class="kpi-value text-amber">{{ upcomingCount }}</span>
+      </div>
+    </div>
+
+    <div class="schedule-kpi-card" [class.active-kpi]="selectedFilter === 'In Progress'" (click)="selectedFilter = 'In Progress'">
+      <div class="kpi-icon-wrap kpi-blue">
+        <i class="bi bi-activity"></i>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-label d-flex align-items-center gap-1">
+          {{ 'RECEPTIONIST.IN_PROGRESS' | translate }} <span class="live-dot"></span>
+        </span>
+        <span class="kpi-value text-blue">{{ inProgressCount }}</span>
+      </div>
+    </div>
+
+    <div class="schedule-kpi-card" [class.active-kpi]="selectedFilter === 'Completed'" (click)="selectedFilter = 'Completed'">
+      <div class="kpi-icon-wrap kpi-green">
+        <i class="bi bi-check2-circle"></i>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-label">{{ 'RECEPTIONIST.COMPLETED_SESSIONS' | translate }}</span>
+        <span class="kpi-value text-teal">{{ completedCount }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Schedule Panel -->
+  <div class="schedule-panel">
+    <!-- Refined Filter & Search Toolbar (Queries /api/Receptionist/today-sessions) -->
+    <div class="schedule-toolbar">
+      <div class="schedule-status-filters">
+        <!-- Segmented Status Pills -->
+        <div class="status-pill-group">
+          @for (opt of filterOptions; track opt.value) {
+            <button type="button" class="status-pill-btn"
+              [class.active]="selectedFilter === opt.value"
+              [attr.aria-pressed]="selectedFilter === opt.value"
+              (click)="selectedFilter = $any(opt.value)">
+              <i [class]="opt.icon"></i>
+              <span>{{ opt.label | receptionistText }}</span>
+            </button>
+          }
+        </div>
+      </div>
+
+      <div class="schedule-filter-tools">
+        <div class="schedule-filter-fields">
+          <!-- Search Input -->
+          <div class="search-bar schedule-search">
+            <i class="bi bi-search"></i>
+            <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="onSearchOrFilterChange()"
+              [placeholder]="'COMMON.SEARCH' | translate"
+              [attr.aria-label]="'RECEPTIONIST.SEARCH_PLACEHOLDER' | translate"
+              [title]="'RECEPTIONIST.SEARCH_PLACEHOLDER' | translate" />
+            @if (searchQuery) {
+              <button type="button" class="btn-clear-search" (click)="searchQuery = ''; onSearchOrFilterChange()" [title]="'RECEPTIONIST.UI.CLEAR_SEARCH' | translate">
+                <i class="bi bi-x-lg"></i>
+              </button>
+            }
+          </div>
+
+          <!-- Doctor Filter -->
+          <select class="form-select form-select-sm schedule-filter-select" [attr.aria-label]="'RECEPTIONIST.ALL_DOCTORS' | translate" [(ngModel)]="selectedDoctorFilter"
+            (ngModelChange)="onSearchOrFilterChange()">
+            <option value="">{{ 'RECEPTIONIST.ALL_DOCTORS' | translate }}</option>
+            @for (doc of allDoctors(); track doc.id) {
+              <option [value]="doc.id">{{ doc.name }}</option>
+            }
+          </select>
+
+          <!-- Room Filter -->
+          <select class="form-select form-select-sm schedule-filter-select" [attr.aria-label]="'RECEPTIONIST.ALL_ROOMS' | translate" [(ngModel)]="selectedRoomFilter"
+            (ngModelChange)="onSearchOrFilterChange()">
+            <option value="">{{ 'RECEPTIONIST.ALL_ROOMS' | translate }}</option>
+            @for (room of allRooms(); track room.id) {
+              <option [value]="room.id">{{ room.displayName }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="schedule-view-controls">
+          @if (searchQuery || selectedDoctorFilter || selectedRoomFilter || selectedFilter !== 'All') {
+            <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-1" (click)="resetFilters()"
+              [attr.aria-label]="'RECEPTIONIST.UI.RESET_FILTERS' | translate" [title]="'RECEPTIONIST.UI.RESET_FILTERS' | translate">
+              <i class="bi bi-arrow-counterclockwise"></i>
+            </button>
+          }
+
+          <!-- View Mode Toggle -->
+          <div class="view-mode-toggle">
+            <button type="button" class="view-btn" [class.active]="viewMode() === 'Day'" [attr.aria-pressed]="viewMode() === 'Day'" (click)="viewMode.set('Day')">
+              {{ 'RECEPTIONIST.DAY' | translate }}
+            </button>
+            <button type="button" class="view-btn" [class.active]="viewMode() === 'Week'" [attr.aria-pressed]="viewMode() === 'Week'" (click)="viewMode.set('Week')">
+              {{ 'RECEPTIONIST.WEEK' | translate }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Timeline Rows (Strictly Bound to ReceptionistService API) -->
+    <div class="timeline-scroll-area">
+      @for (slot of filteredSchedule; track slot.time) {
+        <div class="calendar-slot-row" [class.slot-has-sessions]="slot.sessions.length > 0">
+          <!-- Time Column -->
+          <div class="time-badge-col">
+            <span class="time-text">{{ locale.hour(slot.time) }}</span>
+            @if (slot.sessions.length > 0) {
+              <span class="slot-count-pill">{{ slot.sessions.length }} {{ (slot.sessions.length === 1 ? 'Session' : 'Sessions') | receptionistText }}</span>
+            }
+          </div>
+
+          <!-- Session Cards Container -->
+          <div class="slot-sessions-container">
+            @for (session of slot.sessions; track session.id) {
+              @let statusStr = getMappedStatus(session.status);
+              <div class="session-card" [ngClass]="getStatusClass(session.status)">
+                <!-- Card Top: Patient Info & Status -->
+                <div class="session-card-top">
+                  <div class="d-flex align-items-center gap-2 min-w-0">
+                    <div class="patient-avatar-circle" role="button"
+                      (click)="openPatientProfile(session.patientId); $event.stopPropagation()">
+                      {{ getPatientInitials(session) }}
+                    </div>
+                    <div class="min-w-0">
+                      <div class="d-flex align-items-center gap-1">
+                        @if (statusStr === 'In Progress' || statusStr === 'Waiting') {
+                          <span class="live-indicator"></span>
+                        }
+                        <span class="patient-name text-truncate" role="button"
+                          (click)="openPatientProfile(session.patientId); $event.stopPropagation()">
+                          {{ getPatientName(session) }}
+                        </span>
+                      </div>
+                      @if (getSessionBadge(session)) {
+                        <span class="progress-mini-badge" role="button"
+                          (click)="openPatientProfile(session.patientId); $event.stopPropagation()"
+                          [title]="'RECEPTIONIST.UI.TREATMENT_PROGRESS' | translate">
+                          <i class="bi bi-layers-half me-1"></i>{{ getSessionBadge(session) }}
+                        </span>
+                      }
+                    </div>
+                  </div>
+
+                  <span class="badge session-status-badge" [ngClass]="{
+                    'badge-warning': statusStr === 'Confirmed',
+                    'badge-info': statusStr === 'In Progress' || statusStr === 'Waiting',
+                    'badge-success': statusStr === 'Completed',
+                    'badge-neutral': statusStr === 'Pending',
+                    'badge-error': statusStr === 'Cancelled'
+                  }">
+                    {{ statusStr | receptionistText }}
+                  </span>
+                </div>
+
+                <!-- Card Middle: Doctor & Room Pills -->
+                <div class="session-meta-row">
+                  <div class="meta-chip" [title]="'RECEPTIONIST.UI.ASSIGNED_DOCTOR' | translate">
+                    <i class="bi bi-person-badge text-teal"></i>
+                    <span class="text-truncate">{{ getDoctorName(session) }}</span>
+                  </div>
+                  <div class="meta-chip" [title]="'RECEPTIONIST.UI.ASSIGNED_ROOM' | translate">
+                    <i class="bi bi-door-open text-blue"></i>
+                    <span class="text-truncate">{{ getRoomName(session) }}</span>
+                  </div>
+                </div>
+
+                <!-- Card Footer: Type, Time & Actions -->
+                <div class="session-card-footer">
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="type-pill" [class.type-assessment]="(session.appointmentType || session.type) === 'Assessment'">
+                      {{ (session.appointmentType || session.type || 'Session') | receptionistText }}
+                    </span>
+                    <span class="session-time">
+                      <i class="bi bi-clock me-1"></i>{{ formatTime(session.startTime.toString()) }}
+                    </span>
+                  </div>
+
+                  <div class="session-actions">
+                    @if (statusStr === 'In Progress' || statusStr === 'Waiting') {
+                      <button type="button" class="btn-session-action btn-checkout"
+                        (click)="checkoutSession(session.id); $event.stopPropagation()">
+                        <i class="bi bi-box-arrow-right"></i>
+                        <span>{{ 'RECEPTIONIST.CHECK_OUT' | translate }}</span>
+                      </button>
+                    } @else if (statusStr === 'Confirmed' || statusStr === 'Pending') {
+                      <button type="button" class="btn-session-action btn-checkin"
+                        (click)="checkInSession(session.id); $event.stopPropagation()">
+                        <i class="bi bi-box-arrow-in-right"></i>
+                        <span>{{ 'RECEPTIONIST.CHECK_IN' | translate }}</span>
+                      </button>
+                      <button type="button" class="btn-absent-icon"
+                        [title]="'RECEPTIONIST.MARK_ABSENT' | translate"
+                        (click)="markPatientAbsent(session.id); $event.stopPropagation()">
+                        <i class="bi bi-person-x"></i>
+                      </button>
+                    }
+                  </div>
+                </div>
+              </div>
+            }
+
+            @if (slot.sessions.length === 0) {
+              <div class="empty-slot-placeholder">
+                <i class="bi bi-calendar2-minus me-2"></i>
+                <span>{{ 'RECEPTIONIST.UI.NO_SLOT_SESSIONS' | translate:{ time: locale.hour(slot.time) } }}</span>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</div>
+
+<!-- Patient Profile Modal -->
+<app-patient-profile
+  [visible]="showProfileModal()"
+  (visibleChange)="showProfileModal.set($event)"
+  [patientId]="selectedProfilePatientId()">
+</app-patient-profile>
+
+<!-- Check-In Debt Gate Modal (Wired to BillingService & ReceptionistService) -->
+<p-dialog [(visible)]="showDebtModal" [modal]="true" appendTo="body" [draggable]="false" [resizable]="false"
+  [closable]="true" styleClass="clean-modal receptionist-modal" [style]="{width: '450px'}" [header]="'RECEPTIONIST.UI.OUTSTANDING_BALANCE' | translate"
+  (onHide)="showDebtModal = false; pendingCheckInSessionId = null">
+
+  <div class="d-flex flex-column gap-3 py-2">
+    <div class="alert alert-warning d-flex align-items-center gap-2 mb-0" role="alert" style="font-size: 0.85rem;">
+      <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+      <div>
+        <strong>{{ 'RECEPTIONIST.UI.NOTICE_' | translate }}</strong> {{ 'RECEPTIONIST.UI.THIS_PATIENT_HAS_AN_OUTSTANDING_DEBT_OF' | translate }}
+        <strong class="text-danger">{{ debtAmount | number:'1.0-0':locale.language }} {{ 'RECEPTIONIST.EGP' | translate }}</strong>.
+      </div>
+    </div>
+
+    <p class="small text-muted mb-0">
+      {{ 'RECEPTIONIST.UI.YOU_CAN_COLLECT_A_PARTIAL_INSTALLMENT_NOW_BEFORE_CHECKING_THEM_IN_OR_SKIP_TO_COLLECT_LATER_' | translate }}
+    </p>
+
+    <div class="form-group">
+      <label class="form-label mb-2 fw-semibold small">
+        {{ 'RECEPTIONIST.UI.COLLECT_INSTALLMENT_EGP_' | translate }}
+      </label>
+      <p-inputNumber [(ngModel)]="installmentAmount" mode="currency" currency="EGP" [locale]="locale.language" styleClass="w-100" class="w-full d-block"></p-inputNumber>
+    </div>
+
+    <div class="form-group" *ngIf="installmentAmount > 0">
+      <label class="form-label mb-2 fw-semibold small">
+        {{ 'RECEPTIONIST.UI.PAYMENT_METHOD' | translate }} <span class="text-danger">*</span>
+      </label>
+      <p-select [options]="paymentMethods" [(ngModel)]="installmentPaymentMethod"
+        appendTo="body" styleClass="w-100 p-select-sm">
+        <ng-template pTemplate="item" let-method>{{ method | receptionistText }}</ng-template>
+        <ng-template pTemplate="selectedItem" let-method>{{ method | receptionistText }}</ng-template>
+      </p-select>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="modal-footer-actions d-flex justify-content-end gap-2 w-100">
+      <p-button [label]="'RECEPTIONIST.UI.SKIP_CHECK_IN' | translate" [outlined]="true" severity="secondary"
+        (onClick)="confirmCheckIn(false)">
+      </p-button>
+      <p-button [label]="'RECEPTIONIST.UI.COLLECT_CHECK_IN' | translate" severity="success" (onClick)="confirmCheckIn(true)"
+        [disabled]="!installmentAmount || installmentAmount <= 0">
+      </p-button>
+    </div>
+  </ng-template>
+</p-dialog>

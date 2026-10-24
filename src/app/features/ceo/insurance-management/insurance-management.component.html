@@ -1,0 +1,121 @@
+<div class="container-fluid py-4">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0 fw-bold">{{ 'CEO.INSURANCE_MANAGEMENT.TITLE' | translate }}</h2>
+    <button class="btn btn-primary d-flex align-items-center gap-2" (click)="openModal()">
+      <i class="bi bi-plus-lg"></i> {{ 'CEO.INSURANCE_MANAGEMENT.ADD_NEW' | translate }}
+    </button>
+  </div>
+
+  <!-- Error Alert -->
+  <div *ngIf="error()" class="alert alert-danger shadow-sm" role="alert">
+    {{ error() }}
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading()" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading() && !error() && companies().length === 0" class="text-center py-5 text-muted bg-white rounded-4 shadow-sm border">
+    <i class="bi bi-building fs-1 mb-3 d-block text-primary opacity-50"></i>
+    <p class="fs-5 fw-medium">{{ 'CEO.INSURANCE_MANAGEMENT.NO_COMPANIES' | translate }}</p>
+    <button class="btn btn-outline-primary mt-2" (click)="openModal()">{{ 'CEO.INSURANCE_MANAGEMENT.ADD_FIRST' | translate }}</button>
+  </div>
+
+  <!-- Table -->
+  <div *ngIf="!loading() && companies().length > 0" class="card shadow-sm border-0 rounded-4 overflow-hidden">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th class="ps-4 py-3">{{ 'CEO.INSURANCE_MANAGEMENT.COMPANY_NAME' | translate }}</th>
+            <th class="py-3">{{ 'CEO.INSURANCE_MANAGEMENT.PORTAL_URL' | translate }}</th>
+            <th class="py-3 text-center">{{ 'CEO.INSURANCE_MANAGEMENT.PATIENTS_COUNT' | translate }}</th>
+            <th class="py-3">{{ 'COMMON.STATUS' | translate }}</th>
+            <th class="text-end pe-4 py-3">{{ 'COMMON.ACTION' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let company of companies()">
+            <td class="fw-medium ps-4">{{ company.name }}</td>
+            <td>
+              <a *ngIf="company.portalUrl" [href]="company.portalUrl" target="_blank" class="text-decoration-none d-flex align-items-center gap-1">
+                {{ company.portalUrl }} <i class="bi bi-box-arrow-up-right small"></i>
+              </a>
+              <span *ngIf="!company.portalUrl" class="text-muted fst-italic">N/A</span>
+            </td>
+            <td class="text-center">
+              <span class="badge bg-primary rounded-pill">{{ company.patients?.length || 0 }}</span>
+            </td>
+            <td>
+              <span class="badge rounded-pill" 
+                    [ngClass]="company.isActive ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary'">
+                {{ company.isActive ? ('COMMON.ACTIVE' | translate) : ('COMMON.INACTIVE' | translate) }}
+              </span>
+            </td>
+            <td class="text-end pe-4">
+              <button class="btn btn-sm btn-light border-0 me-2 shadow-sm rounded-3 hover-lift" (click)="openModal(company)" [title]="'COMMON.EDIT' | translate">
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button class="btn btn-sm btn-light border-0 text-danger shadow-sm rounded-3 hover-lift" (click)="onDelete(company.id)" [title]="'COMMON.DELETE' | translate">
+                <i class="bi bi-trash"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Custom Glassmorphism Modal -->
+<div class="custom-modal-overlay" *ngIf="showModal" (click)="closeModal()">
+  <div class="custom-modal-dialog" (click)="$event.stopPropagation()">
+    <div class="modal-header border-bottom-0 pb-0 mb-3">
+      <h5 class="modal-title fw-bold">{{ editingCompany ? ('CEO.INSURANCE_MANAGEMENT.EDIT_COMPANY' | translate) : ('CEO.INSURANCE_MANAGEMENT.ADD_COMPANY' | translate) }}</h5>
+      <button type="button" class="btn-close" (click)="closeModal()" aria-label="Close"></button>
+    </div>
+    
+    <div class="modal-body pt-0">
+      <form [formGroup]="companyForm" (ngSubmit)="onSubmit()">
+        <div class="mb-3">
+          <label for="name" class="form-label fw-medium">{{ 'CEO.INSURANCE_MANAGEMENT.COMPANY_NAME' | translate }} <span class="text-danger">*</span></label>
+          <input type="text" class="form-control bg-light border-0" id="name" formControlName="name" [placeholder]="'CEO.INSURANCE_MANAGEMENT.NAME_PLACEHOLDER' | translate">
+          <div *ngIf="companyForm.get('name')?.invalid && companyForm.get('name')?.touched" class="text-danger small mt-1">
+            {{ 'CEO.INSURANCE_MANAGEMENT.NAME_REQUIRED' | translate }}
+          </div>
+        </div>
+        
+        <div class="mb-3">
+          <label for="portalUrl" class="form-label fw-medium">{{ 'CEO.INSURANCE_MANAGEMENT.PORTAL_URL' | translate }}</label>
+          <input type="url" class="form-control bg-light border-0" id="portalUrl" formControlName="portalUrl" placeholder="https://example-portal.com">
+        </div>
+        
+        <div class="mb-3">
+          <label for="hotline" class="form-label fw-medium">{{ 'CEO.INSURANCE_MANAGEMENT.HOTLINE' | translate }}</label>
+          <div class="input-group input-group-sm-custom">
+            <span class="input-group-text bg-light border-0 text-muted"><i class="bi bi-telephone"></i></span>
+            <input type="text" class="form-control bg-light border-0" id="hotline" formControlName="hotline" placeholder="19000">
+          </div>
+        </div>
+        
+        <div class="mb-4 form-check form-switch custom-switch">
+          <input class="form-check-input" type="checkbox" role="switch" id="isActive" formControlName="isActive">
+          <label class="form-check-label fw-medium ms-2" for="isActive">{{ 'CEO.INSURANCE_MANAGEMENT.ACTIVE_STATUS' | translate }}</label>
+        </div>
+        
+        <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+          <button type="button" class="btn btn-light rounded-pill px-4" (click)="closeModal()">{{ 'COMMON.CANCEL' | translate }}</button>
+          <button type="submit" class="btn btn-primary rounded-pill px-4 shadow-sm" [disabled]="isSubmitting">
+            <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+            {{ editingCompany ? ('CEO.INSURANCE_MANAGEMENT.UPDATE_COMPANY' | translate) : ('CEO.INSURANCE_MANAGEMENT.SAVE_COMPANY' | translate) }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
