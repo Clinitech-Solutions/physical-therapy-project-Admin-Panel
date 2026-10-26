@@ -98,6 +98,11 @@
 
           <div class="section-card-body">
             <div class="row g-3">
+              <div class="col-12">
+                <button class="btn btn-outline-primary btn-sm" type="button" (click)="openQuickAddModal()">
+                  <i class="bi bi-person-plus"></i> {{ 'RECEPTIONIST.ADD_PATIENT' | translate }}
+                </button>
+              </div>
               <!-- Patient Selector -->
               <div class="col-md-7">
                 <label class="form-label mb-1 fw-semibold text-secondary small">
@@ -662,3 +667,24 @@
   (visibleChange)="showProfileModal.set($event)"
   [patientId]="selectedProfilePatientId()">
 </app-patient-profile>
+
+<!-- Quick registration uses the same fields, validation and response mapping as Patients. -->
+<p-dialog [(visible)]="isQuickAddModalOpen" [modal]="true" appendTo="body" [draggable]="false" [resizable]="false"
+  [closable]="!registeringPatient()" styleClass="clean-modal receptionist-modal" [style]="{width: '650px', maxWidth: '95vw'}"
+  [header]="'RECEPTIONIST.ADD_PATIENT' | translate">
+  @if (quickRegistrationError()) {
+    <p class="alert alert-warning" role="alert" style="white-space: pre-line">{{ quickRegistrationError() }}</p>
+  }
+  @if (patientService.creationOutcomeUnknown()) {
+    <p class="alert alert-warning" role="alert">{{ 'RECEPTIONIST.UI.PATIENT_OUTCOME_UNKNOWN' | translate }}</p>
+  }
+  <fieldset [disabled]="registeringPatient() || patientService.creationOutcomeUnknown()" class="border-0 p-0 m-0 w-100">
+    <app-patient-registration-fields [draft]="quickPatient" [companies]="insuranceService.companies()"
+      [insuranceLoading]="insuranceService.loading()" [insuranceError]="insuranceService.error()" />
+  </fieldset>
+  <ng-template pTemplate="footer">
+    <p-button [label]="'COMMON.CANCEL' | translate" [outlined]="true" (onClick)="closeQuickAddModal()" [disabled]="registeringPatient()" />
+    <p-button [label]="'COMMON.SAVE' | translate" (onClick)="saveQuickPatient()" [loading]="registeringPatient()"
+      [disabled]="registeringPatient() || patientService.creationOutcomeUnknown()" />
+  </ng-template>
+</p-dialog>

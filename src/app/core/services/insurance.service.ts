@@ -27,9 +27,14 @@ export class InsuranceService {
     this.error.set(null);
     this.http.get<InsuranceCompany[]>(`${this.apiUrl}/GetAll`).subscribe({
       next: (data) => {
-        // Fallback for wrapped responses (e.g. data.value) if the API uses a standard envelope
-        const result = (data as any).value !== undefined ? (data as any).value : data;
-        this.companies.set(result);
+        if (!Array.isArray(data)) {
+          this.error.set('Invalid insurance company list response');
+          this.loading.set(false);
+          return;
+        }
+        // The documented int32 may be serialized as a string; selects submit numeric IDs.
+        this.companies.set(data.map(company => ({ ...company, id: Number(company.id) }))
+          .filter(company => Number.isSafeInteger(company.id) && company.id > 0));
         this.loading.set(false);
       },
       error: (err) => {

@@ -1,0 +1,96 @@
+<div class="modal-form-vertical d-flex flex-column gap-3">
+  <div class="row g-3">
+    <div class="col-md-6">
+      <label class="form-label fw-bold small w-100">
+        {{ 'RECEPTIONIST.UI.PATIENT_USERNAME' | translate }} *
+        <input class="form-control form-control-sm" type="text" [(ngModel)]="draft.userName" [ngModelOptions]="{standalone: true}" required minlength="3" maxlength="50" dir="auto">
+      </label>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label fw-bold small w-100">
+        {{ 'RECEPTIONIST.UI.PATIENT_FULL_NAME' | translate }} *
+        <input class="form-control form-control-sm" type="text" [(ngModel)]="draft.nameEn" [ngModelOptions]="{standalone: true}" required minlength="2" maxlength="150" dir="auto">
+      </label>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label fw-bold small w-100">
+        {{ 'RECEPTIONIST.PHONE' | translate }} *
+        <input class="form-control form-control-sm" type="tel" [(ngModel)]="draft.phone" [ngModelOptions]="{standalone: true}" required maxlength="20" dir="ltr">
+      </label>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label fw-bold small w-100">
+        {{ 'RECEPTIONIST.DOB' | translate }} *
+        <input class="form-control form-control-sm" type="date" [(ngModel)]="draft.dob" [ngModelOptions]="{standalone: true}" required>
+      </label>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label fw-bold small w-100">
+        {{ 'RECEPTIONIST.GENDER_TH' | translate }} *
+        <select class="form-select form-select-sm" [(ngModel)]="draft.gender" [ngModelOptions]="{standalone: true}">
+          <option value="Male">{{ 'RECEPTIONIST.MALE' | translate }}</option>
+          <option value="Female">{{ 'RECEPTIONIST.FEMALE' | translate }}</option>
+        </select>
+      </label>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label fw-bold small w-100">
+        {{ 'RECEPTIONIST.PAYMENT_TYPE' | translate }}
+        <select class="form-select form-select-sm" [(ngModel)]="draft.paymentType" [ngModelOptions]="{standalone: true}">
+          <option value="Cash">{{ 'RECEPTIONIST.CASH' | translate }}</option>
+          <option value="Insurance">{{ 'RECEPTIONIST.INSURANCE_PAYMENT' | translate }}</option>
+          <option value="Online">{{ 'RECEPTIONIST.UI.ONLINE' | translate }}</option>
+        </select>
+      </label>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label fw-bold small w-100">
+        {{ 'RECEPTIONIST.UI.PATIENT_EMERGENCY_CONTACT' | translate }}
+        <input class="form-control form-control-sm" type="tel" [(ngModel)]="draft.emergencyContact" [ngModelOptions]="{standalone: true}" maxlength="20" dir="ltr">
+      </label>
+    </div>
+  </div>
+  @if (draft.paymentType === 'Insurance' && draft.insuranceDetails; as details) {
+    <div class="card card-bg border p-3 rounded">
+      <div class="section-label fw-bold small mb-2">{{ 'RECEPTIONIST.INSURANCE_DETAILS' | translate }}</div>
+      @if (insuranceError) {
+        <p role="alert" class="text-danger">{{ 'RECEPTIONIST.UI.PATIENT_COMPANIES_FAILED' | translate }}</p>
+      }
+      <label class="form-label fw-bold small w-100">
+        {{ 'RECEPTIONIST.INSURANCE_COMPANY' | translate }} *
+        <select class="form-select form-select-sm" [(ngModel)]="draft.insuranceCompanyId" [ngModelOptions]="{standalone: true}" [disabled]="insuranceLoading" required>
+          <option [ngValue]="null">{{ 'RECEPTIONIST.UI.PATIENT_SELECT_COMPANY' | translate }}</option>
+          @for (company of companies; track company.id) {
+            <option [ngValue]="company.id">{{ company.name }}</option>
+          }
+        </select>
+      </label>
+      <div class="row g-3 mt-1">
+        <div class="col-md-6">
+          <label class="form-label fw-bold small w-100">
+            {{ 'RECEPTIONIST.MEMBER_ID' | translate }}
+            <input class="form-control form-control-sm" [(ngModel)]="details.memberId" [ngModelOptions]="{standalone: true}" dir="auto">
+          </label>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-bold small w-100">
+            {{ 'RECEPTIONIST.EMPLOYER' | translate }}
+            <input class="form-control form-control-sm" [(ngModel)]="details.employer" [ngModelOptions]="{standalone: true}" dir="auto">
+          </label>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-bold small w-100">
+            {{ 'RECEPTIONIST.COPAY_PERCENTAGE' | translate }} (%)
+            <input class="form-control form-control-sm" type="number" [(ngModel)]="details.copayPercentage" [ngModelOptions]="{standalone: true}">
+          </label>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-bold small w-100">
+            {{ 'RECEPTIONIST.APPROVED_SESSIONS' | translate }}
+            <input class="form-control form-control-sm" type="number" step="1" [(ngModel)]="details.approvedSessions" [ngModelOptions]="{standalone: true}">
+          </label>
+        </div>
+      </div>
+    </div>
+  }
+</div>

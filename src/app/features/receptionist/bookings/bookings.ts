@@ -1,3 +1,4 @@
+import { PatientRegistrationFieldsComponent } from '../../../shared/components/patient-registration-fields/patient-registration-fields';
 import { ReceptionistLocale, ReceptionistTextPipe } from '../../../shared/receptionist-locale';
 import { Component, signal, computed, inject, OnInit } from "@angular/core";
 import { CommonModule } from "@angular/common";
@@ -21,12 +22,14 @@ import { Patient } from '../../../core/models/patient.model';
 import { PatientProfileComponent } from '../../../shared/components/patient-profile/patient-profile.component';
 import { AppointmentService, Appointment } from '../../../core/services/appointment.service';
 import { PatientService } from '../../../core/services/patient.service';
+import { InsuranceService } from '../../../core/services/insurance.service';
+import { emptyPatientRegistration, PatientInputError, patientOutcomeIsUnknown, patientServerError } from '../../../core/services/patient-registration';
 import { BillingService, CreateInvoiceDto } from '../../../core/services/billing.service';
 
 @Component({
   selector: "app-receptionist-bookings",
   standalone: true,
-  imports: [ReceptionistTextPipe,
+  imports: [PatientRegistrationFieldsComponent, ReceptionistTextPipe,
     CommonModule, 
     RouterModule,
     TranslateModule, 
@@ -49,7 +52,10 @@ export class BookingsComponent implements OnInit {
   clinicState = inject(ClinicStateService);
   messageService = inject(MessageService);
   appointmentService = inject(AppointmentService, { optional: true })!;
-  patientService = inject(PatientService, { optional: true })!;
+  patientService = inject(PatientService);
+  insuranceService = inject(InsuranceService);
+  readonly registeringPatient = signal(false);
+  readonly quickRegistrationError = signal('');
   billingService = inject(BillingService, { optional: true }) ?? new BillingService();
 
   viewMode = signal<'Week' | 'Day'>('Day');
@@ -57,7 +63,7 @@ export class BookingsComponent implements OnInit {
 
   // Global State Signals
   appointments = this.appointmentService?.appointments ?? signal<Appointment[]>([]);
-  allPatients = this.patientService?.patients ?? this.clinicState.patients;
+  allPatients = this.patientService.patients;
   allDoctors = this.clinicState.doctors;
   allRooms = this.clinicState.rooms;
   availableRooms = this.clinicState.availableRooms;
@@ -73,7 +79,8 @@ export class BookingsComponent implements OnInit {
 
   ngOnInit() {
     this.appointmentService?.getAppointments();
-    this.patientService?.getPatients().subscribe();
+    this.refreshPatients();
+    this.insuranceService.getCompanies();
     this.billingService.getInvoices();
   }
 
@@ -165,13 +172,7 @@ export class BookingsComponent implements OnInit {
 
   // Quick Add Patient Modal State
   isQuickAddModalOpen = false;
-  quickPatient = {
-    nameEn: '',
-    nameAr: '',
-    phone: '',
-    gender: 'Male' as 'Male' | 'Female',
-    paymentType: 'Cash' as 'Cash' | 'Online' | 'Insurance'
-  };
+  quickPatient = emptyPatientRegistration();
 
   // Doctor Absence Reporting State
   showAbsenceModal = false;
@@ -707,66 +708,51 @@ export class BookingsComponent implements OnInit {
   }
 
   openQuickAddModal() {
-    this.quickPatient = {
-      nameEn: '',
-      nameAr: '',
-      phone: '',
-      gender: 'Male',
-      paymentType: 'Cash'
-    };
+    if (this.registeringPatient()) return;
+    this.quickPatient = emptyPatientRegistration();
+    this.quickRegistrationError.set('');
     this.isQuickAddModalOpen = true;
   }
 
   closeQuickAddModal() {
-    this.isQuickAddModalOpen = false;
+    if (!this.registeringPatient()) this.isQuickAddModalOpen = false;
+  }
+
+  refreshPatients(afterSave = false) {
+    this.patientService.getPatients().subscribe({
+      error: () => this.messageService.add({
+        severity: 'warn', summary: this.locale.text('ERROR', 'Error'),
+        detail: this.locale.text(afterSave ? 'PATIENT_SAVED_REFRESH_FAILED' : 'PATIENT_LIST_FAILED',
+          afterSave ? 'Patient saved. The list could not refresh; do not register again.' : 'Could not load patients. Please retry.')
+      })
+    });
   }
 
   async saveQuickPatient() {
-    if (!this.quickPatient.nameEn.trim() || !this.quickPatient.phone.trim()) {
-      this.messageService.add({
-        severity: 'error',
-        summary: this.locale.text('REQUIRED_FIELDS', "Required Fields"),
-        detail: this.locale.text('PLEASE_ENTER_PATIENT_NAME_AND_PHONE_NUMBER_', "Please enter patient name and phone number.")
-      });
+    if (this.registeringPatient() || this.patientService.creationOutcomeUnknown()) return;
+    this.registeringPatient.set(true);
+    this.quickRegistrationError.set('');
+    let patient: Patient;
+    try {
+      patient = await firstValueFrom(this.patientService.addPatient(this.quickPatient));
+    } catch (error) {
+      const detail = patientOutcomeIsUnknown(error)
+        ? this.locale.text('PATIENT_OUTCOME_UNKNOWN', 'The patient may have been saved. Check the patient list before registering again.')
+        : error instanceof PatientInputError ? this.locale.text(error.key, error.message)
+        : patientServerError(error) || this.locale.text('COULD_NOT_REGISTER_NEW_PATIENT_', 'Could not register new patient.');
+      this.quickRegistrationError.set(detail);
+      this.messageService.add({ severity: 'error', summary: this.locale.text('REGISTRATION_FAILED', 'Registration Failed'), detail });
+      this.registeringPatient.set(false);
       return;
     }
-
-    try {
-      await new Promise<void>((resolve, reject) => {
-        this.patientService.addPatient({
-          nameEn: this.quickPatient.nameEn.trim(),
-          nameAr: this.quickPatient.nameAr.trim() || this.quickPatient.nameEn.trim(),
-          phone: this.quickPatient.phone.trim(),
-          gender: this.quickPatient.gender,
-          paymentType: this.quickPatient.paymentType,
-          dob: '1995-01-01',
-          insuranceCompany: '',
-          docs: { medicalConsent: true, liabilityWaiver: true, idCard: true }
-        }).subscribe({
-          next: (res) => {
-            const newPatientId = res?.id || res?.data?.id || (res?.items && res.items[0]?.id) || Date.now();
-            this.selectedPatientId = newPatientId.toString();
-            this.onPatientChange(this.selectedPatientId);
-            resolve();
-          },
-          error: (err) => reject(err)
-        });
-      });
-
-      this.patientService.getPatients().subscribe();
-      this.closeQuickAddModal();
-      this.messageService.add({
-        severity: 'success',
-        summary: this.locale.text('PATIENT_REGISTERED', "Patient Registered"),
-        detail: this.locale.text('NEW_PATIENT_CREATED_AND_SELECTED_', "New patient created and selected.")
-      });
-    } catch (error) {
-      this.messageService.add({
-        severity: 'error',
-        summary: this.locale.text('REGISTRATION_FAILED', "Registration Failed"),
-        detail: this.locale.text('COULD_NOT_REGISTER_NEW_PATIENT_', "Could not register new patient.")
-      });
-    }
+    this.registeringPatient.set(false);
+    // addPatient caches the normalized response before selection; refresh is independent.
+    this.selectedPatientId = patient.id;
+    this.onPatientChange(patient.id);
+    this.closeQuickAddModal();
+    this.messageService.add({ severity: 'success', summary: this.locale.text('PATIENT_REGISTERED', 'Patient Registered'),
+      detail: this.locale.text('NEW_PATIENT_CREATED_AND_SELECTED_', 'New patient created and selected.') });
+    this.refreshPatients(true);
   }
 
   // Timeline slots

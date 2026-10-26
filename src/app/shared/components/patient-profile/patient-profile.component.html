@@ -27,6 +27,9 @@
             </div>
             <div class="d-flex flex-wrap align-items-center gap-3 mt-1 text-muted small">
               <span dir="ltr"><i class="bi bi-telephone me-1 text-primary"></i>{{ p.phone }}</span>
+              @if (p.birthDate) {
+                <span>{{ 'RECEPTIONIST.DOB' | translate }}: {{ locale.date(p.birthDate) }}</span>
+              }
               <span><i class="bi bi-gender-ambiguous me-1"></i>{{ p.gender | receptionistText }}</span>
               <span class="badge" [ngClass]="{
                 'badge-success': p.paymentType === 'Cash',

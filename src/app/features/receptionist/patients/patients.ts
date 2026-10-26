@@ -1,15 +1,18 @@
+import { PatientRegistrationFieldsComponent } from '../../../shared/components/patient-registration-fields/patient-registration-fields';
 import { ReceptionistLocale, ReceptionistTextPipe } from '../../../shared/receptionist-locale';
 import { Component, signal, computed, inject, OnInit } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { TranslateModule } from '@ngx-translate/core';
-import { FormsModule, ReactiveFormsModule, FormBuilder } from '@angular/forms';
+import { FormsModule } from '@angular/forms';
+import { firstValueFrom } from 'rxjs';
 
 import { ClinicStateService } from '../../../core/services/state/clinic-state.service';
 import { InsuranceService } from '../../../core/services/insurance.service';
 import { PatientService } from '../../../core/services/patient.service';
 import { InsuranceDocumentService } from '../../../core/services/insurance-document.service';
 import { BillingService } from '../../../core/services/billing.service';
-import { Patient, NewPatient, PaymentMethod, InsuranceDetails } from '../../../core/models/patient.model';
+import { Patient } from '../../../core/models/patient.model';
+import { emptyPatientRegistration, PatientInputError, patientOutcomeIsUnknown, patientServerError } from '../../../core/services/patient-registration';
 import { MessageService, SharedModule } from 'primeng/api';
 import { DialogModule } from 'primeng/dialog';
 import { ButtonModule } from 'primeng/button';
@@ -19,7 +22,7 @@ import { PatientProfileComponent } from '../../../shared/components/patient-prof
 @Component({
   selector: "app-receptionist-patients",
   standalone: true,
-  imports: [ReceptionistTextPipe, CommonModule, TranslateModule, FormsModule, ReactiveFormsModule, DialogModule, ButtonModule, SharedModule, PatientProfileComponent],
+  imports: [PatientRegistrationFieldsComponent, ReceptionistTextPipe, CommonModule, TranslateModule, FormsModule, DialogModule, ButtonModule, SharedModule, PatientProfileComponent],
   templateUrl: "./patients.html",
   styleUrl: "./patients.css",
 })
@@ -31,7 +34,12 @@ export class PatientsComponent implements OnInit {
   private patientService = inject(PatientService);
   private insuranceDocService = inject(InsuranceDocumentService);
   private billingService = inject(BillingService, { optional: true });
-  private fb = inject(FormBuilder);
+  readonly saving = signal(false);
+  readonly createdPatient = signal<Patient | null>(null);
+  readonly creationOutcomeUnknown = this.patientService.creationOutcomeUnknown;
+  readonly registrationError = signal('');
+  readonly insuranceError = this.insuranceService.error;
+  readonly insuranceLoading = this.insuranceService.loading;
 
   selectedFiles: File[] = [];
 
@@ -43,37 +51,10 @@ export class PatientsComponent implements OnInit {
 
   ngOnInit() {
     this.insuranceService.getCompanies();
-    this.patientService.getPatients().subscribe();
+    this.refreshPatients();
     this.billingService?.getInvoices();
   }
 
-  // Main patientForm builder (Reactive Forms) — basic info + insurance only
-  patientForm = this.fb.group({
-    nameEn: [''],
-    nameAr: [''],
-    phone: [''],
-    gender: ['Male'],
-    dob: [''],
-    address: [''],
-    occupation: [''],
-    paymentType: ['Cash'],
-    insuranceCompanyId: [null],
-    insuranceCompany: ['Bupa'],
-    insuranceDetails: this.fb.group({
-      company: ['Bupa'],
-      status: ['Pending'],
-      copayPercentage: [20],
-      approvedSessions: [10],
-      memberId: [''],
-      employer: ['']
-    }),
-    docs: this.fb.group({
-      medicalConsent: [false],
-      liabilityWaiver: [false],
-      idCard: [false]
-    })
-  });
-  
   // Search & Filter
   searchQuery = signal('');
   filterPayment = signal<string>('All');
@@ -135,46 +116,24 @@ export class PatientsComponent implements OnInit {
   selectedPatient = signal<Patient | null>(null);
 
   // New Patient Form
-  newPatient: NewPatient = this.initNewPatient();
-
-  private initNewPatient(): NewPatient {
-    return {
-      nameEn: '',
-      nameAr: '',
-      phone: '',
-      gender: 'Male',
-      dob: '',
-      address: '',
-      occupation: '',
-      paymentType: 'Cash',
-      insuranceCompany: 'Bupa',
-      insuranceDetails: {
-        company: 'Bupa',
-        status: 'Pending',
-        copayPercentage: 20,
-        approvedSessions: 10,
-        memberId: '',
-        employer: ''
-      },
-      docs: {
-        medicalConsent: false,
-        liabilityWaiver: false,
-        idCard: false
-      }
-    };
-  }
+  newPatient = emptyPatientRegistration();
 
   // Edit Patient Form (Working Copy)
   editPatientForm: Partial<Patient> = {};
 
   // Actions
   openDrawer() {
-    this.newPatient = this.initNewPatient();
+    if (this.saving()) return;
+    if (!this.createdPatient()) {
+      this.newPatient = emptyPatientRegistration();
+      this.selectedFiles = [];
+      this.registrationError.set('');
+    }
     this.showDrawer.set(true);
   }
 
   closeDrawer() {
-    this.showDrawer.set(false);
+    if (!this.saving()) this.showDrawer.set(false);
   }
 
   viewPatient(patient: Patient) {
@@ -196,7 +155,7 @@ export class PatientsComponent implements OnInit {
       documents: { ...patient.documents },
       insuranceDetails: patient.insuranceDetails 
         ? { ...patient.insuranceDetails } 
-        : { company: 'Bupa', status: 'Pending', copayPercentage: 20, approvedSessions: 10, memberId: '', employer: '' },
+        : { company: '', status: 'Unknown' },
       financialPlan: patient.financialPlan 
         ? { ...patient.financialPlan } 
         : patient.treatmentPlan?.financialPlan
@@ -220,41 +179,67 @@ export class PatientsComponent implements OnInit {
     this.createProfile();
   }
 
-  createProfile() {
-    if (!this.newPatient.nameEn) {
-      this.messageService.add({ severity: 'error', summary: this.locale.text('VALIDATION_ERROR', "Validation Error"), detail: this.locale.text('PATIENT_ENGLISH_NAME_IS_REQUIRED', "Patient English name is required") });
+  refreshPatients(afterSave = false) {
+    this.patientService.getPatients().subscribe({
+      error: () => this.messageService.add({
+        severity: 'warn', summary: this.locale.text('ERROR', 'Error'),
+        detail: this.locale.text(afterSave ? 'PATIENT_SAVED_REFRESH_FAILED' : 'PATIENT_LIST_FAILED',
+          afterSave ? 'Patient saved. The list could not refresh; do not register again.' : 'Could not load patients. Please retry.')
+      })
+    });
+  }
+
+  async createProfile() {
+    if (this.saving() || this.createdPatient() || this.creationOutcomeUnknown()) return;
+    this.saving.set(true);
+    this.registrationError.set('');
+    try {
+      const patient = await firstValueFrom(this.patientService.addPatient(this.newPatient));
+      this.createdPatient.set(patient);
+      this.refreshPatients(true);
+    } catch (error) {
+      const detail = patientOutcomeIsUnknown(error)
+        ? this.locale.text('PATIENT_OUTCOME_UNKNOWN', 'The patient may have been saved. Check the patient list before registering again.')
+        : error instanceof PatientInputError ? this.locale.text(error.key, error.message)
+        : patientServerError(error) || this.locale.text('FAILED_TO_CREATE_PATIENT', 'Failed to create patient.');
+      this.registrationError.set(detail);
+      this.messageService.add({ severity: 'error', summary: this.locale.text('ERROR', 'Error'), detail });
+      this.saving.set(false);
       return;
     }
-    if (this.newPatient.paymentType === 'Insurance' && this.newPatient.insuranceDetails) {
-      this.newPatient.insuranceCompany = this.newPatient.insuranceDetails.company;
+    this.saving.set(false);
+    if (this.newPatient.paymentType === 'Insurance' && this.selectedFiles.length) {
+      await this.retryDocumentUpload();
+    } else {
+      this.finishRegistration();
     }
+  }
 
-    this.patientService.addPatient(this.newPatient).subscribe({
-      next: (res) => {
-        const newPatientId = res?.id || res?.data?.id || (res?.items && res.items[0]?.id) || Date.now(); // Fallback for mock backend
-        if (this.newPatient.paymentType === 'Insurance' && this.selectedFiles.length > 0) {
-          this.insuranceDocService.uploadDocuments(newPatientId, this.selectedFiles).subscribe({
-            next: () => {
-              this.messageService.add({ severity: 'success', summary: this.locale.text('SUCCESS', "Success"), detail: this.locale.text('PATIENT_AND_DOCUMENT_CREATED', "Patient and document created") });
-              this.closeDrawer();
-              this.patientService.getPatients().subscribe();
-            },
-            error: (err) => {
-              this.messageService.add({ severity: 'error', summary: this.locale.text('ERROR', "Error"), detail: this.locale.text('PATIENT_CREATED_BUT_DOCUMENT_UPLOAD_FAILED', "Patient created but document upload failed") });
-              console.error(err);
-            }
-          });
-        } else {
-          this.messageService.add({ severity: 'success', summary: this.locale.text('SUCCESS', "Success"), detail: this.locale.text('PATIENT_PROFILE_CREATED', "Patient profile created") });
-          this.closeDrawer();
-          this.patientService.getPatients().subscribe();
-        }
-      },
-      error: (err) => {
-        this.messageService.add({ severity: 'error', summary: this.locale.text('ERROR', "Error"), detail: this.locale.text('FAILED_TO_CREATE_PATIENT', "Failed to create patient") });
-        console.error(err);
-      }
-    });
+  async retryDocumentUpload() {
+    const patient = this.createdPatient();
+    if (!patient || this.saving() || !this.selectedFiles.length) return;
+    this.saving.set(true);
+    try {
+      await firstValueFrom(this.insuranceDocService.uploadDocuments(Number(patient.id), this.selectedFiles));
+    } catch (error) {
+      this.registrationError.set(this.locale.text('PATIENT_CREATED_UPLOAD_RETRY',
+        'Patient #{{id}} is saved. Document upload failed. Check uploaded documents before retrying if the outcome is uncertain.', { id: patient.id }) +
+        (patientServerError(error) ? `\n${patientServerError(error)}` : ''));
+      this.saving.set(false);
+      return;
+    }
+    this.saving.set(false);
+    this.finishRegistration();
+  }
+
+  finishRegistration() {
+    if (this.saving() || !this.createdPatient()) return;
+    this.messageService.add({ severity: 'success', summary: this.locale.text('SUCCESS', 'Success'),
+      detail: this.locale.text('PATIENT_PROFILE_CREATED', 'Patient profile created') });
+    this.createdPatient.set(null);
+    this.selectedFiles = [];
+    this.registrationError.set('');
+    this.closeDrawer();
   }
 
   updateProfile() {
@@ -267,7 +252,7 @@ export class PatientsComponent implements OnInit {
         next: () => {
           this.closeEditDrawer();
           this.messageService.add({ severity: 'success', summary: this.locale.text('SUCCESS', "Success"), detail: this.locale.text('PATIENT_PROFILE_UPDATED', "Patient profile updated") });
-          this.patientService.getPatients().subscribe();
+          this.refreshPatients(true);
         },
         error: (err) => {
           this.messageService.add({ severity: 'error', summary: this.locale.text('ERROR', "Error"), detail: this.locale.text('FAILED_TO_UPDATE_PATIENT', "Failed to update patient") });
@@ -282,7 +267,7 @@ export class PatientsComponent implements OnInit {
       this.patientService.deletePatient(parseInt(id, 10) || 0).subscribe({
         next: () => {
           this.messageService.add({ severity: 'success', summary: this.locale.text('SUCCESS', "Success"), detail: this.locale.text('PATIENT_DELETED', "Patient deleted") });
-          this.patientService.getPatients().subscribe();
+          this.refreshPatients(true);
         },
         error: (err) => {
           this.messageService.add({ severity: 'error', summary: this.locale.text('ERROR', "Error"), detail: this.locale.text('FAILED_TO_DELETE_PATIENT', "Failed to delete patient") });

@@ -3,7 +3,9 @@ export type PaymentMethod = 'Cash' | 'Online' | 'Insurance' | 'Card' | 'InstaPay
 
 export interface InsuranceDetails {
   company: string;
-  status: 'Pending' | 'Approved';
+  status: 'Pending' | 'Approved' | 'Unknown';
+  /** Preserve the server enum until its numeric labels are documented. */
+  apiStatus?: number | null;
   copayPercentage?: number;
   approvedSessions?: number;
   memberId?: string;
@@ -27,6 +29,9 @@ export interface Patient {
   avatar: string;
   gender: Gender;
   phone: string;
+  birthDate?: string;
+  email?: string;
+  emergencyContact?: string | null;
   address?: string;
   occupation?: string;
   paymentType: PaymentMethod;
@@ -48,11 +53,13 @@ export interface Patient {
 }
 
 export interface NewPatient {
+  userName?: string;
   nameEn: string;
   nameAr: string;
   phone: string;
   gender: Gender;
   dob: string;
+  emergencyContact?: string;
   address?: string;
   occupation?: string;
   paymentType: PaymentMethod;

@@ -3,6 +3,8 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { BookingsComponent } from './bookings';
 import { ClinicStateService } from '../../../core/services/state/clinic-state.service';
 import { MessageService } from 'primeng/api';
+import { PatientService } from '../../../core/services/patient.service';
+import { InsuranceService } from '../../../core/services/insurance.service';
 
 import { Injector, runInInjectionContext } from '@angular/core';
 
@@ -20,7 +22,10 @@ describe('BookingsComponent Logic Unit Tests', () => {
     const injector = Injector.create({
       providers: [
         { provide: ClinicStateService, useValue: clinicState },
-        { provide: MessageService, useValue: messageService }
+        { provide: MessageService, useValue: messageService },
+        // Registration now requires backend services; this legacy suite exercises clinic-state rules.
+        { provide: PatientService, useValue: { patients: clinicState.patients } },
+        { provide: InsuranceService, useValue: {} }
       ]
     });
 
