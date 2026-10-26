@@ -32,7 +32,7 @@ export interface InsuranceProvider {
 export class InsuranceComponent implements OnInit {
   readonly locale = new ReceptionistLocale();
   messageService = inject(MessageService);
-  private insuranceService = inject(InsuranceService);
+  insuranceService = inject(InsuranceService);
 
   ngOnInit() {
     this.insuranceService.getCompanies();
@@ -41,8 +41,8 @@ export class InsuranceComponent implements OnInit {
   providers = computed(() => {
     return this.insuranceService.companies().map((c, index) => ({
       ...c,
-      id: c.id ?? index,
-      code: `INS-${(c.id || index).toString().padStart(3, '0')}`,
+      id: c.id,
+
       hotline: c.hotline || this.locale.text('NOT_PROVIDED', 'Not provided'),
       themeColor: index % 2 === 0 ? 'var(--bs-info-bg-subtle)' : 'var(--bs-primary-bg-subtle)',
       logoIcon: 'bi-shield-check text-primary'
@@ -50,7 +50,7 @@ export class InsuranceComponent implements OnInit {
   });
 
   openPortal(url: string | null) {
-    if (url) {
+    if (url && /^https?:\/\//i.test(url)) {
       window.open(url, '_blank', 'noopener,noreferrer');
     }
   }

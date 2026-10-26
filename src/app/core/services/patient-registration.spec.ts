@@ -1,3 +1,9 @@
+import { ClinicalRecordsService } from './clinical-records.service';
+import { AppointmentWorkflowService } from './appointment-workflow.service';
+import { ReceptionContracts } from './reception-contracts';
+import { RoomService } from './room.service';
+import { ClinicianService } from './clinician.service';
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, HttpErrorResponse } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
@@ -32,6 +38,11 @@ describe('Patient registration contracts and safety', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({ imports: [TranslateModule.forRoot(), PatientRegistrationFieldsComponent], providers: [provideHttpClient(), provideHttpClientTesting(), MessageService,
+      { provide: ClinicalRecordsService, useValue: { load() {}, plansForPatient: () => [], sessions: () => [] } },
+      { provide: AppointmentWorkflowService, useValue: {} },
+      { provide: ReceptionContracts, useValue: {} },
+      { provide: RoomService, useValue: { rooms: signal([]) } },
+      { provide: ClinicianService, useValue: { clinicians: signal([]) } },
       { provide: BillingService, useValue: { getInvoices() {} } },
       { provide: AppointmentService, useValue: {} }
     ] });

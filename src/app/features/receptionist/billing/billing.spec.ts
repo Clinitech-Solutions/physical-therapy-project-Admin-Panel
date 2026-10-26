@@ -1,221 +1,45 @@
-import '@angular/compiler';
-import { describe, it, expect, beforeEach } from 'vitest';
-import { Injector, runInInjectionContext } from '@angular/core';
-import { of } from 'rxjs';
-import { BillingComponent } from './billing';
-import { BillingService, Invoice } from '../../../core/services/billing.service';
-import { PatientService } from '../../../core/services/patient.service';
-import { AppointmentService } from '../../../core/services/appointment.service';
+import { TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController,provideHttpClientTesting } from '@angular/common/http/testing';
 import { MessageService } from 'primeng/api';
-
-describe('Receptionist BillingComponent & BillingService Suite', () => {
-  let billing: BillingComponent;
-  let billingService: BillingService;
-  let messageService: MessageService;
-  let toastMessages: any[] = [];
-  const todayIso = new Date().toISOString();
-
-  const initialInvoices: Invoice[] = [
-    {
-      id: 1001,
-      appointmentId: 1,
-      patientId: 1,
-      type: 1, // Session
-      totalAmount: 500,
-      insuranceAmount: 0,
-      patientAmount: 500,
-      paidAmount: 0,
-      remainingBalance: 500,
-      status: 0, // Pending
-      createdAt: todayIso
-    },
-    {
-      id: 1002,
-      appointmentId: 2,
-      patientId: 2,
-      type: 0, // Assessment
-      totalAmount: 1000,
-      insuranceAmount: 800,
-      patientAmount: 200,
-      paidAmount: 0,
-      remainingBalance: 200,
-      status: 0, // Pending
-      createdAt: todayIso
-    }
-  ];
-
-  beforeEach(() => {
-    toastMessages = [];
-    messageService = new MessageService();
-    messageService.add = (msg: any) => {
-      toastMessages.push(msg);
-    };
-
-    const injector = Injector.create({
-      providers: [
-        { provide: BillingService, useFactory: () => new BillingService(), deps: [] },
-        { provide: PatientService, useValue: { patients: () => [], getPatients: () => of([]) } },
-        { provide: AppointmentService, useValue: { appointments: () => [], getAppointments: () => {} } },
-        { provide: MessageService, useValue: messageService }
-      ]
-    });
-
-    billingService = injector.get(BillingService);
-    billingService.invoices.set(
-      initialInvoices.map((inv) => billingService.normalizeInvoice(inv))
-    );
-
-    // Mock recordPayment to update the target invoice in the signal
-    billingService.recordPayment = (payload) => {
-      const methodLabel = billingService.mapMethodToString(payload.method);
-      billingService.invoices.update((list) =>
-        list.map((inv) => {
-          if (inv.id !== payload.invoiceId) return inv;
-          const newPaid = (inv.paidAmount || 0) + payload.amount;
-          const newRem = Math.max(0, inv.patientAmount - newPaid);
-          return {
-            ...inv,
-            paidAmount: newPaid,
-            remainingBalance: newRem,
-            status: newRem <= 0 ? 'Paid' : 'Partial',
-            paymentMethod: methodLabel
-          };
-        })
-      );
-      return of({
-        id: 1,
-        invoiceId: payload.invoiceId,
-        amount: payload.amount,
-        method: methodLabel
-      });
-    };
-
-    billing = runInInjectionContext(injector, () => new BillingComponent());
+import { BillingService } from '../../../core/services/billing.service';
+import { BillingComponent } from './billing';
+import { environment } from '../../../../environments/environment';
+const invoice={id:11,invoiceNumber:'INV-11',appointmentId:10,patientId:1,patientName:'Patient',patientPhone:null,insuranceCompany:null,
+  type:72,totalAmount:500,insuranceAmount:300,patientAmount:200,paidAmount:50,remainingAmount:150,status:57,appointmentDate:'2026-11-01T09:00:00Z',createdAt:new Date().toISOString(),paymentMethod:null};
+describe('Billing component with backend invoice data',()=>{
+  let component:BillingComponent;let service:BillingService;let http:HttpTestingController;
+  beforeEach(()=>{
+    TestBed.configureTestingModule({providers:[provideHttpClient(),provideHttpClientTesting(),MessageService]});
+    service=TestBed.inject(BillingService);http=TestBed.inject(HttpTestingController);
+    service.invoices.set([service.normalizeInvoice(invoice)]);
+    component=TestBed.runInInjectionContext(()=>new BillingComponent());
   });
-
-  it('should create BillingComponent and inject BillingService and MessageService', () => {
-    expect(billing).toBeDefined();
-    expect(billing.billingService).toBe(billingService);
-    expect(billing.messageService).toBe(messageService);
+  afterEach(()=>http.verify());
+  it('keeps invoices visible when their type and status are unidentified',()=>{
+    expect(component.dailyCashierInvoices()).toHaveLength(1);expect(service.mapStatusToString(57)).toBe('Unknown');
   });
-
-  describe('1. Reactive Computed Signal: invoices & Enum Mappings', () => {
-    it('should reactively return all normalized invoices from BillingService', () => {
-      const stateInvoices = billingService.invoices();
-      expect(billing.invoices()).toEqual(stateInvoices);
-      expect(billing.invoices().length).toBe(2);
-      expect(billingService.mapTypeToString(1)).toBe('Session');
-      expect(billingService.mapTypeToString(0)).toBe('Assessment');
-      expect(billingService.mapStatusToString(0)).toBe('Pending');
-      expect(billingService.mapStatusToString(1)).toBe('Paid');
-    });
-
-    it('should update reactively when a new invoice is added to BillingService', () => {
-      const initialCount = billing.invoices().length;
-      const newInv: Invoice = billingService.normalizeInvoice({
-        id: 1099,
-        appointmentId: 99,
-        patientId: 3,
-        type: 1,
-        totalAmount: 800,
-        insuranceAmount: 0,
-        patientAmount: 800,
-        status: 0,
-        createdAt: todayIso
-      });
-
-      billingService.invoices.update((list) => [...list, newInv]);
-
-      expect(billing.invoices().length).toBe(initialCount + 1);
-      expect(billing.invoices().find((i) => i.id === 1099)).toBeDefined();
-    });
+  it('opens saved invoice details using the actual remaining balance without defaulting a payment method',()=>{
+    component.openPaymentModal(11);http.expectOne(environment.apiUrl+'/Billing/invoices/11/payments').flush([]);
+    expect(component.amountToCollect).toBe(150);expect(component.selectedPaymentMethod).toBe('');
+    expect(component.paymentMethods).toEqual([]);expect(component.showPaymentModal).toBe(true);
   });
-
-  describe('2. Payment Method Modal & Confirm Payment Workflow', () => {
-    it('should open payment modal when openPaymentModal or payInvoice is called', () => {
-      expect(billing.showPaymentModal).toBe(false);
-      expect(billing.selectedInvoiceId).toBeNull();
-
-      billing.payInvoice(1002);
-
-      expect(billing.showPaymentModal).toBe(true);
-      expect(billing.selectedInvoiceId).toBe(1002);
-      expect(billing.amountToCollect).toBe(200); // patientAmount
-      expect(billing.selectedPaymentMethod).toBe('Cash');
-      expect(billing.paymentMethods).toEqual(['Cash', 'Credit Card', 'E-Wallet', 'InstaPay']);
-    });
-
-    it('should confirm payment with chosen payment method via BillingService.recordPayment, close modal, update status to Paid, and show toast', async () => {
-      const pendingInvoice = billing
-        .invoices()
-        .find((i) => billingService.mapStatusToString(i.status) === 'Pending');
-      expect(pendingInvoice).toBeDefined();
-
-      const invoiceId = pendingInvoice!.id;
-
-      billing.openPaymentModal(invoiceId);
-      expect(billing.showPaymentModal).toBe(true);
-
-      billing.selectedPaymentMethod = 'Credit Card';
-
-      await billing.confirmPayment();
-
-      expect(billing.showPaymentModal).toBe(false);
-      expect(billing.selectedInvoiceId).toBeNull();
-
-      const updatedInvoice = billingService.findInvoiceById(invoiceId);
-      expect(billingService.mapStatusToString(updatedInvoice?.status)).toBe('Paid');
-      expect(updatedInvoice?.paymentMethod).toBe('Credit Card');
-
-      expect(toastMessages.length).toBeGreaterThan(0);
-      const lastToast = toastMessages[toastMessages.length - 1];
-      expect(lastToast.severity).toBe('success');
-      expect(lastToast.detail).toEqual(expect.stringContaining('collected via Credit Card'));
-    });
+  it('shows history failures independently of invoice details',()=>{
+    component.openPaymentModal(11);http.expectOne(environment.apiUrl+'/Billing/invoices/11/payments').flush({}, {status:403,statusText:'Forbidden'});
+    expect(component.paymentHistoryError()).toBeTruthy();expect(component.showPaymentModal).toBe(true);
   });
-
-  describe('3. Status Tag Severity Helper: getStatusSeverity', () => {
-    it('should map Paid (or 1) to success (Green)', () => {
-      expect(billing.getStatusSeverity('Paid')).toBe('success');
-      expect(billing.getStatusSeverity(1)).toBe('success');
-    });
-
-    it('should map Pending (or 0) to warn (Orange/Warning)', () => {
-      expect(billing.getStatusSeverity('Pending')).toBe('warn');
-      expect(billing.getStatusSeverity(0)).toBe('warn');
-    });
-
-    it('should map Partial (or 2) to info (Blue)', () => {
-      expect(billing.getStatusSeverity('Partial')).toBe('info');
-      expect(billing.getStatusSeverity(2)).toBe('info');
-    });
-
-    it('should map Waived (or unknown status) to secondary', () => {
-      expect(billing.getStatusSeverity('Waived')).toBe('secondary');
-      expect(billing.getStatusSeverity('Unknown')).toBe('secondary');
-    });
+  it('uses recorded payments and balances instead of invoice charges as collections',()=>{
+    expect(component.totalRevenue()).toBe(50);expect(component.pendingPaymentsTotal()).toBe(150);
+    expect(component.cashCollectedToday()).toBeNull();expect(component.digitalCollectedToday()).toBeNull();
   });
-
-  describe('4. Dynamic Revenue & KPI Computed Signals (totalAmount & patientAmount)', () => {
-    it('should compute expectedTodayRevenue and pendingPaymentsTotal using totalAmount', () => {
-      expect(billing.expectedTodayRevenue()).toBe(1500);
-      expect(billing.pendingPaymentsTotal()).toBe(1500);
-    });
-
-    it('should compute collectedTodayRevenue and totalRevenue when invoice is Paid', async () => {
-      billing.openPaymentModal(1001);
-      await billing.confirmPayment();
-
-      expect(billing.collectedTodayRevenue()).toBe(500);
-      expect(billing.totalRevenue()).toBe(500);
-      expect(billing.cashCollectedToday()).toBe(500);
-    });
-
-    it('should filter insuranceClaims where insuranceAmount > 0', () => {
-      const claims = billing.insuranceClaims();
-      expect(claims.length).toBe(1);
-      expect(claims[0].id).toBe(1002);
-      expect(claims[0].insuranceAmount).toBe(800);
-    });
+  it('does not create installment invoices or locally adjust patient debt',async()=>{
+    await component.confirmInstallmentCollection();
+    expect(component.paymentError()).toContain('Installment');http.expectNone(environment.apiUrl+'/Billing/invoices');
+  });
+  it('gives an unknown numeric invoice status a neutral presentation',()=>{
+    expect(component.getStatusSeverity(57)).toBe('secondary');expect(component.getStatusSeverity('Paid')).toBe('success');
+  });
+  it('keeps insurer invoice amounts separate from recorded patient payments',()=>{
+    expect(component.insuranceClaims()[0].insuranceAmount).toBe(300);expect(component.totalRevenue()).toBe(50);
   });
 });

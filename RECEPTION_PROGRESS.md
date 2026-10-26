@@ -7,12 +7,12 @@ Updated: 2026-10-26 (Africa/Cairo).
 | Phase | Status | Next action |
 | --- | --- | --- |
 | 1. Audit integration and fix Add Patient | Independent implementation and local checks finished; runtime verification pending. **Not complete.** | Verify cash and insurance registration, reload, booking selection and document recovery using an approved test API and Receptionist account. Resolve the contract questions below. |
-| 2. Clinicians and rooms | Not started | Audit room contracts and an authorized clinician lookup after Phase 1 verification. |
-| 3. Bookings and daily schedule | Not started | Verify appointment, assessment, treatment plan/session and invoice behavior. |
-| 4. Billing, insurance and patient profile | Not started | Verify payment, insurance, document and patient history contracts. |
-| 5. Dashboard and final validation | Not started | Validate statistics, two-session consistency, languages and end-to-end workflows. |
+| 2. Clinicians and rooms | Independent integration implemented; non-empty responses and authenticated runtime checks pending. | Verify room record adapter and clinician lookup with approved access. |
+| 3. Bookings and daily schedule | Independent integration implemented; status definitions and authenticated runtime verification pending. | Verify non-empty responses, clinical access and transitions. |
+| 4. Billing, insurance and patient profile | Independent integration implemented; payment enums/document schema and authenticated runtime verification pending. | Confirm payment/history/document contracts on approved data. |
+| 5. Dashboard and final validation | Independent integration and local validation implemented; live/browser/two-session checks pending. | Resolve exact contracts and verify all flows on an approved test environment. |
 
-Only Phase 1 was authorized for this implementation. No push, deployment, live patient creation or financial transaction was performed. Login, interceptors and guards were preserved.
+The user has now authorized sequential implementation through Phases 2-5; Phase 1 runtime verification is not a prerequisite for independent later work. No push, deployment, live patient creation or financial transaction was performed. Login, interceptors and guards were preserved.
 
 ## Phase 1 audit
 
@@ -100,4 +100,105 @@ No approved non-production API URL or Receptionist test account was supplied. En
 6. Verify refresh/direct navigation, browser duplicate clicks and timeout handling against real persistence. Local tests confirm client behavior only.
 7. Review the rendered registration dialogs and shared profile in Arabic, English and RTL on a browser. Angular templates compile and the shared form has a DOM binding test, but interactive visual/browser verification is pending.
 
-**Stopping point:** Phase 1 implementation and local checks are finished; Phase 1 stays open for the runtime checks above. The next action is approved-environment verification and resolution of the exact enum/upload questions. Phases 2-5 were not started.
+**Phase 1 stopping point:** Local implementation finished; all its runtime checks remain pending. Later phases are now independently authorized.
+
+
+## Phase 2 implementation ? 2026-10-26
+
+- Read current Rooms GET/POST, record GET/PUT/DELETE and maintenance PATCH contracts. Added typed write/read-adapter models, RoomService and room CRUD/explicit maintenance actions. No room assignments, occupancy updates or availability endpoints were invented.
+- Removed clinic_rooms browser-storage reads/writes and initial sample-room loading from ClinicStateService. Reception Rooms and booking candidates now read RoomService only. An active room is a candidate, not an available time slot.
+- Preserved room card/dialog styling, bilingual labels and RTL. Added loading/error/retry and validation/submission/unknown-outcome states. Mutations do not guess a response ID; list refresh is separate from persistence.
+- Added a separate clinician directory using the documented GET /Users/GetAll. All clinician IDs remain strings. Existing user envelope/field assumptions are explicitly validated; Receptionist access and a successful response remain unverified.
+- Corrected appointment POST /Appointments, GET/PUT/DELETE /Appointments/{id}, PATCH /Appointments/{id}/status paths and string clinician ID types. Deeper appointment/schedule behavior is Phase 3.
+- Read-only running-API observations: GET /Rooms -> HTTP 200, []; GET /Users/GetAll -> HTTP 401. No live mutations. Empty rooms establish the array envelope only, not the item schema. The non-empty room adapter requires server ID plus name/capacity/isActive and rejects mismatches; this item structure remains provisional pending a sample. Maintenance state is not inferred from isActive or persisted through unrelated fields.
+- Independent read-only audit also confirmed paginated items for Appointments/GetAll and Receptionist/today-sessions, direct arrays for Billing/invoices and InsuranceDocuments, and dashboard fields totalExpectedToday/totalCollectedToday/collectionRate. These corrections are applied in subsequent phases.
+- Checks: production build passed; 36 focused tests passed (27 Phase 1, 9 Phase 2). Test response fixtures verify client contracts only, not real API acceptance. The existing 40 full-suite failures remain a separate baseline; affected legacy fixtures will be updated for intentional dependency changes during final validation.
+- Main files: room-api.model.ts, room.service.ts, clinician.service.ts, reception-api.ts, rooms.ts/html, booking room bindings, appointment.service.ts, clinic-state.service.ts and room.service.spec.ts.
+- Pending: non-empty room response, Users response envelope/fields/role values, Receptionist authorization, real CRUD/maintenance persistence and concurrent-session behavior. Approved test environment/account still unavailable.
+- Next: Phase 3 appointment submission, partial recurring failures, shared schedule actions and clinical record reads. No phase is marked complete while runtime verification is pending.
+
+
+## Phase 3 implementation ? 2026-10-26
+
+- Corrected all appointment paths and ID handling. Added validated start/end intervals, real patient/clinician/room relationships, paginated appointment reads, explicit loading/errors, shared mutation guards and no automatic mutation retries.
+- Booking no longer creates an invoice or assumes a fixed session fee. Removed unsaved fee/package/discount controls from the appointment form. Whether the server automatically creates invoices remains unverified; no duplicate financial write is issued.
+- Removed reception use of ClinicStateService sessions, sample clinician/room IDs, local assessment-first assumptions and inferred insurance eligibility. An unknown insurance status does not prevent submitting an appointment DTO that has no status field; backend eligibility is authoritative.
+- Added typed Assessment/TreatmentPlan/TreatmentPlanSession read contracts. Recurring bookings require a saved plan linked to the selected patient through an assessment and actual unscheduled plan-session IDs. No synthetic plan or session is created.
+- Recurring requests run sequentially. The exact batch and confirmed session IDs survive a rejected later request; retry skips accepted records. A network/5xx/unknown outcome blocks replay. Inputs are frozen after partial success. No fake installment records or package payments are created.
+- Schedule now uses backend room/clinician lists and one AppointmentWorkflowService for semantic actions, also used by Bookings. Cancellation uses PUT Receptionist/appointments/{id}/cancel without guessing a status number. Check-in/completion stay pending until authoritative AppointmentStatus values are provided; no numeric values are guessed. Generic documented string PATCH remains available for explicitly verified status values.
+- Removed simulated staff absence/automatic redistribution and nearest-slot success. Their persistence/availability contracts do not exist in the supplied OpenAPI; controls are unavailable with an explanation. Removed financial side effects from check-in.
+- Current GET observations: Appointments/GetAll and Receptionist/today-sessions both return paginated items with empty lists. Their non-empty item adapters are strict and remain unverified. Clinical GET requests returned 401 without credentials. Scalar status/type schemas contain only type:integer, no enum names/values.
+- Checks: production build passed; 43 focused tests passed (27 Phase 1 + 9 Phase 2 + 7 Phase 3). Tests cover endpoint paths/string IDs, invalid intervals, actual page envelope, unknown status handling, cancellation without enums, no extra invoice creation and partial recurring retry without duplicate confirmed sessions. Legacy schedule fixture doctor IDs were corrected to strings to match the contract.
+- Main files: appointment.service.ts, appointment-workflow.service.ts, reception-pagination.ts, reception-contracts.ts, clinical-api.model.ts, clinical-records.service.ts, receptionist.service.ts, bookings.ts/html, schedule.ts/html and appointment-integration.spec.ts.
+- Pending: clinician/clinical authorization, non-empty read DTOs, accepted appointmentType strings, all status enums, actual booking conflict/relationship behavior and invoice auto-creation. No live writes were performed.
+- Next: Phase 4 billing, insurance documents and patient profile. Phase 3 stays runtime-pending; its blockers do not prevent independent later work.
+
+
+## Phase 4 implementation ? 2026-10-26
+
+- Replaced permissive billing aliases/defaults with the documented InvoiceResponse fields. remainingAmount and paidAmount are authoritative; no Paid/Waived/Partial status or payment amount is inferred from other fields. Opaque numeric status/type/method values remain opaque until definitions are supplied.
+- Invoice list is a direct array (observed empty); invoice-by-ID has a documented direct DTO. List/detail failures are visible and cached server records are retained. All invoice records can be inspected despite unidentified enum labels.
+- Payment POST is wired to the documented CreatePaymentRequest and saved invoice ID. The collection flow re-reads the invoice, validates finite positive amount against remainingAmount, blocks overlapping submits and sends only a verified method value. Successful payment does not optimistically change financial data. A second collection on that invoice is blocked until refreshed paidAmount reconciles the accepted amount. Unknown outcomes are never replayed automatically.
+- Payment history retrieval has independent loading/error/retry. Its non-empty schema is undocumented, so the strict request-field adapter remains provisional; no success is fabricated when the response is unrecognized.
+- Removed fabricated installment invoice creation/local financial-plan adjustments. Packages/installments/discounts lack contracts and remain unavailable. Payment-method/status/type semantic operations remain pending their own enum definitions; they do not prevent invoice retrieval, patient registration or appointment creation.
+- Billing metrics distinguish charges issued today, cumulative recorded patient payments on invoices and saved outstanding invoice balances. Insurer invoice amounts are not labeled collected receipts. Daily cash/digital collections are not inferred from cumulative invoice paidAmount or an invoice's last payment method; the dashboard endpoint is handled independently in Phase 5.
+- Insurance screen uses persisted company IDs/details with no synthetic insurer codes. Added failure/loading/retry and HTTP(S)-only portal opening. Insurance approval remains unknown; no approval/discharge inference was introduced.
+- Shared Patient Profile loads Patient GetById on opening (including an uncached ID), clinical records, appointments, invoices and documents. Removed all synthetic session rows, clinic-state fallbacks, invented session numbers, package-covered payment labels and inferred completion. Plan totals/completions come from returned plan records; sessions and check-in/out times come from saved TreatmentPlanSession DTOs.
+- Added profile document upload against the real patient without re-registration. Document listing is confirmed only for an empty array; non-empty records are withheld with an explicit blocker until the patient association and file-access DTO are known. Document update/delete service paths exist, but controls requiring unknown document IDs/metadata are pending. Multipart upload binding still needs runtime confirmation. Document checklist flags are not treated as known missing paperwork.
+- Main files: billing.service.ts, billing.ts/html, insurance.ts/html, insurance-document.service.ts, patient.service.ts, patient-profile.component.ts/html, patient.model.ts and billing-integration.spec.ts.
+- Checks: production build passed; 56 focused tests passed (prior 43 + 13 billing/profile cases). Coverage includes authoritative balances, no daily-collection inference, stale balance rejection, payment reconciliation, uncertain outcomes, invalid amounts, history schema failure, document isolation and real-only clinical sessions. No live writes were made.
+- Remaining blockers: PaymentMethod/InvoiceStatus/InvoiceType/SessionStatus definitions; approved Receptionist test account; actual payments/history responses; non-empty documents and file-access contract; clinical authorization. These are specific pending operations, not prerequisites for independent dashboard work.
+- Next: Phase 5 dashboard normalization, refresh propagation, broader regression checks and language/RTL review. All runtime verification remains pending.
+
+
+## Phase 5 implementation ? 2026-10-26
+
+- Dashboard now maps the six fields observed in the running dashboard-stats response: todaysSessions, completedSessions, pendingPayments, totalExpectedToday, totalCollectedToday and collectionRate. No invented aliases or inferred collections are used. Missing/failed statistics render as unavailable rather than fabricated zeros; each read has independent loading/error/retry.
+- Dashboard uses real clinician/room records, string doctor filter IDs and the shared appointment workflow. Removed remaining receptionist clinic-state lookups, static sample absence lists, simulated coverage success and checkout financial side effects. Unsupported status/availability/staff actions are unavailable rather than pretending to persist.
+- Added ReceptionRefreshService, initialized only for reception routes. Confirmed writes trigger separate reads of affected records, invoices, today's sessions and statistics. Failed refreshes do not turn a confirmed write into a failed mutation. Authentication, interceptors, guards and role lists were not changed.
+- Added read-generation guards so stale patient, appointment, room, dashboard, invoice and clinical responses cannot overwrite later reads or confirmed patient creation. Clinical source failures are independent: successful sources remain available while denied sources show their errors. Client-side TimeoutError is also an uncertain mutation outcome and cannot trigger replay.
+- Added Schedule appointment editing via GET/PUT /Appointments/{id}. Editing keeps patient association, appointment type, opaque numeric status and unchanged clinician roles; only documented fields are sent. Explicit start/end times are validated. A status label definition is not needed to preserve an existing valid integer during rescheduling.
+- Final audit tightened insurer response validation (invalid records are errors, not silently filtered successful lists), preserves insurer name even when insuranceDetails is null, and prevents mismatched invoice payment histories. Profile uploads are scoped to the captured patient and ignore stale UI completions after navigation.
+- English/Arabic keys and interpolation parameters are consistent. Localization tests preserve timeline buckets when language changes. Existing CSS and RTL patterns remain; live interactive visual checks still require a browser session with approved access. No API transport data is translated or assigned a guessed enum value.
+- Test migrations are explicit: old Rooms/browser-cache tests now verify backend records and ignoring browser caches; Bookings tests cover no fake slots/absence/gates; Billing/Profile/Schedule/Dashboard fixtures use documented DTOs and shared workflows. Legacy ClinicStateService tests explicitly seed their own room fixtures; production code no longer loads them.
+- Baseline comparison is recorded separately in RECEPTION_TEST_BASELINE.md against commit d1b0860592cbbe138811a8f98c4b109e280e6408. The baseline was reproduced in an isolated checkout, and temporary checkouts were removed afterward. The existing fakeAsync/zone-testing suite initialization error is recorded independently from assertion counts.
+
+### Remaining runtime and contract matrix
+
+| Area | Specific pending verification/information |
+| --- | --- |
+| Phase 1 | Approved cash/insurance registration, reload, validation, duplicate-click and upload recovery checks remain pending. Its runtime state was never marked complete. |
+| Rooms | A successful non-empty room list/detail DTO, how maintenance state is represented on reads, Receptionist CRUD/maintenance permissions, persistence after reload. Active records never establish time-slot availability. |
+| Clinicians | Successful Users/GetAll envelope/item sample, role strings, string IDs and Receptionist lookup access. The unauthenticated lookup returned 401. |
+| Appointments/schedule | Non-empty list/detail/today-session item DTOs; accepted appointmentType strings; AppointmentStatus definitions/accepted PATCH strings; actual relationship/conflict checks and recurring partial failures. |
+| Clinical records | Authorized Assessments/TreatmentPlans/TreatmentPlanSessions access, returned associations/counts/check-in/out values and clinical status definitions before semantic status operations. |
+| Billing | Invoice list/detail and payment/history runtime responses; InvoiceStatus, InvoiceType and PaymentMethod definitions; payment reconciliation and server enforcement under concurrent collection. Unknown outcomes must be reconciled before replay. |
+| Invoice creation | Whether appointment creation already creates an invoice is unknown. Booking therefore does not add a second invoice. A verified backend rule is required before automating invoice creation. |
+| Packages/installments/discounts | No supporting contracts are provided in the current specification. Backend documentation/implementation/access is needed before enabling these operations; missing frontend use was not treated as proof of absence. |
+| Insurance/documents | InsuranceStatus values and null semantics; document IDs/patient association/file-access DTO; actual multipart binding versus documented form content type; independent upload/list verification. Non-empty unverified documents are withheld rather than exposing another patient's files. |
+| Dashboard/final validation | Authenticated statistics semantics, approved cash/insurance end-to-end workflows, two receptionist sessions, direct navigation/refresh and browser visual/RTL verification. Read-only empty response checks are not role/permission or persistence verification. |
+
+**Stopping point:** Independent implementation through Phases 2-5 is finished. Required authenticated runtime verification and the exact contract questions above remain pending for their affected operations. No live data mutations, push or deployment were performed.
+
+
+### Phase 5 final local verification
+
+| Check | Final result |
+| --- | --- |
+| Production `npm run build` | Passed. Template/style-budget warnings remain; no build errors. |
+| `npx tsc --noEmit -p tsconfig.app.json` | Passed. |
+| `npx tsc --noEmit -p tsconfig.spec.json` | Passed. |
+| Focused integration suites within the full run | **64 passed:** registration 27, rooms/clinicians 10, appointments 7, billing/profile 13, refresh/concurrency 7. |
+| Full `npm test -- --watch=false` with JSON reporter | **133 passed / 32 failed** out of 165 tests, across 36 files. |
+| Original baseline | **106 passed / 40 failed** reproduced at the original commit. |
+| Failure comparison | **32 unchanged failures; 8 obsolete Bookings cases migrated; 0 newly failing assertions.** The existing zone-testing suite-load error remains separate. See RECEPTION_TEST_BASELINE.md for every original failure. |
+| Language checks | English/Arabic key and interpolation parity, Arabic text and language-switch timeline tests passed. Browser visual/RTL verification remains pending. |
+| `git diff --check` | Passed. |
+
+Phase 5 main files: reception-refresh.service.ts/spec.ts, reception-api.ts, receptionist.service.ts, dashboard.ts/html, schedule.ts/html (including appointment editor), patient.service.ts, insurance.service.ts, bilingual dictionaries, affected component test fixtures, RECEPTION_PROGRESS.md and RECEPTION_TEST_BASELINE.md. No new tests use a live mutation endpoint; all write verification uses HttpTestingController.
+
+### Rooms design correction - 2026-10-26
+
+- Restored the original room card structure, typography classes, colored border/status indicator, compact footer, Add Room button and modal form/grid/footer wrappers so the existing CSS applies again. Removed the large four-button row and record ID from the card heading; edit/delete now use existing compact icon-button styles.
+- All CSS files remain unchanged. Supported server fields and backend operations remain wired. The indicator describes active/inactive records, never time-slot availability. Maintenance uses an explicit compact action selector rather than claiming an unverified toggle state; room reads do not document maintenance state. Unsupported clinician assignments were not restored.
+- Checks: production build passed with existing warnings; all 13 room component/service tests passed; `git diff --check` passed. Authenticated runtime and browser visual/RTL verification remain pending. The original 40-test baseline remains tracked separately in RECEPTION_TEST_BASELINE.md.

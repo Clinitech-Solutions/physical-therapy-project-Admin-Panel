@@ -5,14 +5,19 @@ import { environment } from '../../../environments/environment';
 import { NewPatient, Patient } from '../models/patient.model';
 import { CreatePatientRequest, PagedPatientsResponse, PatientResponse } from '../models/patient-api.model';
 import { createPatientRequest, patientBirthDate, patientInsuranceDetails, PatientOutcomeUnknownError, patientOutcomeIsUnknown } from './patient-registration';
+import { ReceptionEvents, apiError, numericId } from './reception-api';
 
 @Injectable({ providedIn: 'root' })
 export class PatientService {
   private http = inject(HttpClient);
+  private events = inject(ReceptionEvents);
   private apiUrl = `${environment.apiUrl}/Patients`;
   patients = signal<Patient[]>([]);
+  readonly loading = signal(false);
+  readonly error = signal<string | null>(null);
   readonly creating = signal(false);
   readonly creationOutcomeUnknown = signal(false);
+  private readGeneration = 0;
 
   public mapToFrontendPatient(data: PatientResponse): Patient {
     const id = Number(data?.id);
@@ -28,8 +33,9 @@ export class PatientService {
       gender: data.gender === 1 ? 'Female' : 'Male',
       paymentType: (data.paymentType ?? '') as Patient['paymentType'],
       // PatientResponse has neither lastVisit nor document checklist flags.
-      lastVisit: '', documents: { medicalConsent: false, liabilityWaiver: false, idCard: false },
+      lastVisit: '', documentsKnown: false, documents: { medicalConsent: false, liabilityWaiver: false, idCard: false },
       insuranceCompanyId: data.insuranceCompanyId == null ? null : Number(data.insuranceCompanyId),
+      insuranceCompanyName: data.insuranceCompanyName,
       insuranceDetails: details ? {
         company: data.insuranceCompanyName ?? '', status: 'Unknown', apiStatus: details.status,
         copayPercentage: details.copayPercentage == null ? undefined : Number(details.copayPercentage),
@@ -41,6 +47,8 @@ export class PatientService {
 
   /** Load every documented page so newly registered patients remain selectable after reload. */
   getPatients(): Observable<Patient[]> {
+    const generation = ++this.readGeneration;
+    this.loading.set(true); this.error.set(null);
     const page = (pageNumber: number) => this.http.get<PagedPatientsResponse>(`${this.apiUrl}/GetAll`, {
       params: { PageNumber: pageNumber, PageSize: 100 }
     });
@@ -59,7 +67,9 @@ export class PatientService {
         return response.items.map(item => this.mapToFrontendPatient(item));
       }),
       reduce((patients, items) => [...patients, ...items], [] as Patient[]),
-      tap(patients => this.patients.set(patients))
+      tap(patients => { if (generation === this.readGeneration) this.patients.set(patients); }),
+      catchError(error => { if (generation === this.readGeneration) this.error.set(apiError(error)); return throwError(() => error); }),
+      finalize(() => { if (generation === this.readGeneration) this.loading.set(false); })
     );
   }
 
@@ -71,7 +81,7 @@ export class PatientService {
       this.creating.set(true);
       return this.http.post<PatientResponse>(`${this.apiUrl}/Add`, payload).pipe(
         map(response => this.mapToFrontendPatient(response)),
-        tap(patient => this.cachePatient(patient)),
+        tap(patient => { this.cachePatient(patient); this.events.changed.next('patients'); }),
         catchError(error => {
           if (patientOutcomeIsUnknown(error)) this.creationOutcomeUnknown.set(true);
           return throwError(() => error);
@@ -82,7 +92,14 @@ export class PatientService {
   }
 
   private cachePatient(patient: Patient) {
+    this.readGeneration++; this.loading.set(false);
     this.patients.update(patients => [patient, ...patients.filter(p => p.id !== patient.id)]);
+  }
+
+  getPatientById(id: number): Observable<Patient> {
+    return this.http.get<PatientResponse>(`${this.apiUrl}/GetById/${numericId(id)}`).pipe(
+      map(value => this.mapToFrontendPatient(value)), tap(patient => this.cachePatient(patient))
+    );
   }
 
   updatePatient(id: number, patient: Partial<Patient>): Observable<Patient> {
@@ -99,11 +116,11 @@ export class PatientService {
       payload.insuranceDetails = patient.paymentType === 'Insurance' ? patientInsuranceDetails(patient.insuranceDetails) : null;
     }
     return this.http.put<PatientResponse>(`${this.apiUrl}/Update/${id}`, payload).pipe(
-      map(response => this.mapToFrontendPatient(response)), tap(patient => this.cachePatient(patient))
+      map(response => this.mapToFrontendPatient(response)), tap(patient => { this.cachePatient(patient); this.events.changed.next('patients'); })
     );
   }
 
   deletePatient(id: number): Observable<unknown> {
-    return this.http.delete(`${this.apiUrl}/Delete/${id}`);
+    return this.http.delete(`${this.apiUrl}/Delete/${id}`).pipe(tap(() => this.events.changed.next('patients')));
   }
 }

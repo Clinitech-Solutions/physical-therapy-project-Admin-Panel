@@ -1,3 +1,6 @@
+import { RoomService } from '../../../core/services/room.service';
+import { ClinicianService } from '../../../core/services/clinician.service';
+import { AppointmentWorkflowService } from '../../../core/services/appointment-workflow.service';
 import '@angular/compiler';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Injector, runInInjectionContext, signal } from '@angular/core';
@@ -30,6 +33,9 @@ describe('Receptionist DashboardComponent & ReceptionistService Suite', () => {
     const injector = Injector.create({
       providers: [
         { provide: ClinicStateService, useValue: clinicState },
+        { provide: RoomService, useValue: {rooms:signal([])} },
+        { provide: ClinicianService, useValue: {clinicians:signal([])} },
+        { provide: AppointmentWorkflowService, useValue: {mutation:{busy:()=>false},transition:vi.fn(()=>of(null)),cancel:vi.fn(()=>of(null))} },
         { provide: ReceptionistService, useFactory: () => new ReceptionistService(), deps: [] },
         { provide: BillingService, useFactory: () => new BillingService(), deps: [] },
         { provide: MessageService, useValue: messageService },
@@ -45,9 +51,9 @@ describe('Receptionist DashboardComponent & ReceptionistService Suite', () => {
         todaysSessions: 5,
         completedSessions: 2,
         pendingPayments: 1,
-        collectedTodayRevenue: 1200,
-        expectedTodayRevenue: 2000,
-        collectionRateToday: 60
+        totalCollectedToday: 1200,
+        totalExpectedToday: 2000,
+        collectionRate: 60
       })
     );
 
@@ -56,24 +62,26 @@ describe('Receptionist DashboardComponent & ReceptionistService Suite', () => {
         id: 101,
         patientId: 1,
         patientName: 'Ahmed Fathy',
-        doctorId: 2,
+        doctorId: '2',
         doctorName: 'Dr. Omar',
         roomId: 1,
         roomName: 'Room 1',
         appointmentType: 'Session',
         startTime: `${today}T09:00:00`,
+        endTime: new Date().toISOString(),
         status: 1 // Confirmed
       }),
       receptionistService.normalizeSession({
         id: 102,
         patientId: 2,
         patientName: 'Mona Zaki',
-        doctorId: 1,
+        doctorId: '1',
         doctorName: 'Dr. Sarah',
         roomId: 2,
         roomName: 'Room 2',
         appointmentType: 'Session',
         startTime: `${today}T10:00:00`,
+        endTime: new Date().toISOString(),
         status: 2 // In Progress
       })
     ]);
@@ -106,37 +114,17 @@ describe('Receptionist DashboardComponent & ReceptionistService Suite', () => {
   });
 
   describe('2. Session Actions (Check-In, Check-Out, Cancel)', () => {
-    it('checkIn: should call receptionistService.updateSessionStatus with status 2 (In Progress)', async () => {
-      let calledArgs: any = null;
-      receptionistService.updateSessionStatus = (appointmentId: number, status: number) => {
-        calledArgs = { appointmentId, status };
-        return of(null);
-      };
-
+    it('checkIn delegates to the shared workflow with a semantic status', async () => {
       await dashboard.checkIn(101);
-      expect(calledArgs).toEqual({ appointmentId: 101, status: 2 });
+      expect(dashboard.workflow.transition).toHaveBeenCalledWith(101,'In Progress');
     });
-
-    it('checkOut: should call receptionistService.updateSessionStatus with status 3 (Completed)', async () => {
-      let calledArgs: any = null;
-      receptionistService.updateSessionStatus = (appointmentId: number, status: number) => {
-        calledArgs = { appointmentId, status };
-        return of(null);
-      };
-
+    it('checkOut delegates to the shared workflow', async () => {
       await dashboard.checkOut(102);
-      expect(calledArgs).toEqual({ appointmentId: 102, status: 3 });
+      expect(dashboard.workflow.transition).toHaveBeenCalledWith(102,'Completed');
     });
-
-    it('cancelSession: should call receptionistService.cancelSession', () => {
-      let cancelledId: number | null = null;
-      receptionistService.cancelSession = (appointmentId: number) => {
-        cancelledId = appointmentId;
-        return of(null);
-      };
-
-      dashboard.cancelSession(101);
-      expect(cancelledId).toBe(101);
+    it('cancelSession uses the shared cancellation operation', async () => {
+      await dashboard.cancelSession(101);
+      expect(dashboard.workflow.cancel).toHaveBeenCalledWith(101);
     });
   });
 

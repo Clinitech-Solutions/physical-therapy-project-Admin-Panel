@@ -6,7 +6,7 @@
   appendTo="body"
   [draggable]="false"
   [resizable]="false"
-  [closable]="true"
+  [closable]="!documentService.mutation.busy()"
   styleClass="clean-modal receptionist-modal patient-profile-modal"
   [style]="{ width: '920px', maxWidth: '95vw' }">
 
@@ -76,6 +76,20 @@
     }
   </ng-template>
 
+  @if (patientLoading() || clinical.loading()) { <p role="status">{{ 'RECEPTIONIST.PROCESSING' | translate }}</p> }
+  @if (profileError() || clinical.error() || billingService.error() || appointmentService?.error()) {
+    <p class="alert alert-warning" role="alert">{{ locale.label(profileError() || clinical.error() || billingService.error() || appointmentService?.error()) }}
+      <button class="btn btn-outline-secondary btn-sm" (click)="refreshProfile()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button>
+    </p>
+  }
+  @if (currentPatient; as p) {
+    <div class="card card-body mb-3">
+      <div>{{ 'RECEPTIONIST.INSURANCE_COMPANY' | translate }}: {{ p.insuranceCompanyName || p.insuranceDetails?.company || '-'  }}</div>
+      <div>{{ 'RECEPTIONIST.MEMBER_ID' | translate }}: {{ p.insuranceDetails?.memberId || '?' }}</div>
+      <div>{{ 'RECEPTIONIST.COPAY_PERCENTAGE' | translate }}: {{ p.insuranceDetails?.copayPercentage ?? '?' }}</div>
+      <p class="text-muted small mb-0">{{ 'RECEPTIONIST.UI.INSURANCE_STATUS_NOTICE' | translate }}</p>
+    </div>
+  }
   <!-- Body: PrimeNG Table of Sessions -->
   <div class="patient-profile-body pt-2">
     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -112,7 +126,7 @@
                 @if (session.type === 'Assessment') {
                   {{ 'RECEPTIONIST.UI.ASSESSMENT' | translate }}
                 } @else {
-                  #{{ session.sessionNumber || (i + 1) }}
+                  #{{ session.sessionNumber }}
                 }
               </span>
             </td>
@@ -147,8 +161,6 @@
               @let payment = getPaymentInfo(session.id);
               @if (session.type === 'Assessment') {
                 <p-tag [value]="payment.label | translate" [severity]="payment.severity"></p-tag>
-              } @else if (currentPatient?.financialPlan?.paymentMode && currentPatient?.financialPlan?.paymentMode !== 'Per-Session') {
-                <span class="badge bg-info">{{ 'RECEPTIONIST.UI.PACKAGE_COVERED' | translate }}</span>
               } @else {
                 <p-tag [value]="payment.label | translate" [severity]="payment.severity"></p-tag>
               }
@@ -171,5 +183,29 @@
         </ng-template>
       </p-table>
     </div>
+  </div>
+  <div class="card card-body mt-3">
+    <h6>{{ 'RECEPTIONIST.UI.PATIENT_HISTORY' | translate }}</h6>
+    @for (assessment of patientAssessments; track assessment.id) {
+      <p>#{{ assessment.id }} ? {{ assessment.diagnosis }} ? {{ locale.date(assessment.assessmentDate) }}</p>
+    }
+    @for (appointment of patientAppointments; track appointment.id) {
+      <p>{{ appointment.appointmentType | receptionistText }} ? {{ locale.date(appointment.startTime, true) }}</p>
+    }
+    @for (invoice of patientInvoices; track invoice.id) {
+      <p>{{ invoice.invoiceNumber }} ? {{ 'RECEPTIONIST.BILLING.REMAINING' | translate }}: {{ invoice.remainingAmount | currency:'EGP':'symbol':'1.2-2':locale.language }}</p>
+    }
+  </div>
+  <div class="card card-body mt-3">
+    <h6>{{ 'RECEPTIONIST.UI.INSURANCE_DOCUMENTS' | translate }}</h6>
+    @if (documentsLoading()) { <p role="status">{{ 'RECEPTIONIST.PROCESSING' | translate }}</p> }
+    @if (documentsError()) { <p class="alert alert-warning" role="alert">{{ locale.label(documentsError()) }}</p> }
+    @if (uploadError()) { <p class="alert alert-warning" role="alert">{{ locale.label(uploadError()) }}</p> }
+    @if (uploadSaved()) { <p class="alert alert-success" role="status">{{ 'RECEPTIONIST.UI.DOCUMENT_UPLOAD_SAVED' | translate }}</p> }
+    @if (documentService.mutation.uncertain()) { <p class="alert alert-warning">{{ 'RECEPTIONIST.UI.OPERATION_OUTCOME_UNKNOWN' | translate }}</p> }
+    <label class="form-label">{{ 'RECEPTIONIST.UI.UPLOAD_DOCUMENT' | translate }}
+      <input class="form-control" type="file" multiple (change)="onFilesSelected($event)" [disabled]="documentService.mutation.busy()">
+    </label>
+    <button class="btn btn-primary btn-sm" (click)="uploadDocuments()" [disabled]="!files.length || !currentPatient || documentService.mutation.busy() || documentService.mutation.uncertain()">{{ 'RECEPTIONIST.UI.UPLOAD_DOCUMENT' | translate }}</button>
   </div>
 </p-dialog>

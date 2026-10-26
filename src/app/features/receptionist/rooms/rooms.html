@@ -1,144 +1,104 @@
 <div class="receptionist-page rooms-container fade-in">
-  <!-- Top Action Bar -->
   <div class="d-flex justify-content-between align-items-center mb-3">
-    <div>
-      <h4 class="fw-bold mb-0 text-primary">{{ 'SIDEBAR.ROOMS' | translate }}</h4>
-    </div>
-    <button class="btn btn-primary btn-sm d-flex align-items-center gap-2" (click)="openAddRoomModal()">
-      <i class="bi bi-plus-lg"></i>
-      <span>{{ 'RECEPTIONIST.ADD_ROOM' | translate }}</span>
+    <div><h4 class="fw-bold mb-0 text-primary">{{ 'SIDEBAR.ROOMS' | translate }}</h4></div>
+    <button class="btn btn-primary btn-sm d-flex align-items-center gap-2" (click)="openAddRoomModal()" [disabled]="isSubmitting()">
+      <i class="bi bi-plus-lg" aria-hidden="true"></i><span>{{ 'RECEPTIONIST.ADD_ROOM' | translate }}</span>
     </button>
   </div>
-
-  @if (rooms().length === 0) {
+  @if (loading()) { <p role="status">{{ 'RECEPTIONIST.PROCESSING' | translate }}</p> }
+  @if (error()) {
+    <div class="alert alert-warning" role="alert">{{ locale.label(error()) }}
+      <button class="btn btn-outline-secondary btn-sm" (click)="retry()" [disabled]="loading()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button>
+    </div>
+  }
+  @if (formError()) { <p class="alert alert-warning" role="alert">{{ locale.label(formError()) }}</p> }
+  @if (roomService.mutation.uncertain()) { <p class="alert alert-warning">{{ 'RECEPTIONIST.UI.OPERATION_OUTCOME_UNKNOWN' | translate }}</p> }
+  @if (!loading() && !error() && rooms().length === 0) {
     <div class="card p-4 text-center" role="status">
       <i class="bi bi-door-open fs-2 text-secondary mb-3" aria-hidden="true"></i>
       <h5>{{ 'RECEPTIONIST.ROOMS.EMPTY_TITLE' | translate }}</h5>
       <p class="text-secondary mb-0">{{ 'RECEPTIONIST.ROOMS.EMPTY_DESCRIPTION' | translate }}</p>
     </div>
   }
-
   <div class="rooms-grid">
-    <div *ngFor="let room of rooms()" class="room-card" [ngClass]="getRoomStatusCssClass(room)">
-
-      <!-- Top Section -->
-      <div class="room-header">
-        <div class="room-title" style="display: flex; align-items: center; gap: 1rem;">
-          <span class="font-bold text-lg">{{ room.displayName || ('RECEPTIONIST.ROOMS.UNNAMED_ROOM' | translate) }}</span>
-        </div>
-        <!-- Animated Pulse Status -->
-        <div class="status-indicator-wrapper" [title]="getRoomStatusLabel(room) | translate">
-          <div class="status-indicator"></div>
-          <div class="status-pulse" *ngIf="room.status !== 'Maintenance'"></div>
-        </div>
-      </div>
-
-      <!-- Divider -->
-
-      <!-- Middle Section -->
-      <div class="room-body">
-        <div class="doctor-info" *ngIf="room.doctorId; else noDoctor">
-          <div class="doctor-details">
-            <span class="label">{{ 'COMMON.ASSIGNED_TO' | translate }}:</span>
-            <span class="font-semibold text-md">{{ clinicState.getDoctorName(room.doctorId) }}</span>
+    @for (room of rooms(); track room.id) {
+      <div class="room-card" [style.border-top]="'4px solid ' + (room.isActive ? 'var(--color-success)' : 'var(--color-neutral)')">
+        <div class="room-header gap-2">
+          <div class="room-title d-flex align-items-center gap-3">
+            <span class="font-bold text-lg">{{ room.name }}</span>
           </div>
-        </div>
-        <ng-template #noDoctor>
-          <div class="doctor-info empty">
-            <div class="doctor-details">
-              <span class="text-sm text-secondary italic">{{ 'RECEPTIONIST.NO_DOCTOR' | translate }}</span>
+          <div class="d-flex align-items-center gap-1">
+            <button class="btn-action action-primary" (click)="edit(room)" [disabled]="isSubmitting()"
+              [attr.aria-label]="'COMMON.EDIT' | translate" [attr.data-tip]="'COMMON.EDIT' | translate">
+              <i class="bi bi-pencil" aria-hidden="true"></i>
+            </button>
+            <button class="btn-action action-danger" (click)="delete(room)" [disabled]="isSubmitting() || roomService.mutation.uncertain()"
+              [attr.aria-label]="'COMMON.DELETE' | translate" [attr.data-tip]="'COMMON.DELETE' | translate">
+              <i class="bi bi-trash" aria-hidden="true"></i>
+            </button>
+            <div class="status-indicator-wrapper" role="img"
+              [attr.aria-label]="(room.isActive ? 'RECEPTIONIST.UI.ACTIVE' : 'RECEPTIONIST.UI.INACTIVE') | translate"
+              [title]="((room.isActive ? 'RECEPTIONIST.UI.ACTIVE' : 'RECEPTIONIST.UI.INACTIVE') | translate) + '. ' + ('RECEPTIONIST.UI.ROOM_AVAILABILITY_NOTICE' | translate)">
+              <div class="status-indicator" [style.background]="room.isActive ? 'var(--color-success)' : 'var(--color-neutral)'"></div>
+              @if (room.isActive) { <div class="status-pulse" style="background: var(--color-success)"></div> }
             </div>
           </div>
-        </ng-template>
-      </div>
-
-      <!-- Bottom Section -->
-      <div class="room-footer">
-        <div class="maintenance-toggle">
-          <span class="text-sm font-medium">{{ 'RECEPTIONIST.MAINTENANCE' | translate }}</span>
-          <p-toggleSwitch [ariaLabel]="'RECEPTIONIST.MAINTENANCE' | translate" [ngModel]="room.status === 'Maintenance'"
-            (onChange)="clinicState.toggleRoomMaintenance(room.id)">
-          </p-toggleSwitch>
+        </div>
+        <div class="room-body">
+          <div class="doctor-info">
+            <div class="doctor-details">
+              <span class="label">{{ 'RECEPTIONIST.CAPACITY' | translate }}:</span>
+              <span class="font-semibold text-md">{{ room.capacity }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="room-footer">
+          <div class="maintenance-toggle gap-2">
+            <span class="text-sm font-medium">{{ 'RECEPTIONIST.MAINTENANCE' | translate }}</span>
+            <select #maintenanceAction class="minimal-select w-50" [attr.aria-label]="'RECEPTIONIST.MAINTENANCE' | translate"
+              [disabled]="isSubmitting() || roomService.mutation.uncertain()"
+              (change)="setMaintenance(room, maintenanceAction.value === 'set'); maintenanceAction.value = ''">
+              <option value="" disabled selected>{{ 'COMMON.ACTION' | translate }}</option>
+              <option value="set">{{ 'RECEPTIONIST.MAINTENANCE' | translate }}</option>
+              <option value="clear">{{ 'RECEPTIONIST.UI.CLEAR_MAINTENANCE' | translate }}</option>
+            </select>
+          </div>
         </div>
       </div>
-
-    </div>
+    }
   </div>
 </div>
-
-<!-- Add Room Modal (Standard Clean Modal) -->
-<p-dialog 
-  [visible]="isAddRoomModalOpen()" (visibleChange)="isAddRoomModalOpen.set($event)"
-  [modal]="true" 
-  appendTo="body"
-  [draggable]="false" 
-  [resizable]="false" 
-  [closable]="true" 
-  [showHeader]="true" 
-  styleClass="clean-modal receptionist-modal"
-  [style]="{ width: '450px' }"
-  [header]="'RECEPTIONIST.ADD_ROOM' | translate">
-
-  <div class="modal-form-vertical">
-    <div class="form-group">
-      <label class="form-label">
-        {{ 'RECEPTIONIST.ROOM_NAME' | translate }} <span class="required-asterisk">*</span>
-      </label>
-      <input 
-        type="text" 
-        class="form-control" 
-        [(ngModel)]="newRoom.displayName" 
-        [placeholder]="'RECEPTIONIST.UI.E_G_THERAPY_ROOM_4' | translate">
-    </div>
-
-    <div class="modal-form-grid">
+<p-dialog [visible]="isAddRoomModalOpen()" (visibleChange)="isAddRoomModalOpen.set($event)" [modal]="true" appendTo="body"
+  [draggable]="false" [resizable]="false" [closable]="!isSubmitting()" styleClass="clean-modal receptionist-modal"
+  [style]="{ width: '450px', maxWidth: '95vw' }" [header]="editingId === null ? ('RECEPTIONIST.ADD_ROOM' | translate) : (('COMMON.EDIT' | translate) + ' ' + ('COMMON.ROOM' | translate))">
+  @if (formError()) { <p role="alert" class="alert alert-warning">{{ locale.label(formError()) }}</p> }
+  <fieldset [disabled]="isSubmitting() || roomService.mutation.uncertain()" class="border-0 w-100 p-0 m-0">
+    <div class="modal-form-vertical">
       <div class="form-group">
-        <label class="form-label">
-          {{ 'RECEPTIONIST.CAPACITY' | translate }} <span class="required-asterisk">*</span>
-        </label>
-        <input 
-          type="number" 
-          class="form-control" 
-          [(ngModel)]="newRoom.capacity" 
-          min="1" 
-          max="10">
+        <label class="form-label" for="room-name">{{ 'RECEPTIONIST.ROOM_NAME' | translate }}<span class="required-asterisk">*</span></label>
+        <input id="room-name" class="form-control" [(ngModel)]="newRoom.name" required dir="auto"
+          [placeholder]="'RECEPTIONIST.UI.E_G_THERAPY_ROOM_4' | translate">
       </div>
-
-      <div class="form-group">
-        <label class="form-label">
-          {{ 'RECEPTIONIST.INITIAL_STATUS' | translate }}
-        </label>
-        <select class="form-select" [(ngModel)]="newRoom.status">
-          <option value="Available">{{ 'RECEPTIONIST.AVAILABLE' | translate }}</option>
-          <option value="Maintenance">{{ 'RECEPTIONIST.MAINTENANCE' | translate }}</option>
-        </select>
+      <div class="modal-form-grid">
+        <div class="form-group">
+          <label class="form-label" for="room-capacity">{{ 'RECEPTIONIST.CAPACITY' | translate }}<span class="required-asterisk">*</span></label>
+          <input id="room-capacity" class="form-control" type="number" [(ngModel)]="newRoom.capacity" min="1" step="1" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="room-active">{{ 'COMMON.STATUS' | translate }}</label>
+          <select id="room-active" class="form-select" [(ngModel)]="newRoom.isActive">
+            <option [ngValue]="true">{{ 'RECEPTIONIST.UI.ACTIVE' | translate }}</option>
+            <option [ngValue]="false">{{ 'RECEPTIONIST.UI.INACTIVE' | translate }}</option>
+          </select>
+        </div>
       </div>
     </div>
-
-    <div class="form-group">
-      <label class="form-label">
-        {{ 'COMMON.ASSIGNED_TO' | translate }}
-      </label>
-      <select class="form-select" [(ngModel)]="newRoom.doctorId">
-        <option [ngValue]="null">-- {{ 'RECEPTIONIST.NO_DOCTOR' | translate }} --</option>
-        <option *ngFor="let doc of allDoctors()" [value]="doc.id">
-          {{ doc.name }}
-        </option>
-      </select>
-    </div>
-  </div>
-
+  </fieldset>
   <ng-template pTemplate="footer">
     <div class="modal-footer-actions">
-      <button class="btn btn-outline-secondary" (click)="closeAddRoomModal()">
-        {{ 'COMMON.CANCEL' | translate }}
-      </button>
-      <button 
-        class="btn btn-primary" 
-        (click)="saveNewRoom()" 
-        [disabled]="isSubmitting() || !newRoom.displayName.trim()">
-        <span *ngIf="isSubmitting()" class="spinner-border spinner-border-sm me-1"></span>
-        {{ 'COMMON.SAVE' | translate }}
+      <button class="btn btn-outline-secondary" (click)="closeAddRoomModal()" [disabled]="isSubmitting()">{{ 'COMMON.CANCEL' | translate }}</button>
+      <button class="btn btn-primary" (click)="saveNewRoom()" [disabled]="isSubmitting() || roomService.mutation.uncertain() || !newRoom.name.trim()">
+        <span *ngIf="isSubmitting()" class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>{{ 'COMMON.SAVE' | translate }}
       </button>
     </div>
   </ng-template>

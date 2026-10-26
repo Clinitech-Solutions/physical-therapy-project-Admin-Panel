@@ -1,4 +1,10 @@
 <div class="page-content receptionist-page fade-in schedule-page">
+  @if (receptionistService.error() || actionError() || roomService.error() || clinicianService.error()) {
+    <div class="alert alert-warning" role="alert">{{ locale.label(actionError() || receptionistService.error() || roomService.error() || clinicianService.error()) }}
+      <button class="btn btn-outline-secondary btn-sm" (click)="onSearchOrFilterChange(); roomService.load(); clinicianService.load()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button>
+    </div>
+  }
+  <p class="text-muted small">{{ 'RECEPTIONIST.UI.STATUS_CONFIGURATION_NOTICE' | translate }}</p>
   <!-- Modern Page Header -->
   <div class="schedule-hero-header">
     <div class="schedule-header-layout d-flex flex-wrap justify-content-between align-items-center gap-3">
@@ -51,7 +57,7 @@
       </div>
       <div class="kpi-info">
         <span class="kpi-label">{{ 'RECEPTIONIST.UI.UPCOMING' | translate }}</span>
-        <span class="kpi-value text-amber">{{ upcomingCount }}</span>
+        <span class="kpi-value text-amber">{{ upcomingCount ?? '?' }}</span>
       </div>
     </div>
 
@@ -63,7 +69,7 @@
         <span class="kpi-label d-flex align-items-center gap-1">
           {{ 'RECEPTIONIST.IN_PROGRESS' | translate }} <span class="live-dot"></span>
         </span>
-        <span class="kpi-value text-blue">{{ inProgressCount }}</span>
+        <span class="kpi-value text-blue">{{ inProgressCount ?? '?' }}</span>
       </div>
     </div>
 
@@ -73,7 +79,7 @@
       </div>
       <div class="kpi-info">
         <span class="kpi-label">{{ 'RECEPTIONIST.COMPLETED_SESSIONS' | translate }}</span>
-        <span class="kpi-value text-teal">{{ completedCount }}</span>
+        <span class="kpi-value text-teal">{{ completedCount ?? '?' }}</span>
       </div>
     </div>
   </div>
@@ -232,21 +238,25 @@
                   </div>
 
                   <div class="session-actions">
+                    <button class="btn-absent-icon" [title]="'RECEPTIONIST.UI.EDIT_APPOINTMENT' | translate" [disabled]="editingLoading() || workflow.mutation.busy() || !!appointmentService?.mutation?.busy()" (click)="openEditAppointment(session); $event.stopPropagation()"><i class="bi bi-pencil"></i></button>
+                    @if (statusStr === 'Unknown') {
+                      <button class="btn-absent-icon" [title]="'RECEPTIONIST.CANCEL' | translate" [disabled]="workflow.mutation.busy()" (click)="markPatientAbsent(session.id); $event.stopPropagation()"><i class="bi bi-x-circle"></i></button>
+                    }
                     @if (statusStr === 'In Progress' || statusStr === 'Waiting') {
                       <button type="button" class="btn-session-action btn-checkout"
-                        (click)="checkoutSession(session.id); $event.stopPropagation()">
+                        [disabled]="workflow.mutation.busy() || !workflow.canTransition('Completed')" (click)="checkoutSession(session.id); $event.stopPropagation()">
                         <i class="bi bi-box-arrow-right"></i>
                         <span>{{ 'RECEPTIONIST.CHECK_OUT' | translate }}</span>
                       </button>
                     } @else if (statusStr === 'Confirmed' || statusStr === 'Pending') {
                       <button type="button" class="btn-session-action btn-checkin"
-                        (click)="checkInSession(session.id); $event.stopPropagation()">
+                        [disabled]="workflow.mutation.busy() || !workflow.canTransition('In Progress')" (click)="checkInSession(session.id); $event.stopPropagation()">
                         <i class="bi bi-box-arrow-in-right"></i>
                         <span>{{ 'RECEPTIONIST.CHECK_IN' | translate }}</span>
                       </button>
                       <button type="button" class="btn-absent-icon"
                         [title]="'RECEPTIONIST.MARK_ABSENT' | translate"
-                        (click)="markPatientAbsent(session.id); $event.stopPropagation()">
+                        [disabled]="workflow.mutation.busy()" (click)="markPatientAbsent(session.id); $event.stopPropagation()">
                         <i class="bi bi-person-x"></i>
                       </button>
                     }
@@ -275,51 +285,25 @@
   [patientId]="selectedProfilePatientId()">
 </app-patient-profile>
 
-<!-- Check-In Debt Gate Modal (Wired to BillingService & ReceptionistService) -->
-<p-dialog [(visible)]="showDebtModal" [modal]="true" appendTo="body" [draggable]="false" [resizable]="false"
-  [closable]="true" styleClass="clean-modal receptionist-modal" [style]="{width: '450px'}" [header]="'RECEPTIONIST.UI.OUTSTANDING_BALANCE' | translate"
-  (onHide)="showDebtModal = false; pendingCheckInSessionId = null">
-
-  <div class="d-flex flex-column gap-3 py-2">
-    <div class="alert alert-warning d-flex align-items-center gap-2 mb-0" role="alert" style="font-size: 0.85rem;">
-      <i class="bi bi-exclamation-triangle-fill fs-5"></i>
-      <div>
-        <strong>{{ 'RECEPTIONIST.UI.NOTICE_' | translate }}</strong> {{ 'RECEPTIONIST.UI.THIS_PATIENT_HAS_AN_OUTSTANDING_DEBT_OF' | translate }}
-        <strong class="text-danger">{{ debtAmount | number:'1.0-0':locale.language }} {{ 'RECEPTIONIST.EGP' | translate }}</strong>.
-      </div>
-    </div>
-
-    <p class="small text-muted mb-0">
-      {{ 'RECEPTIONIST.UI.YOU_CAN_COLLECT_A_PARTIAL_INSTALLMENT_NOW_BEFORE_CHECKING_THEM_IN_OR_SKIP_TO_COLLECT_LATER_' | translate }}
-    </p>
-
-    <div class="form-group">
-      <label class="form-label mb-2 fw-semibold small">
-        {{ 'RECEPTIONIST.UI.COLLECT_INSTALLMENT_EGP_' | translate }}
-      </label>
-      <p-inputNumber [(ngModel)]="installmentAmount" mode="currency" currency="EGP" [locale]="locale.language" styleClass="w-100" class="w-full d-block"></p-inputNumber>
-    </div>
-
-    <div class="form-group" *ngIf="installmentAmount > 0">
-      <label class="form-label mb-2 fw-semibold small">
-        {{ 'RECEPTIONIST.UI.PAYMENT_METHOD' | translate }} <span class="text-danger">*</span>
-      </label>
-      <p-select [options]="paymentMethods" [(ngModel)]="installmentPaymentMethod"
-        appendTo="body" styleClass="w-100 p-select-sm">
-        <ng-template pTemplate="item" let-method>{{ method | receptionistText }}</ng-template>
-        <ng-template pTemplate="selectedItem" let-method>{{ method | receptionistText }}</ng-template>
-      </p-select>
-    </div>
-  </div>
-
-  <ng-template pTemplate="footer">
-    <div class="modal-footer-actions d-flex justify-content-end gap-2 w-100">
-      <p-button [label]="'RECEPTIONIST.UI.SKIP_CHECK_IN' | translate" [outlined]="true" severity="secondary"
-        (onClick)="confirmCheckIn(false)">
-      </p-button>
-      <p-button [label]="'RECEPTIONIST.UI.COLLECT_CHECK_IN' | translate" severity="success" (onClick)="confirmCheckIn(true)"
-        [disabled]="!installmentAmount || installmentAmount <= 0">
-      </p-button>
-    </div>
-  </ng-template>
+<p-dialog [(visible)]="editVisible" [modal]="true" appendTo="body" [draggable]="false" [resizable]="false" [closable]="!appointmentService?.mutation?.busy()"
+  styleClass="clean-modal receptionist-modal" [style]="{width:'550px',maxWidth:'95vw'}" [header]="'RECEPTIONIST.UI.EDIT_APPOINTMENT' | translate">
+  @if (actionError()) { <p class="alert alert-warning" role="alert">{{ locale.label(actionError()) }}</p> }
+  @if (appointmentService?.mutation?.uncertain()) { <p class="alert alert-warning">{{ 'RECEPTIONIST.UI.OPERATION_OUTCOME_UNKNOWN' | translate }}</p> }
+  <fieldset class="border-0 w-100" [disabled]="!!appointmentService?.mutation?.busy() || !!appointmentService?.mutation?.uncertain()">
+    <label class="form-label w-100">{{ 'COMMON.DOCTOR' | translate }}
+      <select class="form-select" [(ngModel)]="editClinicianId">
+        <option [value]="editingAppointment()?.doctorId || editingAppointment()?.seniorId">#{{ editingAppointment()?.doctorId || editingAppointment()?.seniorId }}</option>
+        @for (doctor of allDoctors(); track doctor.id) { <option [value]="doctor.id">{{ doctor.name }}</option> }
+      </select>
+    </label>
+    <label class="form-label w-100">{{ 'COMMON.ROOM' | translate }}
+      <select class="form-select" [(ngModel)]="editRoomId">
+        <option [ngValue]="editingAppointment()?.roomId">#{{ editingAppointment()?.roomId }}</option>
+        @for (room of roomService.candidates(); track room.id) { <option [ngValue]="room.id">{{ room.name }}</option> }
+      </select>
+    </label>
+    <label class="form-label w-100">{{ 'RECEPTIONIST.UI.START_TIME' | translate }} *<input type="datetime-local" class="form-control" [(ngModel)]="editStart" required></label>
+    <label class="form-label w-100">{{ 'RECEPTIONIST.UI.END_TIME' | translate }} *<input type="datetime-local" class="form-control" [(ngModel)]="editEnd" required></label>
+  </fieldset>
+  <ng-template pTemplate="footer"><button class="btn btn-primary" (click)="saveAppointmentEdit()" [disabled]="!!appointmentService?.mutation?.busy() || !!appointmentService?.mutation?.uncertain()">{{ 'COMMON.SAVE' | translate }}</button></ng-template>
 </p-dialog>

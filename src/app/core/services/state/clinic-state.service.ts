@@ -8,7 +8,6 @@ import { WaitlistItem } from '../../models/waitlist.model';
 import {
   mockPatients,
   mockDoctors,
-  mockRooms,
   mockSessions,
   mockInvoices,
   mockWaitlist,
@@ -20,41 +19,6 @@ import {
   providedIn: 'root'
 })
 export class ClinicStateService {
-  // LocalStorage helper
-  private saveRoomsToLocalStorage(rooms: Room[]) {
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('clinic_rooms', JSON.stringify(rooms));
-    }
-  }
-
-  private loadInitialRooms(): Room[] {
-    if (typeof localStorage !== 'undefined') {
-      const stored = localStorage.getItem('clinic_rooms');
-      if (stored) {
-        try {
-          const parsed: Room[] = JSON.parse(stored);
-          // An empty cache from an earlier app version must not hide the initial rooms.
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            const cleaned = parsed.map(r => {
-              if (r.status === 'Available') {
-                return { ...r, doctorId: null };
-              }
-              return r;
-            });
-            this.saveRoomsToLocalStorage(cleaned);
-            return cleaned;
-          }
-        } catch {
-          // Fallback if parsing fails
-        }
-      }
-      const initial = mockRooms.map(r => r.status === 'Available' ? { ...r, doctorId: null } : { ...r });
-      this.saveRoomsToLocalStorage(initial);
-      return initial;
-    }
-    return mockRooms.map(r => r.status === 'Available' ? { ...r, doctorId: null } : { ...r });
-  }
-
   // Global State Signals
   private patientsSig = signal<Patient[]>([]);
   public patients = this.patientsSig.asReadonly();
@@ -63,7 +27,7 @@ export class ClinicStateService {
   public doctors = this.doctorsSig.asReadonly();
 
   // Rooms Signal & Available Rooms Computed Signal
-  private roomsSig = signal<Room[]>(this.loadInitialRooms());
+  private roomsSig = signal<Room[]>([]);
   public rooms = this.roomsSig.asReadonly();
   public availableRooms = computed(() => this.roomsSig().filter(r => r.status === 'Available' && r.currentLoad === 0));
 
@@ -152,7 +116,7 @@ export class ClinicStateService {
     this.patientsSig.set([...mockPatients]);
     this.doctorsSig.set([...mockDoctors]);
     if (this.roomsSig().length === 0) {
-      this.roomsSig.set(this.loadInitialRooms());
+      this.roomsSig.set([]);
     }
     this.sessionsSig.set([...mockSessions]);
     this.waitlistSig.set([...mockWaitlist]);
@@ -201,7 +165,7 @@ export class ClinicStateService {
       }
       return r;
     }));
-    this.saveRoomsToLocalStorage(this.roomsSig());
+
 
     // 3. Remove from Waitlist (if applicable)
     this.waitlistSig.update(list => list.filter(w => w.patientId !== sessionToUpdate.patientId));
@@ -232,7 +196,7 @@ export class ClinicStateService {
           }
           return r;
         }));
-        this.saveRoomsToLocalStorage(this.roomsSig());
+
       }
     }
 
@@ -266,7 +230,7 @@ export class ClinicStateService {
           return r;
         })
       );
-      this.saveRoomsToLocalStorage(this.roomsSig());
+
     }
   }
 
@@ -388,7 +352,7 @@ export class ClinicStateService {
           }
           return r;
         }));
-        this.saveRoomsToLocalStorage(this.roomsSig());
+
       }
     }
   }
@@ -703,7 +667,7 @@ export class ClinicStateService {
     };
 
     this.roomsSig.update(rooms => [...rooms, newRoom]);
-    this.saveRoomsToLocalStorage(this.roomsSig());
+
     this.isLoading.set(false);
     return newRoom;
   }
@@ -718,7 +682,7 @@ export class ClinicStateService {
       }
       return r;
     }));
-    this.saveRoomsToLocalStorage(this.roomsSig());
+
     this.isLoading.set(false);
   }
 
@@ -738,7 +702,7 @@ export class ClinicStateService {
       }
       return r;
     }));
-    this.saveRoomsToLocalStorage(this.roomsSig());
+
     this.isLoading.set(false);
   }
 
@@ -756,7 +720,7 @@ export class ClinicStateService {
       }
       return r;
     }));
-    this.saveRoomsToLocalStorage(this.roomsSig());
+
     this.isLoading.set(false);
   }
 

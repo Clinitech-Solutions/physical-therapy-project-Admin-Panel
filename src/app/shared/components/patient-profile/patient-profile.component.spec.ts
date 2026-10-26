@@ -1,105 +1,39 @@
-import '@angular/compiler';
-import { describe, it, expect, beforeEach } from 'vitest';
-import { Injector, runInInjectionContext } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController,provideHttpClientTesting } from '@angular/common/http/testing';
 import { PatientProfileComponent } from './patient-profile.component';
-import { ClinicStateService } from '../../../core/services/state/clinic-state.service';
+import { PatientService } from '../../../core/services/patient.service';
+import { ClinicalRecordsService } from '../../../core/services/clinical-records.service';
+import { AppointmentService } from '../../../core/services/appointment.service';
 import { BillingService } from '../../../core/services/billing.service';
 import { Patient } from '../../../core/models/patient.model';
 
-describe('PatientProfileComponent Suite', () => {
-  let component: PatientProfileComponent;
-  let clinicState: ClinicStateService;
-  let billingService: BillingService;
-
-  const mockTestPatient: Patient = {
-    id: 'p1',
-    nameEn: 'Ahmed Fathy',
-    nameAr: 'أحمد فتحي',
-    avatar: 'AF',
-    gender: 'Male',
-    phone: '+201012345671',
-    paymentType: 'Cash',
-    lastVisit: '2026-09-01T00:00:00Z',
-    documents: { medicalConsent: true, liabilityWaiver: true, idCard: true },
-    treatmentPlan: { totalSessions: 10, primaryDoctorId: 'doc_2' }
-  };
-
-  beforeEach(async () => {
-    clinicState = new ClinicStateService();
-    await new Promise(resolve => setTimeout(resolve, 600));
-
-    const injector = Injector.create({
-      providers: [
-        { provide: ClinicStateService, useValue: clinicState },
-        { provide: BillingService, useFactory: () => new BillingService(), deps: [] }
-      ]
-    });
-
-    billingService = injector.get(BillingService);
-    billingService.invoices.set([
-      billingService.normalizeInvoice({
-        id: 1,
-        appointmentId: 101,
-        patientId: 1,
-        type: 0, // Assessment
-        totalAmount: 500,
-        insuranceAmount: 0,
-        patientAmount: 500,
-        paidAmount: 500,
-        status: 1 // Paid
-      })
-    ]);
-
-    component = runInInjectionContext(injector, () => new PatientProfileComponent());
-    component.patient = mockTestPatient;
-    component.visible = true;
+describe('Patient profile persisted record presentation',()=>{
+  let component:PatientProfileComponent;let http:HttpTestingController;
+  const patient:Patient={id:'1',nameEn:'Patient',nameAr:'Patient',avatar:'P',gender:'Male',phone:'010',paymentType:'Cash',lastVisit:'',documents:{medicalConsent:false,liabilityWaiver:false,idCard:false},documentsKnown:false};
+  beforeEach(()=>{
+    TestBed.configureTestingModule({providers:[provideHttpClient(),provideHttpClientTesting()]});
+    http=TestBed.inject(HttpTestingController);TestBed.inject(PatientService).patients.set([patient]);
+    const clinical=TestBed.inject(ClinicalRecordsService);
+    clinical.assessments.set([{id:1,patientId:1} as never]);
+    clinical.plans.set([{id:5,assessmentId:1,doctorId:'doctor-guid',doctorName:'Doctor',numberOfSessions:10,completedSessions:2} as never]);
+    clinical.sessions.set([{id:501,treatmentPlanId:5,sessionNumber:1,sessionDate:null,checkIn:null,checkOut:null,status:89} as never]);
+    component=TestBed.runInInjectionContext(()=>new PatientProfileComponent());component.patientId='1';component.visible=true;
   });
-
-  it('should create the component', () => {
-    expect(component).toBeTruthy();
+  afterEach(()=>http.verify());
+  it('resolves patients from backend cache without clinic-state fallbacks',()=>{expect(component.currentPatient?.id).toBe('1');});
+  it('resolves clinician names and totals from saved treatment plans',()=>{expect(component.primaryDoctorName).toBe('Doctor');expect(component.totalSessions).toBe(10);});
+  it('uses server completion counts rather than counting assumed session status numbers',()=>{expect(component.completedSessionsCount).toBe(2);expect(component.progressPercentage).toBe(20);});
+  it('never fabricates missing sessions to fill a plan',()=>{expect(component.sessions.map(s=>s.id)).toEqual(['501']);});
+  it('does not invent check-in or check-out timestamps',()=>{expect(component.formatTime(undefined)).toBeNull();expect(component.sessions[0].checkInTime).toBeUndefined();});
+  it('keeps unknown invoice status unknown and links through the appointment ID',()=>{
+    TestBed.inject(AppointmentService).appointments.set([{id:101,patientId:1,treatmentPlanSessionId:501} as never]);
+    TestBed.inject(BillingService).invoices.set([{id:11,appointmentId:101,patientId:1,status:57} as never]);
+    expect(component.getPaymentInfo('501')).toEqual({label:'Unknown',severity:'secondary'});
+    expect(component.getPaymentInfo('999').label).toBe('Unknown');
   });
-
-  it('should correctly resolve primary doctor name and patient info', () => {
-    expect(component.currentPatient?.nameEn).toBe('Ahmed Fathy');
-    expect(component.primaryDoctorName).toContain('Dr. Omar');
-    expect(component.totalSessions).toBe(10);
-  });
-
-  it('should calculate completed sessions and progress percentage', () => {
-    // Ahmed Fathy (p1) has 4 completed Treatment Sessions (p1_s1..p1_s4) out of 10 in mock data
-    expect(component.completedSessionsCount).toBe(4);
-    expect(component.progressPercentage).toBe(40);
-  });
-
-  it('should list allsessions in order', () => {
-    const sessions = component.sessions;
-    expect(sessions.length).toBeGreaterThanOrEqual(10);
-  });
-
-  it('should return null for formatTime when checkInTime or checkOutTime is missing', () => {
-    expect(component.formatTime(undefined)).toBeNull();
-    expect(component.formatTime('')).toBeNull();
-  });
-
-  it('should dynamically calculate payment status using BillingService invoice status', () => {
-    // Session 101 has invoice 1 with status 1 (Paid)
-    const pay1 = component.getPaymentInfo('101');
-    expect(pay1.label).toBe('Paid');
-    expect(pay1.severity).toBe('success');
-
-    // Session 999 has no invoice yet -> Unbilled
-    const pay4 = component.getPaymentInfo('999');
-    expect(pay4.label).toBe('RECEPTIONIST.UNBILLED');
-    expect(pay4.severity).toBe('secondary');
-  });
-
-  it('should emit false when closing modal', () => {
-    let emittedValue: boolean | undefined;
-    component.visibleChange.subscribe(val => {
-      emittedValue = val;
-    });
-    component.closeModal();
-    expect(component.visible).toBe(false);
-    expect(emittedValue).toBe(false);
+  it('emits close without mutating patient business data',()=>{
+    const emit=vi.fn();component.visibleChange.subscribe(emit);component.closeModal();
+    expect(emit).toHaveBeenCalledWith(false);expect(component.visible).toBe(false);expect(TestBed.inject(PatientService).patients()[0]).toEqual(patient);
   });
 });

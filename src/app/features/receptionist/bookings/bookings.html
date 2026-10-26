@@ -1,4 +1,14 @@
 <div class="page-content receptionist-page fade-in bookings-page">
+  @if (roomService.error() || clinicianService.error()) {
+    <div class="alert alert-warning" role="alert">
+      {{ locale.label(roomService.error() || clinicianService.error()) }}
+      <button class="btn btn-outline-secondary btn-sm" (click)="roomService.load(); clinicianService.load()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button>
+    </div>
+  }
+  <p class="text-muted small">{{ 'RECEPTIONIST.UI.ROOM_AVAILABILITY_NOTICE' | translate }}</p>
+  @if (bookingError()) { <p role="alert" class="alert alert-warning" style="white-space: pre-line">{{ locale.label(bookingError()) }}</p> }
+  @if (appointmentService.error()) { <p role="alert" class="alert alert-warning">{{ locale.label(appointmentService.error()) }}</p> }
+  @if (appointmentService.mutation.uncertain()) { <p role="alert" class="alert alert-warning">{{ 'RECEPTIONIST.UI.OPERATION_OUTCOME_UNKNOWN' | translate }}</p> }
   <!-- Modern Page Header -->
   <div class="booking-hero-header mb-4">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
@@ -20,7 +30,7 @@
           <span>{{ 'SIDEBAR.TODAYS_SCHEDULE' | translate }}</span>
         </a>
         <p-button icon="pi pi-user-minus" [label]="'RECEPTIONIST.MARK_ABSENT' | translate" severity="danger"
-          [outlined]="true" (onClick)="showAbsenceModal = true"></p-button>
+          [outlined]="true" [disabled]="true" [attr.title]="'RECEPTIONIST.UI.ABSENCE_OPERATION_PENDING' | translate"></p-button>
       </div>
     </div>
   </div>
@@ -48,11 +58,11 @@
       </div>
       <div class="mode-details">
         <div class="d-flex align-items-center justify-content-between">
-          <h5 class="font-clash mb-0">{{ 'RECEPTIONIST.UI.TREATMENT_PLAN_BULK_PACKAGE_' | translate }}</h5>
+          <h5 class="font-clash mb-0">{{ 'RECEPTIONIST.UI.SAVED_TREATMENT_PLAN' | translate }}</h5>
           <span class="mode-radio-dot"></span>
         </div>
         <p class="text-muted small mb-0 mt-1">
-          {{ 'RECEPTIONIST.UI.SCHEDULE_RECURRING_MULTI_SESSION_TREATMENT_PROGRAMS_WITH_PACKAGE_OR_PER_SESSION_BILLING_' | translate }}
+          {{ 'RECEPTIONIST.UI.SAVED_PLAN_BOOKING_DESCRIPTION' | translate }}
         </p>
       </div>
     </div>
@@ -83,7 +93,7 @@
   <!-- Main Two-Column Booking Workspace -->
   <div class="row g-4 align-items-start">
     <!-- Left Column: Step-by-Step Form Sections -->
-    <div class="col-xl-8 col-lg-7">
+    <div class="col-xl-8 col-lg-7" [attr.inert]="bookingBusy() || bulkProgress().length > 0 ? '' : null">
       <div class="d-flex flex-column gap-4">
 
         <!-- Step 1: Patient & Session Type -->
@@ -191,37 +201,7 @@
                 </div>
               }
 
-              <!-- Free Assessment Toggle & Assessment Price (Visible when sessionType === 'Assessment') -->
-              @if (sessionType === 'Assessment') {
-                <div class="col-12 col-md-6 col-lg-12 col-xl-6 assessment-fee-field">
-                  <label class="form-label mb-1 fw-semibold text-secondary small">{{ 'RECEPTIONIST.UI.ASSESSMENT_FEE_OPTION' | translate }}</label>
-                  <div class="free-assessment-card" [class.active]="isFreeAssessment"
-                    (click)="isFreeAssessment = !isFreeAssessment">
-                    <div class="d-flex align-items-center gap-2">
-                      <i class="bi bi-gift-fill fs-5" [ngClass]="isFreeAssessment ? 'text-warning' : 'text-muted'"></i>
-                      <div>
-                        <div class="fw-semibold small">{{ 'RECEPTIONIST.FREE_ASSESSMENT' | translate }}</div>
-                        <div class="text-muted" style="font-size: 0.7rem;">{{ 'RECEPTIONIST.UI.WAIVE_INITIAL_ASSESSMENT_FEE_0_EGP_' | translate }}</div>
-                      </div>
-                    </div>
-                    <div class="form-check form-switch mb-0">
-                      <input class="form-check-input" type="checkbox" role="switch" id="freeAssessToggle"
-                        [(ngModel)]="isFreeAssessment" (click)="$event.stopPropagation()">
-                    </div>
-                  </div>
-                </div>
-
-                @if (!isFreeAssessment) {
-                  <div class="col-12 col-md-6 col-lg-12 col-xl-6 assessment-fee-field">
-                    <label class="form-label mb-1 fw-semibold text-secondary small">
-                      {{ 'RECEPTIONIST.UI.ASSESSMENT_PRICE_EGP_' | translate }} <span class="text-danger">*</span>
-                    </label>
-                    <p-inputNumber class="assessment-price-input" [(ngModel)]="assessmentPrice" mode="currency" currency="EGP" [locale]="locale.language"
-                      styleClass="w-100" inputId="assessmentPriceInput" [placeholder]="'RECEPTIONIST.UI.ENTER_ASSESSMENT_PRICE' | translate" [min]="0">
-                    </p-inputNumber>
-                  </div>
-                }
-              }
+              <p class="text-muted small">{{ 'RECEPTIONIST.UI.BOOKING_BILLING_NOTICE' | translate }}</p>
             </div>
           </div>
         </div>
@@ -233,11 +213,11 @@
             <div class="flex-grow-1 d-flex flex-wrap justify-content-between align-items-center gap-2">
               <div>
                 <h5 class="font-clash mb-0">{{ 'RECEPTIONIST.UI.CLINICAL_ASSIGNMENT' | translate }}</h5>
-                <span class="text-muted small">{{ 'RECEPTIONIST.UI.ASSIGN_A_GENDER_MATCHED_THERAPIST_AND_AVAILABLE_TREATMENT_ROOM' | translate }}</span>
+                <span class="text-muted small">{{ 'RECEPTIONIST.UI.SELECT_CLINICIAN_AND_ROOM' | translate }}</span>
               </div>
               @if (bookingMode === 'single') {
                 <button type="button" class="btn btn-walkin-auto btn-sm d-flex align-items-center gap-2"
-                  (click)="handleWalkInNearestSlot()" [disabled]="!selectedPatientId || isInsurancePending">
+                  (click)="handleWalkInNearestSlot()" [disabled]="true">
                   <i class="bi bi-lightning-charge-fill"></i>
                   <span>{{ 'RECEPTIONIST.UI.AUTO_FILL_NEAREST_WALK_IN_SLOT' | translate }}</span>
                 </button>
@@ -255,7 +235,7 @@
                   </label>
                   @if (selectedPatientId) {
                     <span class="badge bg-primary bg-opacity-10 text-primary" style="font-size: 0.65rem;">
-                      <i class="bi bi-gender-ambiguous me-1"></i>{{ 'RECEPTIONIST.UI.MATCHED_' | translate }} {{ clinicState.getPatientGender(selectedPatientId) | receptionistText }}
+                      <i class="bi bi-gender-ambiguous me-1"></i>{{ 'RECEPTIONIST.GENDER_TH' | translate }}: {{ selectedPatient?.gender | receptionistText }}
                     </span>
                   }
                 </div>
@@ -281,7 +261,7 @@
                     {{ 'COMMON.ROOM' | translate }} <span class="text-danger">*</span>
                   </label>
                   <span class="badge bg-success bg-opacity-10 text-success" style="font-size: 0.65rem;">
-                    {{ availableRooms().length }} {{ 'RECEPTIONIST.UI.AVAILABLE' | translate }}
+                    {{ availableRooms().length }} {{ 'RECEPTIONIST.UI.ROOM_RECORDS' | translate }}
                   </span>
                 </div>
                 <p-select [options]="availableRooms()" [(ngModel)]="selectedRoomId" optionLabel="displayName" optionValue="id"
@@ -290,7 +270,7 @@
                   <ng-template pTemplate="item" let-room>
                     <div class="d-flex justify-content-between align-items-center w-100">
                       <span class="small fw-medium"><i class="bi bi-door-open me-1 text-primary"></i>{{ room.displayName }}</span>
-                      <span class="badge bg-success bg-opacity-10 text-success" style="font-size: 0.65rem;">{{ 'RECEPTIONIST.UI.AVAILABLE' | translate }}</span>
+                      <span class="badge bg-success bg-opacity-10 text-success" style="font-size: 0.65rem;">{{ 'RECEPTIONIST.UI.ROOM_RECORD' | translate }}</span>
                     </div>
                   </ng-template>
                 </p-select>
@@ -326,6 +306,10 @@
                 </div>
 
                 <div class="col-md-6">
+                  <label class="form-label mb-1 fw-semibold text-secondary small">{{ 'RECEPTIONIST.UI.END_TIME' | translate }} *</label>
+                  <p-datepicker [(ngModel)]="scheduledEndDate" [showTime]="true" hourFormat="12" [showIcon]="true" appendTo="body" styleClass="w-100" />
+                </div>
+                <div class="col-md-6">
                   <div class="schedule-helper-box">
                     <i class="bi bi-info-circle text-teal fs-5"></i>
                     <div class="small text-muted">
@@ -335,6 +319,16 @@
                 </div>
               </div>
             } @else {
+              @if (clinical.error()) { <p role="alert" class="alert alert-warning">{{ locale.label(clinical.error()) }}</p> }
+              <label class="form-label w-100">{{ 'RECEPTIONIST.UI.SAVED_TREATMENT_PLAN' | translate }} *
+                <select class="form-select" [(ngModel)]="selectedPlanId" [disabled]="clinical.loading()">
+                  <option [ngValue]="null">{{ 'RECEPTIONIST.UI.SELECT_SAVED_PLAN' | translate }}</option>
+                  @for (plan of patientPlans; track plan.id) { <option [ngValue]="plan.id">#{{ plan.id }} ? {{ plan.treatmentType }}</option> }
+                </select>
+              </label>
+              <label class="form-label w-100">{{ 'RECEPTIONIST.UI.END_TIME' | translate }} *
+                <p-datepicker [(ngModel)]="planEndTime" [timeOnly]="true" hourFormat="12" appendTo="body" styleClass="w-100" />
+              </label>
               <!-- Treatment Plan Configuration -->
               <div class="row g-3">
                 <div class="col-md-3">
@@ -359,87 +353,9 @@
                 </div>
               </div>
 
-              <div class="divider my-3"></div>
-
-              <div class="row g-3 align-items-end">
-                <div class="col-md-3">
-                  <label class="form-label mb-1 fw-semibold text-secondary small">{{ 'RECEPTIONIST.UI.PAYMENT_MODE' | translate }} <span class="text-danger">*</span></label>
-                  <select class="form-select" [(ngModel)]="planPaymentMode">
-                    <option value="Per-Session">{{ 'RECEPTIONIST.UI.PER_SESSION' | translate }}</option>
-                    <option value="Package">{{ 'RECEPTIONIST.UI.PACKAGE_BULK_PAYMENT_' | translate }}</option>
-                  </select>
-                </div>
-
-                @if (planPaymentMode === 'Package') {
-                  <div class="col-md-3">
-                    <label class="form-label mb-1 fw-semibold text-secondary small">{{ 'RECEPTIONIST.UI.TOTAL_PACKAGE_PRICE' | translate }} <span class="text-danger">*</span></label>
-                    <p-inputNumber [(ngModel)]="packageTotalPrice" mode="currency" currency="EGP" [locale]="locale.language" styleClass="w-100" [min]="0"></p-inputNumber>
-                  </div>
-                  <div class="col-md-3">
-                    <label class="form-label mb-1 fw-semibold text-secondary small">{{ 'RECEPTIONIST.UI.DISCOUNT_EGP_' | translate }}</label>
-                    <p-inputNumber [(ngModel)]="packageDiscount" mode="currency" currency="EGP" [locale]="locale.language" styleClass="w-100" [min]="0" [max]="packageTotalPrice"></p-inputNumber>
-                  </div>
-                  <div class="col-md-3">
-                    <label class="form-label mb-1 fw-semibold text-secondary small">{{ 'RECEPTIONIST.UI.AMOUNT_PAYING_NOW' | translate }}</label>
-                    <p-inputNumber [(ngModel)]="packagePayingNow" mode="currency" currency="EGP" [locale]="locale.language" styleClass="w-100" [min]="0"></p-inputNumber>
-                  </div>
-                } @else {
-                  <div class="col-md-4">
-                    <label class="form-label mb-1 fw-semibold text-secondary small">{{ 'RECEPTIONIST.UI.PRICE_PER_SESSION' | translate }} <span class="text-danger">*</span></label>
-                    <p-inputNumber [(ngModel)]="packageTotalPrice" mode="currency" currency="EGP" [locale]="locale.language" styleClass="w-100" [min]="0"></p-inputNumber>
-                  </div>
-                }
-              </div>
+              <p class="text-muted small">{{ 'RECEPTIONIST.UI.BOOKING_BILLING_NOTICE' | translate }}</p>
             }
 
-            <!-- Live Insurance Copay Split Banner -->
-            @if (selectedPatient?.paymentType === 'Insurance' && selectedPatient?.insuranceDetails?.copayPercentage != null && ((bookingMode === 'single' && !isFreeAssessment) || bookingMode === 'plan')) {
-              <div class="insurance-split-banner mt-3">
-                <span class="badge badge-info fs-6">{{ selectedPatient?.insuranceDetails?.copayPercentage }}% {{ 'RECEPTIONIST.UI.COPAY' | translate }}</span>
-                <div class="d-flex flex-wrap align-items-center gap-3 fw-semibold small">
-                  <span>{{ 'RECEPTIONIST.UI.PATIENT_PAYS_' | translate }} <strong class="text-danger">{{ calculatedInsuranceShare.patientShare | number:'1.0-0':locale.language }} {{ 'RECEPTIONIST.EGP' | translate }}</strong></span>
-                  <span class="text-muted">|</span>
-                  <span>{{ 'RECEPTIONIST.UI.INSURANCE_PAYS_' | translate }} <strong class="text-teal">{{ calculatedInsuranceShare.insuranceShare | number:'1.0-0':locale.language }} {{ 'RECEPTIONIST.EGP' | translate }}</strong></span>
-                </div>
-              </div>
-            }
-
-            <!-- Existing Financial Agreement Strip -->
-            @if (selectedPatient?.financialPlan && bookingMode === 'single') {
-              <div class="financial-plan-strip mt-3"
-                [ngClass]="(selectedPatient?.financialPlan?.remainingDebt ?? 0) > 0 ? 'plan-strip-warn' : 'plan-strip-ok'">
-                <i class="bi bi-wallet2 fs-5"
-                  [ngClass]="(selectedPatient?.financialPlan?.remainingDebt ?? 0) > 0 ? 'text-warning' : 'text-teal'"></i>
-                <span class="fw-semibold">{{ 'RECEPTIONIST.FINANCIAL_AGREEMENT' | translate }}:</span>
-                <span class="badge badge-info">{{ selectedPatient?.financialPlan?.paymentMode | receptionistText }}</span>
-
-                @if (selectedPatient?.financialPlan?.paymentMode !== 'Per-Session') {
-                  <span class="text-muted small">
-                    {{ 'RECEPTIONIST.TOTAL_AMOUNT' | translate }}:
-                    <strong class="text-body">{{ selectedPatient?.financialPlan?.totalAgreedAmount | number:'1.0-0':locale.language }} {{ 'RECEPTIONIST.EGP' | translate }}</strong>
-                  </span>
-                  <span class="text-muted small">
-                    {{ 'RECEPTIONIST.AMOUNT_PAID_NOW' | translate }}:
-                    <strong class="text-body">{{ selectedPatient?.financialPlan?.totalPaidSoFar | number:'1.0-0':locale.language }} {{ 'RECEPTIONIST.EGP' | translate }}</strong>
-                  </span>
-                  <span class="badge"
-                    [ngClass]="(selectedPatient?.financialPlan?.remainingDebt ?? 0) > 0 ? 'badge-warning' : 'badge-success'">
-                    {{ 'RECEPTIONIST.REMAINING_DEBT' | translate }}:
-                    {{ selectedPatient?.financialPlan?.remainingDebt | number:'1.0-0':locale.language }} {{ 'RECEPTIONIST.EGP' | translate }}
-                  </span>
-                  @if ((selectedPatient?.financialPlan?.remainingDebt ?? 0) === 0) {
-                    <span class="badge badge-success">
-                      <i class="bi bi-check2-all me-1"></i>{{ 'RECEPTIONIST.SESSION_COVERED' | translate }}
-                    </span>
-                  }
-                } @else {
-                  <span class="text-muted small">
-                    {{ 'RECEPTIONIST.PRICE_PER_SESSION' | translate }}:
-                    <strong class="text-body">{{ selectedPatient?.financialPlan?.sessionPrice | number:'1.0-0':locale.language }} {{ 'RECEPTIONIST.EGP' | translate }}</strong>
-                  </span>
-                }
-              </div>
-            }
           </div>
         </div>
       </div>
@@ -505,53 +421,7 @@
             </div>
           }
 
-          <!-- Financial Summary Box -->
-          <div class="summary-financial-box mt-3">
-            @if (bookingMode === 'single') {
-              @if (sessionType === 'Assessment' && isFreeAssessment) {
-                <div class="d-flex justify-content-between align-items-center">
-                  <span class="small fw-semibold">{{ 'RECEPTIONIST.UI.ASSESSMENT_FEE' | translate }}</span>
-                  <span class="badge badge-warning">
-                    <i class="bi bi-gift-fill me-1"></i>{{ 'RECEPTIONIST.WAIVED' | translate }} (0 {{ 'RECEPTIONIST.EGP' | translate }})
-                  </span>
-                </div>
-              } @else if (sessionType === 'Assessment') {
-                <div class="d-flex justify-content-between align-items-center">
-                  <span class="small text-secondary">{{ 'RECEPTIONIST.UI.ASSESSMENT_FEE' | translate }}</span>
-                  <span class="fw-bold fs-6 text-teal">{{ (assessmentPrice || 0) | currency:'EGP':'symbol':'1.2-2':locale.language }}</span>
-                </div>
-              } @else {
-                <div class="d-flex justify-content-between align-items-center">
-                  <span class="small text-secondary">{{ 'RECEPTIONIST.UI.SESSION_BILLING' | translate }}</span>
-                  <span class="fw-bold small">
-                    {{ (selectedPatient?.financialPlan?.paymentMode === 'Package' ? 'Covered by Package' : 'Standard Rate') | receptionistText }}
-                  </span>
-                </div>
-              }
-            } @else {
-              @if (planPaymentMode === 'Package') {
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                  <span class="small text-secondary">{{ 'RECEPTIONIST.UI.NET_PACKAGE_TOTAL' | translate }}</span>
-                  <span class="fw-bold">{{ ((packageTotalPrice || 0) - (packageDiscount || 0)) | currency:'EGP':'symbol':'1.2-2':locale.language }}</span>
-                </div>
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                  <span class="small text-secondary">{{ 'RECEPTIONIST.UI.PAYING_NOW' | translate }}</span>
-                  <span class="fw-semibold text-teal">{{ (packagePayingNow || 0) | currency:'EGP':'symbol':'1.2-2':locale.language }}</span>
-                </div>
-                <div class="d-flex justify-content-between align-items-center pt-2 border-top">
-                  <span class="small fw-bold">{{ 'RECEPTIONIST.UI.REMAINING_DEBT' | translate }}</span>
-                  <span class="fw-bold" [ngClass]="packageRemainingDebt > 0 ? 'text-warning' : 'text-teal'">
-                    {{ packageRemainingDebt | currency:'EGP':'symbol':'1.2-2':locale.language }}
-                  </span>
-                </div>
-              } @else {
-                <div class="d-flex justify-content-between align-items-center">
-                  <span class="small text-secondary">{{ 'RECEPTIONIST.UI.RATE_PER_SESSION' | translate }}</span>
-                  <span class="fw-bold text-teal">{{ (packageTotalPrice || 500) | currency:'EGP':'symbol':'1.2-2':locale.language }}</span>
-                </div>
-              }
-            }
-          </div>
+          <p class="text-muted small">{{ 'RECEPTIONIST.UI.BOOKING_BILLING_NOTICE' | translate }}</p>
         </div>
 
         <!-- Primary Action Buttons -->
@@ -559,7 +429,7 @@
           @if (bookingMode === 'single') {
             <button type="button" class="btn btn-primary w-100 py-2 fw-semibold d-flex align-items-center justify-content-center gap-2"
               (click)="submitBooking()"
-              [disabled]="isLoading() || !selectedPatientId || !selectedDoctorId || !selectedRoomId || !scheduledDate || isInsurancePending">
+              [disabled]="isLoading() || !selectedPatientId || !selectedDoctorId || !selectedRoomId || !scheduledDate || !scheduledEndDate || appointmentService.mutation.uncertain()">
               @if (isLoading()) {
                 <span class="spinner-border spinner-border-sm"></span>
                 <span>{{ 'RECEPTIONIST.PROCESSING' | translate }}</span>
@@ -570,14 +440,14 @@
             </button>
 
             <button type="button" class="btn btn-walkin-cta w-100 py-2 fw-semibold d-flex align-items-center justify-content-center gap-2"
-              (click)="handleWalkInNearestSlot()" [disabled]="!selectedPatientId || isInsurancePending">
+              (click)="handleWalkInNearestSlot()" [disabled]="true">
               <i class="bi bi-lightning-charge-fill"></i>
               <span>{{ 'RECEPTIONIST.UI.FIND_NEAREST_SLOT_WALK_IN_' | translate }}</span>
             </button>
           } @else {
             <button type="button" class="btn btn-primary w-100 py-2 fw-semibold d-flex align-items-center justify-content-center gap-2"
               (click)="submitTreatmentPlan()"
-              [disabled]="isLoading() || !selectedPatientId || !selectedDoctorId || !selectedRoomId || isInsurancePending">
+              [disabled]="isLoading() || !selectedPatientId || !selectedDoctorId || !selectedRoomId || !selectedPlanId || appointmentService.mutation.uncertain()">
               @if (isLoading()) {
                 <span class="spinner-border spinner-border-sm"></span>
                 <span>{{ 'RECEPTIONIST.UI.PROCESSING_' | translate }}</span>
@@ -588,7 +458,7 @@
             </button>
           }
 
-          <button type="button" class="btn btn-outline-secondary w-100 py-2" (click)="resetBookingForm()">
+          <button type="button" class="btn btn-outline-secondary w-100 py-2" (click)="resetBookingForm()" [disabled]="bookingBusy() || bulkProgress().length > 0">
             <i class="bi bi-arrow-counterclockwise me-1"></i> {{ 'RECEPTIONIST.UI.RESET_FORM' | translate }}
           </button>
         </div>
@@ -673,7 +543,7 @@
   [closable]="!registeringPatient()" styleClass="clean-modal receptionist-modal" [style]="{width: '650px', maxWidth: '95vw'}"
   [header]="'RECEPTIONIST.ADD_PATIENT' | translate">
   @if (quickRegistrationError()) {
-    <p class="alert alert-warning" role="alert" style="white-space: pre-line">{{ quickRegistrationError() }}</p>
+    <p class="alert alert-warning" role="alert" style="white-space: pre-line">{{ locale.label(quickRegistrationError()) }}</p>
   }
   @if (patientService.creationOutcomeUnknown()) {
     <p class="alert alert-warning" role="alert">{{ 'RECEPTIONIST.UI.PATIENT_OUTCOME_UNKNOWN' | translate }}</p>

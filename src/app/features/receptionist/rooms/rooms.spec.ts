@@ -3,63 +3,34 @@ import { signal } from '@angular/core';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { MessageService } from 'primeng/api';
-import { ClinicStateService } from '../../../core/services/state/clinic-state.service';
-import { Room } from '../../../core/models/room.model';
+import { RoomService } from '../../../core/services/room.service';
+import { RoomRecord } from '../../../core/models/room-api.model';
 import { RoomsComponent } from './rooms';
 
-describe('Room cards rendering', () => {
-  let fixture: ComponentFixture<RoomsComponent>;
-  const rooms = signal<Room[]>([]);
-
-  beforeEach(async () => {
-    rooms.set([]);
-    await TestBed.configureTestingModule({
-      imports: [RoomsComponent, TranslateModule.forRoot()],
-      providers: [
-        provideNoopAnimations(), MessageService,
-        { provide: ClinicStateService, useValue: {
-          rooms, doctors: signal([]), getDoctorName: () => 'Doctor'
-        } }
-      ]
-    }).compileComponents();
-    const translate = TestBed.inject(TranslateService);
-    translate.setTranslation('en', { RECEPTIONIST: { ROOMS: {
-      EMPTY_TITLE: 'No rooms added yet', EMPTY_DESCRIPTION: 'Add a room to start managing clinic availability.',
-      UNNAMED_ROOM: 'Unnamed room', UNKNOWN_STATUS: 'Unknown room status'
-    } } });
-    translate.use('en');
-    fixture = TestBed.createComponent(RoomsComponent);
+describe('Backend room cards',()=>{
+  let fixture:ComponentFixture<RoomsComponent>;
+  const rooms=signal<RoomRecord[]>([]);
+  const error=signal<string|null>(null);
+  const service={rooms,error,loading:signal(false),mutation:{busy:signal(false),uncertain:signal(false)},load:vi.fn()};
+  beforeEach(async()=>{
+    rooms.set([]);error.set(null);
+    await TestBed.configureTestingModule({imports:[RoomsComponent,TranslateModule.forRoot()],providers:[provideNoopAnimations(),MessageService,{provide:RoomService,useValue:service}]}).compileComponents();
+    TestBed.inject(TranslateService).setTranslation('en',{RECEPTIONIST:{ROOMS:{EMPTY_TITLE:'No rooms added yet'}}});
+    TestBed.inject(TranslateService).use('en');
+    fixture=TestBed.createComponent(RoomsComponent);
   });
-
-  it('renders every room card with its name and status class', () => {
-    rooms.set([
-      { id: '1', displayName: 'Room 1', status: 'Occupied', doctorId: null, capacity: 1, currentLoad: 1 },
-      { id: '2', displayName: 'Room 2', status: 'Available', doctorId: null, capacity: 1, currentLoad: 0 }
-    ]);
-    fixture.detectChanges();
-    const cards = fixture.nativeElement.querySelectorAll('.room-card');
-    expect(cards.length).toBe(2);
-    expect(cards[0].textContent).toContain('Room 1');
-    expect(cards[0].classList.contains('occupied')).toBe(true);
-    expect(cards[1].classList.contains('available')).toBe(true);
+  it('renders server record names without claiming room availability or occupancy',()=>{
+    rooms.set([{id:1,name:'Therapy room',capacity:2,isActive:true}]);fixture.detectChanges();
+    const card=fixture.nativeElement.querySelector('.room-card');
+    expect(card.textContent).toContain('Therapy room');
+    expect(card.classList.contains('occupied')).toBe(false);expect(card.classList.contains('available')).toBe(false);
   });
-
-  it('keeps rendering cached rooms with numeric or missing statuses', () => {
-    rooms.set([
-      { id: '1', displayName: 'Legacy room', status: 0, doctorId: null },
-      { id: '2', displayName: 'Incomplete room', doctorId: null }
-    ] as unknown as Room[]);
-    expect(() => fixture.detectChanges()).not.toThrow();
-    const cards = fixture.nativeElement.querySelectorAll('.room-card');
-    expect(cards.length).toBe(2);
-    expect(cards[0].textContent).toContain('Legacy room');
-    expect(cards[1].textContent).toContain('Incomplete room');
-    expect(cards[0].querySelector('.status-indicator-wrapper').title).toBe('Unknown room status');
+  it('shows failures and retries instead of reporting an empty successful floor plan',()=>{
+    error.set('Request failed');fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[role="alert"]').textContent).toContain('Request failed');
+    expect(fixture.nativeElement.querySelector('.room-card')).toBeNull();
   });
-
-  it('shows the empty-state card when no rooms exist', () => {
-    fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('[role="status"]').textContent).toContain('No rooms added yet');
-    expect(fixture.nativeElement.querySelectorAll('.room-card').length).toBe(0);
+  it('shows an empty state only after a successful empty list',()=>{
+    fixture.detectChanges();expect(fixture.nativeElement.querySelector('[role="status"]').textContent).toContain('No rooms added yet');
   });
 });

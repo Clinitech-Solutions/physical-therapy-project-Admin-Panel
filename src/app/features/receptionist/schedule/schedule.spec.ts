@@ -1,3 +1,7 @@
+import { RoomService } from '../../../core/services/room.service';
+import { ClinicianService } from '../../../core/services/clinician.service';
+import { AppointmentWorkflowService } from '../../../core/services/appointment-workflow.service';
+import { signal } from '@angular/core';
 import '@angular/compiler';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { ScheduleComponent } from './schedule';
@@ -29,7 +33,7 @@ describe('ScheduleComponent API Unit Tests', () => {
         id: 101,
         patientId: 1,
         patientName: 'Ahmed Fathy',
-        doctorId: 10,
+        doctorId: '10',
         doctorName: 'Dr. Omar',
         roomId: 1,
         roomName: 'Room 1',
@@ -41,7 +45,7 @@ describe('ScheduleComponent API Unit Tests', () => {
         id: 102,
         patientId: 2,
         patientName: 'Mona Zaki',
-        doctorId: 11,
+        doctorId: '11',
         doctorName: 'Dr. Sarah',
         roomId: 2,
         roomName: 'Room 2',
@@ -53,7 +57,7 @@ describe('ScheduleComponent API Unit Tests', () => {
         id: 103,
         patientId: 3,
         patientName: 'Omar Hassan',
-        doctorId: 10,
+        doctorId: '10',
         doctorName: 'Dr. Omar',
         roomId: 1,
         roomName: 'Room 1',
@@ -67,7 +71,10 @@ describe('ScheduleComponent API Unit Tests', () => {
       providers: [
         { provide: ReceptionistService, useValue: receptionistService },
         { provide: BillingService, useValue: billingService },
-        { provide: MessageService, useValue: messageService }
+        { provide: MessageService, useValue: messageService },
+        { provide: RoomService, useValue: {rooms:signal([])} },
+        { provide: ClinicianService, useValue: {clinicians:signal([])} },
+        { provide: AppointmentWorkflowService, useValue: {mutation:{busy:()=>false},transition:vi.fn(()=>of(null)),cancel:vi.fn(()=>of(null))} }
       ]
     });
 
@@ -101,45 +108,26 @@ describe('ScheduleComponent API Unit Tests', () => {
 
   it('should map distinct CSS classes based on numeric or string session status', () => {
     expect(component.getStatusClass('Completed')).toBe('status-completed');
-    expect(component.getStatusClass(3)).toBe('status-completed');
+    expect(component.getStatusClass(3)).toBe('status-unknown');
     expect(component.getStatusClass('In Progress')).toBe('status-in-progress');
-    expect(component.getStatusClass(2)).toBe('status-in-progress');
+    expect(component.getStatusClass(2)).toBe('status-unknown');
     expect(component.getStatusClass('Pending')).toBe('status-pending');
-    expect(component.getStatusClass(0)).toBe('status-pending');
+    expect(component.getStatusClass(0)).toBe('status-unknown');
     expect(component.getStatusClass('Confirmed')).toBe('status-confirmed');
-    expect(component.getStatusClass(1)).toBe('status-confirmed');
+    expect(component.getStatusClass(1)).toBe('status-unknown');
     expect(component.getStatusClass('Cancelled')).toBe('status-cancelled');
-    expect(component.getStatusClass(4)).toBe('status-cancelled');
+    expect(component.getStatusClass(4)).toBe('status-unknown');
   });
 
-  it('should call ReceptionistService.updateSessionStatus on check-in and check-out', async () => {
-    let calledId: number | null = null;
-    let calledStatus: number | null = null;
-
-    receptionistService.updateSessionStatus = (id: number, status: number) => {
-      calledId = id;
-      calledStatus = status;
-      return of({});
-    };
-
+  it('delegates check-in and check-out to the same workflow as the dashboard', async () => {
     await component.checkInSession(102);
-    expect(calledId).toBe(102);
-    expect(calledStatus).toBe(2); // In Progress
-
+    expect(component.workflow.transition).toHaveBeenCalledWith(102,'In Progress');
     await component.checkoutSession(101);
-    expect(calledId).toBe(101);
-    expect(calledStatus).toBe(3); // Completed
+    expect(component.workflow.transition).toHaveBeenCalledWith(101,'Completed');
   });
-
-  it('should call ReceptionistService.cancelSession on markPatientAbsent', () => {
-    let cancelledId: number | null = null;
-    receptionistService.cancelSession = (id: number) => {
-      cancelledId = id;
-      return of({});
-    };
-
-    component.markPatientAbsent(102);
-    expect(cancelledId).toBe(102);
+  it('delegates cancellation without inferring an absent status', async () => {
+    await component.markPatientAbsent(102);
+    expect(component.workflow.cancel).toHaveBeenCalledWith(102);
   });
 
   it('should reset filters cleanly', () => {

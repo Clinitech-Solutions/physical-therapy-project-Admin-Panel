@@ -6,7 +6,6 @@ import { TranslateModule } from '@ngx-translate/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 
-import { ClinicStateService } from '../../../core/services/state/clinic-state.service';
 import { InsuranceService } from '../../../core/services/insurance.service';
 import { PatientService } from '../../../core/services/patient.service';
 import { InsuranceDocumentService } from '../../../core/services/insurance-document.service';
@@ -28,7 +27,6 @@ import { PatientProfileComponent } from '../../../shared/components/patient-prof
 })
 export class PatientsComponent implements OnInit {
   readonly locale = new ReceptionistLocale();
-  clinicState = inject(ClinicStateService);
   messageService = inject(MessageService);
   private insuranceService = inject(InsuranceService);
   private patientService = inject(PatientService);
@@ -65,7 +63,7 @@ export class PatientsComponent implements OnInit {
 
   // Base Data
   patients = this.patientService.patients;
-  isLoading = this.clinicState.isLoading;
+  isLoading = this.patientService.loading;
 
   // Computed Filtered Data
   filteredPatients = computed(() => {
@@ -79,7 +77,7 @@ export class PatientsComponent implements OnInit {
         p.phone.includes(q) || 
         (p.nameAr && p.nameAr.includes(q));
       const matchesPayment = filterPay === 'All' || p.paymentType === filterPay;
-      const matchesCompany = filterComp === 'All' || (p.paymentType === 'Insurance' && p.insuranceDetails?.company === filterComp);
+      const matchesCompany = filterComp === 'All' || (p.paymentType === 'Insurance' && (p.insuranceCompanyName ?? p.insuranceDetails?.company) === filterComp);
       return matchesSearch && matchesPayment && matchesCompany;
     });
   });

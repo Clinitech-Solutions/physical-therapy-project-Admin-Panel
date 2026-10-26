@@ -3,6 +3,10 @@ import { Login } from './features/auth/login/login';
 import { AppLayoutComponent } from './layout/app-layout/app-layout';
 import { authGuard } from './core/guards/auth-guard';
 import { roleGuard } from './core/guards/role-guard';
+import { inject, provideEnvironmentInitializer } from '@angular/core';
+import { ReceptionRefreshService } from './core/services/reception-refresh.service';
+
+const receptionProviders = [provideEnvironmentInitializer(() => { inject(ReceptionRefreshService); })];
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -12,13 +16,13 @@ export const routes: Routes = [
     component: AppLayoutComponent,
     canActivate: [authGuard],
     children: [
-      { path: 'receptionist/dashboard', loadComponent: () => import('./features/receptionist/dashboard/dashboard').then(m => m.Dashboard), canActivate: [roleGuard], data: { roles: ['Receptionist', 'Ceo'] } },
-      { path: 'receptionist/patients', loadComponent: () => import('./features/receptionist/patients/patients').then(m => m.PatientsComponent), canActivate: [roleGuard], data: { roles: ['Receptionist', 'Ceo'] } },
-      { path: 'receptionist/bookings', loadComponent: () => import('./features/receptionist/bookings/bookings').then(m => m.BookingsComponent), canActivate: [roleGuard], data: { roles: ['Receptionist', 'Ceo'] } },
-      { path: 'receptionist/schedule', loadComponent: () => import('./features/receptionist/schedule/schedule').then(m => m.ScheduleComponent), canActivate: [roleGuard], data: { roles: ['Receptionist', 'Ceo'] } },
-      { path: 'receptionist/rooms', loadComponent: () => import('./features/receptionist/rooms/rooms').then(m => m.RoomsComponent), canActivate: [roleGuard], data: { roles: ['Receptionist', 'Ceo'] } },
-      { path: 'receptionist/insurance', loadComponent: () => import('./features/receptionist/insurance/insurance').then(m => m.InsuranceComponent), canActivate: [roleGuard], data: { roles: ['Receptionist', 'Ceo'] } },
-      { path: 'receptionist/billing', loadComponent: () => import('./features/receptionist/billing/billing').then(m => m.BillingComponent), canActivate: [roleGuard], data: { roles: ['Receptionist', 'Ceo'] } },
+      { path: 'receptionist/dashboard', providers: receptionProviders, loadComponent: () => import('./features/receptionist/dashboard/dashboard').then(m => m.Dashboard), canActivate: [roleGuard], data: { roles: ['Receptionist', 'Ceo'] } },
+      { path: 'receptionist/patients', providers: receptionProviders, loadComponent: () => import('./features/receptionist/patients/patients').then(m => m.PatientsComponent), canActivate: [roleGuard], data: { roles: ['Receptionist', 'Ceo'] } },
+      { path: 'receptionist/bookings', providers: receptionProviders, loadComponent: () => import('./features/receptionist/bookings/bookings').then(m => m.BookingsComponent), canActivate: [roleGuard], data: { roles: ['Receptionist', 'Ceo'] } },
+      { path: 'receptionist/schedule', providers: receptionProviders, loadComponent: () => import('./features/receptionist/schedule/schedule').then(m => m.ScheduleComponent), canActivate: [roleGuard], data: { roles: ['Receptionist', 'Ceo'] } },
+      { path: 'receptionist/rooms', providers: receptionProviders, loadComponent: () => import('./features/receptionist/rooms/rooms').then(m => m.RoomsComponent), canActivate: [roleGuard], data: { roles: ['Receptionist', 'Ceo'] } },
+      { path: 'receptionist/insurance', providers: receptionProviders, loadComponent: () => import('./features/receptionist/insurance/insurance').then(m => m.InsuranceComponent), canActivate: [roleGuard], data: { roles: ['Receptionist', 'Ceo'] } },
+      { path: 'receptionist/billing', providers: receptionProviders, loadComponent: () => import('./features/receptionist/billing/billing').then(m => m.BillingComponent), canActivate: [roleGuard], data: { roles: ['Receptionist', 'Ceo'] } },
       
       // ── Senior Therapist Routes ──
       { path: 'senior/dashboard', loadComponent: () => import('./features/senior/live-dashboard/live-dashboard').then(m => m.LiveDashboard), canActivate: [roleGuard], data: { roles: ['Senior', 'Ceo'] } },

@@ -1,4 +1,7 @@
 /// <reference types="node" />
+import { RoomService } from '../core/services/room.service';
+import { ClinicianService } from '../core/services/clinician.service';
+import { AppointmentWorkflowService } from '../core/services/appointment-workflow.service';
 import { readFileSync, readdirSync } from 'node:fs';
 import { TestBed } from '@angular/core/testing';
 import { signal, Injector, runInInjectionContext } from '@angular/core';
@@ -49,6 +52,9 @@ describe('Receptionist localization', () => {
       { provide: TranslateService, useValue: translate },
       { provide: ReceptionistService, useValue: receptionist },
       { provide: BillingService, useValue: {} },
+      { provide: RoomService, useValue: {rooms:signal([])} },
+      { provide: ClinicianService, useValue: {clinicians:signal([])} },
+      { provide: AppointmentWorkflowService, useValue: {} },
       MessageService
     ] });
     const schedule = runInInjectionContext(injector, () => new ScheduleComponent());

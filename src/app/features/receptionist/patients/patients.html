@@ -78,7 +78,7 @@
                       @if(patient.address) {
                         <span class="text-muted" style="font-size:var(--text-xs)"><i class="bi bi-geo-alt"></i> {{ patient.address }}</span>
                       }
-                      @if(!patient.documents.medicalConsent || !patient.documents.liabilityWaiver || !patient.documents.idCard) {
+                      @if(patient.documentsKnown !== false && (!patient.documents.medicalConsent || !patient.documents.liabilityWaiver || !patient.documents.idCard)) {
                         <span class="badge badge-error" [title]="'RECEPTIONIST.NEEDS_PAPERWORK' | translate">
                           <i class="bi bi-file-earmark-x"></i>
                         </span>
@@ -149,7 +149,7 @@
   [header]="'RECEPTIONIST.ADD_PATIENT' | translate">
 
   @if (registrationError()) {
-    <p class="alert alert-warning" role="alert" style="white-space: pre-line">{{ registrationError() }}</p>
+    <p class="alert alert-warning" role="alert" style="white-space: pre-line">{{ locale.label(registrationError()) }}</p>
   }
   @if (creationOutcomeUnknown()) {
     <p class="alert alert-warning" role="alert">{{ 'RECEPTIONIST.UI.PATIENT_OUTCOME_UNKNOWN' | translate }}</p>
