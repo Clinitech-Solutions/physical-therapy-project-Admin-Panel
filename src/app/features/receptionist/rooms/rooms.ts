@@ -30,6 +30,9 @@ export class RoomsComponent implements OnInit {
   readonly isSubmitting = this.roomService.mutation.busy;
   readonly isAddRoomModalOpen = signal(false);
   readonly formError = signal("");
+  // Acknowledged requests in this view, not maintenance state inferred from isActive.
+  readonly maintenanceRequests = signal<Record<number, boolean>>({});
+  readonly maintenanceRoomId = signal<number | null>(null);
   editingId: number | null = null;
   newRoom: RoomWriteRequest = { name: "", capacity: 1, isActive: true };
   ngOnInit() {
@@ -79,8 +82,28 @@ export class RoomsComponent implements OnInit {
     await this.perform(this.roomService.delete(room.id));
   }
   async setMaintenance(room: RoomRecord, maintenance: boolean) {
-    if (!this.isSubmitting())
-      await this.perform(this.roomService.maintenance(room.id, maintenance));
+    if (
+      this.isSubmitting() ||
+      this.roomService.mutation.uncertain() ||
+      this.maintenanceRoomId() !== null
+    )
+      return;
+    this.maintenanceRoomId.set(room.id);
+    try {
+      if (
+        await this.perform(this.roomService.maintenance(room.id, maintenance))
+      ) {
+        this.maintenanceRequests.update((requests) => ({
+          ...requests,
+          [room.id]: maintenance,
+        }));
+      }
+    } finally {
+      this.maintenanceRoomId.set(null);
+    }
+  }
+  maintenanceState(id: number): boolean | null {
+    return this.maintenanceRequests()[id] ?? null;
   }
   private async perform(request: Observable<unknown>, close = false) {
     this.formError.set("");
@@ -88,7 +111,7 @@ export class RoomsComponent implements OnInit {
       await firstValueFrom(request);
     } catch (error) {
       this.formError.set(apiError(error));
-      return;
+      return false;
     }
     if (close) this.closeAddRoomModal();
     this.messages.add({
@@ -100,5 +123,6 @@ export class RoomsComponent implements OnInit {
       ),
     });
     this.retry();
+    return true;
   }
 }
