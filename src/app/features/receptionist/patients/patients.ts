@@ -1,6 +1,6 @@
 import { PatientRegistrationFieldsComponent } from '../../../shared/components/patient-registration-fields/patient-registration-fields';
 import { ReceptionistLocale, ReceptionistTextPipe } from '../../../shared/receptionist-locale';
-import { Component, signal, computed, inject, OnInit } from "@angular/core";
+import { Component, signal, computed, inject, OnInit, ViewChild } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { TranslateModule } from '@ngx-translate/core';
 import { FormsModule } from '@angular/forms';
@@ -11,7 +11,7 @@ import { PatientService } from '../../../core/services/patient.service';
 import { InsuranceDocumentService } from '../../../core/services/insurance-document.service';
 import { BillingService } from '../../../core/services/billing.service';
 import { Patient } from '../../../core/models/patient.model';
-import { emptyPatientRegistration, PatientInputError, patientOutcomeIsUnknown, patientServerError } from '../../../core/services/patient-registration';
+import { emptyPatientRegistration, PatientInputError, PatientValidationError, patientOutcomeIsUnknown, patientServerError } from '../../../core/services/patient-registration';
 import { MessageService, SharedModule } from 'primeng/api';
 import { DialogModule } from 'primeng/dialog';
 import { ButtonModule } from 'primeng/button';
@@ -36,6 +36,8 @@ export class PatientsComponent implements OnInit {
   readonly createdPatient = signal<Patient | null>(null);
   readonly creationOutcomeUnknown = this.patientService.creationOutcomeUnknown;
   readonly registrationError = signal('');
+  readonly registrationValidationErrors = signal<PatientInputError[]>([]);
+  @ViewChild(PatientRegistrationFieldsComponent) private registrationFields?: PatientRegistrationFieldsComponent;
   readonly insuranceError = this.insuranceService.error;
   readonly insuranceLoading = this.insuranceService.loading;
 
@@ -126,6 +128,7 @@ export class PatientsComponent implements OnInit {
       this.newPatient = emptyPatientRegistration();
       this.selectedFiles = [];
       this.registrationError.set('');
+      this.registrationValidationErrors.set([]);
     }
     this.showDrawer.set(true);
   }
@@ -174,7 +177,7 @@ export class PatientsComponent implements OnInit {
   }
 
   savePatient() {
-    this.createProfile();
+    return this.createProfile();
   }
 
   refreshPatients(afterSave = false) {
@@ -191,6 +194,7 @@ export class PatientsComponent implements OnInit {
     if (this.saving() || this.createdPatient() || this.creationOutcomeUnknown()) return;
     this.saving.set(true);
     this.registrationError.set('');
+    this.registrationValidationErrors.set([]);
     try {
       const patient = await firstValueFrom(this.patientService.addPatient(this.newPatient));
       this.createdPatient.set(patient);
@@ -198,9 +202,12 @@ export class PatientsComponent implements OnInit {
     } catch (error) {
       const detail = patientOutcomeIsUnknown(error)
         ? this.locale.text('PATIENT_OUTCOME_UNKNOWN', 'The patient may have been saved. Check the patient list before registering again.')
+        : error instanceof PatientValidationError ? error.errors.map(item => this.locale.text(item.key, item.message)).join('\n')
         : error instanceof PatientInputError ? this.locale.text(error.key, error.message)
         : patientServerError(error) || this.locale.text('FAILED_TO_CREATE_PATIENT', 'Failed to create patient.');
       this.registrationError.set(detail);
+      this.registrationValidationErrors.set(error instanceof PatientValidationError ? error.errors : error instanceof PatientInputError ? [error] : []);
+      this.registrationFields?.focusFirstInvalid();
       this.messageService.add({ severity: 'error', summary: this.locale.text('ERROR', 'Error'), detail });
       this.saving.set(false);
       return;

@@ -148,14 +148,8 @@
   [breakpoints]="{ '1199px': '70vw', '991px': '90vw', '575px': '100vw' }"
   [header]="'RECEPTIONIST.ADD_PATIENT' | translate">
 
-  @if (registrationError()) {
-    <p class="alert alert-warning" role="alert" style="white-space: pre-line">{{ locale.label(registrationError()) }}</p>
-  }
-  @if (creationOutcomeUnknown()) {
-    <p class="alert alert-warning" role="alert">{{ 'RECEPTIONIST.UI.PATIENT_OUTCOME_UNKNOWN' | translate }}</p>
-  }
   <fieldset [disabled]="saving() || !!createdPatient() || creationOutcomeUnknown()" class="border-0 p-0 m-0 w-100">
-    <app-patient-registration-fields [draft]="newPatient" [companies]="insuranceCompanies()"
+    <app-patient-registration-fields formId="patients-add" [draft]="newPatient" [validationErrors]="registrationValidationErrors()" [companies]="insuranceCompanies()"
       [insuranceLoading]="insuranceLoading()" [insuranceError]="insuranceError()" />
     @if (newPatient.paymentType === 'Insurance') {
       <label class="form-label fw-bold small mt-3 w-100">
@@ -167,6 +161,12 @@
 
   <!-- 2. FIXED FOOTER (MUST BE OUTSIDE THE FORM, DIRECT CHILD OF p-dialog) -->
   <ng-template #footer pTemplate="footer">
+    <div class="w-100">
+      @if (registrationError()) {
+        <p class="alert alert-warning d-block mb-2" role="alert" data-registration-feedback style="white-space: pre-line; text-align: start; max-height: 8rem; overflow-y: auto">{{ registrationError() }}</p>
+      } @else if (creationOutcomeUnknown()) {
+        <p class="alert alert-warning d-block mb-2" role="alert">{{ 'RECEPTIONIST.UI.PATIENT_OUTCOME_UNKNOWN' | translate }}</p>
+      }
     <div class="modal-footer-actions pt-3 pb-1 border-top">
       <p-button label="{{ 'COMMON.CANCEL' | translate }}" icon="pi pi-times" styleClass="p-button-text p-button-secondary" (onClick)="hideDialog()"></p-button>
       @if (createdPatient()) {
@@ -175,6 +175,7 @@
       } @else {
         <p-button label="{{ 'COMMON.SAVE' | translate }}" icon="pi pi-check" (onClick)="savePatient()" [loading]="saving()" [disabled]="saving() || creationOutcomeUnknown()" />
       }
+    </div>
     </div>
   </ng-template>
 </p-dialog>

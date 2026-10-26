@@ -17,7 +17,7 @@ import {
   ReceptionistLocale,
   ReceptionistTextPipe,
 } from "../../../shared/receptionist-locale";
-import { Component, signal, computed, inject, OnInit } from "@angular/core";
+import { Component, signal, computed, inject, OnInit, ViewChild } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { RouterModule } from "@angular/router";
 import { TranslateModule } from "@ngx-translate/core";
@@ -44,6 +44,7 @@ import { InsuranceService } from "../../../core/services/insurance.service";
 import {
   emptyPatientRegistration,
   PatientInputError,
+  PatientValidationError,
   patientOutcomeIsUnknown,
   patientServerError,
 } from "../../../core/services/patient-registration";
@@ -95,6 +96,8 @@ export class BookingsComponent implements OnInit {
   insuranceService = inject(InsuranceService);
   readonly registeringPatient = signal(false);
   readonly quickRegistrationError = signal("");
+  readonly quickRegistrationValidationErrors = signal<PatientInputError[]>([]);
+  @ViewChild(PatientRegistrationFieldsComponent) private registrationFields?: PatientRegistrationFieldsComponent;
   billingService =
     inject(BillingService, { optional: true }) ?? new BillingService();
 
@@ -489,6 +492,7 @@ export class BookingsComponent implements OnInit {
     if (this.registeringPatient()) return;
     this.quickPatient = emptyPatientRegistration();
     this.quickRegistrationError.set("");
+    this.quickRegistrationValidationErrors.set([]);
     this.isQuickAddModalOpen = true;
   }
 
@@ -520,6 +524,7 @@ export class BookingsComponent implements OnInit {
       return;
     this.registeringPatient.set(true);
     this.quickRegistrationError.set("");
+    this.quickRegistrationValidationErrors.set([]);
     let patient: Patient;
     try {
       patient = await firstValueFrom(
@@ -531,6 +536,8 @@ export class BookingsComponent implements OnInit {
             "PATIENT_OUTCOME_UNKNOWN",
             "The patient may have been saved. Check the patient list before registering again.",
           )
+        : error instanceof PatientValidationError
+          ? error.errors.map(item => this.locale.text(item.key, item.message)).join("\n")
         : error instanceof PatientInputError
           ? this.locale.text(error.key, error.message)
           : patientServerError(error) ||
@@ -539,6 +546,8 @@ export class BookingsComponent implements OnInit {
               "Could not register new patient.",
             );
       this.quickRegistrationError.set(detail);
+      this.quickRegistrationValidationErrors.set(error instanceof PatientValidationError ? error.errors : error instanceof PatientInputError ? [error] : []);
+      this.registrationFields?.focusFirstInvalid();
       this.messageService.add({
         severity: "error",
         summary: this.locale.text("REGISTRATION_FAILED", "Registration Failed"),

@@ -347,6 +347,8 @@
       "PATIENT_SAVED_REFRESH_FAILED": "Patient saved. The list could not refresh; do not register again.",
       "PATIENT_LIST_FAILED": "Could not load patients. Please retry.",
       "PATIENT_BIRTH_DATE_REQUIRED": "Enter a valid date of birth.",
+      "PATIENT_USERNAME_HINT": "Required · 3–50 characters",
+      "PATIENT_EMERGENCY_CONTACT_LENGTH": "Emergency contact must contain at most 20 characters.",
       "PATIENT_USERNAME_LENGTH": "Username must contain 3 to 50 characters.",
       "PATIENT_NAME_LENGTH": "Full name must contain 2 to 150 characters.",
       "PATIENT_PHONE_LENGTH": "Enter a phone number of at most 20 characters; emergency contact has the same limit.",

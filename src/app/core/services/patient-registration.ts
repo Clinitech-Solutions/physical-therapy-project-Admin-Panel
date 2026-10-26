@@ -3,7 +3,13 @@ import { InsuranceDetails, NewPatient } from '../models/patient.model';
 import { CreatePatientRequest, InsuranceDetailsResponse } from '../models/patient-api.model';
 
 export class PatientInputError extends Error {
-  constructor(public readonly key: string, message: string) { super(message); }
+  constructor(public readonly key: string, message: string, public readonly field?: string) { super(message); }
+}
+
+export class PatientValidationError extends PatientInputError {
+  constructor(public readonly errors: PatientInputError[]) {
+    super(errors[0].key, errors.map(error => error.message).join('\n'), errors[0].field);
+  }
 }
 
 export class PatientOutcomeUnknownError extends Error {
@@ -43,34 +49,57 @@ export function patientInsuranceDetails(details?: InsuranceDetails): InsuranceDe
   };
 }
 
-export function createPatientRequest(draft: NewPatient): CreatePatientRequest {
+/** Shared UI/service validation: collect errors without sending a request. */
+export function patientRegistrationErrors(draft: NewPatient): PatientInputError[] {
+  const errors: PatientInputError[] = [];
   const userName = draft.userName?.trim() ?? '';
   const fullName = draft.nameEn.trim();
   const phoneNumber = draft.phone.trim();
   if (userName.length < 3 || userName.length > 50) {
-    throw new PatientInputError('PATIENT_USERNAME_LENGTH', 'Username must contain 3 to 50 characters.');
+    errors.push(new PatientInputError('PATIENT_USERNAME_LENGTH', 'Username must contain 3 to 50 characters.', 'userName'));
   }
   if (fullName.length < 2 || fullName.length > 150) {
-    throw new PatientInputError('PATIENT_NAME_LENGTH', 'Full name must contain 2 to 150 characters.');
+    errors.push(new PatientInputError('PATIENT_NAME_LENGTH', 'Full name must contain 2 to 150 characters.', 'nameEn'));
   }
-  if (!phoneNumber || phoneNumber.length > 20 || (draft.emergencyContact?.trim().length ?? 0) > 20) {
-    throw new PatientInputError('PATIENT_PHONE_LENGTH', 'Enter a phone number of at most 20 characters; emergency contact has the same limit.');
+  if (!phoneNumber || phoneNumber.length > 20) {
+    errors.push(new PatientInputError('PATIENT_PHONE_LENGTH', 'Enter a phone number of at most 20 characters; emergency contact has the same limit.', 'phone'));
+  }
+  if ((draft.emergencyContact?.trim().length ?? 0) > 20) {
+    errors.push(new PatientInputError('PATIENT_EMERGENCY_CONTACT_LENGTH', 'Emergency contact must contain at most 20 characters.', 'emergencyContact'));
   }
   if (draft.gender !== 'Male' && draft.gender !== 'Female') {
-    throw new PatientInputError('PATIENT_GENDER_REQUIRED', 'Select the patient gender.');
+    errors.push(new PatientInputError('PATIENT_GENDER_REQUIRED', 'Select the patient gender.', 'gender'));
   }
+  try { patientBirthDate(draft.dob); } catch (error) {
+    if (!(error instanceof PatientInputError)) throw error;
+    errors.push(new PatientInputError(error.key, error.message, 'dob'));
+  }
+  if (draft.paymentType === 'Insurance') {
+    if (!Number.isInteger(draft.insuranceCompanyId) || Number(draft.insuranceCompanyId) <= 0) {
+      errors.push(new PatientInputError('PATIENT_INSURANCE_COMPANY_REQUIRED', 'Select an insurance company.', 'insuranceCompanyId'));
+    }
+    const details = draft.insuranceDetails;
+    if (details?.copayPercentage != null && !Number.isFinite(details.copayPercentage)) {
+      errors.push(new PatientInputError('PATIENT_INSURANCE_NUMBERS_INVALID', 'Enter numeric copay and whole approved sessions.', 'copayPercentage'));
+    }
+    if (details?.approvedSessions != null && !Number.isInteger(details.approvedSessions)) {
+      errors.push(new PatientInputError('PATIENT_INSURANCE_NUMBERS_INVALID', 'Enter numeric copay and whole approved sessions.', 'approvedSessions'));
+    }
+  }
+  return errors;
+}
+
+export function createPatientRequest(draft: NewPatient): CreatePatientRequest {
+  const errors = patientRegistrationErrors(draft);
+  if (errors.length) throw new PatientValidationError(errors);
   const insured = draft.paymentType === 'Insurance';
-  const companyId = draft.insuranceCompanyId;
-  if (insured && (!Number.isInteger(companyId) || Number(companyId) <= 0)) {
-    throw new PatientInputError('PATIENT_INSURANCE_COMPANY_REQUIRED', 'Select an insurance company.');
-  }
   return {
-    userName, fullName, phoneNumber,
+    userName: draft.userName?.trim() ?? '', fullName: draft.nameEn.trim(), phoneNumber: draft.phone.trim(),
     // Existing frontend mapping retained unchanged, as requested by the user.
     gender: draft.gender === 'Female' ? 1 : 0,
     birthDate: patientBirthDate(draft.dob), paymentType: draft.paymentType,
     emergencyContact: draft.emergencyContact?.trim() || null,
-    insuranceCompanyId: insured ? companyId : null,
+    insuranceCompanyId: insured ? draft.insuranceCompanyId : null,
     insuranceDetails: insured ? patientInsuranceDetails(draft.insuranceDetails) : null
   };
 }

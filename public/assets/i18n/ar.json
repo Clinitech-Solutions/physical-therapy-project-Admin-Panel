@@ -347,6 +347,8 @@
       "PATIENT_SAVED_REFRESH_FAILED": "تم حفظ المريض. تعذر تحديث القائمة؛ لا تسجل المريض مرة أخرى.",
       "PATIENT_LIST_FAILED": "تعذر تحميل المرضى. يرجى المحاولة مرة أخرى.",
       "PATIENT_BIRTH_DATE_REQUIRED": "أدخل تاريخ ميلاد صحيحاً.",
+      "PATIENT_USERNAME_HINT": "مطلوب · من ٣ إلى ٥٠ حرفاً",
+      "PATIENT_EMERGENCY_CONTACT_LENGTH": "يجب ألا تزيد جهة اتصال الطوارئ عن ٢٠ حرفاً.",
       "PATIENT_USERNAME_LENGTH": "يجب أن يحتوي اسم المستخدم على ٣ إلى ٥٠ حرفاً.",
       "PATIENT_NAME_LENGTH": "يجب أن يحتوي الاسم الكامل على حرفين إلى ١٥٠ حرفاً.",
       "PATIENT_PHONE_LENGTH": "أدخل رقم هاتف لا يزيد عن ٢٠ حرفاً؛ ينطبق نفس الحد على رقم الطوارئ.",
