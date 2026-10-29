@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
-import { forkJoin, map, finalize, catchError, of } from "rxjs";
+import { forkJoin, map, finalize, catchError, of, switchMap } from "rxjs";
 import { environment } from "../../../environments/environment";
 import {
   AssessmentRecord,
@@ -77,11 +77,19 @@ export class ClinicalRecordsService {
         ),
       ),
       plans: safe(this.list<TreatmentPlanRecord>("TreatmentPlans/GetAll")),
-      sessions: safe(
-        this.list<TreatmentPlanSessionRecord>("TreatmentPlanSessions/GetAll"),
-      ),
     })
       .pipe(
+        switchMap(data => {
+          if (generation !== this.generation) return of({ ...data, sessions: { data: [] as TreatmentPlanSessionRecord[], error: null } });
+          if (data.assessments.data) this.assessments.set(data.assessments.data);
+          if (data.plans.data) this.plans.set(data.plans.data);
+          // A patient without a treatment plan has no plan sessions to load.
+          const plans = patientId ? this.plansForPatient(patientId) : this.plans();
+          if (!plans.length) return of({ ...data, sessions: { data: [] as TreatmentPlanSessionRecord[], error: null } });
+          return safe(this.list<TreatmentPlanSessionRecord>("TreatmentPlanSessions/GetAll")).pipe(
+            map(sessions => ({ ...data, sessions })),
+          );
+        }),
         finalize(() => {
           if (generation === this.generation) this.loading.set(false);
         }),

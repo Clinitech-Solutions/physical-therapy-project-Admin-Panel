@@ -24,6 +24,10 @@ export interface FinancialPlan {
 
 export interface Patient {
   id: string;
+  applicationUserId?: string;
+  createdAt?: string;
+  /** GetById does not return a username. Never derive it from the name or email. */
+  userName?: string;
   nameEn: string;
   nameAr: string;
   avatar: string;
@@ -34,7 +38,7 @@ export interface Patient {
   emergencyContact?: string | null;
   address?: string;
   occupation?: string;
-  paymentType: PaymentMethod;
+  paymentType: string | null;
   lastVisit: string; // ISO 8601
   documents: {
     medicalConsent: boolean;
@@ -45,7 +49,7 @@ export interface Patient {
   assignedDoctorId?: string;
   insuranceCompanyId?: number | null;
   insuranceCompanyName?: string | null;
-  insuranceDetails?: InsuranceDetails;
+  insuranceDetails?: InsuranceDetails | null;
   financialPlan?: FinancialPlan;
   treatmentPlan?: {
     totalSessions: number;
@@ -61,18 +65,22 @@ export interface NewPatient {
   phone: string;
   gender: Gender;
   dob: string;
-  emergencyContact?: string;
+  emergencyContact?: string | null;
   address?: string;
   occupation?: string;
-  paymentType: PaymentMethod;
+  paymentType: string | null;
   insuranceCompanyId?: number | null;
   insuranceCompany: string;
-  insuranceDetails?: InsuranceDetails;
+  insuranceDetails?: InsuranceDetails | null;
   financialPlan?: FinancialPlan;
   docs: {
     medicalConsent: boolean;
     liabilityWaiver: boolean;
     idCard: boolean;
   };
+}
+
+export interface PatientEditDraft extends NewPatient {
+  email: string;
 }
 

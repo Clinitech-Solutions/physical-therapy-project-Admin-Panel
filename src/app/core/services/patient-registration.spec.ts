@@ -17,7 +17,7 @@ import { BillingService } from './billing.service';
 import { AppointmentService } from './appointment.service';
 import { PatientsComponent } from '../../features/receptionist/patients/patients';
 import { BookingsComponent } from '../../features/receptionist/bookings/bookings';
-import { createPatientRequest, emptyPatientRegistration, patientBirthDate, PatientOutcomeUnknownError, patientServerError } from './patient-registration';
+import { createPatientRequest, emptyPatientRegistration, patientBirthDate, patientEditDraft, patientEditChanges, PatientOutcomeUnknownError, patientServerError } from './patient-registration';
 
 const base = 'https://clinitech-solutions65.runasp.net/api';
 const saved: PatientResponse = {
@@ -78,6 +78,23 @@ describe('Patient registration contracts and safety', () => {
     const request = createPatientRequest({ ...draft(), nameAr: 'Other name', address: 'Not in DTO' });
     expect(request).toEqual({ userName: 'test.patient', fullName: 'Test Patient', phoneNumber: '01012345678', gender: 1,
       birthDate: '1988-03-14T00:00:00.000Z', paymentType: 'Cash', emergencyContact: null, insuranceCompanyId: null, insuranceDetails: null });
+  });
+
+  it('registers cash patients without coverage and ignores stale insurance form values', () => {
+    const request = createPatientRequest({ ...draft(), paymentType: 'Cash', insuranceCompanyId: 7,
+      insuranceDetails: { company: 'Old insurer', status: 'Unknown', apiStatus: 1, copayPercentage: 20 } });
+    expect(request).toMatchObject({ paymentType: 'Cash', insuranceCompanyId: null, insuranceDetails: null });
+  });
+
+  it('keeps insurance controls hidden and out of edits for a cash patient with stale coverage', () => {
+    const component = TestBed.runInInjectionContext(() => new PatientsComponent());
+    const cash = service.mapToFrontendPatient({ ...saved, paymentType: 'Cash' });
+    component.loadedEditPatient.set(cash);
+    component.editPatientForm = patientEditDraft(cash);
+    expect(component.showExistingInsurance).toBe(false);
+    component.editPatientForm.phone = '01111111111';
+    component.editPatientForm.insuranceDetails!.copayPercentage = -1;
+    expect(patientEditChanges(cash, component.editPatientForm)).toEqual({ phone: '01111111111' });
   });
 
   it.each(['', '2025-02-29', '2026-13-01', 'not-a-date'])('rejects invalid birth date %s', value => {
@@ -174,6 +191,125 @@ describe('Patient registration contracts and safety', () => {
     expect(request.request.body).toEqual({ phoneNumber: '01111111111' });
     request.flush(saved);
     await result;
+  });
+
+  it('loads every response field from GetById, including nullable payment and account metadata', async () => {
+    const result = firstValueFrom(service.getPatientById(42));
+    http.expectOne(`${base}/Patients/GetById/42`).flush({ ...saved, paymentType: null, insuranceCompanyId: null });
+    expect(await result).toMatchObject({ applicationUserId: saved.applicationUserId, createdAt: saved.createdAt,
+      paymentType: null, insuranceCompanyId: null, email: saved.email, emergencyContact: saved.emergencyContact });
+  });
+
+  it('updates email, explicit username and insurance fields independently of payment type', async () => {
+    const result = firstValueFrom(service.updatePatient(42, { userName: '  changed.user  ', email: '  patient@example.com  ',
+      insuranceCompanyId: 8, insuranceDetails: { company: '', status: 'Unknown', apiStatus: 1, copayPercentage: 0, approvedSessions: 0 } }));
+    const request = http.expectOne(`${base}/Patients/Update/42`);
+    expect(request.request.method).toBe('PUT');
+    expect(request.request.body).toEqual({ userName: 'changed.user', email: 'patient@example.com', insuranceCompanyId: 8,
+      insuranceDetails: { status: 1, copayPercentage: 0, approvedSessions: 0, memberId: null, employer: null } });
+    request.flush({ ...saved, email: 'patient@example.com' });
+    expect((await result).email).toBe('patient@example.com');
+  });
+
+  it('sends explicit nulls when optional patient values are cleared', async () => {
+    const result = firstValueFrom(service.updatePatient(42, { email: '', emergencyContact: '', paymentType: null,
+      insuranceCompanyId: null, insuranceDetails: null }));
+    const request = http.expectOne(`${base}/Patients/Update/42`);
+    expect(request.request.body).toEqual({ email: '', emergencyContact: null, paymentType: null,
+      insuranceCompanyId: null, insuranceDetails: null });
+    request.flush({ ...saved, email: '', emergencyContact: null, paymentType: null, insuranceCompanyId: null, insuranceDetails: null });
+    expect((await result).insuranceDetails).toBeNull();
+  });
+
+  it.each([
+    { email: 'invalid-email' }, { userName: 'ab' }, { phone: '' }, { birthDate: '2025-02-29' },
+    { insuranceDetails: { company: '', status: 'Unknown' as const, copayPercentage: 101 } },
+    { insuranceDetails: { company: '', status: 'Unknown' as const, approvedSessions: -1 } },
+    { insuranceDetails: { company: '', status: 'Unknown' as const, apiStatus: 1.5 } }
+  ])('rejects invalid edits before HTTP: %j', async changes => {
+    await expect(firstValueFrom(service.updatePatient(42, changes))).rejects.toThrow();
+    http.expectNone(`${base}/Patients/Update/42`);
+  });
+
+  it('preserves nulls and undocumented enum values when an edit only changes the phone', () => {
+    for (const paymentType of [null, 'Insurance', 'OtherPayment']) {
+      for (const insuranceDetails of [null, saved.insuranceDetails]) {
+        const patient = service.mapToFrontendPatient({ ...saved, paymentType, insuranceCompanyId: null, insuranceDetails });
+        const form = patientEditDraft(patient);
+        expect(patientEditChanges(patient, form)).toEqual({});
+        form.phone = '01111111111';
+        expect(patientEditChanges(patient, form)).toEqual({ phone: form.phone });
+      }
+    }
+  });
+
+  it('clears coverage when leaving insurance and requires a company when switching to insurance', async () => {
+    const patient = service.mapToFrontendPatient(saved);
+    const form = patientEditDraft(patient);
+    form.paymentType = 'Cash';
+    expect(patientEditChanges(patient, form)).toEqual({ paymentType: 'Cash', insuranceCompanyId: null, insuranceDetails: null });
+    const cash = { ...patient, paymentType: 'Cash', insuranceCompanyId: null, insuranceDetails: null };
+    const insured = { ...patientEditDraft(cash), paymentType: 'Insurance' };
+    await expect(firstValueFrom(service.updatePatient(42, patientEditChanges(cash, insured)))).rejects.toThrow('insurance company');
+    http.expectNone(`${base}/Patients/Update/42`);
+  });
+
+  it('fetches fresh detail before editing and never submits the stale list row', async () => {
+    const component = TestBed.runInInjectionContext(() => new PatientsComponent());
+    const stale = service.mapToFrontendPatient({ ...saved, fullName: 'Old list name', email: 'old@example.com' });
+    const loading = component.editPatient(stale);
+    expect(component.editLoading()).toBe(true);
+    await component.updateProfile();
+    http.expectNone(`${base}/Patients/Update/42`);
+    http.expectOne(`${base}/Patients/GetById/42`).flush({ ...saved, email: 'current@example.com' });
+    await loading;
+    expect(component.editPatientForm).toMatchObject({ nameEn: saved.fullName, email: 'current@example.com',
+      dob: '1988-03-14', emergencyContact: saved.emergencyContact, userName: '', insuranceDetails: { apiStatus: 73 } });
+    component.editPatientForm.email = 'new@example.com';
+    const updating = component.updateProfile();
+    await component.updateProfile();
+    const request = http.expectOne(`${base}/Patients/Update/42`);
+    expect(request.request.body).toEqual({ email: 'new@example.com' });
+    component.closeEditDrawer();
+    expect(component.showEditDrawer()).toBe(true);
+    request.flush({ ...saved, email: 'new@example.com' });
+    await updating;
+    expect(component.showEditDrawer()).toBe(false);
+    expect(service.patients()[0].email).toBe('new@example.com');
+    http.expectOne(r => r.url.endsWith('/Patients/GetAll')).flush(page([{ ...saved, email: 'new@example.com' }]));
+  });
+
+  it('keeps edit values and server validation visible after an update fails', async () => {
+    const component = TestBed.runInInjectionContext(() => new PatientsComponent());
+    const loading = component.editPatient(service.mapToFrontendPatient(saved));
+    http.expectOne(`${base}/Patients/GetById/42`).flush(saved);
+    await loading;
+    component.editPatientForm.userName = 'duplicate.user';
+    const updating = component.updateProfile();
+    http.expectOne(`${base}/Patients/Update/42`).flush({ errors: { UserName: ['Username already exists.'] } },
+      { status: 400, statusText: 'Bad Request' });
+    await updating;
+    expect(component.editError()).toBe('UserName: Username already exists.');
+    expect(component.editPatientForm.userName).toBe('duplicate.user');
+    expect(component.showEditDrawer()).toBe(true);
+    expect(component.updating()).toBe(false);
+  });
+
+  it('blocks editing after a failed detail load and ignores late results after closing', async () => {
+    const component = TestBed.runInInjectionContext(() => new PatientsComponent());
+    const patient = service.mapToFrontendPatient(saved);
+    const failed = component.editPatient(patient);
+    http.expectOne(`${base}/Patients/GetById/42`).flush({}, { status: 404, statusText: 'Not Found' });
+    await failed;
+    expect(component.editError()).toContain('Could not load patient details');
+    await component.updateProfile();
+    http.expectNone(`${base}/Patients/Update/42`);
+    const retry = component.editPatient(patient);
+    component.closeEditDrawer();
+    http.expectOne(`${base}/Patients/GetById/42`).flush(saved);
+    await retry;
+    expect(component.loadedEditPatient()).toBeNull();
+    expect(component.showEditDrawer()).toBe(false);
   });
 
   it('selects a quick registration before refresh and distinguishes refresh failure', async () => {

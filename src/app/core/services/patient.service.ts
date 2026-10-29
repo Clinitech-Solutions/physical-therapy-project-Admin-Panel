@@ -3,8 +3,8 @@ import { HttpClient } from '@angular/common/http';
 import { EMPTY, Observable, catchError, defer, expand, finalize, map, reduce, tap, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { NewPatient, Patient } from '../models/patient.model';
-import { CreatePatientRequest, PagedPatientsResponse, PatientResponse } from '../models/patient-api.model';
-import { createPatientRequest, patientBirthDate, patientInsuranceDetails, PatientOutcomeUnknownError, patientOutcomeIsUnknown } from './patient-registration';
+import { PagedPatientsResponse, PatientResponse } from '../models/patient-api.model';
+import { createPatientRequest, updatePatientRequest, PatientOutcomeUnknownError, patientOutcomeIsUnknown } from './patient-registration';
 import { ReceptionEvents, apiError, numericId } from './reception-api';
 
 @Injectable({ providedIn: 'root' })
@@ -27,11 +27,12 @@ export class PatientService {
     const details = data.insuranceDetails;
     return {
       id: String(id), nameEn: data.fullName, nameAr: data.fullName,
+      applicationUserId: data.applicationUserId, createdAt: data.createdAt,
       avatar: data.fullName?.split(/\s+/).map(n => n[0]).join('').slice(0, 2).toUpperCase() || '',
       phone: data.phoneNumber, birthDate: data.birthDate, email: data.email,
       emergencyContact: data.emergencyContact,
       gender: data.gender === 1 ? 'Female' : 'Male',
-      paymentType: (data.paymentType ?? '') as Patient['paymentType'],
+      paymentType: data.paymentType ?? null,
       // PatientResponse has neither lastVisit nor document checklist flags.
       lastVisit: '', documentsKnown: false, documents: { medicalConsent: false, liabilityWaiver: false, idCard: false },
       insuranceCompanyId: data.insuranceCompanyId == null ? null : Number(data.insuranceCompanyId),
@@ -41,7 +42,7 @@ export class PatientService {
         copayPercentage: details.copayPercentage == null ? undefined : Number(details.copayPercentage),
         approvedSessions: details.approvedSessions == null ? undefined : Number(details.approvedSessions),
         memberId: details.memberId ?? undefined, employer: details.employer ?? undefined
-      } : undefined
+      } : null
     };
   }
 
@@ -103,19 +104,7 @@ export class PatientService {
   }
 
   updatePatient(id: number, patient: Partial<Patient>): Observable<Patient> {
-    // UpdatePatientRequest is separate: do not replace absent fields with create defaults.
-    const payload: Partial<CreatePatientRequest> = {};
-    if (patient.nameEn !== undefined) payload.fullName = patient.nameEn.trim();
-    if (patient.phone !== undefined) payload.phoneNumber = patient.phone.trim();
-    if (patient.gender !== undefined) payload.gender = patient.gender === 'Female' ? 1 : 0;
-    if (patient.birthDate !== undefined) payload.birthDate = patientBirthDate(patient.birthDate);
-    if (patient.emergencyContact !== undefined) payload.emergencyContact = patient.emergencyContact;
-    if (patient.paymentType !== undefined) {
-      payload.paymentType = patient.paymentType;
-      payload.insuranceCompanyId = patient.paymentType === 'Insurance' ? patient.insuranceCompanyId : null;
-      payload.insuranceDetails = patient.paymentType === 'Insurance' ? patientInsuranceDetails(patient.insuranceDetails) : null;
-    }
-    return this.http.put<PatientResponse>(`${this.apiUrl}/Update/${id}`, payload).pipe(
+    return defer(() => this.http.put<PatientResponse>(`${this.apiUrl}/Update/${numericId(id)}`, updatePatientRequest(patient))).pipe(
       map(response => this.mapToFrontendPatient(response)), tap(patient => { this.cachePatient(patient); this.events.changed.next('patients'); })
     );
   }

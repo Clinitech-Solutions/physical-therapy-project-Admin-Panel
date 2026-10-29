@@ -68,17 +68,22 @@ export class PatientProfileComponent implements OnChanges {
     if (id !== this.loadedPatientId) { this.files=[];this.uploadError.set('');this.uploadSaved.set(false);this.loadedPatientId=id; }
     const generation = ++this.generation;
     this.profileError.set(''); this.patientLoading.set(true);
+    this.documentsError.set(''); this.documentsLoading.set(false);
     let patientId: number;
     try { patientId = numericId(id); }
     catch (error) { this.profileError.set(apiError(error)); this.patientLoading.set(false); return; }
     this.patientService.getPatientById(patientId).subscribe({
-      next: () => { if(generation===this.generation)this.patientLoading.set(false); },
+      next: patient => {
+        if (generation !== this.generation) return;
+        this.patientLoading.set(false);
+        if (patient.paymentType === 'Insurance') this.loadDocuments(patientId);
+        else { this.files = []; this.uploadError.set(''); this.uploadSaved.set(false); }
+      },
       error: error => { if(generation===this.generation){this.profileError.set(apiError(error));this.patientLoading.set(false);} }
     });
     this.clinical.load(patientId);
     this.appointmentService?.getAppointments();
     this.billingService.getInvoices();
-    this.loadDocuments(patientId);
   }
   private loadDocuments(patientId: number) {
     const generation = this.generation;
@@ -92,6 +97,8 @@ export class PatientProfileComponent implements OnChanges {
     const id = this.patientId ?? this.patient?.id;
     return this.patientService.patients().find(p => p.id === id) ?? (this.patient && this.patient.id === id ? this.patient : undefined);
   }
+  get isInsurancePatient(): boolean { return this.currentPatient?.paymentType === 'Insurance'; }
+  get isSelfPayPatient(): boolean { return ['Cash', 'Online', 'Card', 'InstaPay'].includes(this.currentPatient?.paymentType ?? ''); }
   get plans() { const id = this.patientId ?? this.patient?.id; return id ? this.clinical.plansForPatient(Number(id)) : []; }
   get primaryDoctorName(): string { return [...new Set(this.plans.map(p => p.doctorName))].filter(Boolean).join(', ') || this.locale.label('Unknown'); }
   get totalSessions(): number { return this.plans.reduce((sum,p) => sum + Number(p.numberOfSessions),0); }
@@ -116,7 +123,7 @@ export class PatientProfileComponent implements OnChanges {
   }
   onFilesSelected(event: Event) { this.files = Array.from((event.target as HTMLInputElement).files ?? []); this.uploadSaved.set(false); }
   async uploadDocuments() {
-    if(this.documentService.mutation.busy()||!this.files.length||!this.currentPatient)return;
+    if(!this.isInsurancePatient||this.documentService.mutation.busy()||!this.files.length||!this.currentPatient)return;
     this.uploadError.set(''); this.uploadSaved.set(false);
     const id = numericId(this.currentPatient.id);
     const generation = this.generation;

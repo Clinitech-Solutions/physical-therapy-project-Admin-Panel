@@ -2,7 +2,7 @@
   <div class="row g-3">
     <div class="col-md-6">
       <label class="form-label fw-bold small w-100">
-        {{ 'RECEPTIONIST.UI.PATIENT_USERNAME' | translate }} *
+        {{ 'RECEPTIONIST.UI.PATIENT_USERNAME' | translate }} {{ mode === 'create' ? '*' : '' }}
         <input
           [id]="formId + '-userName'"
           name="userName"
@@ -13,7 +13,7 @@
           type="text"
           [(ngModel)]="draft.userName"
           [ngModelOptions]="{standalone: true}"
-          required
+          [required]="mode === 'create'"
           minlength="3"
           maxlength="50"
           dir="auto"
@@ -21,7 +21,7 @@
         <small
           class="text-secondary d-block fw-normal"
           [id]="formId + '-userName-help'"
-          >{{ 'RECEPTIONIST.UI.PATIENT_USERNAME_HINT' | translate }}</small
+          >{{ (mode === 'create' ? 'RECEPTIONIST.UI.PATIENT_USERNAME_HINT' : 'RECEPTIONIST.UI.PATIENT_USERNAME_EDIT_HINT') | translate }}</small
         >
         @if (errorFor('userName'); as error) {
         <small
@@ -59,6 +59,20 @@
         }
       </label>
     </div>
+    @if (mode === 'edit') {
+    <div class="col-md-6">
+      <label class="form-label fw-bold small w-100">
+        {{ 'RECEPTIONIST.UI.PATIENT_EMAIL' | translate }}
+        <input [id]="formId + '-email'" name="email" type="email" class="form-control form-control-sm"
+          [(ngModel)]="draft.email" [ngModelOptions]="{standalone: true}" dir="ltr"
+          [class.is-invalid]="!!errorFor('email')" [attr.aria-invalid]="errorFor('email') ? true : null"
+          [attr.aria-describedby]="errorFor('email') ? formId + '-email-error' : null" />
+        @if (errorFor('email'); as error) {
+          <small class="text-danger d-block fw-normal" [id]="formId + '-email-error'">{{ ('RECEPTIONIST.UI.' + error) | translate }}</small>
+        }
+      </label>
+    </div>
+    }
     <div class="col-md-6">
       <label class="form-label fw-bold small w-100">
         {{ 'RECEPTIONIST.PHONE' | translate }} *
@@ -140,10 +154,16 @@
       <label class="form-label fw-bold small w-100">
         {{ 'RECEPTIONIST.PAYMENT_TYPE' | translate }}
         <select
+          [id]="formId + '-paymentType'"
+          name="paymentType"
           class="form-select form-select-sm"
           [(ngModel)]="draft.paymentType"
           [ngModelOptions]="{standalone: true}"
         >
+          <option [ngValue]="null">{{ 'RECEPTIONIST.UI.NOT_SET' | translate }}</option>
+          @if (draft.paymentType && !paymentTypes.includes(draft.paymentType)) {
+            <option [ngValue]="draft.paymentType">{{ draft.paymentType }}</option>
+          }
           <option value="Cash">{{ 'RECEPTIONIST.CASH' | translate }}</option>
           <option value="Insurance">
             {{ 'RECEPTIONIST.INSURANCE_PAYMENT' | translate }}
@@ -151,6 +171,8 @@
           <option value="Online">
             {{ 'RECEPTIONIST.UI.ONLINE' | translate }}
           </option>
+          <option value="Card">{{ 'RECEPTIONIST.CARD' | translate }}</option>
+          <option value="InstaPay">{{ 'RECEPTIONIST.INSTAPAY' | translate }}</option>
         </select>
       </label>
     </div>
@@ -180,7 +202,7 @@
       </label>
     </div>
   </div>
-  @if (draft.paymentType === 'Insurance' && draft.insuranceDetails; as details)
+  @if ((draft.paymentType === 'Insurance' || showInsuranceDetails) && draft.insuranceDetails; as details)
   {
   <div class="card card-bg border p-3 rounded">
     <div class="section-label fw-bold small mb-2">
@@ -192,7 +214,7 @@
     </p>
     }
     <label class="form-label fw-bold small w-100">
-      {{ 'RECEPTIONIST.INSURANCE_COMPANY' | translate }} *
+      {{ 'RECEPTIONIST.INSURANCE_COMPANY' | translate }} {{ draft.paymentType === 'Insurance' ? '*' : '' }}
       <select
         [id]="formId + '-insuranceCompanyId'"
         name="insuranceCompanyId"
@@ -203,13 +225,16 @@
         [(ngModel)]="draft.insuranceCompanyId"
         [ngModelOptions]="{standalone: true}"
         [disabled]="insuranceLoading"
-        required
+        [required]="draft.paymentType === 'Insurance'"
       >
         <option [ngValue]="null">
           {{ 'RECEPTIONIST.UI.PATIENT_SELECT_COMPANY' | translate }}
         </option>
         @for (company of companies; track company.id) {
         <option [ngValue]="company.id">{{ company.name }}</option>
+        }
+        @if (draft.insuranceCompanyId && !companiesHaveSelectedId()) {
+          <option [ngValue]="draft.insuranceCompanyId">{{ draft.insuranceCompany || ('RECEPTIONIST.INSURANCE_COMPANY' | translate) }} (#{{ draft.insuranceCompanyId }})</option>
         }
       </select>
       @if (errorFor('insuranceCompanyId'); as error) {
@@ -223,8 +248,22 @@
     <div class="row g-3 mt-1">
       <div class="col-md-6">
         <label class="form-label fw-bold small w-100">
+          {{ 'RECEPTIONIST.UI.PATIENT_INSURANCE_STATUS' | translate }}
+          <input [id]="formId + '-apiStatus'" name="apiStatus" type="number" step="1" class="form-control form-control-sm"
+            min="-2147483648" max="2147483647"
+            [(ngModel)]="details.apiStatus" [ngModelOptions]="{standalone: true}"
+            [class.is-invalid]="!!errorFor('apiStatus')" [attr.aria-invalid]="errorFor('apiStatus') ? true : null"
+            [attr.aria-describedby]="errorFor('apiStatus') ? formId + '-apiStatus-error' : null" />
+          @if (errorFor('apiStatus'); as error) {
+            <small class="text-danger d-block fw-normal" [id]="formId + '-apiStatus-error'">{{ ('RECEPTIONIST.UI.' + error) | translate }}</small>
+          }
+        </label>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label fw-bold small w-100">
           {{ 'RECEPTIONIST.MEMBER_ID' | translate }}
           <input
+            name="memberId"
             class="form-control form-control-sm"
             [(ngModel)]="details.memberId"
             [ngModelOptions]="{standalone: true}"
@@ -236,6 +275,7 @@
         <label class="form-label fw-bold small w-100">
           {{ 'RECEPTIONIST.EMPLOYER' | translate }}
           <input
+            name="employer"
             class="form-control form-control-sm"
             [(ngModel)]="details.employer"
             [ngModelOptions]="{standalone: true}"
@@ -254,6 +294,9 @@
             [attr.aria-describedby]="errorFor('copayPercentage') ? formId + '-copayPercentage-error' : null"
             class="form-control form-control-sm"
             type="number"
+            min="0"
+            max="100"
+            step="any"
             [(ngModel)]="details.copayPercentage"
             [ngModelOptions]="{standalone: true}"
           />
@@ -278,6 +321,8 @@
             class="form-control form-control-sm"
             type="number"
             step="1"
+            min="0"
+            max="2147483647"
             [(ngModel)]="details.approvedSessions"
             [ngModelOptions]="{standalone: true}"
           />

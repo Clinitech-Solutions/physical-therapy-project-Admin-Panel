@@ -10,8 +10,8 @@ import { InsuranceService } from '../../../core/services/insurance.service';
 import { PatientService } from '../../../core/services/patient.service';
 import { InsuranceDocumentService } from '../../../core/services/insurance-document.service';
 import { BillingService } from '../../../core/services/billing.service';
-import { Patient } from '../../../core/models/patient.model';
-import { emptyPatientRegistration, PatientInputError, PatientValidationError, patientOutcomeIsUnknown, patientServerError } from '../../../core/services/patient-registration';
+import { Patient, PatientEditDraft } from '../../../core/models/patient.model';
+import { emptyPatientRegistration, patientEditDraft, patientEditChanges, PatientInputError, PatientValidationError, patientOutcomeIsUnknown, patientServerError } from '../../../core/services/patient-registration';
 import { MessageService, SharedModule } from 'primeng/api';
 import { DialogModule } from 'primeng/dialog';
 import { ButtonModule } from 'primeng/button';
@@ -37,7 +37,14 @@ export class PatientsComponent implements OnInit {
   readonly creationOutcomeUnknown = this.patientService.creationOutcomeUnknown;
   readonly registrationError = signal('');
   readonly registrationValidationErrors = signal<PatientInputError[]>([]);
-  @ViewChild(PatientRegistrationFieldsComponent) private registrationFields?: PatientRegistrationFieldsComponent;
+  @ViewChild('registrationFields') private registrationFields?: PatientRegistrationFieldsComponent;
+  @ViewChild('editFields') private editFields?: PatientRegistrationFieldsComponent;
+  readonly editLoading = signal(false);
+  readonly updating = signal(false);
+  readonly editError = signal('');
+  readonly editValidationErrors = signal<PatientInputError[]>([]);
+  readonly loadedEditPatient = signal<Patient | null>(null);
+  private editGeneration = 0;
   readonly insuranceError = this.insuranceService.error;
   readonly insuranceLoading = this.insuranceService.loading;
 
@@ -109,7 +116,8 @@ export class PatientsComponent implements OnInit {
     return this.showEditDrawer();
   }
   set isEditModalOpen(val: boolean) {
-    this.showEditDrawer.set(val);
+    if (!val) this.closeEditDrawer();
+    else this.showEditDrawer.set(true);
   }
   
   // Selected Patient for View/Edit
@@ -119,7 +127,13 @@ export class PatientsComponent implements OnInit {
   newPatient = emptyPatientRegistration();
 
   // Edit Patient Form (Working Copy)
-  editPatientForm: Partial<Patient> = {};
+  editPatientForm: PatientEditDraft = { ...emptyPatientRegistration(), email: '' };
+
+  get showExistingInsurance(): boolean {
+    const original = this.loadedEditPatient();
+    return !!original && original.paymentType == null && original.paymentType === this.editPatientForm.paymentType &&
+      !!(original.insuranceDetails || original.insuranceCompanyId);
+  }
 
   // Actions
   openDrawer() {
@@ -148,28 +162,37 @@ export class PatientsComponent implements OnInit {
     this.selectedPatient.set(null);
   }
 
-  editPatient(patient: Patient) {
+  async editPatient(patient: Patient) {
+    if (this.updating()) return;
+    const generation = ++this.editGeneration;
     this.selectedPatient.set(patient);
-    // Create a shallow copy for the form with deep copies of nested objects
-    this.editPatientForm = { 
-      ...patient, 
-      documents: { ...patient.documents },
-      insuranceDetails: patient.insuranceDetails 
-        ? { ...patient.insuranceDetails } 
-        : { company: '', status: 'Unknown' },
-      financialPlan: patient.financialPlan 
-        ? { ...patient.financialPlan } 
-        : patient.treatmentPlan?.financialPlan
-        ? { ...patient.treatmentPlan.financialPlan }
-        : undefined
-    };
+    this.loadedEditPatient.set(null);
+    this.editPatientForm = { ...emptyPatientRegistration(), email: '' };
+    this.editError.set(''); this.editValidationErrors.set([]);
+    this.editLoading.set(true);
     this.showEditDrawer.set(true);
+    try {
+      const saved = await firstValueFrom(this.patientService.getPatientById(Number(patient.id)));
+      if (generation !== this.editGeneration) return;
+      this.selectedPatient.set(saved);
+      this.loadedEditPatient.set(saved);
+      this.editPatientForm = patientEditDraft(saved);
+    } catch (error) {
+      if (generation === this.editGeneration) this.editError.set(patientServerError(error) ||
+        this.locale.text('PATIENT_DETAILS_FAILED', 'Could not load patient details. Please retry.'));
+    } finally {
+      if (generation === this.editGeneration) this.editLoading.set(false);
+    }
   }
 
   closeEditDrawer() {
+    if (this.updating()) return;
+    this.editGeneration++;
     this.showEditDrawer.set(false);
     this.selectedPatient.set(null);
-    this.editPatientForm = {};
+    this.loadedEditPatient.set(null);
+    this.editLoading.set(false);
+    this.editPatientForm = { ...emptyPatientRegistration(), email: '' };
   }
 
   hideDialog() {
@@ -247,24 +270,32 @@ export class PatientsComponent implements OnInit {
     this.closeDrawer();
   }
 
-  updateProfile() {
-    const p = this.selectedPatient();
-    if (p) {
-      if (this.editPatientForm.paymentType !== 'Insurance') {
-        this.editPatientForm.insuranceDetails = undefined;
+  async updateProfile() {
+    const original = this.loadedEditPatient();
+    if (!original || this.editLoading() || this.updating()) return;
+    this.updating.set(true); this.editError.set(''); this.editValidationErrors.set([]);
+    try {
+      const changes = patientEditChanges(original, this.editPatientForm);
+      if (!Object.keys(changes).length) {
+        this.editError.set(this.locale.text('PATIENT_NO_CHANGES', 'No changes to save.'));
+        return;
       }
-      this.patientService.updatePatient(parseInt(p.id, 10) || 0, this.editPatientForm).subscribe({
-        next: () => {
-          this.closeEditDrawer();
-          this.messageService.add({ severity: 'success', summary: this.locale.text('SUCCESS', "Success"), detail: this.locale.text('PATIENT_PROFILE_UPDATED', "Patient profile updated") });
-          this.refreshPatients(true);
-        },
-        error: (err) => {
-          this.messageService.add({ severity: 'error', summary: this.locale.text('ERROR', "Error"), detail: this.locale.text('FAILED_TO_UPDATE_PATIENT', "Failed to update patient") });
-          console.error(err);
-        }
-      });
+      await firstValueFrom(this.patientService.updatePatient(Number(original.id), changes));
+    } catch (error) {
+      const errors = error instanceof PatientValidationError ? error.errors : error instanceof PatientInputError ? [error] : [];
+      const detail = errors.length ? errors.map(item => this.locale.text(item.key, item.message)).join('\n') :
+        patientServerError(error) || this.locale.text('FAILED_TO_UPDATE_PATIENT', 'Failed to update patient.');
+      this.editError.set(detail); this.editValidationErrors.set(errors);
+      this.editFields?.focusFirstInvalid();
+      this.messageService.add({ severity: 'error', summary: this.locale.text('ERROR', 'Error'), detail });
+      return;
+    } finally {
+      this.updating.set(false);
     }
+    this.closeEditDrawer();
+    this.messageService.add({ severity: 'success', summary: this.locale.text('SUCCESS', 'Success'),
+      detail: this.locale.text('PATIENT_PROFILE_UPDATED', 'Patient profile updated') });
+    this.refreshPatients(true);
   }
 
   deletePatient(id: string) {

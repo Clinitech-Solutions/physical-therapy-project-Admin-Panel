@@ -6,7 +6,7 @@
   appendTo="body"
   [draggable]="false"
   [resizable]="false"
-  [closable]="!documentService.mutation.busy()"
+  [closable]="!isInsurancePatient || !documentService.mutation.busy()"
   styleClass="clean-modal receptionist-modal patient-profile-modal"
   [style]="{ width: '920px', maxWidth: '95vw' }">
 
@@ -35,14 +35,14 @@
                 'badge-success': p.paymentType === 'Cash',
                 'badge-info': p.paymentType === 'Insurance',
                 'badge-warning': p.paymentType === 'Online'
-              }">{{ p.paymentType | receptionistText }}</span>
+              }">{{ (p.paymentType || 'Not set') | receptionistText }}</span>
               @if (p.occupation) {
                 <span><i class="bi bi-briefcase me-1 text-primary"></i>{{ p.occupation }}</span>
               }
               @if (p.address) {
                 <span><i class="bi bi-geo-alt me-1 text-primary"></i>{{ p.address }}</span>
               }
-              @if (p.insuranceDetails?.employer) {
+              @if (isInsurancePatient && p.insuranceDetails?.employer) {
                 <span><i class="bi bi-building me-1 text-primary"></i>{{ p.insuranceDetails?.employer }}</span>
               }
             </div>
@@ -78,17 +78,40 @@
 
   @if (patientLoading() || clinical.loading()) { <p role="status">{{ 'RECEPTIONIST.PROCESSING' | translate }}</p> }
   @if (profileError() || clinical.error() || billingService.error() || appointmentService?.error()) {
-    <p class="alert alert-warning" role="alert">{{ locale.label(profileError() || clinical.error() || billingService.error() || appointmentService?.error()) }}
+    <div class="alert alert-warning" role="alert">
+      @if (profileError()) { <p>{{ 'RECEPTIONIST.UI.PATIENT_DETAILS_FAILED' | translate }} {{ locale.label(profileError()) }}</p> }
+      @if (clinical.error()) { <p>{{ 'RECEPTIONIST.UI.PATIENT_TREATMENT_HISTORY_FAILED' | translate }} {{ locale.label(clinical.error()) }}</p> }
+      @if (billingService.error()) { <p>{{ 'RECEPTIONIST.UI.PATIENT_INVOICES_FAILED' | translate }} {{ locale.label(billingService.error()) }}</p> }
+      @if (appointmentService?.error()) { <p>{{ 'RECEPTIONIST.UI.PATIENT_APPOINTMENTS_FAILED' | translate }} {{ locale.label(appointmentService?.error()) }}</p> }
       <button class="btn btn-outline-secondary btn-sm" (click)="refreshProfile()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button>
-    </p>
+    </div>
   }
   @if (currentPatient; as p) {
     <div class="card card-body mb-3">
-      <div>{{ 'RECEPTIONIST.INSURANCE_COMPANY' | translate }}: {{ p.insuranceCompanyName || p.insuranceDetails?.company || '-'  }}</div>
-      <div>{{ 'RECEPTIONIST.MEMBER_ID' | translate }}: {{ p.insuranceDetails?.memberId || '?' }}</div>
-      <div>{{ 'RECEPTIONIST.COPAY_PERCENTAGE' | translate }}: {{ p.insuranceDetails?.copayPercentage ?? '?' }}</div>
-      <p class="text-muted small mb-0">{{ 'RECEPTIONIST.UI.INSURANCE_STATUS_NOTICE' | translate }}</p>
+      <div>{{ 'RECEPTIONIST.UI.PATIENT_ID' | translate }}: #{{ p.id }}</div>
+      <div class="text-break">{{ 'RECEPTIONIST.UI.PATIENT_ACCOUNT_ID' | translate }}: {{ p.applicationUserId || '-' }}</div>
+      <div>{{ 'RECEPTIONIST.UI.PATIENT_EMAIL' | translate }}: <span dir="ltr">{{ p.email || '-' }}</span></div>
+      <div>{{ 'RECEPTIONIST.UI.PATIENT_EMERGENCY_CONTACT' | translate }}: <span dir="ltr">{{ p.emergencyContact || '-' }}</span></div>
+      <div>{{ 'RECEPTIONIST.UI.PATIENT_CREATED_AT' | translate }}: {{ locale.date(p.createdAt, true) }}</div>
+      @if (isSelfPayPatient) {
+        <p class="text-muted mt-2 mb-0" data-self-pay>{{ 'RECEPTIONIST.UI.PATIENT_SELF_PAY' | translate }}</p>
+      }
     </div>
+    @if (isInsurancePatient) {
+    <div class="card card-body mb-3" data-patient-insurance>
+      <h6>{{ 'RECEPTIONIST.INSURANCE_DETAILS' | translate }}</h6>
+      <div>{{ 'RECEPTIONIST.INSURANCE_COMPANY' | translate }}: {{ p.insuranceCompanyName || p.insuranceDetails?.company || '-'  }}</div>
+      <div>{{ 'RECEPTIONIST.UI.PATIENT_INSURANCE_COMPANY_ID' | translate }}: {{ p.insuranceCompanyId ?? '-' }}</div>
+      <div>{{ 'RECEPTIONIST.UI.PATIENT_INSURANCE_STATUS' | translate }}: {{ p.insuranceDetails?.apiStatus ?? '-' }}</div>
+      <div>{{ 'RECEPTIONIST.MEMBER_ID' | translate }}: {{ p.insuranceDetails?.memberId || '-' }}</div>
+      <div>{{ 'RECEPTIONIST.EMPLOYER' | translate }}: {{ p.insuranceDetails?.employer || '-' }}</div>
+      <div>{{ 'RECEPTIONIST.COPAY_PERCENTAGE' | translate }}: {{ p.insuranceDetails?.copayPercentage ?? '-' }}</div>
+      <div>{{ 'RECEPTIONIST.APPROVED_SESSIONS' | translate }}: {{ p.insuranceDetails?.approvedSessions ?? '-' }}</div>
+      @if (p.insuranceDetails) {
+        <p class="text-muted small mb-0">{{ 'RECEPTIONIST.UI.INSURANCE_STATUS_NOTICE' | translate }}</p>
+      }
+    </div>
+    }
   }
   <!-- Body: PrimeNG Table of Sessions -->
   <div class="patient-profile-body pt-2">
@@ -196,7 +219,8 @@
       <p>{{ invoice.invoiceNumber }} ? {{ 'RECEPTIONIST.BILLING.REMAINING' | translate }}: {{ invoice.remainingAmount | currency:'EGP':'symbol':'1.2-2':locale.language }}</p>
     }
   </div>
-  <div class="card card-body mt-3">
+  @if (isInsurancePatient) {
+  <div class="card card-body mt-3" data-insurance-documents>
     <h6>{{ 'RECEPTIONIST.UI.INSURANCE_DOCUMENTS' | translate }}</h6>
     @if (documentsLoading()) { <p role="status">{{ 'RECEPTIONIST.PROCESSING' | translate }}</p> }
     @if (documentsError()) { <p class="alert alert-warning" role="alert">{{ locale.label(documentsError()) }}</p> }
@@ -208,4 +232,5 @@
     </label>
     <button class="btn btn-primary btn-sm" (click)="uploadDocuments()" [disabled]="!files.length || !currentPatient || documentService.mutation.busy() || documentService.mutation.uncertain()">{{ 'RECEPTIONIST.UI.UPLOAD_DOCUMENT' | translate }}</button>
   </div>
+  }
 </p-dialog>
