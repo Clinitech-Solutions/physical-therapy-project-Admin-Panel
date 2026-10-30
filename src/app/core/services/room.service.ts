@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
-import { Observable, finalize, map, tap } from "rxjs";
+import { Observable, Subject, finalize, map, tap } from "rxjs";
 import { environment } from "../../../environments/environment";
 import { RoomRecord, RoomWriteRequest } from "../models/room-api.model";
 import {
@@ -26,6 +26,7 @@ export function decodeRoom(value: unknown): RoomRecord {
     name: textField(r["name"]),
     capacity: finiteNumber(r["capacity"]),
     isActive: r["isActive"],
+    status: ({ 0: 'Available', 1: 'Occupied', 2: 'Maintenance', Available: 'Available', Occupied: 'Occupied', Maintenance: 'Maintenance' } as Record<string, RoomRecord['status']>)[String(r['status'])] ?? 'Unknown',
   };
 }
 @Injectable({ providedIn: "root" })
@@ -38,6 +39,8 @@ export class RoomService {
   readonly error = signal<string | null>(null);
   readonly mutation = new MutationState();
   private generation = 0;
+  private readonly refreshSubject = new Subject<void>();
+  readonly refreshed = this.refreshSubject.asObservable();
   /** Active records are candidates, never evidence of availability at a time. */
   readonly candidates = computed(() => this.rooms().filter((r) => r.isActive));
   list(): Observable<RoomRecord[]> {
@@ -55,7 +58,7 @@ export class RoomService {
       }),
       tap({
         next: (rooms) => {
-          if (generation === this.generation) this.rooms.set(rooms);
+          if (generation === this.generation) { this.rooms.set(rooms); this.refreshSubject.next(); }
         },
         error: (e) => {
           if (generation === this.generation) this.error.set(apiError(e));
@@ -68,6 +71,12 @@ export class RoomService {
   }
   load() {
     this.list().subscribe({ error: () => {} });
+  }
+  availability(startsAt: string[]) {
+    return this.http.post<unknown>(`${this.url}/availability`, { startsAt }).pipe(map(value => {
+      if (!Array.isArray(value)) throw new ReceptionError('ROOM_RESPONSE_PENDING', 'Room availability could not be verified.');
+      return value.map(decodeRoom);
+    }));
   }
   get(id: number) {
     return this.http

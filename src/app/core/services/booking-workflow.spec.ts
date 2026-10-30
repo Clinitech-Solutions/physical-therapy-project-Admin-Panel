@@ -9,6 +9,8 @@ import { PatientService } from './patient.service';
 import { ClinicianService } from './clinician.service';
 import { BookingContext, BookingPreview, BookingReceipt } from '../models/booking.model';
 import { environment } from '../../../environments/environment';
+import { ReceptionRefreshService } from './reception-refresh.service';
+import { AppointmentWorkflowService } from './appointment-workflow.service';
 
 const url = environment.apiUrl;
 const context: BookingContext = { patientId: 1, patientName: 'Test patient', gender: 'Male', paymentType: 'Cash', hasCompletedAssessment: false,
@@ -33,7 +35,8 @@ describe('Patient-first booking workflow', () => {
   async function select(value = context) {
     const loading = component.onPatientChange('1');
     http.expectOne(`${url}/Bookings/patients/1`).flush(value); await Promise.resolve();
-    http.expectOne(`${url}/Rooms`).flush([]);
+    http.expectOne(`${url}/Rooms`).flush([{ id: 1, name: 'Room', capacity: 1, isActive: true, status: 'Available' }]);
+    http.expectOne(`${url}/Rooms/availability`).flush([{ id: 1, name: 'Room', capacity: 1, isActive: true, status: 'Available' }]);
     http.expectOne(request => request.url === `${url}/Bookings/patients/1/clinicians`).flush([
       { id: value.hasCompletedAssessment ? 'doctor' : 'senior', name: 'Clinician', gender: 'Male', role: value.hasCompletedAssessment ? 'Doctor' : 'Senior', preferred: value.hasCompletedAssessment, currentLoad: 0 }
     ]);
@@ -41,11 +44,46 @@ describe('Patient-first booking workflow', () => {
     component.selectedDoctorId = value.hasCompletedAssessment ? 'doctor' : 'senior'; component.selectedRoomId = '1'; component.scheduledDate = new Date('2030-02-04T10:00:00Z');
   }
   async function preview() {
+    http.match(`${url}/Rooms/availability`).forEach(request => request.flush([{ id: 1, name: 'Room', capacity: 1, isActive: true, status: 'Available' }]));
     const pending = component.previewBooking(); const request = http.expectOne(`${url}/Bookings/preview`); request.flush(quote); await pending; return request;
   }
   it('loads only the patient directory before selection', () => {
     component.ngOnInit(); http.expectOne(r => r.url.endsWith('/Bookings/patients')).flush({ items: [], pageNumber: 1, totalPages: 1, hasNextPage: false });
     http.expectNone(r => /Bookings|Users|Insurance|TreatmentPlan|Assessments|Billing|Rooms|Appointments/.test(r.url));
+  });
+  it('shows only server-confirmed available rooms and clears a room that becomes booked', async () => {
+    await select(); component.roomService.load();
+    http.expectOne(`${url}/Rooms`).flush([
+      { id: 1, name: 'Occupied', capacity: 1, isActive: true, status: 'Occupied' },
+      { id: 2, name: 'Free', capacity: 1, isActive: true, status: 'Available' },
+    ]);
+    const request = http.expectOne(`${url}/Rooms/availability`);
+    expect(request.request.body).toEqual({ startsAt: ['2030-02-04T10:00:00.000Z'] });
+    request.flush([{ id: 2, name: 'Free', capacity: 1, isActive: true, status: 'Available' }]);
+    expect(component.availableRooms().map(room => room.id)).toEqual(['2']);
+    expect(component.selectedRoomId).toBe('');
+  });
+  it('ignores an older room-availability request when the chosen time changes', async () => {
+    await select(); component.refreshRoomAvailability();
+    const older = http.expectOne(`${url}/Rooms/availability`);
+    component.scheduledDate = new Date('2030-02-05T10:00:00Z'); component.refreshRoomAvailability();
+    expect(older.cancelled).toBe(true);
+    http.expectOne(`${url}/Rooms/availability`).flush([]);
+    expect(component.availableRooms()).toEqual([]); expect(component.selectedRoomId).toBe('');
+  });
+  it('refreshes room status and the booking dropdown only after confirmed checkout', async () => {
+    await select(); component.refreshRoomAvailability(); http.expectOne(`${url}/Rooms/availability`).flush([]);
+    TestBed.inject(ReceptionRefreshService);
+    const checkout = firstValueFrom(TestBed.inject(AppointmentWorkflowService).transition(10, 'Completed'));
+    http.expectOne(`${url}/Receptionist/appointments/10/status`).flush(null); await checkout;
+    http.expectOne(r => r.url.endsWith('/Appointments/GetAll')).flush({ items: [], totalPages: 0 });
+    http.expectOne(`${url}/Rooms`).flush([{ id: 1, name: 'Room', capacity: 1, isActive: true, status: 'Available' }]);
+    http.expectOne(`${url}/Rooms/availability`).flush([{ id: 1, name: 'Room', capacity: 1, isActive: true, status: 'Available' }]);
+    http.expectOne(`${url}/Billing/invoices`).flush([]);
+    http.expectOne(`${url}/Receptionist/dashboard-stats`).flush({ todaysSessions: 0, completedSessions: 0, pendingPayments: 0, totalExpectedToday: 0, totalCollectedToday: 0, collectionRate: 0 });
+    http.expectOne(r => r.url.endsWith('/Receptionist/today-sessions')).flush({ items: [], totalPages: 0 });
+    expect(component.availableRooms().map(room => room.id)).toEqual(['1']);
+    expect(component.roomService.rooms()[0].status).toBe('Available');
   });
   it('uses completed-assessment evidence and matching Seniors, rather than an empty cache or a guessed status', async () => {
     await select(); expect(component.isNewPatient).toBe(true); expect(component.sessionTypeOptions.map(o => o.value)).toEqual(['Assessment']);

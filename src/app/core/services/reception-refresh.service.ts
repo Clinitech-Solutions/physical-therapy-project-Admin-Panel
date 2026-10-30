@@ -24,7 +24,7 @@ export class ReceptionRefreshService {
       }
       if (kind === "patients")
         this.patients.getPatients().subscribe({ error: () => {} });
-      if (kind === "appointments") this.appointments.getAppointments();
+      if (kind === "appointments") { this.appointments.getAppointments(); this.rooms.load(); }
       if (kind === "billing" || kind === "appointments")
         this.billing.getInvoices();
       this.reception.getDashboardStats();

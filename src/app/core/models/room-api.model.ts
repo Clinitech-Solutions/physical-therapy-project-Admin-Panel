@@ -9,4 +9,5 @@ export interface MaintenanceRequest {
 /** Read adapter validates these fields; non-empty response still awaits a backend sample. */
 export interface RoomRecord extends RoomWriteRequest {
   id: number;
+  status?: 'Available' | 'Occupied' | 'Maintenance' | 'Unknown';
 }

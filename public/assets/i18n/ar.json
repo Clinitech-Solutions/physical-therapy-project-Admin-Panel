@@ -320,9 +320,9 @@
       "INVALID_IDENTIFIER": "اختر سجلاً محفوظاً صحيحاً.",
       "OPERATION_IN_PROGRESS": "توجد عملية قيد التنفيذ.",
       "RETRY": "إعادة المحاولة",
-      "ROOM_AVAILABILITY_NOTICE": "سجلات الغرف لا تؤكد التوفر في الموعد المختار. يجب أن يقبل الخادم الحجز.",
-      "ROOM_RECORDS": "سجلات غرف",
-      "ROOM_RECORD": "سجل غرفة",
+      "ROOM_AVAILABILITY_NOTICE": "تظهر فقط الغرف المتاحة لجميع المواعيد المختارة. تتحرر الغرفة بعد تسجيل خروج المريض، وتظل غرف الصيانة غير متاحة.",
+      "ROOM_RECORDS": "غرف متاحة",
+      "ROOM_RECORD": "متاحة",
       "ACTIVE": "نشط",
       "INACTIVE": "غير نشط",
       "ROOM_DOCTORS": "أطباء الغرفة",
@@ -717,7 +717,9 @@
       "STANDARD_RATE": "السعر المعتاد",
       "REFUNDED": "مسترد",
       "APPROVED": "معتمد",
-      "E_G_ARABIC_NAME": "مثال: أحمد محمد"
+      "E_G_ARABIC_NAME": "مثال: أحمد محمد",
+      "ROOM_AVAILABLE": "متاحة",
+      "ROOM_OCCUPIED": "مشغولة"
     },
     "DASHBOARD": {
       "TREATMENT_PROGRESS": "تقدم العلاج",

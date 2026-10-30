@@ -62,6 +62,16 @@ describe("Backend room cards", () => {
       fixture.nativeElement.querySelector('[role="status"]').textContent,
     ).toContain("No rooms added yet");
   });
+  it('renders the persisted room status changing from Occupied to Available after checkout refresh', () => {
+    rooms.set([{ id: 1, name: 'Therapy room', capacity: 1, isActive: true, status: 'Occupied' }]);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.room-status').textContent).toContain('RECEPTIONIST.UI.ROOM_OCCUPIED');
+    expect(fixture.nativeElement.querySelector('.room-status.is-occupied')).toBeTruthy();
+    rooms.set([{ id: 1, name: 'Therapy room', capacity: 1, isActive: true, status: 'Available' }]);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.room-status').textContent).toContain('RECEPTIONIST.UI.ROOM_AVAILABLE');
+    expect(fixture.nativeElement.querySelector('.room-status.is-active')).toBeTruthy();
+  });
   it("keeps maintenance unknown for active and inactive records instead of inferring its state", () => {
     rooms.set([
       { id: 1, name: "Active", capacity: 2, isActive: true },

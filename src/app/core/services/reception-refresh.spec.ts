@@ -30,6 +30,7 @@ describe('Reception refresh and concurrent reads',()=>{
     const save=firstValueFrom(TestBed.inject(AppointmentWorkflowService).cancel(12));
     http.expectOne(`${url}/Receptionist/appointments/12/cancel`).flush(null);await save;
     http.expectOne(r=>r.url.endsWith('/Appointments/GetAll')).flush(emptyPage);
+    http.expectOne(`${url}/Rooms`).flush([]);
     http.expectOne(`${url}/Billing/invoices`).flush([]);
     http.expectOne(`${url}/Receptionist/dashboard-stats`).flush(stats);
     http.expectOne(r=>r.url.endsWith('/Receptionist/today-sessions')).flush(emptyPage);
@@ -39,6 +40,7 @@ describe('Reception refresh and concurrent reads',()=>{
     const save=firstValueFrom(TestBed.inject(AppointmentWorkflowService).cancel(12));
     http.expectOne(`${url}/Receptionist/appointments/12/cancel`).flush(null);await expect(save).resolves.toBeNull();
     http.expectOne(r=>r.url.endsWith('/Appointments/GetAll')).flush({}, {status:500,statusText:'Error'});
+    http.expectOne(`${url}/Rooms`).flush([]);
     http.expectOne(`${url}/Billing/invoices`).flush([]);
     http.expectOne(`${url}/Receptionist/dashboard-stats`).flush({}, {status:500,statusText:'Error'});
     http.expectOne(r=>r.url.endsWith('/Receptionist/today-sessions')).flush(emptyPage);

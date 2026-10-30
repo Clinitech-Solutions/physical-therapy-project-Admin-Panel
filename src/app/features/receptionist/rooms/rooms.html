@@ -94,11 +94,11 @@
         >
         <span
           class="room-status"
-          [class.is-active]="room.isActive"
+          [class.is-active]="room.status === 'Available' || ((!room.status || room.status === 'Unknown') && room.isActive)"
+          [class.is-occupied]="room.status === 'Occupied'"
           [title]="'RECEPTIONIST.UI.ROOM_AVAILABILITY_NOTICE' | translate"
         >
-          <span class="status-dot" aria-hidden="true"></span>{{ (room.isActive ?
-          'RECEPTIONIST.UI.ACTIVE' : 'RECEPTIONIST.UI.INACTIVE') | translate }}
+          <span class="status-dot" aria-hidden="true"></span>{{ (room.status === 'Available' ? 'RECEPTIONIST.UI.ROOM_AVAILABLE' : room.status === 'Occupied' ? 'RECEPTIONIST.UI.ROOM_OCCUPIED' : room.status === 'Maintenance' ? 'RECEPTIONIST.MAINTENANCE' : room.isActive ? 'RECEPTIONIST.UI.ACTIVE' : 'RECEPTIONIST.UI.INACTIVE') | translate }}
         </span>
       </div>
       <section

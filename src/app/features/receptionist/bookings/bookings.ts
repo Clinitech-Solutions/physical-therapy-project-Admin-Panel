@@ -19,12 +19,14 @@ import {
   ReceptionistLocale,
   ReceptionistTextPipe,
 } from "../../../shared/receptionist-locale";
-import { Component, signal, computed, inject, OnInit, ViewChild } from "@angular/core";
+import { Component, signal, computed, inject, OnInit, ViewChild, DestroyRef } from "@angular/core";
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { RoomRecord } from '../../../core/models/room-api.model';
 import { CommonModule } from "@angular/common";
 import { RouterModule } from "@angular/router";
 import { TranslateModule } from "@ngx-translate/core";
 import { FormsModule } from "@angular/forms";
-import { firstValueFrom } from "rxjs";
+import { firstValueFrom, Subscription } from "rxjs";
 import { HttpErrorResponse } from '@angular/common/http';
 import { MessageService } from "primeng/api";
 import { SelectModule } from "primeng/select";
@@ -135,7 +137,42 @@ export class BookingsComponent implements OnInit {
       .rooms()
       .map((r) => ({ ...r, id: String(r.id), displayName: r.name })),
   );
-  availableRooms = computed(() => this.allRooms().filter((r) => r.isActive));
+  private readonly availableRoomRecords = signal<RoomRecord[]>([]);
+  readonly roomAvailabilityLoading = signal(false);
+  readonly roomAvailabilityError = signal('');
+  private roomAvailabilityRequest?: Subscription;
+  private roomAvailabilityGeneration = 0;
+  private readonly destroyRef = inject(DestroyRef);
+  availableRooms = computed(() => this.availableRoomRecords().filter(room => room.isActive && room.capacity > 0 && room.status === 'Available')
+    .map(room => ({ ...room, id: String(room.id), displayName: room.name })));
+
+  constructor() {
+    this.roomService.refreshed.pipe(takeUntilDestroyed()).subscribe(() => {
+      if (this.bookingContext()) this.refreshRoomAvailability();
+    });
+  }
+
+  refreshRoomAvailability() {
+    const generation = ++this.roomAvailabilityGeneration;
+    this.roomAvailabilityRequest?.unsubscribe();
+    this.preview.set(null); this.availableRoomRecords.set([]); this.roomAvailabilityError.set('');
+    const dates = this.bookingMode === 'plan' ? this.generateBulkDates() : this.scheduledDate ? [this.scheduledDate] : [];
+    if (!this.bookingContext() || !dates.length || dates.some(date => !Number.isFinite(date.getTime()))) {
+      this.roomAvailabilityLoading.set(false); this.selectedRoomId = ''; return;
+    }
+    this.roomAvailabilityLoading.set(true);
+    this.roomAvailabilityRequest = this.roomService.availability(dates.map(date => date.toISOString())).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: rooms => {
+        if (generation !== this.roomAvailabilityGeneration) return;
+        this.availableRoomRecords.set(rooms); this.roomAvailabilityLoading.set(false);
+        if (!rooms.some(room => String(room.id) === this.selectedRoomId)) this.selectedRoomId = '';
+      },
+      error: error => {
+        if (generation !== this.roomAvailabilityGeneration) return;
+        this.roomAvailabilityLoading.set(false); this.roomAvailabilityError.set(apiError(error)); this.selectedRoomId = '';
+      },
+    });
+  }
 
   // Patient Profile Modal
   selectedProfilePatientId = signal<string | null>(null);
@@ -282,14 +319,18 @@ export class BookingsComponent implements OnInit {
   get isWaivedAssessment(): boolean { return this.isNewPatient && (!!this.bookingContext()?.isInsurance || this.assessmentCharge === 'Free'); }
   setBookingMode(mode: 'single' | 'plan') {
     if (this.bookingBusy() || this.hasUnresolvedBooking) return;
-    this.bookingMode = mode === 'plan' && this.bookingContext()?.hasCompletedAssessment ? 'plan' : 'single';
+    const next = mode === 'plan' && this.bookingContext()?.hasCompletedAssessment ? 'plan' : 'single';
+    if (this.bookingMode === next) return;
+    this.bookingMode = next;
     this.preview.set(null);
+    this.refreshRoomAvailability();
   }
   async onPatientChange(id?: string) {
     if (this.bookingBusy() || this.hasUnresolvedBooking) return;
     if (id !== undefined) this.selectedPatientId = id;
     const generation = ++this.contextGeneration;
     this.bookingContext.set(null); this.preview.set(null); this.selectedPlanId = null;
+    this.refreshRoomAvailability();
     this.selectedDoctorId = ''; this.selectedRoomId = ''; this.bookingMode = 'single'; this.bookingError.set('');
     this.assessmentCharge = null; this.unitPrice = null; this.packagePrice = null; this.discount = 0; this.deposit = 0; this.installments = [];
     if (!this.selectedPatientId) return;
@@ -365,7 +406,7 @@ export class BookingsComponent implements OnInit {
   get previewIsCurrent(): boolean {
     try { return !!this.preview() && this.previewFingerprint === JSON.stringify(this.buildBooking()); } catch { return false; }
   }
-  get canConfirm(): boolean { return this.previewIsCurrent && !!this.preview()?.canSave && !this.bookingBusy() && !this.hasUnresolvedBooking && !this.contextLoading(); }
+  get canConfirm(): boolean { return this.previewIsCurrent && !!this.preview()?.canSave && !this.bookingBusy() && !this.hasUnresolvedBooking && !this.contextLoading() && !this.roomAvailabilityLoading() && !this.roomAvailabilityError(); }
   async previewBooking() {
     if (this.bookingBusy() || this.hasUnresolvedBooking) return;
     this.bookingBusy.set(true); this.bookingError.set(''); this.preview.set(null);
@@ -417,6 +458,7 @@ export class BookingsComponent implements OnInit {
     this.contextGeneration++; this.clinicianGeneration++;
     this.selectedPatientId = ''; this.selectedDoctorId = ''; this.selectedRoomId = ''; this.selectedPlanId = null;
     this.bookingContext.set(null); this.preview.set(null); this.bookingMode = 'single'; this.bookingError.set(''); this.lastReceipt.set(null);
+    this.refreshRoomAvailability();
     this.contextLoading.set(false);
   }
   openQuickAddModal() {

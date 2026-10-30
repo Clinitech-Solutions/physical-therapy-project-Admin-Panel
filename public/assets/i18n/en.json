@@ -320,9 +320,9 @@
       "INVALID_IDENTIFIER": "Select a valid saved record.",
       "OPERATION_IN_PROGRESS": "An operation is already in progress.",
       "RETRY": "Retry",
-      "ROOM_AVAILABILITY_NOTICE": "Room records do not confirm availability at the selected time. The booking must be accepted by the server.",
-      "ROOM_RECORDS": "room records",
-      "ROOM_RECORD": "Room record",
+      "ROOM_AVAILABILITY_NOTICE": "Only rooms free for all selected appointment times are shown. Occupied rooms are released after checkout; maintenance rooms remain unavailable.",
+      "ROOM_RECORDS": "available rooms",
+      "ROOM_RECORD": "Available",
       "ACTIVE": "Active",
       "INACTIVE": "Inactive",
       "ROOM_DOCTORS": "Room doctors",
@@ -717,7 +717,9 @@
       "STANDARD_RATE": "Standard Rate",
       "REFUNDED": "Refunded",
       "APPROVED": "Approved",
-      "E_G_ARABIC_NAME": "e.g. أحمد محمد"
+      "E_G_ARABIC_NAME": "e.g. أحمد محمد",
+      "ROOM_AVAILABLE": "Available",
+      "ROOM_OCCUPIED": "Occupied"
     },
     "DASHBOARD": {
       "TREATMENT_PROGRESS": "Treatment Progress",

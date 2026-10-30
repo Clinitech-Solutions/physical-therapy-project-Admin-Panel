@@ -30,6 +30,7 @@ describe('Rendered patient-first booking controls', () => {
     http.expectOne(`${url}/Bookings/patients/1`).flush({ patientId: 1, patientName: 'Patient', gender: 'Male', paymentType: isInsurance ? 'Insurance' : 'Cash',
       hasCompletedAssessment: false, isInsurance, insuranceApproved: false, remainingApprovedSessions: null, copayPercentage: null, insuranceCompanyName: null, assessments: [], plans: [] });
     await Promise.resolve(); http.expectOne(`${url}/Rooms`).flush([{ id: 1, name: 'Room', capacity: 1, isActive: true }]);
+    http.expectOne(`${url}/Rooms/availability`).flush([{ id: 1, name: 'Room', capacity: 1, isActive: true, status: 'Available' }]);
     http.expectOne(r => r.url === `${url}/Bookings/patients/1/clinicians`).flush([{ id: 'senior', name: 'Senior', gender: 'Male', role: 'Senior', preferred: false, currentLoad: 0 }]);
     await pending; await fixture.whenStable();
   }

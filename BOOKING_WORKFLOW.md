@@ -1,5 +1,11 @@
 # Patient-first booking integration
 
+## Room availability and checkout
+
+After patient selection, Booking checks `POST /api/Rooms/availability` with all selected `startsAt` values. Only active rooms free for every selected 60-minute interval appear in the dropdown. Pending overlapping reservations and ongoing room occupancy exclude a room; changing dates, time, or bulk recurrence reloads availability. Stale reads are cancelled, removed room selections are cleared, and availability failures remain visible with retry.
+
+Successful appointment changes refresh the room list and the Booking availability query. Checkout makes the room available immediately unless another reservation conflicts or the room is inactive/under maintenance. Ongoing occupancy persists past the planned end time until explicit checkout. Room cards display the backend's Available/Occupied/Maintenance status. No schema migration is required. Verification: 33 backend and 58 focused frontend tests pass.
+
 ## Staff working-hours setup
 
 CEO Staff Management Add User and Edit User include a **Working days and hours (Cairo time)** editor with seven weekday checkboxes and one shared Start Time / End Time pair. All selected days share the same range; changing either time updates every selected day. At least one day and a valid range are required for staff accounts. The editor uses the existing theme tokens, responsive weekday grid and side-by-side time controls, with English/Arabic inline validation.

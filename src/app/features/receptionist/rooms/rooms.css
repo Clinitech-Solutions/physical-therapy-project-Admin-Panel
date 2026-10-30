@@ -113,7 +113,7 @@
 }
 .room-status {
   gap: 0.4rem;
-  color: var(--text-secondary);
+  color: var(--color-warning);
   font-weight: 600;
 }
 .room-status.is-active {

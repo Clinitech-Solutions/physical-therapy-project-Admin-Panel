@@ -307,7 +307,7 @@
                 </div>
                 <p-select [options]="availableRooms()" [(ngModel)]="selectedRoomId" optionLabel="displayName" optionValue="id"
                   [placeholder]="'COMMON.ROOM' | translate" emptyMessage="{{ 'COMMON.NO_AVAILABLE_ROOMS' | translate }}"
-                  [disabled]="!bookingContext() || contextLoading()" appendTo="body" styleClass="w-100">
+                  [disabled]="!bookingContext() || contextLoading() || roomAvailabilityLoading() || !!roomAvailabilityError() || bookingBusy() || hasUnresolvedBooking" appendTo="body" styleClass="w-100" [loading]="roomAvailabilityLoading()">
                   <ng-template pTemplate="item" let-room>
                     <div class="d-flex justify-content-between align-items-center w-100">
                       <span class="small fw-medium"><i class="bi bi-door-open me-1 text-primary"></i>{{ room.displayName }}</span>
@@ -315,6 +315,11 @@
                     </div>
                   </ng-template>
                 </p-select>
+                @if (roomAvailabilityError()) {
+                  <p class="text-danger small mt-2" role="alert">{{ locale.label(roomAvailabilityError()) }}
+                    <button type="button" class="btn btn-outline-secondary btn-sm" (click)="refreshRoomAvailability()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button>
+                  </p>
+                }
               </div>
             </div>
           </div>
@@ -328,7 +333,7 @@
               @if (bookingMode === 'single') {
                 <div class="row g-3">
                   <div class="col-md-6"><label class="form-label">{{ 'COMMON.DATE' | translate }} / {{ 'COMMON.TIME' | translate }} *
-                    <p-datepicker [(ngModel)]="scheduledDate" [showTime]="true" hourFormat="12" [showIcon]="true" appendTo="body" styleClass="w-100" />
+                    <p-datepicker [(ngModel)]="scheduledDate" (ngModelChange)="refreshRoomAvailability()" [showTime]="true" hourFormat="12" [showIcon]="true" appendTo="body" styleClass="w-100" />
                   </label></div>
                   <div class="col-md-6"><label class="form-label">{{ 'RECEPTIONIST.UI.END_TIME' | translate }}
                     <output class="form-control" data-calculated-end>{{ locale.date(scheduledEndDate, true) }}</output>
@@ -337,16 +342,16 @@
               } @else {
                 <div class="row g-3">
                   <div class="col-md-3"><label class="form-label">{{ 'RECEPTIONIST.UI.TOTAL_SESSIONS' | translate }} *
-                    <p-inputNumber [(ngModel)]="planSessionCount" [min]="1" [max]="200" [showButtons]="true" styleClass="w-100" />
+                    <p-inputNumber [(ngModel)]="planSessionCount" (ngModelChange)="refreshRoomAvailability()" [min]="1" [max]="200" [showButtons]="true" styleClass="w-100" />
                   </label></div>
                   <div class="col-md-3"><label class="form-label">{{ 'RECEPTIONIST.UI.PREFERRED_DAYS' | translate }} *
-                    <p-multiSelect [options]="localizedWeekDays" [(ngModel)]="selectedDays" optionLabel="label" optionValue="value" styleClass="w-100" appendTo="body" />
+                    <p-multiSelect [options]="localizedWeekDays" [(ngModel)]="selectedDays" (ngModelChange)="refreshRoomAvailability()" optionLabel="label" optionValue="value" styleClass="w-100" appendTo="body" />
                   </label></div>
                   <div class="col-md-3"><label class="form-label">{{ 'RECEPTIONIST.UI.START_DATE' | translate }} *
-                    <p-datepicker [(ngModel)]="planStartDate" [showIcon]="true" appendTo="body" styleClass="w-100" />
+                    <p-datepicker [(ngModel)]="planStartDate" (ngModelChange)="refreshRoomAvailability()" [showIcon]="true" appendTo="body" styleClass="w-100" />
                   </label></div>
                   <div class="col-md-3"><label class="form-label">{{ 'RECEPTIONIST.UI.PREFERRED_TIME' | translate }} *
-                    <p-datepicker [(ngModel)]="planPreferredTime" [timeOnly]="true" hourFormat="12" appendTo="body" styleClass="w-100" />
+                    <p-datepicker [(ngModel)]="planPreferredTime" (ngModelChange)="refreshRoomAvailability()" [timeOnly]="true" hourFormat="12" appendTo="body" styleClass="w-100" />
                   </label></div>
                 </div>
               }
