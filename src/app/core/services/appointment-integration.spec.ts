@@ -51,10 +51,10 @@ describe('Reception appointment integration',()=>{
     const patchResult=firstValueFrom(service.updateStatus(10,'Explicit server value'));
     const patch=http.expectOne(`${url}/Appointments/10/status`);expect(patch.request.body).toBe('"Explicit server value"');patch.flush(null);await patchResult;
   });
-  it('blocks semantic transitions while enum definitions are unavailable, but allows cancellation',async()=>{
+  it('uses verified transition definitions and cancellation contracts',async()=>{
     const workflow=TestBed.inject(AppointmentWorkflowService);
-    await expect(firstValueFrom(workflow.transition(10,'In Progress'))).rejects.toThrow('confirmed backend');
-    expect(workflow.mutation.busy()).toBe(false);
+    const entering=firstValueFrom(workflow.transition(10,'In Progress'));
+    const checkIn=http.expectOne(`${url}/Receptionist/appointments/10/status`);expect(checkIn.request.body).toBe(4);checkIn.flush(null);await entering;
     const cancel=firstValueFrom(workflow.cancel(10));const req=http.expectOne(`${url}/Receptionist/appointments/10/cancel`);
     expect(req.request.method).toBe('PUT');expect(req.request.body).toBeNull();req.flush(null);await cancel;
   });
@@ -63,26 +63,7 @@ describe('Reception appointment integration',()=>{
     expect(service.normalizeStats({todaysSessions:0,completedSessions:0,pendingPayments:0,totalExpectedToday:100,totalCollectedToday:25,collectionRate:25})).toMatchObject({expectedTodayRevenue:100,collectedTodayRevenue:25,collectionRateToday:25});
     expect(()=>service.normalizeStats({todayRevenue:100})).toThrow();
   });
-  function booking(){
-    const component=TestBed.runInInjectionContext(()=>new BookingsComponent());
-    component.selectedPatientId='1';component.selectedDoctorId='doctor-guid';component.selectedRoomId='2';return component;
-  }
-  it('does not create an invoice after successful appointment persistence',async()=>{
-    const component=booking();component.scheduledDate=new Date(payload.startTime);component.scheduledEndDate=new Date(payload.endTime);
-    const result=component.submitBooking();http.expectOne(`${url}/Appointments`).flush(null);await result;
-    http.expectNone(`${url}/Billing/invoices`);
-    http.expectOne(r=>r.url.endsWith('/Appointments/GetAll')).flush({items:[],totalPages:0,hasNextPage:false});
-    expect(component.bookingError()).toBe('');
-  });
-  it('does not duplicate confirmed sessions when retrying a partially rejected recurring batch',async()=>{
-    const component=booking();component.selectedPlanId=5;component.planSessionCount=2;component.planStartDate=new Date('2026-11-01T09:00:00');component.planPreferredTime=new Date('2026-11-01T09:00:00');component.planEndTime=new Date('2026-11-01T10:00:00');
-    const first=component.submitTreatmentPlan();
-    http.expectOne(`${url}/Appointments`).flush(null);await Promise.resolve();
-    const second=http.expectOne(`${url}/Appointments`);expect(second.request.body.treatmentPlanSessionId).toBe(21);
-    second.flush({title:'Room conflict'},{status:400,statusText:'Rejected'});await first;
-    expect(component.bulkProgress()).toEqual([20]);expect(component.bookingError()).toContain('1 appointment(s) saved');
-    const retry=component.submitTreatmentPlan();const req=http.expectOne(`${url}/Appointments`);expect(req.request.body.treatmentPlanSessionId).toBe(21);req.flush(null);await retry;
-    http.expectOne(r=>r.url.endsWith('/Appointments/GetAll')).flush({items:[],totalPages:0,hasNextPage:false});
-    expect(TestBed.inject(AppointmentService).bookedPlanSessions()).toEqual([20,21]);
+  it('recognizes verified appointment transitions from the sibling backend', () => {
+    expect(TestBed.inject(ReceptionContracts).label('appointmentStatus', 4)).toBe('In Progress');
   });
 });

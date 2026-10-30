@@ -12,6 +12,7 @@ import { TranslateModule } from '@ngx-translate/core';
 import { PatientRegistrationFieldsComponent } from '../../shared/components/patient-registration-fields/patient-registration-fields';
 import { MessageService } from 'primeng/api';
 import { PatientResponse } from '../models/patient-api.model';
+import { environment } from '../../../environments/environment';
 import { PatientService } from './patient.service';
 import { BillingService } from './billing.service';
 import { AppointmentService } from './appointment.service';
@@ -19,7 +20,7 @@ import { PatientsComponent } from '../../features/receptionist/patients/patients
 import { BookingsComponent } from '../../features/receptionist/bookings/bookings';
 import { createPatientRequest, emptyPatientRegistration, patientBirthDate, patientEditDraft, patientEditChanges, PatientOutcomeUnknownError, patientServerError } from './patient-registration';
 
-const base = 'https://clinitech-solutions65.runasp.net/api';
+const base = environment.apiUrl;
 const saved: PatientResponse = {
   id: 42, applicationUserId: 'user-guid', fullName: 'Test Patient', phoneNumber: '01012345678',
   email: '', birthDate: '1988-03-14T00:00:00Z', gender: 1, paymentType: 'Insurance',
@@ -324,7 +325,8 @@ describe('Patient registration contracts and safety', () => {
     expect(component.selectedPatientId).toBe('42');
     expect(component.selectedPatient?.birthDate).toBe(saved.birthDate);
     expect(component.isQuickAddModalOpen).toBe(false);
-    http.expectOne(r => r.url.endsWith('/Patients/GetAll')).flush({}, { status: 500, statusText: 'Error' });
+    http.expectOne(`${base}/Bookings/patients/42`).flush({ title: 'Eligibility unavailable' }, { status: 503, statusText: 'Unavailable' });
+    http.expectOne(r => r.url.endsWith('/Bookings/patients')).flush({}, { status: 500, statusText: 'Error' });
     expect(service.patients()[0].id).toBe('42');
     expect(add.mock.calls.some(([message]) => message.severity === 'warn' && message.detail?.includes('Patient saved'))).toBe(true);
   });

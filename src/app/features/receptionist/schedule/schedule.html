@@ -303,7 +303,8 @@
       </select>
     </label>
     <label class="form-label w-100">{{ 'RECEPTIONIST.UI.START_TIME' | translate }} *<input type="datetime-local" class="form-control" [(ngModel)]="editStart" required></label>
-    <label class="form-label w-100">{{ 'RECEPTIONIST.UI.END_TIME' | translate }} *<input type="datetime-local" class="form-control" [(ngModel)]="editEnd" required></label>
+    <label class="form-label w-100">{{ 'RECEPTIONIST.UI.END_TIME' | translate }}<output class="form-control">{{ locale.date(editEnd, true) }}</output></label>
+    <p class="small text-muted">{{ 'RECEPTIONIST.UI.PLANNED_HOUR_NOTICE' | translate }}</p>
   </fieldset>
   <ng-template pTemplate="footer"><button class="btn btn-primary" (click)="saveAppointmentEdit()" [disabled]="!!appointmentService?.mutation?.busy() || !!appointmentService?.mutation?.uncertain()">{{ 'COMMON.SAVE' | translate }}</button></ng-template>
 </p-dialog>

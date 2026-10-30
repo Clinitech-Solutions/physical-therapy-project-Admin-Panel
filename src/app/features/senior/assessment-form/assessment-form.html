@@ -5,6 +5,8 @@
   </div>
 </div>
 
+@if (error()) { <p class="alert alert-warning" role="alert">{{ error() }}</p> }
+@if (loading()) { <p role="status">{{ 'RECEPTIONIST.PROCESSING' | translate }}</p> }
 <div class="senior-grid gap-3 align-items-start">
 
   <!-- LEFT: Form (Diagnosis & Treatment Plan) -->
@@ -64,7 +66,7 @@
         </div>
 
         <div class="mt-3">
-          <button type="submit" class="btn btn-primary w-100">
+          <button type="submit" class="btn btn-primary w-100" [disabled]="saving() || loading() || !patient()">
             <i class="bi bi-check-circle"></i> {{ 'SENIOR.SUBMIT_ASSESSMENT' | translate }}
           </button>
         </div>

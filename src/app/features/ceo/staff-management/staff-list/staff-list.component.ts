@@ -55,7 +55,7 @@ export class StaffListComponent implements OnInit {
       userName: user.userName || '',
       gender: user.gender !== undefined ? user.gender : 0,
       birthDate: user.birthDate || '',
-      role: user.roles?.[0] || ''
+      role: user.roles[0] || ''
     });
   }
 

@@ -2,6 +2,7 @@ import { Injectable, inject, signal } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
 import { forkJoin, map, finalize, catchError, of, switchMap } from "rxjs";
 import { environment } from "../../../environments/environment";
+import { backendEnumNumber } from './reception-contracts';
 import {
   AssessmentRecord,
   TreatmentPlanRecord,
@@ -48,7 +49,9 @@ export class ClinicalRecordsService {
                   "status",
                 ]
               : ["treatmentPlanId", "sessionNumber", "paymentStatus", "status"];
-          for (const key of fields) r[key] = finiteNumber(r[key]);
+          for (const key of fields) r[key] = finiteNumber(key === 'status'
+            ? backendEnumNumber(path.startsWith('Assessments/') ? 'assessmentSeverity' : path.startsWith('TreatmentPlans/') ? 'planStatus' : 'sessionStatus', r[key])
+            : key === 'paymentStatus' ? backendEnumNumber('paymentStatus', r[key]) : r[key]);
           if (path.startsWith("TreatmentPlans/"))
             r["doctorId"] = textField(r["doctorId"]);
           if (path.startsWith("Assessments/"))
@@ -76,7 +79,7 @@ export class ClinicalRecordsService {
           `Assessments/GetAll${patientId ? "?patientId=" + numericId(patientId) : ""}`,
         ),
       ),
-      plans: safe(this.list<TreatmentPlanRecord>("TreatmentPlans/GetAll")),
+      plans: safe(this.list<TreatmentPlanRecord>(`TreatmentPlans/GetAll${patientId ? '?patientId=' + numericId(patientId) : ''}`)),
     })
       .pipe(
         switchMap(data => {
@@ -86,8 +89,8 @@ export class ClinicalRecordsService {
           // A patient without a treatment plan has no plan sessions to load.
           const plans = patientId ? this.plansForPatient(patientId) : this.plans();
           if (!plans.length) return of({ ...data, sessions: { data: [] as TreatmentPlanSessionRecord[], error: null } });
-          return safe(this.list<TreatmentPlanSessionRecord>("TreatmentPlanSessions/GetAll")).pipe(
-            map(sessions => ({ ...data, sessions })),
+          return forkJoin(plans.map(plan => safe(this.list<TreatmentPlanSessionRecord>(`TreatmentPlanSessions/GetAll?treatmentPlanId=${numericId(plan.id)}`)))).pipe(
+            map(results => ({ ...data, sessions: { data: results.flatMap(result => result.data ?? []), error: results.map(result => result.error).filter(Boolean).join(' | ') || null } })),
           );
         }),
         finalize(() => {

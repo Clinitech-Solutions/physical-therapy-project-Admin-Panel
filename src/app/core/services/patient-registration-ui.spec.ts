@@ -80,7 +80,7 @@ describe.each(["patients", "bookings"] as const)(
       for (const request of http.match((request) => request.method === "GET")) {
         if (
           request.request.url.endsWith("/Patients/GetAll") ||
-          request.request.url.endsWith("/Appointments/GetAll")
+          request.request.url.endsWith("/Appointments/GetAll") || request.request.url.endsWith('/Bookings/patients')
         ) {
           request.flush({
             items: [],
@@ -176,9 +176,9 @@ describe.each(["patients", "bookings"] as const)(
       request.flush(saved);
       await Promise.resolve();
       http
-        .expectOne((r) => r.url === `${base}/Patients/GetAll`)
+        .expectOne((r) => r.url === `${base}/${entry === 'bookings' ? 'Bookings/patients' : 'Patients/GetAll'}`)
         .flush({
-          items: [saved],
+          items: entry === 'bookings' ? [{ id: saved.id, fullName: saved.fullName, phoneNumber: saved.phoneNumber, gender: 'Male' }] : [saved],
           pageNumber: 1,
           totalPages: 1,
           hasNextPage: false,
@@ -190,6 +190,7 @@ describe.each(["patients", "bookings"] as const)(
       )) {
         request.flush([]);
       }
+      if (entry === 'bookings') http.expectOne(`${base}/Bookings/patients/42`).flush({ title: 'Eligibility unavailable' }, { status: 503, statusText: 'Unavailable' });
       await fixture.whenStable();
       const component = fixture.componentInstance;
       if (component instanceof PatientsComponent) {

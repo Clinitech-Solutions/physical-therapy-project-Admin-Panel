@@ -52,13 +52,13 @@
             <td class="py-3 px-4 text-secondary">{{ user.userName }}</td>
             <td class="py-3 px-4">
               <span class="badge" [ngClass]="{
-                      'badge-ceo': user.roles?.[0] === 'Ceo' || user.roles?.[0] === 'CEO',
-                      'badge-doctor': user.roles?.[0] === 'Doctor',
-                      'badge-senior': user.roles?.[0] === 'Senior Therapist',
-                      'badge-recep': user.roles?.[0] === 'Receptionist',
-                      'badge-neutral': !['CEO', 'Ceo', 'Doctor', 'Senior Therapist', 'Receptionist'].includes(user.roles?.[0] || '')
+                      'badge-ceo': user.roles[0] === 'Ceo' || user.roles[0] === 'CEO',
+                      'badge-doctor': user.roles[0] === 'Doctor',
+                      'badge-senior': user.roles[0] === 'Senior Therapist',
+                      'badge-recep': user.roles[0] === 'Receptionist',
+                      'badge-neutral': !['CEO', 'Ceo', 'Doctor', 'Senior Therapist', 'Receptionist'].includes(user.roles[0] || '')
                     }">
-                {{ user.roles?.[0] }}
+                {{ user.roles[0] }}
               </span>
             </td>
             <td class="py-3 px-4 ltr:text-right rtl:text-left">

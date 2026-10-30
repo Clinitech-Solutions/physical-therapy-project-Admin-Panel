@@ -1,6 +1,6 @@
 /** Contracts verified against /openapi/v1.json on 2026-10-29. */
 export interface InsuranceDetailsResponse {
-  status: number | null;
+  status: number | 'Approved' | 'Pending' | 'Rejected' | 'Expired' | null;
   copayPercentage: number | string | null;
   approvedSessions: number | string | null;
   memberId: string | null;
@@ -14,7 +14,7 @@ export interface PatientResponse {
   email: string;
   phoneNumber: string;
   birthDate: string;
-  gender: number;
+  gender: number | 'Male' | 'Female';
   paymentType: string | null;
   emergencyContact: string | null;
   insuranceCompanyId: number | string | null;

@@ -5,6 +5,8 @@ import {
   inject,
   Injector,
   Input,
+  Output,
+  EventEmitter,
 } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { TranslateModule } from "@ngx-translate/core";
@@ -33,6 +35,10 @@ export class PatientRegistrationFieldsComponent {
   @Input() companies: InsuranceCompany[] = [];
   @Input() insuranceLoading = false;
   @Input() insuranceError: string | null = null;
+  @Output() insuranceRequested = new EventEmitter<void>();
+  paymentTypeChanged() {
+    if (this.draft.paymentType === 'Insurance' && !this.companies.length && !this.insuranceLoading) this.insuranceRequested.emit();
+  }
 
   readonly paymentTypes = ['Cash', 'Insurance', 'Online', 'Card', 'InstaPay'];
 

@@ -13,6 +13,14 @@
     </div>
   }
   @if (billingService.mutation.uncertain()) { <p class="alert alert-warning" role="alert">{{ 'RECEPTIONIST.UI.OPERATION_OUTCOME_UNKNOWN' | translate }}</p> }
+  @if (bookingApi.pendingCollection()) {
+    <p class="alert alert-warning" role="alert">{{ 'RECEPTIONIST.UI.COLLECTION_OUTCOME_UNKNOWN' | translate }}
+      <button class="btn btn-outline-secondary btn-sm" (click)="reconcileCollection()" [disabled]="isSubmittingPayment()">{{ 'RECEPTIONIST.UI.RECONCILE_COLLECTION' | translate }}</button>
+    </p>
+  }
+  @for (invoiceId of billingService.unresolvedInvoicePaymentIds; track invoiceId) {
+    <button class="btn btn-outline-secondary btn-sm mb-2" (click)="openPaymentModal(invoiceId)" [disabled]="isSubmittingPayment()">{{ 'RECEPTIONIST.UI.RECONCILE_COLLECTION' | translate }} #{{ invoiceId }}</button>
+  }
   <p class="text-muted small">{{ 'RECEPTIONIST.UI.BILLING_COLLECTIONS_NOTICE' | translate }}</p>
   <div class="row g-3 mb-4">
     <div class="col-md-4"><div class="card card-body"><span class="text-muted">{{ 'RECEPTIONIST.UI.INVOICE_CHARGES_TODAY' | translate }}</span><strong>{{ expectedTodayRevenue() | currency:'EGP':'symbol':'1.2-2':locale.language }}</strong></div></div>
@@ -91,7 +99,23 @@
 
         <!-- TAB 1: Pending Installments -->
         <p-tabpanel value="1">
-          <p class="text-muted p-3">{{ 'RECEPTIONIST.UI.INSTALLMENT_SUPPORT_PENDING' | translate }}</p>
+          @if (accountsError()) { <p class="alert alert-warning" role="alert">{{ accountsError() }} <button class="btn btn-outline-secondary btn-sm" (click)="refreshAccounts()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button></p> }
+          <div class="table-scroll-area mt-2">
+            <p-table [value]="pendingInstallments()" [responsiveLayout]="'scroll'" styleClass="p-datatable-striped">
+              <ng-template pTemplate="header"><tr>
+                <th>{{ 'COMMON.PATIENT' | translate }}</th><th>{{ 'RECEPTIONIST.UI.QUOTED_TOTAL' | translate }}</th>
+                <th>{{ 'RECEPTIONIST.UI.ACTUAL_AMOUNT_PAID' | translate }}</th><th>{{ 'RECEPTIONIST.UI.PATIENT_BALANCE' | translate }}</th>
+                <th>{{ 'RECEPTIONIST.UI.INSTALLMENT_ARRANGEMENT' | translate }}</th><th>{{ 'COMMON.ACTION' | translate }}</th>
+              </tr></ng-template>
+              <ng-template pTemplate="body" let-account><tr>
+                <td>{{ account.patientName }}</td><td>{{ account.totalAmount | currency:'EGP':'symbol':'1.2-2':locale.language }}</td>
+                <td>{{ account.paidAmount | currency:'EGP':'symbol':'1.2-2':locale.language }}</td><td>{{ account.remainingAmount | currency:'EGP':'symbol':'1.2-2':locale.language }}</td>
+                <td>@for (installment of account.installments; track $index) { <div>{{ locale.date(installment.dueDate) }}: {{ installment.amount | currency:'EGP':'symbol':'1.2-2':locale.language }}</div> }</td>
+                <td><button class="btn btn-outline-primary btn-sm" (click)="openAccountPayment(account)">{{ 'RECEPTIONIST.PROCESS_PAYMENT' | translate }}</button></td>
+              </tr></ng-template>
+              <ng-template pTemplate="emptymessage"><tr><td colspan="6" class="text-center py-4 text-muted">{{ 'RECEPTIONIST.UI.NO_PENDING_INSTALLMENTS' | translate }}</td></tr></ng-template>
+            </p-table>
+          </div>
         </p-tabpanel>
 
         <!-- TAB 2: Insurance Claims -->
@@ -144,6 +168,7 @@
 
   @if (!paymentMethods.length) { <p class="alert alert-warning">{{ 'RECEPTIONIST.UI.PAYMENT_METHOD_DEFINITION_PENDING' | translate }}</p> }
   @if (paymentError()) { <p class="alert alert-warning" role="alert">{{ locale.label(paymentError()) }}</p> }
+  @if (bookingApi.pendingCollection()) { <p class="alert alert-warning" role="alert">{{ 'RECEPTIONIST.UI.COLLECTION_OUTCOME_UNKNOWN' | translate }} <button type="button" class="btn btn-outline-secondary btn-sm" (click)="reconcileCollection()" [disabled]="isSubmittingPayment()">{{ 'RECEPTIONIST.UI.RECONCILE_COLLECTION' | translate }}</button></p> }
   @if (paymentHistoryLoading()) { <p role="status">{{ 'RECEPTIONIST.PROCESSING' | translate }}</p> }
   @if (paymentHistoryError()) { <p class="alert alert-warning" role="alert">{{ locale.label(paymentHistoryError()) }} <button class="btn btn-outline-secondary btn-sm" (click)="loadPaymentHistory()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button></p> }
   <div class="modal-form-vertical py-2">
@@ -191,7 +216,7 @@
         type="button" 
         class="btn btn-primary" 
         (click)="confirmPayment()"
-        [disabled]="isProcessingPayment() || !paymentMethods.length || billingService.mutation.uncertain() || billingService.pendingPaymentInvoices().includes(+selectedInvoiceId!)">
+        [disabled]="isProcessingPayment() || !selectedPaymentMethod || !paymentMethods.length || (!selectedAccountKey && (billingService.mutation.uncertain() || billingService.pendingPaymentInvoices().includes(+selectedInvoiceId!)))">
         @if (isProcessingPayment()) {
           <span class="spinner-border spinner-border-sm me-1"></span> {{ 'RECEPTIONIST.PROCESSING' | translate }}
         } @else {

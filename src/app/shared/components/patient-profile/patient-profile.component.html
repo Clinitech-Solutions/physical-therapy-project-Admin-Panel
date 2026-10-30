@@ -214,6 +214,10 @@
     }
     @for (appointment of patientAppointments; track appointment.id) {
       <p>{{ appointment.appointmentType | receptionistText }} ? {{ locale.date(appointment.startTime, true) }}</p>
+      @if (appointment.actualCheckIn) {
+        <p class="small text-muted">{{ 'RECEPTIONIST.CHECK_IN_TIME' | translate }}: {{ locale.date(appointment.actualCheckIn, true) }} ·
+          {{ 'RECEPTIONIST.CHECK_OUT_TIME' | translate }}: {{ appointment.actualCheckOut ? locale.date(appointment.actualCheckOut, true) : '-' }}</p>
+      }
     }
     @for (invoice of patientInvoices; track invoice.id) {
       <p>{{ invoice.invoiceNumber }} ? {{ 'RECEPTIONIST.BILLING.REMAINING' | translate }}: {{ invoice.remainingAmount | currency:'EGP':'symbol':'1.2-2':locale.language }}</p>

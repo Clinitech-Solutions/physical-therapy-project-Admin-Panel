@@ -12,9 +12,13 @@ import {
   textField,
 } from "./reception-api";
 import { pagedRecords } from "./reception-pagination";
+import { backendEnumNumber } from './reception-contracts';
 
 export interface Appointment {
   id?: number;
+  assessmentCompleted?: boolean;
+  actualCheckIn?: string | null;
+  actualCheckOut?: string | null;
   patientId: number;
   doctorId?: string | null;
   seniorId?: string | null;
@@ -66,6 +70,9 @@ export function decodeAppointment(value: unknown): Appointment {
     );
   return {
     id: numericId(r["id"]),
+    assessmentCompleted: r['assessmentCompleted'] === true,
+    actualCheckIn: typeof r['actualCheckIn'] === 'string' ? r['actualCheckIn'] : null,
+    actualCheckOut: typeof r['actualCheckOut'] === 'string' ? r['actualCheckOut'] : null,
     patientId: numericId(r["patientId"]),
     doctorId: clinician(r["doctorId"]),
     seniorId: clinician(r["seniorId"]),
@@ -77,7 +84,7 @@ export function decodeAppointment(value: unknown): Appointment {
     appointmentType: textField(r["appointmentType"]),
     startTime: textField(r["startTime"]),
     endTime: textField(r["endTime"]),
-    status: r["status"],
+    status: backendEnumNumber('appointmentStatus', r["status"]) as number | string,
     patientName:
       typeof r["patientName"] === "string" ? r["patientName"] : undefined,
     doctorName:

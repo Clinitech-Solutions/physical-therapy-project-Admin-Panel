@@ -20,7 +20,7 @@ describe('Bookings backend workflow presentation',()=>{
     TestBed.inject(PatientService).patients.set([{id:'1'} as never]);
     TestBed.inject(ClinicianService).clinicians.set([{id:'doctor-guid',name:'Doctor',roles:['Doctor']}]);
     component.selectedPatientId='1';
-    expect(component.filteredDoctors.map(d=>d.id)).toEqual(['doctor-guid']);
+    expect(component.filteredDoctors).toEqual([]);
     expect(component.getDoctorGender('doctor-guid')).toBe('');
   });
   it('never manufactures a nearest slot from room records',()=>{

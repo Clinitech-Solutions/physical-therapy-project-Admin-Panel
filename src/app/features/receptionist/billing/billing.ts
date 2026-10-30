@@ -15,6 +15,8 @@ import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { SelectModule } from 'primeng/select';
 import { InputNumberModule } from 'primeng/inputnumber';
+import { BookingService } from '../../../core/services/booking.service';
+import { BookingAccount, BookingPaymentMethod } from '../../../core/models/booking.model';
 import { TabsModule } from 'primeng/tabs';
 
 @Component({
@@ -92,6 +94,27 @@ export class BillingComponent implements OnInit {
   patientService = inject(PatientService, { optional: true });
   appointmentService = inject(AppointmentService, { optional: true });
   messageService = inject(MessageService);
+  readonly bookingApi = inject(BookingService);
+  readonly accounts = signal<BookingAccount[]>([]);
+  readonly accountsError = signal('');
+  selectedAccountKey: string | null = null;
+  refreshAccounts() {
+    this.accountsError.set('');
+    this.bookingApi.accounts().subscribe({ next: accounts => this.accounts.set(accounts), error: error => this.accountsError.set(apiError(error)) });
+  }
+  openAccountPayment(account: BookingAccount) {
+    if (this.isSubmittingPayment()) return;
+    this.selectedAccountKey = account.key; this.selectedInvoiceId = null;
+    this.amountToCollect = account.remainingAmount; this.selectedPaymentMethod = ''; this.invoicePayments.set([]);
+    this.paymentError.set(''); this.showPaymentModal = true;
+  }
+  async reconcileCollection() {
+    if (this.isSubmittingPayment()) return;
+    this.isSubmittingPayment.set(true);
+    try { await firstValueFrom(this.bookingApi.reconcileCollection()); this.paymentError.set(''); this.refreshAccounts(); this.billingService.getInvoices(); }
+    catch { this.paymentError.set(this.locale.text('COLLECTION_NOT_CONFIRMED', 'No committed collection has been confirmed. Retry only the original collection with the same key.')); }
+    finally { this.isSubmittingPayment.set(false); }
+  }
 
   // Modal State
   showPaymentModal = false;
@@ -102,18 +125,12 @@ export class BillingComponent implements OnInit {
   readonly paymentHistoryLoading = signal(false);
   readonly invoiceDetailLoading = signal(false);
   amountToCollect: number = 0;
-  get paymentMethods() { return this.billingService.paymentMethods; }
+  get paymentMethods() { return this.billingService.paymentMethods.filter(method => method !== 'Insurance'); }
   invoicePayments = signal<Payment[]>([]);
   isSubmittingPayment = signal<boolean>(false);
 
-  // Installment Modal State
-  showInstallmentModal = false;
-  installmentPatientId: string | null = null;
-  installmentAmount: number = 0;
-  installmentPaymentMethod = 'Cash';
-  selectedPatientRemainingDebt: number = 0;
-
   ngOnInit(): void {
+    this.refreshAccounts();
     this.billingService.getInvoices();
     this.patientService?.getPatients().subscribe({error:e=>this.paymentError.set(apiError(e))});
     this.appointmentService?.getAppointments();
@@ -129,7 +146,7 @@ export class BillingComponent implements OnInit {
 
   // Tab Computed Signals (strictly using totalAmount, patientAmount, insuranceAmount and enum mapping helpers)
   dailyCashierInvoices = computed(() => this.invoices());
-  pendingInstallments = computed(() => []);
+  pendingInstallments = computed(() => this.accounts().filter(account => account.remainingAmount > 0 && account.installments.length > 0));
 
   insuranceClaims = computed(() =>
     this.invoices().filter((inv) => (inv.insuranceAmount || 0) > 0)
@@ -156,7 +173,8 @@ export class BillingComponent implements OnInit {
   openPaymentModal(invoiceId: number | string) {
     if(this.isSubmittingPayment()) return;
     this.selectedInvoiceId = invoiceId;
-    this.selectedPaymentMethod = this.paymentMethods[0] ?? '';
+    this.selectedAccountKey = null;
+    this.selectedPaymentMethod = '';
     this.paymentError.set(''); this.invoicePayments.set([]);
     this.amountToCollect = this.billingService.findInvoiceById(invoiceId)?.remainingAmount ?? 0;
     this.showPaymentModal = true;
@@ -171,13 +189,6 @@ export class BillingComponent implements OnInit {
       error:error=>{if(Number(this.selectedInvoiceId)!==id)return;this.paymentHistoryError.set(apiError(error));this.paymentHistoryLoading.set(false);}
     });
   }
-  openInstallmentModal(patientId: string | number) {
-    this.paymentError.set(this.locale.text('INSTALLMENT_SUPPORT_PENDING','Installment plans are not available. Collect against a saved invoice in Billing.'));
-  }
-  async confirmInstallmentCollection() {
-    this.openInstallmentModal('');
-  }
-
   /**
    * Action trigger from table - opens the payment method modal
    */
@@ -189,6 +200,17 @@ export class BillingComponent implements OnInit {
    * Confirms manual payment via BillingService.recordPayment()
    */
   async confirmPayment(): Promise<void> {
+    if (this.selectedAccountKey) {
+      if (this.isSubmittingPayment()) return;
+      this.isSubmittingPayment.set(true); this.paymentError.set('');
+      try {
+        if (!['Cash', 'Visa', 'EWallet', 'BankTransfer'].includes(this.selectedPaymentMethod)) throw new Error(this.locale.text('PAYMENT_METHOD_REQUIRED', 'Select the actual patient payment method.'));
+        await firstValueFrom(this.bookingApi.collectAccount(this.selectedAccountKey, this.amountToCollect, this.selectedPaymentMethod as BookingPaymentMethod));
+        this.showPaymentModal = false; this.selectedAccountKey = null; this.refreshAccounts(); this.billingService.getInvoices();
+      } catch (error) { this.paymentError.set(this.bookingApi.pendingCollection() ? this.locale.text('COLLECTION_OUTCOME_UNKNOWN', 'The collection outcome is unknown. Reconcile it before collecting again.') : apiError(error)); }
+      finally { this.isSubmittingPayment.set(false); }
+      return;
+    }
     if (this.selectedInvoiceId === null || this.isSubmittingPayment()) return;
     this.isSubmittingPayment.set(true);this.paymentError.set('');
     const amount=this.amountToCollect, id=Number(this.selectedInvoiceId), method=this.selectedPaymentMethod;
@@ -205,6 +227,7 @@ export class BillingComponent implements OnInit {
     this.showPaymentModal=false;this.selectedInvoiceId=null;this.amountToCollect=0;
     this.messageService.add({severity:'success',summary:this.locale.text('PAYMENT_RECORDED','Payment Recorded'),detail:this.locale.text('PAYMENT_SAVED_REFRESH_SEPARATE','Payment saved. Verify the refreshed balance before collecting again.')});
     this.billingService.getInvoices();
+    this.refreshAccounts();
   }
 
   async updateInvoiceStatus(invoiceId: number|string, status: string|number) {

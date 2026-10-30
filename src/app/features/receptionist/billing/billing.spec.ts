@@ -22,7 +22,7 @@ describe('Billing component with backend invoice data',()=>{
   it('opens saved invoice details using the actual remaining balance without defaulting a payment method',()=>{
     component.openPaymentModal(11);http.expectOne(environment.apiUrl+'/Billing/invoices/11/payments').flush([]);
     expect(component.amountToCollect).toBe(150);expect(component.selectedPaymentMethod).toBe('');
-    expect(component.paymentMethods).toEqual([]);expect(component.showPaymentModal).toBe(true);
+    expect(component.paymentMethods).toEqual(['Cash','Visa','EWallet','BankTransfer']);expect(component.showPaymentModal).toBe(true);
   });
   it('shows history failures independently of invoice details',()=>{
     component.openPaymentModal(11);http.expectOne(environment.apiUrl+'/Billing/invoices/11/payments').flush({}, {status:403,statusText:'Forbidden'});
@@ -32,9 +32,10 @@ describe('Billing component with backend invoice data',()=>{
     expect(component.totalRevenue()).toBe(50);expect(component.pendingPaymentsTotal()).toBe(150);
     expect(component.cashCollectedToday()).toBeNull();expect(component.digitalCollectedToday()).toBeNull();
   });
-  it('does not create installment invoices or locally adjust patient debt',async()=>{
-    await component.confirmInstallmentCollection();
-    expect(component.paymentError()).toContain('Installment');http.expectNone(environment.apiUrl+'/Billing/invoices');
+  it('opens a saved installment account without inventing a payment or a payment method',()=>{
+    component.openAccountPayment({key:'saved-account',patientId:1,patientName:'Patient',pricingMode:'Package',totalAmount:500,discount:0,patientAmount:500,insuranceAmount:0,paidAmount:100,remainingAmount:400,invoiceIds:[11],installments:[{dueDate:'2030-01-01',amount:400}]});
+    expect(component.selectedAccountKey).toBe('saved-account');expect(component.amountToCollect).toBe(400);expect(component.selectedPaymentMethod).toBe('');
+    http.expectNone(request=>request.method==='POST');
   });
   it('gives an unknown numeric invoice status a neutral presentation',()=>{
     expect(component.getStatusSeverity(57)).toBe('secondary');expect(component.getStatusSeverity('Paid')).toBe('success');

@@ -31,14 +31,16 @@ export class PatientService {
       avatar: data.fullName?.split(/\s+/).map(n => n[0]).join('').slice(0, 2).toUpperCase() || '',
       phone: data.phoneNumber, birthDate: data.birthDate, email: data.email,
       emergencyContact: data.emergencyContact,
-      gender: data.gender === 1 ? 'Female' : 'Male',
+      gender: data.gender === 1 || data.gender === 'Female' ? 'Female' : 'Male',
       paymentType: data.paymentType ?? null,
       // PatientResponse has neither lastVisit nor document checklist flags.
       lastVisit: '', documentsKnown: false, documents: { medicalConsent: false, liabilityWaiver: false, idCard: false },
       insuranceCompanyId: data.insuranceCompanyId == null ? null : Number(data.insuranceCompanyId),
       insuranceCompanyName: data.insuranceCompanyName,
       insuranceDetails: details ? {
-        company: data.insuranceCompanyName ?? '', status: 'Unknown', apiStatus: details.status,
+        company: data.insuranceCompanyName ?? '',
+        status: details.status === 0 || details.status === 'Approved' ? 'Approved' : details.status === 1 || details.status === 'Pending' ? 'Pending' : details.status === 2 || details.status === 'Rejected' ? 'Rejected' : details.status === 3 || details.status === 'Expired' ? 'Expired' : 'Unknown',
+        apiStatus: typeof details.status === 'string' ? ({ Approved: 0, Pending: 1, Rejected: 2, Expired: 3 })[details.status] : details.status,
         copayPercentage: details.copayPercentage == null ? undefined : Number(details.copayPercentage),
         approvedSessions: details.approvedSessions == null ? undefined : Number(details.approvedSessions),
         memberId: details.memberId ?? undefined, employer: details.employer ?? undefined

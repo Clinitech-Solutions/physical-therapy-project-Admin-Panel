@@ -63,7 +63,7 @@ describe('Patient profile coverage and empty history', () => {
   };
   const flushHistory = () => {
     http.expectOne(`${url}/Assessments/GetAll?patientId=1`).flush([]);
-    http.expectOne(`${url}/TreatmentPlans/GetAll`).flush([]);
+    http.expectOne(`${url}/TreatmentPlans/GetAll?patientId=1`).flush([]);
     http.expectNone(`${url}/TreatmentPlanSessions/GetAll`);
     http.expectOne(request => request.url.endsWith('/Appointments/GetAll'))
       .flush({ items: [], pageNumber: 1, totalPages: 1, hasNextPage: false });
@@ -162,7 +162,7 @@ describe('Patient profile coverage and empty history', () => {
     open();
     http.expectOne(`${url}/Patients/GetById/1`).flush(response);
     http.expectOne(`${url}/Assessments/GetAll?patientId=1`).flush({}, { status: 404, statusText: 'Not Found' });
-    http.expectOne(`${url}/TreatmentPlans/GetAll`).flush([]);
+    http.expectOne(`${url}/TreatmentPlans/GetAll?patientId=1`).flush([]);
     http.expectOne(request => request.url.endsWith('/Appointments/GetAll')).flush({ items: [], pageNumber: 1, totalPages: 1, hasNextPage: false });
     http.expectOne(`${url}/Billing/invoices`).flush([]);
     await fixture.whenStable();

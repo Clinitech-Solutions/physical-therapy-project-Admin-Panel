@@ -62,14 +62,14 @@ describe('Reception refresh and concurrent reads',()=>{
   it('keeps successful clinical sources while exposing an independent authorization failure',()=>{
     const clinical=TestBed.inject(ClinicalRecordsService);clinical.load(1);
     http.expectOne(`${url}/Assessments/GetAll?patientId=1`).flush({}, {status:403,statusText:'Forbidden'});
-    http.expectOne(`${url}/TreatmentPlans/GetAll`).flush([]);
+    http.expectOne(`${url}/TreatmentPlans/GetAll?patientId=1`).flush([]);
     http.expectNone(`${url}/TreatmentPlanSessions/GetAll`);
     expect(clinical.error()).toBeTruthy();expect(clinical.loading()).toBe(false);
   });
   it('treats a patient with no treatment plan as an empty history without requesting sessions',()=>{
     const clinical=TestBed.inject(ClinicalRecordsService);clinical.load(1);
     http.expectOne(`${url}/Assessments/GetAll?patientId=1`).flush([]);
-    http.expectOne(`${url}/TreatmentPlans/GetAll`).flush([]);
+    http.expectOne(`${url}/TreatmentPlans/GetAll?patientId=1`).flush([]);
     http.expectNone(`${url}/TreatmentPlanSessions/GetAll`);
     expect(clinical.sessions()).toEqual([]);expect(clinical.plansForPatient(1)).toEqual([]);
     expect(clinical.error()).toBeNull();expect(clinical.loading()).toBe(false);
@@ -78,26 +78,26 @@ describe('Reception refresh and concurrent reads',()=>{
     const clinical=TestBed.inject(ClinicalRecordsService);clinical.load(1);
     http.expectNone(`${url}/TreatmentPlanSessions/GetAll`);
     http.expectOne(`${url}/Assessments/GetAll?patientId=1`).flush([{id:1,patientId:1,seniorId:'senior-guid',status:0}]);
-    http.expectOne(`${url}/TreatmentPlans/GetAll`).flush([{id:5,assessmentId:1,doctorId:'doctor-guid',numberOfSessions:10,completedSessions:0,progressPercentage:0,frequencyPerWeek:2,status:0}]);
+    http.expectOne(`${url}/TreatmentPlans/GetAll?patientId=1`).flush([{id:5,assessmentId:1,doctorId:'doctor-guid',numberOfSessions:10,completedSessions:0,progressPercentage:0,frequencyPerWeek:2,status:0}]);
     expect(clinical.loading()).toBe(true);
-    http.expectOne(`${url}/TreatmentPlanSessions/GetAll`).flush({title:'Not Found'}, {status:404,statusText:'Not Found'});
+    http.expectOne(`${url}/TreatmentPlanSessions/GetAll?treatmentPlanId=5`).flush({title:'Not Found'}, {status:404,statusText:'Not Found'});
     expect(clinical.plansForPatient(1)[0].id).toBe(5);
     expect(clinical.error()).toContain('Not Found');expect(clinical.loading()).toBe(false);
   });
   it('does not request sessions for a treatment plan belonging to another patient',()=>{
     const clinical=TestBed.inject(ClinicalRecordsService);clinical.load(1);
     http.expectOne(`${url}/Assessments/GetAll?patientId=1`).flush([]);
-    http.expectOne(`${url}/TreatmentPlans/GetAll`).flush([{id:5,assessmentId:2,doctorId:'doctor-guid',numberOfSessions:10,completedSessions:0,progressPercentage:0,frequencyPerWeek:2,status:0}]);
+    http.expectOne(`${url}/TreatmentPlans/GetAll?patientId=1`).flush([{id:5,assessmentId:2,doctorId:'doctor-guid',numberOfSessions:10,completedSessions:0,progressPercentage:0,frequencyPerWeek:2,status:0}]);
     http.expectNone(`${url}/TreatmentPlanSessions/GetAll`);
     expect(clinical.error()).toBeNull();expect(clinical.loading()).toBe(false);
   });
   it('does not load sessions or replace history for an older patient refresh',()=>{
     const clinical=TestBed.inject(ClinicalRecordsService);clinical.load(1);
     const oldAssessments=http.expectOne(`${url}/Assessments/GetAll?patientId=1`);
-    const oldPlans=http.expectOne(`${url}/TreatmentPlans/GetAll`);
+    const oldPlans=http.expectOne(`${url}/TreatmentPlans/GetAll?patientId=1`);
     clinical.load(2);
     http.expectOne(`${url}/Assessments/GetAll?patientId=2`).flush([]);
-    http.expectOne(`${url}/TreatmentPlans/GetAll`).flush([]);
+    http.expectOne(`${url}/TreatmentPlans/GetAll?patientId=2`).flush([]);
     oldAssessments.flush([{id:1,patientId:1,seniorId:'senior-guid',status:0}]);
     oldPlans.flush([{id:5,assessmentId:1,doctorId:'doctor-guid',numberOfSessions:10,completedSessions:0,progressPercentage:0,frequencyPerWeek:2,status:0}]);
     http.expectNone(`${url}/TreatmentPlanSessions/GetAll`);

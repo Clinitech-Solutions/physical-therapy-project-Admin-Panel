@@ -1,137 +1,70 @@
 import { Component, inject, computed, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
-import { ClinicStateService } from '../../../core/services/state/clinic-state.service';
 import { MessageService } from 'primeng/api';
+import { firstValueFrom } from 'rxjs';
+import { BookingService } from '../../../core/services/booking.service';
+import { PatientService } from '../../../core/services/patient.service';
+import { BookingClinician } from '../../../core/models/booking.model';
+import { apiError, numericId } from '../../../core/services/reception-api';
+import { ReceptionistLocale } from '../../../shared/receptionist-locale';
 
 @Component({
-  selector: 'app-assessment-form',
-  standalone: true,
+  selector: 'app-assessment-form', standalone: true,
   imports: [CommonModule, ReactiveFormsModule, TranslateModule],
-  templateUrl: './assessment-form.html',
-  styleUrl: './assessment-form.css',
+  templateUrl: './assessment-form.html', styleUrl: './assessment-form.css',
 })
 export class AssessmentForm implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private fb = inject(FormBuilder);
-  private clinicState = inject(ClinicStateService);
-  private messageService = inject(MessageService);
-
-  patientId = signal<string>('');
-  sessionId = signal<string>('');
-
-  form: FormGroup = this.fb.group({
-    diagnosis: ['', Validators.required],
-    totalSessions: [1, [Validators.required, Validators.min(1)]],
-    frequency: ['', Validators.required],
-    assignedDoctorId: ['', Validators.required],
-    exercises: ['']
-  });
-
-  // Derived state for the patient
-  patient = computed(() => {
-    const pId = this.patientId();
-    return this.clinicState.patients().find(p => p.id === pId);
-  });
-
-  // Smart doctor selection list
-  smartDoctors = computed(() => {
-    const p = this.patient();
-    if (!p) return [];
-
-    const doctors = this.clinicState.doctors();
-    const availability = this.clinicState.doctorAvailability();
-
-    return doctors.map(doc => {
-      const avail = availability.find(a => a.doctorId === doc.id);
-      const currentLoad = avail?.currentLoad || 0;
-      
-      const isGenderMatch = doc.gender === p.gender;
-      const isAvailable = currentLoad < 2; // Threshold for availability
-      const isRecommended = isGenderMatch && isAvailable;
-
-      return {
-        ...doc,
-        currentLoad,
-        isGenderMatch,
-        isRecommended
-      };
-    }).sort((a, b) => {
-      // Sort recommended to top
-      if (a.isRecommended && !b.isRecommended) return -1;
-      if (!a.isRecommended && b.isRecommended) return 1;
-      // Then by load
-      return a.currentLoad - b.currentLoad;
-    });
-  });
-
-  // Derived age from DOB if available
+  private booking = inject(BookingService);
+  private patients = inject(PatientService);
+  private messages = inject(MessageService);
+  readonly locale = new ReceptionistLocale();
+  patientId = signal(''); sessionId = signal('');
+  readonly loading = signal(false); readonly saving = signal(false); readonly error = signal('');
+  readonly eligibleDoctors = signal<BookingClinician[]>([]);
+  private generation = 0;
+  form = this.fb.group({ diagnosis: ['', Validators.required], totalSessions: [1, [Validators.required, Validators.min(1), Validators.max(200)]],
+    frequency: ['', Validators.required], assignedDoctorId: ['', Validators.required], exercises: [''] });
+  patient = computed(() => this.patients.patients().find(p => p.id === this.patientId()));
+  smartDoctors = computed(() => this.eligibleDoctors().map(d => ({ ...d, isGenderMatch: true, isRecommended: d.preferred || d.currentLoad === 0 })));
   patientAge = computed(() => {
-    return '--'; // dob is not available on Patient interface in this app version
+    const birth = this.patient()?.birthDate; if (!birth) return '-';
+    const date = new Date(birth), now = new Date(); if (!Number.isFinite(date.getTime())) return '-';
+    return String(now.getFullYear() - date.getFullYear() - (now.getMonth() < date.getMonth() || now.getMonth() === date.getMonth() && now.getDate() < date.getDate() ? 1 : 0));
   });
-
   ngOnInit() {
     this.route.queryParams.subscribe(params => {
-      this.patientId.set(params['patientId'] || '');
-      this.sessionId.set(params['sessionId'] || '');
+      this.patientId.set(params['patientId'] || ''); this.sessionId.set(params['sessionId'] || '');
+      void this.load();
     });
   }
-
-  submit() {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
-    }
-
-    const val = this.form.value;
-    const pId = this.patientId();
-    const sId = this.sessionId();
-    const currentPatient = this.patient();
-
-    // 1. Update Patient Profile (treatment plan & primary doctor)
-    if (currentPatient) {
-      const updatedPatient = {
-        ...currentPatient,
-        assignedDoctorId: val.assignedDoctorId,
-        treatmentPlan: {
-          ...currentPatient.treatmentPlan,
-          primaryDoctorId: val.assignedDoctorId,
-          diagnosis: val.diagnosis,
-          totalSessions: val.totalSessions,
-          sessionsCompleted: 0
-        }
-      };
-      this.clinicState.updatePatient(currentPatient.id, updatedPatient);
-    }
-
-    // 2. Mark the Assessment Session as Completed
-    if (sId) {
-      const session = this.clinicState.sessions().find(s => s.id === sId);
-      if (session) {
-        this.clinicState.updateSessionStatus(sId, 'Completed');
-      }
-    }
-
-    // 3. Success Feedback
-    this.messageService.add({ 
-      severity: 'success', 
-      summary: 'Success', 
-      detail: 'Assessment recorded & Treatment Plan initialized.' 
-    });
-
-    // 4. Navigate back to dashboard
-    this.router.navigate(['/senior/dashboard']);
+  private async load() {
+    const generation = ++this.generation; this.loading.set(true); this.error.set('');
+    try {
+      const id = numericId(this.patientId()); numericId(this.sessionId());
+      const [, clinicians] = await Promise.all([firstValueFrom(this.patients.getPatientById(id)), firstValueFrom(this.booking.clinicians(id, null, true))]);
+      if (generation === this.generation) this.eligibleDoctors.set(clinicians);
+    } catch (error) { if (generation === this.generation) this.error.set(apiError(error)); }
+    finally { if (generation === this.generation) this.loading.set(false); }
   }
-
-  selectDoctorFromList(doctorId: string): void {
-    this.form.patchValue({ assignedDoctorId: doctorId });
-    this.messageService.add({ 
-      severity: 'info', 
-      summary: 'Doctor Selected', 
-      detail: 'The selected doctor has been assigned to the treatment plan.' 
-    });
+  async submit() {
+    if (this.form.invalid || this.saving() || this.loading()) { this.form.markAllAsTouched(); return; }
+    this.saving.set(true); this.error.set('');
+    try {
+      const value = this.form.getRawValue();
+      const frequency = ({ 'Daily': 7, 'Twice a week': 2, 'Three times a week': 3, 'Once a week': 1 } as Record<string, number>)[value.frequency ?? ''];
+      await firstValueFrom(this.booking.completeAssessment({ appointmentId: numericId(this.sessionId()), diagnosis: value.diagnosis ?? '',
+        numberOfSessions: Number(value.totalSessions), frequencyPerWeek: frequency, doctorId: value.assignedDoctorId ?? '',
+        treatmentType: 'PhysicalTherapy', exercises: value.exercises || null }));
+      this.messages.add({ severity: 'success', summary: this.locale.text('SUCCESS', 'Success'), detail: this.locale.text('ASSESSMENT_SAVED', 'Assessment completed and treatment plan saved.') });
+      await this.router.navigate(['/senior/dashboard']);
+    } catch (error) { this.error.set(apiError(error)); }
+    finally { this.saving.set(false); }
   }
+  selectDoctorFromList(id: string) { this.form.patchValue({ assignedDoctorId: id }); }
 }

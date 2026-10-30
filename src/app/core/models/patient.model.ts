@@ -3,7 +3,7 @@ export type PaymentMethod = 'Cash' | 'Online' | 'Insurance' | 'Card' | 'InstaPay
 
 export interface InsuranceDetails {
   company: string;
-  status: 'Pending' | 'Approved' | 'Unknown';
+  status: 'Pending' | 'Approved' | 'Rejected' | 'Expired' | 'Unknown';
   /** Preserve the server enum until its numeric labels are documented. */
   apiStatus?: number | null;
   copayPercentage?: number;

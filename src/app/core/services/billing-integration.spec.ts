@@ -23,7 +23,7 @@ describe('Reception billing and profile persistence',()=>{
     ]});
     http=TestBed.inject(HttpTestingController);billing=TestBed.inject(BillingService);
   });
-  afterEach(()=>http.verify());
+  afterEach(()=>{http.verify();sessionStorage.removeItem('ptcenter.pending-invoice-payment-keys');});
   it('preserves documented paid and remaining amounts without inferring status or daily collections',()=>{
     const invoice=billing.normalizeInvoice(invoiceFixture);billing.invoices.set([invoice]);
     expect(invoice.paidAmount).toBe(50);expect(invoice.remainingBalance).toBe(150);
@@ -39,7 +39,7 @@ describe('Reception billing and profile persistence',()=>{
   it('posts a payment only against a real saved invoice, then requires balance reconciliation',async()=>{
     billing.invoices.set([billing.normalizeInvoice(invoiceFixture)]);
     const result=firstValueFrom(billing.recordPayment({invoiceId:11,amount:40,method:27}));
-    const req=http.expectOne(`${url}/Billing/payments`);expect(req.request.body).toEqual({invoiceId:11,amount:40,method:27});req.flush(null);await result;
+    const req=http.expectOne(`${url}/Billing/payments`);expect(req.request.body).toMatchObject({invoiceId:11,amount:40,method:27});expect(req.request.body.idempotencyKey).toBeTruthy();req.flush({id:1,invoiceId:11,amount:40,paymentMethod:27});await result;
     expect(billing.invoices()[0].paidAmount).toBe(50); // no optimistic financial mutation
     await expect(firstValueFrom(billing.recordPayment({invoiceId:11,amount:40,method:27}))).rejects.toThrow('Verify');
     billing.getInvoices();http.expectOne(`${url}/Billing/invoices`).flush([{...invoiceFixture,paidAmount:90,remainingAmount:110}]);
@@ -51,6 +51,16 @@ describe('Reception billing and profile persistence',()=>{
     http.expectOne(`${url}/Billing/payments`).error(new ProgressEvent('error'));await rejected;
     expect(billing.mutation.uncertain()).toBe(true);
     await expect(firstValueFrom(billing.recordPayment({invoiceId:11,amount:40,method:27}))).rejects.toThrow('previous operation');
+  });
+  it('makes an uncertain fully collected invoice reachable for history reconciliation',async()=>{
+    billing.invoices.set([billing.normalizeInvoice(invoiceFixture)]);
+    const pending=firstValueFrom(billing.recordPayment({invoiceId:11,amount:150,method:27})).catch(error=>error);
+    const request=http.expectOne(`${url}/Billing/payments`);const key=request.request.body.idempotencyKey;
+    request.error(new ProgressEvent('error'));await pending;expect(billing.unresolvedInvoicePaymentIds).toEqual([11]);
+    const history=firstValueFrom(billing.getPaymentsForInvoice(11));
+    http.expectOne(`${url}/Billing/invoices/11/payments`).flush([{id:1,invoiceId:11,amount:150,paymentMethod:27,idempotencyKey:`invoice:11:${key}`}]);
+    http.expectOne(`${url}/Billing/invoices`).flush([{...invoiceFixture,paidAmount:200,remainingAmount:0}]);await history;
+    expect(billing.unresolvedInvoicePaymentIds).toEqual([]);expect(billing.mutation.uncertain()).toBe(false);
   });
   it.each([0,NaN,151,1000000000])('rejects invalid or excessive payment %s before HTTP',async amount=>{
     billing.invoices.set([billing.normalizeInvoice(invoiceFixture)]);

@@ -158,6 +158,7 @@
           name="paymentType"
           class="form-select form-select-sm"
           [(ngModel)]="draft.paymentType"
+          (ngModelChange)="paymentTypeChanged()"
           [ngModelOptions]="{standalone: true}"
         >
           <option [ngValue]="null">{{ 'RECEPTIONIST.UI.NOT_SET' | translate }}</option>

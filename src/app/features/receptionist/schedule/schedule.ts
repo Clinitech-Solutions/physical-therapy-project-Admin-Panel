@@ -55,7 +55,7 @@ export interface ScheduleRoomOption {
     PatientProfileComponent
   ],
   templateUrl: './schedule.html',
-  styleUrls: ['./schedule.css']
+  styleUrls: ['./schedule.css', './schedule-timeline.css', './schedule-session-cards.css']
 })
 export class ScheduleComponent implements OnInit {
   readonly locale = new ReceptionistLocale();
@@ -75,7 +75,10 @@ export class ScheduleComponent implements OnInit {
   readonly editingAppointment = signal<Appointment | null>(null);
   readonly editingLoading = signal(false);
   editStart = '';
-  editEnd = '';
+  get editEnd(): string {
+    const start = new Date(this.editStart);
+    return Number.isFinite(start.getTime()) ? new Date(start.getTime() + 3600000).toISOString() : '';
+  }
   editClinicianId = '';
   editRoomId: number | null = null;
   get editVisible() { return this.editingAppointment() !== null; }
@@ -92,7 +95,7 @@ export class ScheduleComponent implements OnInit {
         const date = new Date(value);
         return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}T${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
       };
-      this.editStart = local(appointment.startTime); this.editEnd = local(appointment.endTime);
+      this.editStart = local(appointment.startTime);
       this.editClinicianId = appointment.doctorId ?? appointment.seniorId ?? '';
       this.editRoomId = appointment.roomId ?? null; this.editingAppointment.set(appointment);
     } catch (error) { this.actionError.set(error instanceof ReceptionError ? this.locale.text(error.key,error.message) : apiError(error)); }

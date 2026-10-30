@@ -1,192 +1,67 @@
-import { Component, inject, computed, signal } from '@angular/core';
+import { Component, inject, computed, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
-import { ClinicStateService } from '../../../core/services/state/clinic-state.service';
+import { firstValueFrom } from 'rxjs';
+import { AppointmentService } from '../../../core/services/appointment.service';
+import { AppointmentWorkflowService } from '../../../core/services/appointment-workflow.service';
+import { BookingService } from '../../../core/services/booking.service';
+import { BookingClinician } from '../../../core/models/booking.model';
+import { AuthService } from '../../../core/services/auth';
+import { ReceptionContracts } from '../../../core/services/reception-contracts';
+import { apiError, localDay, numericId } from '../../../core/services/reception-api';
+import { ReceptionistLocale, ReceptionistTextPipe } from '../../../shared/receptionist-locale';
 
-/**
- * LiveDashboard — Senior Therapist's real-time operational view.
- *
- * Architecture:
- *  - NO isolated mock data or feature-level services.
- *  - All data is derived as computed() signals from the global ClinicStateService.
- *  - The component is a pure "View" layer over the shared clinic state.
- */
-@Component({
-  selector: 'app-live-dashboard',
-  standalone: true,
-  imports: [CommonModule, TranslateModule],
-  templateUrl: './live-dashboard.html',
-  styleUrl: './live-dashboard.css',
-})
-export class LiveDashboard {
-  private clinicState = inject(ClinicStateService);
+@Component({ selector: 'app-live-dashboard', standalone: true,
+  imports: [CommonModule, TranslateModule, ReceptionistTextPipe], templateUrl: './live-dashboard.html', styleUrl: './live-dashboard.css' })
+export class LiveDashboard implements OnInit {
+  private appointments = inject(AppointmentService);
+  private workflow = inject(AppointmentWorkflowService);
+  private booking = inject(BookingService);
+  private auth = inject(AuthService);
+  private contracts = inject(ReceptionContracts);
   private router = inject(Router);
-
-  // ── Tab State ──────────────────────────────────────────────
+  readonly locale = new ReceptionistLocale();
+  readonly error = signal(''); readonly busy = signal(false); readonly doctors = signal<BookingClinician[]>([]);
+  readonly loading = this.appointments.loading;
   activeTab = signal<'assessments' | 'reassessments'>('assessments');
-
-  // ── Helper: today's date string (YYYY-MM-DD) ──────────────
-  private todayString = computed(() => {
-    const now = new Date();
-    const pad = (n: number) => n.toString().padStart(2, '0');
-    return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-  });
-
-  // ── Business Rule 1: Today's Assessments ──────────────────
-  // New patients who have their first-ever Assessment today and it's not yet completed.
-  todayAssessments = computed(() => {
-    const today = this.todayString();
-    const sessions = this.clinicState.sessions();
-    const patients = this.clinicState.patients();
-
-    return sessions
-      .filter(s => {
-        if (s.type !== 'Assessment') return false;
-        if (s.status === 'Completed' || s.status === 'Cancelled') return false;
-        if (!s.scheduledAt) return false;
-        return s.scheduledAt.startsWith(today);
-      })
-      .map(s => {
-        const patient = patients.find(p => p.id === s.patientId);
-        return {
-          sessionId: s.id,
-          patientId: s.patientId,
-          patientName: patient?.nameEn ?? 'Unknown Patient',
-          avatarInitials: patient?.avatar ?? '??',
-          scheduledTime: this.formatTime(s.scheduledAt!),
-          status: s.status,
-          doctorName: this.clinicState.getDoctorName(s.doctorId),
-          type: 'Assessment' as const,
-        };
-      });
-  });
-
-  // ── Business Rule 1b: Today's Re-Assessments ─────────────
-  // strictly fetches Re-Assessment tasks.
-  todayReassessments = computed(() => {
-    const today = this.todayString();
-    const sessions = this.clinicState.sessions();
-    const patients = this.clinicState.patients();
-
-    return sessions
-      .filter(s => {
-        if (s.type !== 'Re-Assessment') return false;
-        if (s.status === 'Completed' || s.status === 'Cancelled') return false;
-        if (!s.scheduledAt) return false;
-        return s.scheduledAt.startsWith(today);
-      })
-      .map(s => {
-        const patient = patients.find(p => p.id === s.patientId);
-        return {
-          sessionId: s.id,
-          patientId: s.patientId,
-          patientName: patient?.nameEn ?? 'Unknown Patient',
-          avatarInitials: patient?.avatar ?? '??',
-          scheduledTime: this.formatTime(s.scheduledAt!),
-          status: s.status,
-          doctorName: this.clinicState.getDoctorName(s.doctorId),
-          sessionBadge: this.clinicState.getSessionBadge(s),
-          type: 'Re-Assessment' as const,
-        };
-      });
-  });
-
-  // ── KPI Counts ─────────────────────────────────────────────
+  ngOnInit() {
+    this.appointments.getAppointments({ date: new Date().toISOString() });
+    this.booking.workload().subscribe({ next: doctors => this.doctors.set(doctors), error: error => this.error.set(apiError(error)) });
+  }
+  private tasks(type: string) {
+    const user = this.auth.currentUser();
+    const supervisor = user?.roles.some(r => r === 'Ceo');
+    return this.appointments.appointments().filter(a => a.appointmentType === type && !a.assessmentCompleted && localDay(a.startTime) === localDay(new Date()) &&
+      (supervisor || a.seniorId === user?.id) && ['Pending', 'In Progress'].includes(this.contracts.label('appointmentStatus', a.status)))
+      .map(a => ({ sessionId: String(a.id), patientId: String(a.patientId), patientName: a.patientName ?? '',
+        avatarInitials: (a.patientName ?? '').split(/\s+/).map(n => n[0]).join('').slice(0, 2),
+        scheduledTime: new Date(a.startTime).toLocaleTimeString(this.locale.language, { hour: '2-digit', minute: '2-digit' }),
+        status: this.contracts.label('appointmentStatus', a.status), doctorName: a.doctorName ?? '',
+        sessionBadge: '', type: type as 'Assessment' | 'Re-Assessment' }));
+  }
+  todayAssessments = computed(() => this.tasks('Assessment'));
+  todayReassessments = computed(() => this.tasks('Re-Assessment'));
   assessmentCount = computed(() => this.todayAssessments().length);
   reassessmentCount = computed(() => this.todayReassessments().length);
   totalPendingTasks = computed(() => this.assessmentCount() + this.reassessmentCount());
-
-  // ── Active Tab Tasks (what the template iterates over) ─────
-  activeTasks = computed(() => {
-    return this.activeTab() === 'assessments'
-      ? this.todayAssessments()
-      : this.todayReassessments();
-  });
-
-  // ── Business Rule 2: Doctor Workload (Live View Capacity) ──
-  activeDoctorsWorkload = computed(() => {
-    const availability = this.clinicState.doctorAvailability();
-    const doctors = this.clinicState.doctors();
-
-    return availability.map(a => {
-      const doctor = doctors.find(d => d.id === a.doctorId);
-      const maxLoad = 2; // Clinic policy: max 2 concurrent patients per doctor
-
-      // Dynamic border color based on current load
-      let borderColor: string;
-      let loadClass: string;
-      if (a.currentLoad === 0) {
-        borderColor = 'var(--mq-teal)';
-        loadClass = 'load-0';
-      } else if (a.currentLoad === 1) {
-        borderColor = 'var(--color-warning)';
-        loadClass = 'load-1';
-      } else {
-        borderColor = 'var(--color-danger)';
-        loadClass = 'load-2';
-      }
-
-      return {
-        doctorId: a.doctorId,
-        name: doctor?.name ?? 'Unknown Doctor',
-        currentLoad: a.currentLoad,
-        maxLoad,
-        borderColor,
-        loadClass,
-        roomId: a.roomId,
-        roomName: this.clinicState.getRoomName(a.roomId),
-      };
-    });
-  });
-
-  // ── KPI: Available / Busy / Full doctors ───────────────────
-  availableDoctorsCount = computed(() =>
-    this.activeDoctorsWorkload().filter(d => d.currentLoad === 0).length
-  );
-  busyDoctorsCount = computed(() =>
-    this.activeDoctorsWorkload().filter(d => d.currentLoad > 0).length
-  );
-
-  // ── Tab Switching ──────────────────────────────────────────
-  switchTab(tab: 'assessments' | 'reassessments'): void {
-    this.activeTab.set(tab);
+  activeTasks = computed(() => this.activeTab() === 'assessments' ? this.todayAssessments() : this.todayReassessments());
+  activeDoctorsWorkload = computed(() => this.doctors().map(d => ({ doctorId: d.id, name: d.name, currentLoad: d.currentLoad,
+    maxLoad: 1, borderColor: d.currentLoad === 0 ? 'var(--mq-teal)' : 'var(--color-warning)', loadClass: d.currentLoad === 0 ? 'load-0' : 'load-2', roomId: null })));
+  availableDoctorsCount = computed(() => this.activeDoctorsWorkload().filter(d => d.currentLoad === 0).length);
+  busyDoctorsCount = computed(() => this.activeDoctorsWorkload().filter(d => d.currentLoad > 0).length);
+  switchTab(tab: 'assessments' | 'reassessments') { this.activeTab.set(tab); }
+  async startTask(task: { sessionId: string; patientId: string; type: 'Assessment' | 'Re-Assessment' }) {
+    if (this.busy()) return;
+    this.busy.set(true); this.error.set('');
+    try {
+      const appointment = this.appointments.appointments().find(a => String(a.id) === task.sessionId);
+      if (!appointment) throw new Error(this.locale.text('APPOINTMENT_NOT_FOUND', 'Appointment was not found.'));
+      if (this.contracts.label('appointmentStatus', appointment.status) === 'Pending') await firstValueFrom(this.workflow.transition(numericId(task.sessionId), 'In Progress'));
+      await this.router.navigate([task.type === 'Assessment' ? '/senior/assessment-form' : '/senior/re-assessment-form'],
+        { queryParams: { patientId: task.patientId, sessionId: task.sessionId } });
+    } catch (error) { this.error.set(apiError(error)); }
+    finally { this.busy.set(false); }
   }
-
-  // ── Business Rule 3: Start Assessment → Navigate ──────────
-  startTask(task: { sessionId: string; patientId: string; type: 'Assessment' | 'Re-Assessment' }): void {
-    const route = task.type === 'Assessment'
-      ? '/senior/assessment-form'
-      : '/senior/re-assessment-form';
-
-    this.router.navigate([route], {
-      queryParams: {
-        patientId: task.patientId,
-        sessionId: task.sessionId,
-      },
-    });
-  }
-
-  // ── Utility: Format ISO time to HH:MM AM/PM ──────────────
-  private formatTime(isoString: string): string {
-    const date = new Date(isoString);
-    if (isNaN(date.getTime())) return '--:--';
-    const hours = date.getHours();
-    const minutes = date.getMinutes();
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    const displayHour = hours % 12 || 12;
-    return `${displayHour}:${minutes.toString().padStart(2, '0')} ${ampm}`;
-  }
-
-  // ── Status badge class mapping ─────────────────────────────
-  getStatusBadgeClass(status: string): string {
-    switch (status) {
-      case 'In Progress': return 'badge-info';
-      case 'Confirmed': return 'badge-success';
-      case 'Pending': return 'badge-warning';
-      case 'Completed': return 'badge-success';
-      case 'Cancelled': return 'badge-danger';
-      default: return 'badge-neutral';
-    }
-  }
+  getStatusBadgeClass(status: string) { return status === 'In Progress' ? 'badge-info' : 'badge-warning'; }
 }

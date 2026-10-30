@@ -1,3 +1,5 @@
+@if (error()) { <p class="alert alert-warning" role="alert">{{ error() }}</p> }
+@if (loading()) { <p role="status">{{ 'RECEPTIONIST.PROCESSING' | translate }}</p> }
 <!-- ═══════════════════════════════════════════════════════════
      Senior Therapist — Live Dashboard
      Reactive view over ClinicStateService (Signals)
@@ -96,8 +98,8 @@
               </div>
             </div>
             <div class="flex items-center gap-2">
-              <span class="badge" [ngClass]="getStatusBadgeClass(task.status)">{{ 'COMMON.' + (task.status | uppercase) | translate }}</span>
-              <button class="btn btn-primary btn-sm" (click)="startTask(task)">
+              <span class="badge" [ngClass]="getStatusBadgeClass(task.status)">{{ task.status | receptionistText }}</span>
+              <button class="btn btn-primary btn-sm" (click)="startTask(task)" [disabled]="busy()">
                 <i class="bi bi-play-fill"></i> {{ 'COMMON.START' | translate }}
               </button>
             </div>
@@ -125,7 +127,7 @@
             <div class="load-bar" [ngClass]="doctor.loadClass">
               <div class="load-bar-fill"></div>
             </div>
-            @if (doctor.currentLoad > 0) {
+            @if (doctor.roomId) {
               <div class="doctor-room-tag">
                 <i class="bi bi-door-open"></i> {{ 'COMMON.ROOM' | translate }} {{ doctor.roomId }}
               </div>

@@ -1,3 +1,5 @@
+import { BookingService } from '../../../core/services/booking.service';
+import { BookingContext, BookingPreview, BookingReceipt, BookingRequest, BookingPaymentMethod } from '../../../core/models/booking.model';
 import { ClinicalRecordsService } from "../../../core/services/clinical-records.service";
 import { AppointmentWorkflowService } from "../../../core/services/appointment-workflow.service";
 import { ReceptionContracts } from "../../../core/services/reception-contracts";
@@ -23,6 +25,7 @@ import { RouterModule } from "@angular/router";
 import { TranslateModule } from "@ngx-translate/core";
 import { FormsModule } from "@angular/forms";
 import { firstValueFrom } from "rxjs";
+import { HttpErrorResponse } from '@angular/common/http';
 import { MessageService } from "primeng/api";
 import { SelectModule } from "primeng/select";
 import { DatePickerModule } from "primeng/datepicker";
@@ -71,7 +74,7 @@ import { BillingService } from "../../../core/services/billing.service";
     PatientProfileComponent,
   ],
   templateUrl: "./bookings.html",
-  styleUrls: ["./bookings.css"],
+  styleUrls: ["./bookings.css", "./booking-form.css", "./booking-summary.css"],
 })
 export class BookingsComponent implements OnInit {
   readonly locale = new ReceptionistLocale();
@@ -80,16 +83,29 @@ export class BookingsComponent implements OnInit {
   contracts = inject(ReceptionContracts);
   readonly bookingBusy = signal(false);
   readonly bookingError = signal("");
-  scheduledEndDate: Date | null = null;
-  planEndTime: Date | null = null;
+  readonly bookingApi = inject(BookingService);
+  readonly bookingContext = signal<BookingContext | null>(null);
+  readonly contextLoading = signal(false);
+  readonly preview = signal<BookingPreview | null>(null);
+  readonly lastReceipt = signal<BookingReceipt | null>(null);
+  private contextGeneration = 0;
+  private clinicianGeneration = 0;
+  private previewFingerprint = '';
+  private pendingBooking: BookingRequest | null = null;
+  private recoveryEditing = false;
+  get hasUnresolvedBooking(): boolean { return !!this.bookingApi.uncertainKey() && !this.recoveryEditing; }
+  assessmentCharge: 'Free' | 'Paid' | null = null;
+  pricingMode: 'PerSession' | 'Package' = 'PerSession';
+  unitPrice: number | null = null;
+  packagePrice: number | null = null;
+  discount = 0;
+  deposit = 0;
+  paymentMethod: BookingPaymentMethod | null = null;
+  installments: { dueDate: string; amount: number | null }[] = [];
+  readonly paymentMethods: BookingPaymentMethod[] = ['Cash', 'Visa', 'EWallet', 'BankTransfer'];
+  get scheduledEndDate(): Date | null { return this.scheduledDate ? new Date(this.scheduledDate.getTime() + 3600000) : null; }
   selectedPlanId: number | null = null;
   readonly bulkProgress = signal<number[]>([]);
-  private bulkBatch:
-    | {
-        sessionId: number;
-        payload: import("../../../core/services/appointment.service").AddAppointmentPayload;
-      }[]
-    | null = null;
   messageService = inject(MessageService);
   appointmentService = inject(AppointmentService, { optional: true })!;
   patientService = inject(PatientService);
@@ -109,7 +125,8 @@ export class BookingsComponent implements OnInit {
   // Global State Signals
   appointments =
     this.appointmentService?.appointments ?? signal<Appointment[]>([]);
-  allPatients = this.patientService.patients;
+  allPatients = signal<Patient[]>([]);
+  readonly directoryLoading = signal(false);
   roomService = inject(RoomService);
   clinicianService = inject(ClinicianService);
   allDoctors = this.clinicianService.clinicians;
@@ -129,14 +146,7 @@ export class BookingsComponent implements OnInit {
     this.showProfileModal.set(true);
   }
 
-  ngOnInit() {
-    this.appointmentService?.getAppointments();
-    this.roomService.load();
-    this.clinicianService.load();
-    this.refreshPatients();
-    this.insuranceService.getCompanies();
-    this.billingService.getInvoices();
-  }
+  ngOnInit() { this.refreshPatients(); }
 
   // Unified Booking State Variables
   selectedPatientId: string = "";
@@ -147,7 +157,7 @@ export class BookingsComponent implements OnInit {
 
   // Treatment Plan State Variables
   bookingMode: "single" | "plan" = "single";
-  planSessionCount: number = 10;
+  planSessionCount: number = 1;
   planStartDate: Date | null = new Date();
   planPreferredTime: Date | null = new Date();
 
@@ -158,6 +168,7 @@ export class BookingsComponent implements OnInit {
     { label: "Tue", value: 2 },
     { label: "Wed", value: 3 },
     { label: "Thu", value: 4 },
+    { label: "Fri", value: 5 },
   ];
   get localizedWeekDays() {
     return this.weekDays.map((day) => ({
@@ -171,7 +182,7 @@ export class BookingsComponent implements OnInit {
     if (
       !this.planStartDate ||
       !Number.isInteger(this.planSessionCount) ||
-      this.planSessionCount <= 0 ||
+      this.planSessionCount <= 0 || this.planSessionCount > 200 || !this.planPreferredTime ||
       !this.selectedDays.some(
         (day) => Number.isInteger(day) && day >= 0 && day <= 6,
       ) ||
@@ -181,9 +192,12 @@ export class BookingsComponent implements OnInit {
 
     const dates: Date[] = [];
     const current = new Date(this.planStartDate);
-    const preferredTime = this.planPreferredTime || new Date();
+    const preferredTime = this.planPreferredTime;
+    if (!preferredTime || !Number.isFinite(preferredTime.getTime())) return [];
 
-    while (dates.length < this.planSessionCount) {
+    let attempts = 0;
+    while (dates.length < this.planSessionCount && attempts++ < this.planSessionCount * 7 + 7) {
+      if (!Number.isFinite(current.getTime())) return [];
       if (this.selectedDays.includes(current.getDay())) {
         const d = new Date(current);
         d.setHours(preferredTime.getHours(), preferredTime.getMinutes(), 0, 0);
@@ -191,7 +205,7 @@ export class BookingsComponent implements OnInit {
       }
       current.setDate(current.getDate() + 1);
     }
-    return dates;
+    return dates.length === this.planSessionCount ? dates : [];
   }
 
   // Status Filter State for Schedule
@@ -204,10 +218,9 @@ export class BookingsComponent implements OnInit {
   ];
 
   // Session type options
-  sessionTypeOptions: { label: string; value: SessionType }[] = [
-    { label: "Assessment", value: "Assessment" },
-    { label: "Session", value: "Session" },
-  ];
+  get sessionTypeOptions(): { label: string; value: SessionType }[] {
+    return this.bookingContext()?.hasCompletedAssessment ? [{ label: 'Session', value: 'Session' }] : [{ label: 'Assessment', value: 'Assessment' }];
+  }
 
   // Quick Add Patient Modal State
   isQuickAddModalOpen = false;
@@ -238,14 +251,15 @@ export class BookingsComponent implements OnInit {
   }
   // The clinical assessment status enum is unknown; absence of a cached session is not evidence of a new patient.
   get isNewPatient(): boolean {
-    return false;
+    return this.bookingContext()?.hasCompletedAssessment === false;
   }
   get selectedPatient(): Patient | undefined {
-    return this.allPatients().find((p) => p.id === this.selectedPatientId);
+    return this.allPatients().find((p) => p.id === this.selectedPatientId) ?? this.patientService.patients().find(p => p.id === this.selectedPatientId);
   }
   get isInsurancePending(): boolean {
-    return false;
-  } // Registration insurance status does not establish appointment eligibility.
+    const context = this.bookingContext();
+    return !!context?.hasCompletedAssessment && context.isInsurance && !context.insuranceApproved;
+  }
   get selectedDoctorName(): string {
     return (
       this.allDoctors().find((d) => d.id === this.selectedDoctorId)?.name ?? ""
@@ -258,20 +272,58 @@ export class BookingsComponent implements OnInit {
     );
   }
   get filteredDoctors(): Clinician[] {
-    return this.selectedPatient ? this.allDoctors() : [];
+    const context = this.bookingContext();
+    if (!context) return [];
+    const role = context.hasCompletedAssessment ? 'Doctor' : 'Senior';
+    return this.allDoctors().filter(d => d.gender === context.gender && d.roles.includes(role));
   }
-  get patientPlans() {
-    return this.selectedPatientId
-      ? this.clinical.plansForPatient(Number(this.selectedPatientId))
-      : [];
+  get patientPlans() { return this.bookingContext()?.plans ?? []; }
+  get chosenPlan() { return this.patientPlans.find(p => p.id === this.selectedPlanId); }
+  get isWaivedAssessment(): boolean { return this.isNewPatient && (!!this.bookingContext()?.isInsurance || this.assessmentCharge === 'Free'); }
+  setBookingMode(mode: 'single' | 'plan') {
+    if (this.bookingBusy() || this.hasUnresolvedBooking) return;
+    this.bookingMode = mode === 'plan' && this.bookingContext()?.hasCompletedAssessment ? 'plan' : 'single';
+    this.preview.set(null);
   }
-  onPatientChange(id?: string) {
+  async onPatientChange(id?: string) {
+    if (this.bookingBusy() || this.hasUnresolvedBooking) return;
     if (id !== undefined) this.selectedPatientId = id;
-    this.selectedPlanId = null;
-    this.bulkProgress.set([]);
-    this.bulkBatch = null;
-    if (this.selectedPatientId)
-      this.clinical.load(numericId(this.selectedPatientId));
+    const generation = ++this.contextGeneration;
+    this.bookingContext.set(null); this.preview.set(null); this.selectedPlanId = null;
+    this.selectedDoctorId = ''; this.selectedRoomId = ''; this.bookingMode = 'single'; this.bookingError.set('');
+    this.assessmentCharge = null; this.unitPrice = null; this.packagePrice = null; this.discount = 0; this.deposit = 0; this.installments = [];
+    if (!this.selectedPatientId) return;
+    this.contextLoading.set(true);
+    try {
+      const context = await firstValueFrom(this.bookingApi.context(numericId(this.selectedPatientId)));
+      if (generation !== this.contextGeneration) return;
+      this.bookingContext.set(context);
+      this.allPatients.update(patients => patients.map(p => p.id === String(context.patientId)
+        ? { ...p, nameEn: context.patientName, nameAr: context.patientName, gender: context.gender, paymentType: context.paymentType, insuranceCompanyName: context.insuranceCompanyName } : p));
+      this.sessionType = context.hasCompletedAssessment ? 'Session' : 'Assessment';
+      if (context.plans.length === 1) this.selectedPlanId = context.plans[0].id;
+      if (context.isInsurance && !context.hasCompletedAssessment) this.assessmentCharge = 'Free';
+      this.roomService.load();
+      await this.loadEligibleClinicians();
+    } catch (error) { if (generation === this.contextGeneration) this.bookingError.set(apiError(error)); }
+    finally { if (generation === this.contextGeneration) this.contextLoading.set(false); }
+  }
+  async loadEligibleClinicians() {
+    const context = this.bookingContext(); if (!context) return;
+    const generation = ++this.clinicianGeneration;
+    this.clinicianService.loading.set(true); this.clinicianService.error.set(null);
+    try {
+      const clinicians = await firstValueFrom(this.bookingApi.clinicians(context.patientId, this.selectedPlanId));
+      if (generation !== this.clinicianGeneration || context.patientId !== this.bookingContext()?.patientId) return;
+      this.clinicianService.clinicians.set(clinicians.map(c => ({ ...c, roles: [c.role] })));
+      this.selectedDoctorId = clinicians.find(c => c.preferred)?.id ?? '';
+    } catch (error) { if (generation === this.clinicianGeneration) this.clinicianService.error.set(apiError(error)); }
+    finally { if (generation === this.clinicianGeneration) this.clinicianService.loading.set(false); }
+  }
+  onPlanChange() { this.preview.set(null); void this.loadEligibleClinicians(); }
+  onAssessmentChargeChange() {
+    this.preview.set(null);
+    if (this.isWaivedAssessment) { this.unitPrice = null; this.packagePrice = null; this.discount = 0; this.deposit = 0; this.installments = []; }
   }
   handleWalkInNearestSlot() {
     this.unsupported(
@@ -288,205 +340,84 @@ export class BookingsComponent implements OnInit {
       detail,
     });
   }
-  private bookingPayload(
-    start: Date,
-    end: Date,
-    treatmentPlanSessionId?: number,
-  ) {
-    if (
-      !this.selectedPatient ||
-      !this.selectedDoctorId ||
-      !this.availableRooms().some((r) => r.id === this.selectedRoomId)
-    ) {
-      throw new ReceptionError(
-        "BOOKING_SELECTION_REQUIRED",
-        "Select a saved patient, clinician and active room record.",
-      );
-    }
-    const clinician = this.allDoctors().find(
-      (d) => d.id === this.selectedDoctorId,
-    );
-    if (!clinician)
-      throw new ReceptionError(
-        "CLINICIAN_REQUIRED",
-        "Select a clinician from the server directory.",
-      );
+  private buildBooking(): BookingRequest {
+    const context = this.bookingContext();
+    if (!context || context.patientId !== Number(this.selectedPatientId) || !this.selectedDoctorId || !this.selectedRoomId)
+      throw new ReceptionError('BOOKING_SELECTION_REQUIRED', 'Select a saved patient, eligible clinician and active room.');
+    const dates = this.bookingMode === 'plan' ? this.generateBulkDates() : this.scheduledDate ? [this.scheduledDate] : [];
+    if (!dates.length || dates.some(d => !Number.isFinite(d.getTime()))) throw new ReceptionError('BOOKING_TIME_REQUIRED', 'Select a valid appointment time.');
+    const waived = this.isWaivedAssessment;
     return {
-      patientId: numericId(this.selectedPatientId),
-      doctorId: clinician.roles.includes("Doctor") ? clinician.id : null,
-      seniorId: clinician.roles.includes("Doctor") ? null : clinician.id,
-      roomId: numericId(this.selectedRoomId),
-      appointmentType: treatmentPlanSessionId ? "Session" : this.sessionType,
-      startTime: start,
-      endTime: end,
-      treatmentPlanSessionId: treatmentPlanSessionId ?? null,
+      idempotencyKey: '', patientId: context.patientId, clinicianId: this.selectedDoctorId, roomId: numericId(this.selectedRoomId),
+      treatmentPlanId: context.hasCompletedAssessment ? this.selectedPlanId : null, startsAt: dates.map(d => d.toISOString()),
+      assessmentCharge: context.hasCompletedAssessment ? null : context.isInsurance ? 'Free' : this.assessmentCharge,
+      pricingMode: context.hasCompletedAssessment ? this.pricingMode : 'PerSession', unitPrice: waived ? null : this.unitPrice,
+      packagePrice: waived ? null : this.packagePrice, discount: waived ? 0 : this.discount, deposit: waived ? 0 : this.deposit,
+      paymentMethod: waived ? null : this.paymentMethod,
+      installments: waived ? [] : this.installments.map(i => ({ dueDate: i.dueDate, amount: i.amount ?? 0 }))
     };
   }
+  private bookingErrorMessage(error: unknown): string {
+    if (error instanceof HttpErrorResponse && error.error?.title === 'Booking.Validation' && typeof error.error.detail === 'string')
+      return error.error.detail.split(',').map((code: string) => this.bookingRuleLabel(code.trim())).join('\n');
+    return error instanceof ReceptionError ? this.locale.text(error.key, error.message) : apiError(error);
+  }
+  get previewIsCurrent(): boolean {
+    try { return !!this.preview() && this.previewFingerprint === JSON.stringify(this.buildBooking()); } catch { return false; }
+  }
+  get canConfirm(): boolean { return this.previewIsCurrent && !!this.preview()?.canSave && !this.bookingBusy() && !this.hasUnresolvedBooking && !this.contextLoading(); }
+  async previewBooking() {
+    if (this.bookingBusy() || this.hasUnresolvedBooking) return;
+    this.bookingBusy.set(true); this.bookingError.set(''); this.preview.set(null);
+    try {
+      const request = this.buildBooking();
+      const preview = await firstValueFrom(this.bookingApi.preview(request));
+      this.previewFingerprint = JSON.stringify(request); this.preview.set(preview);
+    } catch (error) { this.bookingError.set(error instanceof ReceptionError ? this.locale.text(error.key, error.message) : apiError(error)); }
+    finally { this.bookingBusy.set(false); }
+  }
   async submitBooking() {
-    if (this.bookingBusy()) return;
-    this.bookingError.set("");
-    this.bookingBusy.set(true);
-    try {
-      if (!this.scheduledDate || !this.scheduledEndDate)
-        throw new ReceptionError(
-          "BOOKING_TIME_REQUIRED",
-          "Select both start and end times.",
-        );
-      await firstValueFrom(
-        this.appointmentService.addAppointment(
-          this.bookingPayload(this.scheduledDate, this.scheduledEndDate),
-        ),
-      );
-    } catch (error) {
-      this.bookingError.set(
-        error instanceof ReceptionError
-          ? this.locale.text(error.key, error.message)
-          : apiError(error),
-      );
-      this.bookingBusy.set(false);
-      return;
-    }
-    this.bookingBusy.set(false);
-    this.messageService.add({
-      severity: "success",
-      summary: this.locale.text("SUCCESS", "Success"),
-      detail: this.locale.text(
-        "BOOKING_SAVED_CHECK_BILLING",
-        "Booking saved. Refresh invoices to verify billing separately.",
-      ),
-    });
-    this.resetBookingForm();
-    this.appointmentService.getAppointments();
-    this.billingService.getInvoices();
+    if (!this.canConfirm) return;
+    const request = this.buildBooking(); request.idempotencyKey = this.bookingApi.uncertainKey() ?? crypto.randomUUID(); this.pendingBooking = request;
+    await this.sendBooking(request);
   }
-  async submitTreatmentPlan() {
+  submitTreatmentPlan() { return this.submitBooking(); }
+  private async sendBooking(request: BookingRequest) {
     if (this.bookingBusy()) return;
-    this.bookingBusy.set(true);
-    this.bookingError.set("");
-    let saved = 0;
+    this.bookingBusy.set(true); this.bookingError.set('');
     try {
-      const plan = this.patientPlans.find(
-        (p) => Number(p.id) === Number(this.selectedPlanId),
-      );
-      if (
-        !plan ||
-        plan.doctorId !== this.selectedDoctorId ||
-        !this.planPreferredTime ||
-        !this.planEndTime
-      ) {
-        throw new ReceptionError(
-          "EXISTING_PLAN_REQUIRED",
-          "Select a saved treatment plan for this patient, its clinician and an end time.",
-        );
-      }
-      if (!this.bulkBatch) {
-        const slots = this.clinical
-          .sessions()
-          .filter(
-            (s) =>
-              Number(s.treatmentPlanId) === Number(plan.id) &&
-              s.sessionDate == null,
-          )
-          .filter(
-            (s) =>
-              !this.appointmentService
-                .bookedPlanSessions()
-                .includes(Number(s.id)),
-          )
-          .filter(
-            (s) =>
-              !this.appointments().some(
-                (a) => Number(a.treatmentPlanSessionId) === Number(s.id),
-              ),
-          )
-          .sort((a, b) => a.sessionNumber - b.sessionNumber);
-        const dates = this.generateBulkDates();
-        if (!dates.length || dates.length > slots.length)
-          throw new ReceptionError(
-            "PLAN_SESSIONS_REQUIRED",
-            "The saved plan has fewer unscheduled session records than requested.",
-          );
-        this.bulkBatch = dates.map((start, index) => {
-          const end = new Date(start);
-          end.setHours(
-            this.planEndTime!.getHours(),
-            this.planEndTime!.getMinutes(),
-            0,
-            0,
-          );
-          return {
-            sessionId: numericId(slots[index].id),
-            payload: this.bookingPayload(
-              start,
-              end,
-              numericId(slots[index].id),
-            ),
-          };
-        });
-        // Validate every interval before creating the first record.
-        if (
-          this.bulkBatch.some(
-            (item) =>
-              new Date(item.payload.endTime) <=
-              new Date(item.payload.startTime),
-          )
-        ) {
-          this.bulkBatch = null;
-          throw new ReceptionError(
-            "BOOKING_TIME_INVALID",
-            "End time must be after a valid start time.",
-          );
-        }
-      }
-      for (const item of this.bulkBatch) {
-        if (this.bulkProgress().includes(item.sessionId)) continue;
-        await firstValueFrom(
-          this.appointmentService.addAppointment(item.payload),
-        );
-        this.bulkProgress.update((ids) => [...ids, item.sessionId]);
-        saved++;
-      }
+      const receipt = await firstValueFrom(this.bookingApi.create(request));
+      this.lastReceipt.set(receipt); this.pendingBooking = null; this.preview.set(null); this.recoveryEditing = false;
+      this.messageService.add({ severity: 'success', summary: this.locale.text('SUCCESS', 'Success'),
+        detail: this.locale.text('BOOKING_COMMITTED', 'Booking and financial records saved. Payments are recorded only for the amount collected.') });
+      const context = await firstValueFrom(this.bookingApi.context(request.patientId));
+      if (Number(this.selectedPatientId) === request.patientId) this.bookingContext.set(context);
     } catch (error) {
-      this.bookingError.set(
-        this.locale.text(
-          "BULK_PARTIAL_RESULT",
-          "{{count}} appointment(s) saved before stopping. Completed sessions will not be submitted again.",
-          { count: this.bulkProgress().length },
-        ) +
-          " " +
-          (error instanceof ReceptionError
-            ? this.locale.text(error.key, error.message)
-            : apiError(error)),
-      );
-      this.bookingBusy.set(false);
-      // Preserve the batch and its session IDs. Refresh only after the batch is finished or reconciled.
-      return;
-    }
-    this.bookingBusy.set(false);
-    this.messageService.add({
-      severity: "success",
-      summary: this.locale.text("SUCCESS", "Success"),
-      detail: this.locale.text(
-        "BULK_BOOKINGS_SAVED",
-        "{{count}} appointment(s) saved.",
-        { count: saved },
-      ),
-    });
-    this.resetBookingForm();
-    this.appointmentService.getAppointments();
-    this.billingService.getInvoices();
+      this.bookingError.set(this.lastReceipt()?.idempotencyKey === request.idempotencyKey
+        ? this.locale.text('BOOKING_SAVED_CONTEXT_FAILED', 'Booking saved. Patient information could not refresh; do not book again.')
+        : this.bookingApi.uncertainKey() ? this.locale.text('BOOKING_RECONCILE_REQUIRED', 'The booking outcome is unknown. Reconcile it before retrying.')
+        : this.bookingErrorMessage(error));
+    } finally { this.bookingBusy.set(false); }
   }
+  async reconcileBooking() {
+    if (this.bookingBusy()) return;
+    this.bookingBusy.set(true); this.bookingError.set('');
+    try { const receipt = await firstValueFrom(this.bookingApi.reconcile()); this.lastReceipt.set(receipt); this.pendingBooking = null; this.preview.set(null); }
+    catch {
+      if (!this.pendingBooking) this.recoveryEditing = true;
+      this.bookingError.set(this.locale.text('BOOKING_NOT_CONFIRMED', 'No committed booking has been confirmed. Retry the original details with the same key, or reconcile again.'));
+    }
+    finally { this.bookingBusy.set(false); }
+  }
+  get canRetryPending(): boolean { return !!this.pendingBooking && !!this.bookingApi.uncertainKey() && !this.bookingBusy(); }
+  retryPendingBooking() { if (this.canRetryPending) return this.sendBooking(this.pendingBooking!); return Promise.resolve(); }
+  bookingRuleLabel(code: string): string { return this.locale.text('BOOKING_RULE_' + code.replace(/([a-z])([A-Z])/g, '$1_$2').toUpperCase(), code); }
   resetBookingForm() {
-    if (this.bookingBusy()) return;
-    this.selectedPatientId = "";
-    this.selectedDoctorId = "";
-    this.selectedRoomId = "";
-    this.scheduledDate = new Date();
-    this.scheduledEndDate = null;
-    this.selectedPlanId = null;
-    this.bulkProgress.set([]);
-    this.bulkBatch = null;
-    this.bookingMode = "single";
+    if (this.bookingBusy() || this.bookingApi.uncertainKey()) return;
+    this.contextGeneration++; this.clinicianGeneration++;
+    this.selectedPatientId = ''; this.selectedDoctorId = ''; this.selectedRoomId = ''; this.selectedPlanId = null;
+    this.bookingContext.set(null); this.preview.set(null); this.bookingMode = 'single'; this.bookingError.set(''); this.lastReceipt.set(null);
+    this.contextLoading.set(false);
   }
   openQuickAddModal() {
     if (this.registeringPatient()) return;
@@ -501,9 +432,16 @@ export class BookingsComponent implements OnInit {
   }
 
   refreshPatients(afterSave = false) {
-    this.patientService.getPatients().subscribe({
+    this.directoryLoading.set(true);
+    this.bookingApi.directory().subscribe({
+      next: patients => {
+        const context = this.bookingContext();
+        this.allPatients.set(patients.map(patient => context?.patientId === Number(patient.id)
+          ? { ...patient, paymentType: context.paymentType, gender: context.gender, insuranceCompanyName: context.insuranceCompanyName } : patient));
+        this.directoryLoading.set(false);
+      },
       error: () =>
-        this.messageService.add({
+      { this.directoryLoading.set(false); this.messageService.add({
           severity: "warn",
           summary: this.locale.text("ERROR", "Error"),
           detail: this.locale.text(
@@ -512,7 +450,7 @@ export class BookingsComponent implements OnInit {
               ? "Patient saved. The list could not refresh; do not register again."
               : "Could not load patients. Please retry.",
           ),
-        }),
+        }); },
     });
   }
 
@@ -559,6 +497,7 @@ export class BookingsComponent implements OnInit {
     this.registeringPatient.set(false);
     // addPatient caches the normalized response before selection; refresh is independent.
     this.selectedPatientId = patient.id;
+    this.allPatients.update(patients => [patient, ...patients.filter(p => p.id !== patient.id)]);
     this.onPatientChange(patient.id);
     this.closeQuickAddModal();
     this.messageService.add({
