@@ -822,15 +822,15 @@
       "ROLE_REQUIRED": "Role is required.",
       "SAVE_USER": "Save User",
       "WORKING_HOURS": "Working days and hours (Cairo time)",
-      "WORKING_HOURS_NOTICE": "Choose each working day and time range. You can add multiple days or split shifts. These hours are saved with the user.",
-      "NO_WORKING_HOURS": "No working hours set. Clinicians need saved hours before appointments can be booked.",
-      "WORKING_DAY": "Working day",
-      "SELECT_WORKING_DAY": "Select a day",
+      "WORKING_HOURS_NOTICE": "All selected days share the same working hours. Times are in Cairo time.",
       "WORK_START": "Start time",
       "WORK_END": "End time",
-      "ADD_WORKING_WINDOW": "Add day / time range",
-      "REMOVE_WORKING_WINDOW": "Remove working time range",
-      "INVALID_WORKING_HOURS": "Choose a day for each range, set the end after the start on the same day, and remove overlapping ranges."
+      "WORKING_DAYS": "Working days",
+      "WORKING_DAYS_REQUIRED": "Select at least one working day.",
+      "WORK_START_REQUIRED": "Start time is required.",
+      "WORK_END_REQUIRED": "End time is required.",
+      "WORK_END_AFTER_START": "End time must be later than start time.",
+      "WORKING_HOURS_CHOOSE_SHARED": "This saved schedule has different hours. Choose one shared time range for all selected days before saving."
     },
     "INSURANCE_MANAGEMENT": {
       "TITLE": "Insurance Companies",

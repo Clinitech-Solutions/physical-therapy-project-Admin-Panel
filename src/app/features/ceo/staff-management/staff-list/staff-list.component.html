@@ -129,7 +129,7 @@
         </div>
         
         @if (editForm.get('role')?.value !== 'Patient') {
-          <div class="mb-3"><app-staff-working-hours [hours]="editForm.get('workingHours')?.value" [disabled]="isUpdating"
+          <div class="mb-3"><app-staff-working-hours [hours]="editForm.get('workingHours')?.value" [disabled]="isUpdating" [showErrors]="!!editForm.get('workingHours')?.touched"
             (hoursChange)="editForm.get('workingHours')?.setValue($event)" /></div>
         }
         @if (updateError) { <p class="text-danger" role="alert">{{ updateError }}</p> }

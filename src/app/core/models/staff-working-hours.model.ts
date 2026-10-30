@@ -6,17 +6,24 @@ export interface StaffWorkingHours {
 
 const clock = /^(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/;
 const seconds = (time: string) => time.split(':').reduce((value, part, index) => value + Number(part) * [3600, 60, 1][index], 0);
+export function validStaffWorkingTimeRange(start: string, end: string): boolean {
+  return clock.test(start) && clock.test(end) && seconds(start) < seconds(end);
+}
 export function validStaffWorkingHours(hours: StaffWorkingHours[]): boolean {
-  return hours.length <= 28 && hours.every((window, index) =>
+  const first = hours[0];
+  return hours.length > 0 && hours.length <= 7 && hours.every((window, index) =>
     window.dayOfWeek !== null && Number.isInteger(window.dayOfWeek) && window.dayOfWeek >= 0 && window.dayOfWeek <= 6 &&
-    clock.test(window.startTime) && clock.test(window.endTime) && seconds(window.startTime) < seconds(window.endTime) &&
-    !hours.some((other, otherIndex) => otherIndex !== index && other.dayOfWeek === window.dayOfWeek &&
-      clock.test(other.startTime) && clock.test(other.endTime) && seconds(other.startTime) < seconds(window.endTime) && seconds(window.startTime) < seconds(other.endTime)));
+    validStaffWorkingTimeRange(window.startTime, window.endTime) &&
+    seconds(window.startTime) === seconds(first.startTime) && seconds(window.endTime) === seconds(first.endTime) &&
+    !hours.some((other, otherIndex) => otherIndex !== index && other.dayOfWeek === window.dayOfWeek));
 }
 
 export function serializeStaffWorkingHours(hours: StaffWorkingHours[]): StaffWorkingHours[] {
-  return hours.map(window => ({ ...window,
-    startTime: window.startTime.length === 5 ? `${window.startTime}:00` : window.startTime,
-    endTime: window.endTime.length === 5 ? `${window.endTime}:00` : window.endTime,
+  if (!hours.length) return []; // Patient accounts have no staff schedule.
+  if (!validStaffWorkingHours(hours)) throw new Error('Select working days and one valid shared time range.');
+  const { startTime, endTime } = hours[0];
+  return hours.map(window => ({ dayOfWeek: window.dayOfWeek,
+    startTime: startTime.length === 5 ? `${startTime}:00` : startTime,
+    endTime: endTime.length === 5 ? `${endTime}:00` : endTime,
   }));
 }

@@ -2,9 +2,11 @@
 
 ## Staff working-hours setup
 
-CEO Staff Management Add User and Edit User include a shared **Working days and hours (Cairo time)** editor. Choose multiple weekdays and ranges, add split shifts, change existing hours or remove a window. New rows start blank. User details and the full schedule save together through the existing Users Add/Update requests. Existing saved hours load from the staff directory into Edit User. Patient-only accounts have no staff-hours editor.
+CEO Staff Management Add User and Edit User include a **Working days and hours (Cairo time)** editor with seven weekday checkboxes and one shared Start Time / End Time pair. All selected days share the same range; changing either time updates every selected day. At least one day and a valid range are required for staff accounts. The editor uses the existing theme tokens, responsive weekday grid and side-by-side time controls, with English/Arabic inline validation.
 
-Booking contains no working-hours editor or setup/read/save requests. Missing clinician hours direct staff to CEO Staff Management. Booking continues to validate the full appointment against the saved schedule. The backend rejects invalid/overlapping ranges and saves user, roles and hours in one transaction. This uses the existing DoctorSchedules table and requires no migration. Restart the local API to load the updated Users request/response contract. Verification: 30 backend and 27 focused staff/booking frontend tests pass; the production build is warning-free.
+The existing Users Add/Update contract is unchanged: the frontend sends one entry per selected day, each with identical start/end times. Existing uniform schedules load into the weekly selector. Older schedules with differing daily ranges require explicitly choosing one shared range before saving; they are not silently merged or changed on load. Patient-only accounts have no staff-hours editor and can still save without a staff schedule.
+
+Booking contains no working-hours editor or setup/read/save requests. Missing clinician hours direct staff to CEO Staff Management. Booking continues to validate the full appointment against the saved schedule. The backend saves user, roles and hours in one transaction using the existing DoctorSchedules table. The weekly-selector refactor does not change the API or database schema. Browser checks use synthetic data with intercepted API requests; no live staff accounts are created or changed.
 
 Backend implementation and migration details are in the sibling `Physical-Therapy-Center/BOOKING_WORKFLOW.md`.
 

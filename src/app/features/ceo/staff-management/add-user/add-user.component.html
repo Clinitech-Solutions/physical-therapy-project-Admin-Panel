@@ -72,7 +72,7 @@
     </div>
 
     @if (userForm.controls.role.value && userForm.controls.role.value !== 'Patient') {
-      <div class="mt-3"><app-staff-working-hours [hours]="userForm.controls.workingHours.value" [disabled]="isSubmitting"
+      <div class="mt-3"><app-staff-working-hours [hours]="userForm.controls.workingHours.value" [disabled]="isSubmitting" [showErrors]="userForm.controls.workingHours.touched"
         (hoursChange)="userForm.controls.workingHours.setValue($event)" /></div>
     }
     @if (saveError) { <p class="text-danger mt-3" role="alert">{{ saveError }}</p> }

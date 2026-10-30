@@ -1,24 +1,35 @@
-<fieldset class="border rounded p-3" [disabled]="disabled" data-staff-working-hours>
-  <legend class="float-none w-auto px-2 fs-6">{{ 'CEO.STAFF.WORKING_HOURS' | translate }}</legend>
-  <p class="small text-secondary">{{ 'CEO.STAFF.WORKING_HOURS_NOTICE' | translate }}</p>
-  @if (!hours.length) { <p class="small">{{ 'CEO.STAFF.NO_WORKING_HOURS' | translate }}</p> }
-  @for (window of hours; track $index; let index = $index) {
-    <div class="row g-2 mb-3 align-items-end">
-      <label class="col-sm-4 form-label mb-0">{{ 'CEO.STAFF.WORKING_DAY' | translate }}
-        <select class="form-select" [ngModel]="window.dayOfWeek" (ngModelChange)="change(index, 'dayOfWeek', $event)" [ngModelOptions]="{standalone: true}">
-          <option [ngValue]="null">{{ 'CEO.STAFF.SELECT_WORKING_DAY' | translate }}</option>
-          @for (day of days; track day) { <option [ngValue]="day">{{ dayLabel(day) }}</option> }
-        </select>
+<fieldset class="working-schedule" [disabled]="disabled" [attr.aria-describedby]="id + '-help'" data-staff-working-hours>
+  <legend class="schedule-title">{{ 'CEO.STAFF.WORKING_HOURS' | translate }}</legend>
+  <p class="schedule-help" [id]="id + '-help'">{{ 'CEO.STAFF.WORKING_HOURS_NOTICE' | translate }}</p>
+
+  <span class="schedule-label" [id]="id + '-days-label'">{{ 'CEO.STAFF.WORKING_DAYS' | translate }} *</span>
+  <div class="weekday-grid" role="group" [attr.aria-labelledby]="id + '-days-label'" [attr.aria-describedby]="daysInvalid ? id + '-days-error' : null">
+    @for (day of days; track day) {
+      <label class="weekday-option" [class.selected]="selectedDays.includes(day)" [attr.title]="dayLabel(day)">
+        <input type="checkbox" [checked]="selectedDays.includes(day)" (change)="toggleDay(day, $event)"
+          [attr.aria-label]="dayLabel(day)" [attr.aria-invalid]="daysInvalid" [attr.data-weekday]="day" />
+        <span>{{ dayLabel(day, true) }}</span>
       </label>
-      <label class="col-sm-3 form-label mb-0">{{ 'CEO.STAFF.WORK_START' | translate }}
-        <input type="time" step="1" class="form-control" [ngModel]="window.startTime" (ngModelChange)="change(index, 'startTime', $event)" [ngModelOptions]="{standalone: true}" required />
-      </label>
-      <label class="col-sm-3 form-label mb-0">{{ 'CEO.STAFF.WORK_END' | translate }}
-        <input type="time" step="1" class="form-control" [ngModel]="window.endTime" (ngModelChange)="change(index, 'endTime', $event)" [ngModelOptions]="{standalone: true}" required />
-      </label>
-      <div class="col-sm-2"><button type="button" class="btn btn-outline-danger w-100" (click)="remove(index)" [attr.aria-label]="'CEO.STAFF.REMOVE_WORKING_WINDOW' | translate"><i class="bi bi-trash"></i></button></div>
+    }
+  </div>
+  @if (daysInvalid) { <p class="schedule-error" [id]="id + '-days-error'" role="alert">{{ 'CEO.STAFF.WORKING_DAYS_REQUIRED' | translate }}</p> }
+  @if (differentSavedRanges) { <p class="schedule-notice" role="status">{{ 'CEO.STAFF.WORKING_HOURS_CHOOSE_SHARED' | translate }}</p> }
+
+  <div class="shared-time-grid">
+    <div class="shared-time-field">
+      <label class="schedule-label" [for]="id + '-start'">{{ 'CEO.STAFF.WORK_START' | translate }} *</label>
+      <input type="time" step="60" class="shared-time-input" [id]="id + '-start'" [ngModel]="startTime"
+        (ngModelChange)="changeTime('startTime', $event)" (blur)="startTouched = true" [ngModelOptions]="{standalone: true}"
+        [attr.aria-invalid]="startRequired || rangeInvalid" [attr.aria-describedby]="startRequired ? id + '-start-error' : rangeInvalid ? id + '-range-error' : null" required data-shared-start />
+      @if (startRequired) { <p class="schedule-error" [id]="id + '-start-error'" role="alert">{{ 'CEO.STAFF.WORK_START_REQUIRED' | translate }}</p> }
     </div>
-  }
-  @if (!valid) { <p class="text-danger small" role="alert">{{ 'CEO.STAFF.INVALID_WORKING_HOURS' | translate }}</p> }
-  <button type="button" class="btn btn-outline-primary btn-sm" (click)="add()" [disabled]="hours.length >= 28" data-add-staff-hours>{{ 'CEO.STAFF.ADD_WORKING_WINDOW' | translate }}</button>
+    <div class="shared-time-field">
+      <label class="schedule-label" [for]="id + '-end'">{{ 'CEO.STAFF.WORK_END' | translate }} *</label>
+      <input type="time" step="60" class="shared-time-input" [id]="id + '-end'" [ngModel]="endTime"
+        (ngModelChange)="changeTime('endTime', $event)" (blur)="endTouched = true" [ngModelOptions]="{standalone: true}"
+        [attr.aria-invalid]="endRequired || rangeInvalid" [attr.aria-describedby]="endRequired ? id + '-end-error' : rangeInvalid ? id + '-range-error' : null" required data-shared-end />
+      @if (endRequired) { <p class="schedule-error" [id]="id + '-end-error'" role="alert">{{ 'CEO.STAFF.WORK_END_REQUIRED' | translate }}</p> }
+    </div>
+  </div>
+  @if (rangeInvalid) { <p class="schedule-error" [id]="id + '-range-error'" role="alert">{{ 'CEO.STAFF.WORK_END_AFTER_START' | translate }}</p> }
 </fieldset>

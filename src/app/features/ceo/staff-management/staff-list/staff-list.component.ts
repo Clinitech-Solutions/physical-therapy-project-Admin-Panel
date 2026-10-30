@@ -37,8 +37,8 @@ export class StaffListComponent implements OnInit {
       gender: [0, Validators.required],
       birthDate: ['', Validators.required],
       role: ['', Validators.required],
-      workingHours: this.fb.nonNullable.control<StaffWorkingHours[]>([], control => validStaffWorkingHours(control.value) ? null : { workingHours: true })
-    });
+      workingHours: this.fb.nonNullable.control<StaffWorkingHours[]>([])
+    }, { validators: form => form.get('role')?.value === 'Patient' || validStaffWorkingHours(form.get('workingHours')?.value ?? []) ? null : { workingHours: true } });
   }
 
   loadUsers() {
