@@ -401,6 +401,7 @@
       "BOOKING_RULE_ROOM_REQUIRED": "Choose an active room.",
       "BOOKING_RULE_TIME_IN_PAST": "Appointment time must be in the future.",
       "BOOKING_RULE_DUPLICATE_SLOT": "The generated appointments overlap each other.",
+      "BOOKING_RULE_WORKING_HOURS_NOT_CONFIGURED": "No working hours are saved for this clinician. Ask the CEO to configure them in Staff Management.",
       "BOOKING_RULE_OUTSIDE_WORKING_HOURS": "The appointment is outside the clinician's saved working hours.",
       "BOOKING_RULE_CLINICIAN_ABSENT": "The clinician is absent on this date.",
       "BOOKING_RULE_PATIENT_CONFLICT": "The patient already has an overlapping appointment.",
@@ -819,7 +820,17 @@
       "GENDER_REQUIRED": "Gender is required.",
       "BIRTH_DATE_REQUIRED": "Birth Date is required.",
       "ROLE_REQUIRED": "Role is required.",
-      "SAVE_USER": "Save User"
+      "SAVE_USER": "Save User",
+      "WORKING_HOURS": "Working days and hours (Cairo time)",
+      "WORKING_HOURS_NOTICE": "Choose each working day and time range. You can add multiple days or split shifts. These hours are saved with the user.",
+      "NO_WORKING_HOURS": "No working hours set. Clinicians need saved hours before appointments can be booked.",
+      "WORKING_DAY": "Working day",
+      "SELECT_WORKING_DAY": "Select a day",
+      "WORK_START": "Start time",
+      "WORK_END": "End time",
+      "ADD_WORKING_WINDOW": "Add day / time range",
+      "REMOVE_WORKING_WINDOW": "Remove working time range",
+      "INVALID_WORKING_HOURS": "Choose a day for each range, set the end after the start on the same day, and remove overlapping ranges."
     },
     "INSURANCE_MANAGEMENT": {
       "TITLE": "Insurance Companies",

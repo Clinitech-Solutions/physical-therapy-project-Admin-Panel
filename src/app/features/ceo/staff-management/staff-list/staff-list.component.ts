@@ -4,11 +4,14 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { UserService, User } from '../../../../core/services/user.service';
 import { AddUserComponent } from '../add-user/add-user.component';
 import { TranslateModule } from '@ngx-translate/core';
+import { StaffWorkingHoursComponent } from '../staff-working-hours/staff-working-hours';
+import { StaffWorkingHours, validStaffWorkingHours, serializeStaffWorkingHours } from '../../../../core/models/staff-working-hours.model';
+import { apiError } from '../../../../core/services/reception-api';
 
 @Component({
   selector: 'app-staff-list',
   standalone: true,
-  imports: [CommonModule, AddUserComponent, ReactiveFormsModule, TranslateModule],
+  imports: [CommonModule, AddUserComponent, ReactiveFormsModule, TranslateModule, StaffWorkingHoursComponent],
   templateUrl: './staff-list.component.html',
   styleUrl: './staff-list.component.css'
 })
@@ -21,6 +24,8 @@ export class StaffListComponent implements OnInit {
   selectedUser: User | null = null;
   userToDelete: User | null = null;
   editForm!: FormGroup;
+  isUpdating = false;
+  updateError = '';
 
   roles = ['Admin', 'Owner', 'Doctor', 'Patient', 'Senior', 'Receptionist', 'Ceo'];
 
@@ -31,7 +36,8 @@ export class StaffListComponent implements OnInit {
       userName: ['', Validators.required],
       gender: [0, Validators.required],
       birthDate: ['', Validators.required],
-      role: ['', Validators.required]
+      role: ['', Validators.required],
+      workingHours: this.fb.nonNullable.control<StaffWorkingHours[]>([], control => validStaffWorkingHours(control.value) ? null : { workingHours: true })
     });
   }
 
@@ -49,13 +55,16 @@ export class StaffListComponent implements OnInit {
   }
 
   onEdit(user: User) {
+    if (this.isUpdating) return;
     this.selectedUser = user;
+    this.updateError = '';
     this.editForm.patchValue({
       fullName: user.fullName || '',
       userName: user.userName || '',
-      gender: user.gender !== undefined ? user.gender : 0,
-      birthDate: user.birthDate || '',
-      role: user.roles[0] || ''
+      gender: user.gender === 'Male' ? 0 : user.gender === 'Female' ? 1 : Number(user.gender ?? 0),
+      birthDate: user.birthDate?.slice(0, 10) || '',
+      role: user.roles[0] || '',
+      workingHours: (user.workingHours ?? []).map(window => ({ ...window }))
     });
   }
 
@@ -83,7 +92,9 @@ export class StaffListComponent implements OnInit {
   }
 
   onUpdate() {
+    if (this.isUpdating) return;
     if (this.editForm.valid && this.selectedUser?.id) {
+      this.isUpdating = true; this.updateError = '';
       const formValues = this.editForm.getRawValue();
       const payload = {
         userId: this.selectedUser.id,
@@ -91,15 +102,17 @@ export class StaffListComponent implements OnInit {
         userName: formValues.userName,
         gender: Number(formValues.gender),
         birthDate: formValues.birthDate,
-        roles: [formValues.role]
+        roles: [formValues.role],
+        workingHours: serializeStaffWorkingHours(formValues.workingHours)
       };
 
       this.userService.updateUser(payload).subscribe({
         next: () => {
+          this.isUpdating = false;
           this.loadUsers();
           this.selectedUser = null;
         },
-        error: (err) => console.error('Update error', err)
+        error: (err) => { this.isUpdating = false; this.updateError = apiError(err); }
       });
     } else {
       this.editForm.markAllAsTouched();
@@ -107,6 +120,7 @@ export class StaffListComponent implements OnInit {
   }
 
   closeEditModal() {
-    this.selectedUser = null;
+    if (!this.isUpdating) this.selectedUser = null;
   }
+  onEditRoleChange() { if (this.editForm.get('role')?.value === 'Patient') this.editForm.get('workingHours')?.setValue([]); }
 }

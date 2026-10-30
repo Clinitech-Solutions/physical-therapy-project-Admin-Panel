@@ -1,6 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
+import { StaffWorkingHours } from '../models/staff-working-hours.model';
 
 export interface ApiResponse<T> {
   value: T;
@@ -13,8 +14,9 @@ export interface User {
   fullName: string;
   userName: string;
   roles: string[];
-  gender?: string;
+  gender?: string | number;
   birthDate?: string;
+  workingHours?: StaffWorkingHours[];
 }
 
 @Injectable({
@@ -49,7 +51,7 @@ export class UserService {
   }
 
   updateUser(payload: any) {
-    return this.http.post<ApiResponse<any>>(`${this.apiUrl}/Update?userId=${payload.userId}`, payload);
+    return this.http.post<User>(`${this.apiUrl}/Update?userId=${payload.userId}`, payload);
   }
 
   deleteUser(id: string) {

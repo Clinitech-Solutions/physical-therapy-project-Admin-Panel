@@ -1,6 +1,7 @@
 <div>
   <h4 class="mb-4">{{ 'CEO.STAFF.CREATE_NEW_USER' | translate }}</h4>
   <form [formGroup]="userForm" (ngSubmit)="onSubmit()" autocomplete="off">
+    <fieldset class="border-0 p-0 m-0" [disabled]="isSubmitting">
     <div class="row g-3">
       
       <!-- Full Name -->
@@ -59,7 +60,7 @@
       <!-- Role -->
       <div class="col-md-6 form-group">
         <label class="form-label">{{ 'CEO.STAFF.ROLE' | translate }}</label>
-        <select formControlName="role" class="form-select" [ngClass]="{'is-invalid': userForm.controls.role.invalid && userForm.controls.role.touched}">
+        <select formControlName="role" (change)="onRoleChange()" class="form-select" [ngClass]="{'is-invalid': userForm.controls.role.invalid && userForm.controls.role.touched}">
           <option value="" disabled selected>{{ 'CEO.STAFF.SELECT_ROLE' | translate }}</option>
           <option *ngFor="let role of roles" [value]="role">{{ role }}</option>
         </select>
@@ -70,10 +71,16 @@
 
     </div>
 
+    @if (userForm.controls.role.value && userForm.controls.role.value !== 'Patient') {
+      <div class="mt-3"><app-staff-working-hours [hours]="userForm.controls.workingHours.value" [disabled]="isSubmitting"
+        (hoursChange)="userForm.controls.workingHours.setValue($event)" /></div>
+    }
+    @if (saveError) { <p class="text-danger mt-3" role="alert">{{ saveError }}</p> }
     <div class="mt-4 text-end">
-      <button type="submit" class="btn btn-primary" [disabled]="userForm.invalid">
+      <button type="submit" class="btn btn-primary" [disabled]="userForm.invalid || isSubmitting">
         <i class="bi bi-check-circle me-2"></i> {{ 'CEO.STAFF.SAVE_USER' | translate }}
       </button>
     </div>
+    </fieldset>
   </form>
 </div>

@@ -1,5 +1,11 @@
 # Patient-first booking integration
 
+## Staff working-hours setup
+
+CEO Staff Management Add User and Edit User include a shared **Working days and hours (Cairo time)** editor. Choose multiple weekdays and ranges, add split shifts, change existing hours or remove a window. New rows start blank. User details and the full schedule save together through the existing Users Add/Update requests. Existing saved hours load from the staff directory into Edit User. Patient-only accounts have no staff-hours editor.
+
+Booking contains no working-hours editor or setup/read/save requests. Missing clinician hours direct staff to CEO Staff Management. Booking continues to validate the full appointment against the saved schedule. The backend rejects invalid/overlapping ranges and saves user, roles and hours in one transaction. This uses the existing DoctorSchedules table and requires no migration. Restart the local API to load the updated Users request/response contract. Verification: 30 backend and 27 focused staff/booking frontend tests pass; the production build is warning-free.
+
 Backend implementation and migration details are in the sibling `Physical-Therapy-Center/BOOKING_WORKFLOW.md`.
 
 ## Implemented frontend behavior

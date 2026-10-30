@@ -1,0 +1,24 @@
+<fieldset class="border rounded p-3" [disabled]="disabled" data-staff-working-hours>
+  <legend class="float-none w-auto px-2 fs-6">{{ 'CEO.STAFF.WORKING_HOURS' | translate }}</legend>
+  <p class="small text-secondary">{{ 'CEO.STAFF.WORKING_HOURS_NOTICE' | translate }}</p>
+  @if (!hours.length) { <p class="small">{{ 'CEO.STAFF.NO_WORKING_HOURS' | translate }}</p> }
+  @for (window of hours; track $index; let index = $index) {
+    <div class="row g-2 mb-3 align-items-end">
+      <label class="col-sm-4 form-label mb-0">{{ 'CEO.STAFF.WORKING_DAY' | translate }}
+        <select class="form-select" [ngModel]="window.dayOfWeek" (ngModelChange)="change(index, 'dayOfWeek', $event)" [ngModelOptions]="{standalone: true}">
+          <option [ngValue]="null">{{ 'CEO.STAFF.SELECT_WORKING_DAY' | translate }}</option>
+          @for (day of days; track day) { <option [ngValue]="day">{{ dayLabel(day) }}</option> }
+        </select>
+      </label>
+      <label class="col-sm-3 form-label mb-0">{{ 'CEO.STAFF.WORK_START' | translate }}
+        <input type="time" step="1" class="form-control" [ngModel]="window.startTime" (ngModelChange)="change(index, 'startTime', $event)" [ngModelOptions]="{standalone: true}" required />
+      </label>
+      <label class="col-sm-3 form-label mb-0">{{ 'CEO.STAFF.WORK_END' | translate }}
+        <input type="time" step="1" class="form-control" [ngModel]="window.endTime" (ngModelChange)="change(index, 'endTime', $event)" [ngModelOptions]="{standalone: true}" required />
+      </label>
+      <div class="col-sm-2"><button type="button" class="btn btn-outline-danger w-100" (click)="remove(index)" [attr.aria-label]="'CEO.STAFF.REMOVE_WORKING_WINDOW' | translate"><i class="bi bi-trash"></i></button></div>
+    </div>
+  }
+  @if (!valid) { <p class="text-danger small" role="alert">{{ 'CEO.STAFF.INVALID_WORKING_HOURS' | translate }}</p> }
+  <button type="button" class="btn btn-outline-primary btn-sm" (click)="add()" [disabled]="hours.length >= 28" data-add-staff-hours>{{ 'CEO.STAFF.ADD_WORKING_WINDOW' | translate }}</button>
+</fieldset>

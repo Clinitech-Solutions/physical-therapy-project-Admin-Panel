@@ -401,6 +401,7 @@
       "BOOKING_RULE_ROOM_REQUIRED": "اختر غرفة نشطة.",
       "BOOKING_RULE_TIME_IN_PAST": "يجب أن يكون الموعد في المستقبل.",
       "BOOKING_RULE_DUPLICATE_SLOT": "المواعيد التي تم توليدها تتداخل مع بعضها.",
+      "BOOKING_RULE_WORKING_HOURS_NOT_CONFIGURED": "لم تُحفظ ساعات عمل لهذا الأخصائي. اطلب من المدير تحديدها من إدارة الموظفين.",
       "BOOKING_RULE_OUTSIDE_WORKING_HOURS": "الموعد خارج ساعات العمل المحفوظة للأخصائي.",
       "BOOKING_RULE_CLINICIAN_ABSENT": "الأخصائي غائب في هذا التاريخ.",
       "BOOKING_RULE_PATIENT_CONFLICT": "لدى المريض موعد آخر متداخل.",
@@ -819,7 +820,17 @@
       "GENDER_REQUIRED": "الجنس مطلوب.",
       "BIRTH_DATE_REQUIRED": "تاريخ الميلاد مطلوب.",
       "ROLE_REQUIRED": "الدور مطلوب.",
-      "SAVE_USER": "حفظ المستخدم"
+      "SAVE_USER": "حفظ المستخدم",
+      "WORKING_HOURS": "أيام وساعات العمل (بتوقيت القاهرة)",
+      "WORKING_HOURS_NOTICE": "اختر أيام العمل وفترة العمل لكل يوم. يمكنك إضافة عدة أيام أو فترات منفصلة. تُحفظ هذه الساعات مع بيانات المستخدم.",
+      "NO_WORKING_HOURS": "لم تُحدد ساعات عمل. يجب حفظ ساعات عمل الأخصائي قبل حجز المواعيد.",
+      "WORKING_DAY": "يوم العمل",
+      "SELECT_WORKING_DAY": "اختر يومًا",
+      "WORK_START": "وقت البدء",
+      "WORK_END": "وقت الانتهاء",
+      "ADD_WORKING_WINDOW": "إضافة يوم / فترة عمل",
+      "REMOVE_WORKING_WINDOW": "حذف فترة العمل",
+      "INVALID_WORKING_HOURS": "اختر يومًا لكل فترة وحدد وقت انتهاء بعد وقت البدء في اليوم نفسه، وأزل الفترات المتداخلة."
     },
     "INSURANCE_MANAGEMENT": {
       "TITLE": "شركات التأمين",

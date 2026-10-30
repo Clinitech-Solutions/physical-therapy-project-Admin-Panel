@@ -19,6 +19,8 @@
   max-width: 500px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.1);
   padding: 1.5rem;
+  max-height: 90vh;
+  overflow-y: auto;
   animation: modalFadeIn 0.3s ease;
 }
 
