@@ -234,7 +234,7 @@ export class PatientsComponent implements OnInit {
       this.registrationError.set(detail);
       this.registrationValidationErrors.set(error instanceof PatientValidationError ? error.errors : error instanceof PatientInputError ? [error] : []);
       this.registrationFields?.focusFirstInvalid();
-      this.messageService.add({ severity: 'error', summary: this.locale.text('ERROR', 'Error'), detail });
+      this.messageService.add({ severity: 'warn', summary: this.locale.text('ERROR', 'Error'), detail });
       this.saving.set(false);
       return;
     }
@@ -290,7 +290,7 @@ export class PatientsComponent implements OnInit {
         patientServerError(error) || this.locale.text('FAILED_TO_UPDATE_PATIENT', 'Failed to update patient.');
       this.editError.set(detail); this.editValidationErrors.set(errors);
       this.editFields?.focusFirstInvalid();
-      this.messageService.add({ severity: 'error', summary: this.locale.text('ERROR', 'Error'), detail });
+      this.messageService.add({ severity: 'warn', summary: this.locale.text('ERROR', 'Error'), detail });
       return;
     } finally {
       this.updating.set(false);
@@ -309,7 +309,7 @@ export class PatientsComponent implements OnInit {
           this.refreshPatients(true);
         },
         error: (err) => {
-          this.messageService.add({ severity: 'error', summary: this.locale.text('ERROR', "Error"), detail: this.locale.text('FAILED_TO_DELETE_PATIENT', "Failed to delete patient") });
+          this.messageService.add({ severity: 'warn', summary: this.locale.text('ERROR', "Error"), detail: this.locale.text('FAILED_TO_DELETE_PATIENT', "Failed to delete patient") });
           console.error(err);
         }
       });

@@ -20,6 +20,9 @@ import {
   ReceptionistTextPipe,
 } from "../../../shared/receptionist-locale";
 import { Component, signal, computed, inject, OnInit, ViewChild, DestroyRef } from "@angular/core";
+import { ReceptionWarnings } from '../../../core/services/reception-warnings';
+import { ReceptionEvents } from '../../../core/services/reception-api';
+import { clinicInstant, clinicWeek } from '../../../core/services/clinic-booking-time';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RoomRecord } from '../../../core/models/room-api.model';
 import { CommonModule } from "@angular/common";
@@ -79,6 +82,7 @@ import { BillingService } from "../../../core/services/billing.service";
   styleUrls: ["./bookings.css", "./booking-layout.css", "./booking-controls.css", "./booking-table.css", "./booking-financial.css"],
 })
 export class BookingsComponent implements OnInit {
+  private warnings=inject(ReceptionWarnings,{optional:true}) ?? new ReceptionWarnings();
   readonly locale = new ReceptionistLocale();
   clinical = inject(ClinicalRecordsService);
   workflow = inject(AppointmentWorkflowService);
@@ -111,12 +115,13 @@ export class BookingsComponent implements OnInit {
     const context = this.bookingContext();
     if (!context || this.bookingBusy() || this.contextLoading() || this.hasUnresolvedBooking || this.clinicianService.loading() || this.roomAvailabilityLoading() || this.roomAvailabilityError()) return false;
     if (context.hasCompletedAssessment && (!this.chosenPlan || this.maxBookingSessions <= 0 || context.isInsurance && !context.insuranceApproved)) return false;
+    if(context.hasCompletedAssessment && !this.chosenPlan?.frequencyPerWeek)return false;
     if (!this.selectedDoctorId || !this.selectedRoomId || !this.bookingDates.length || this.bookingMode === 'plan' && this.planSessionCount > this.maxBookingSessions) return false;
     return this.isWaivedAssessment || (this.assessmentCharge === 'Paid' || context.hasCompletedAssessment) &&
       (!!this.agreement || Number(this.unitPrice) > 0) && this.deposit >= 0 && (this.deposit === 0 || !!this.paymentMethod) &&
       (this.discountType === 'None' || this.discountValue >= 0 && (this.discountType !== 'Percent' || this.discountValue <= 100));
   }
-  get bookingDates(): Date[] { return this.bookingMode === 'plan' ? this.generateBulkDates() : this.scheduledDate && Number.isFinite(this.scheduledDate.getTime()) ? [this.scheduledDate] : []; }
+  get bookingDates(): Date[] { try{return this.bookingMode === 'plan' ? this.generateBulkDates() : this.scheduledDate && Number.isFinite(this.scheduledDate.getTime()) ? [clinicInstant(this.scheduledDate)] : [];}catch{return [];} }
   get bookingDate() { return this.bookingMode === 'plan' ? this.planStartDate : this.scheduledDate; }
   get bookingTime() { return this.bookingMode === 'plan' ? this.planPreferredTime : this.scheduledDate; }
   onBookingDateChange(date: Date | null) {
@@ -133,6 +138,7 @@ export class BookingsComponent implements OnInit {
   }
   get bookingWeekDays() { return [1, 2, 3, 4, 5, 6, 0].map(value => this.localizedWeekDays.find(day => day.value === value)!); }
   toggleBookingDay(day: number) {
+    if(!this.selectedDays.includes(day) && this.selectedDays.length >= (this.chosenPlan?.frequencyPerWeek ?? 0)) {this.warnings.show('BOOKING_RULE_WEEKLY_FREQUENCY_LIMIT');return;}
     this.selectedDays = this.selectedDays.includes(day) ? this.selectedDays.filter(value => value !== day) : [...this.selectedDays, day];
     this.refreshRoomAvailability();
   }
@@ -199,6 +205,9 @@ export class BookingsComponent implements OnInit {
     .map(room => ({ ...room, id: String(room.id), displayName: room.name })));
 
   constructor() {
+    inject(ReceptionEvents).changed.pipe(takeUntilDestroyed()).subscribe(kind=>{
+      if(kind==='appointments')this.refreshPatients();
+    });
     this.roomService.refreshed.pipe(takeUntilDestroyed()).subscribe(() => {
       if (this.bookingContext()) this.refreshRoomAvailability();
     });
@@ -208,7 +217,7 @@ export class BookingsComponent implements OnInit {
     const generation = ++this.roomAvailabilityGeneration;
     this.roomAvailabilityRequest?.unsubscribe();
     this.preview.set(null); this.availableRoomRecords.set([]); this.roomAvailabilityError.set('');
-    const dates = this.bookingMode === 'plan' ? this.generateBulkDates() : this.scheduledDate ? [this.scheduledDate] : [];
+    const dates = this.bookingDates;
     if (!this.bookingContext() || !dates.length || dates.some(date => !Number.isFinite(date.getTime()))) {
       this.roomAvailabilityLoading.set(false); this.selectedRoomId = ''; return;
     }
@@ -265,13 +274,13 @@ export class BookingsComponent implements OnInit {
       label: this.locale.label(day.label),
     }));
   }
-  selectedDays: number[] = [6, 0, 1, 2, 3, 4]; // Friday (5) excluded by default
+  selectedDays: number[] = [];
 
   generateBulkDates(): Date[] {
     if (
       !this.planStartDate ||
       !Number.isInteger(this.planSessionCount) ||
-      this.planSessionCount <= 0 || this.planSessionCount > 200 || !this.planPreferredTime ||
+      this.planSessionCount <= 0 || this.planSessionCount > 200 || !this.planPreferredTime || !this.chosenPlan?.frequencyPerWeek || this.selectedDays.length > this.chosenPlan.frequencyPerWeek ||
       !this.selectedDays.some(
         (day) => Number.isInteger(day) && day >= 0 && day <= 6,
       ) ||
@@ -284,13 +293,16 @@ export class BookingsComponent implements OnInit {
     const preferredTime = this.planPreferredTime;
     if (!preferredTime || !Number.isFinite(preferredTime.getTime())) return [];
 
+    const weekly=new Map<string,number>();
+    for(const start of this.chosenPlan.bookedStartsAt ?? []){const key=clinicWeek(start);weekly.set(key,(weekly.get(key)??0)+1);}
     let attempts = 0;
-    while (dates.length < this.planSessionCount && attempts++ < this.planSessionCount * 7 + 7) {
+    while (dates.length < this.planSessionCount && attempts++ < 3660) {
       if (!Number.isFinite(current.getTime())) return [];
       if (this.selectedDays.includes(current.getDay())) {
         const d = new Date(current);
         d.setHours(preferredTime.getHours(), preferredTime.getMinutes(), 0, 0);
-        dates.push(d);
+        const instant=clinicInstant(d),week=clinicWeek(instant);
+        if((weekly.get(week)??0)<this.chosenPlan.frequencyPerWeek){dates.push(instant);weekly.set(week,(weekly.get(week)??0)+1);}
       }
       current.setDate(current.getDate() + 1);
     }
@@ -367,7 +379,7 @@ export class BookingsComponent implements OnInit {
     const role = context.hasCompletedAssessment ? 'Doctor' : 'Senior';
     return this.allDoctors().filter(d => d.gender === context.gender && d.roles.includes(role));
   }
-  get patientPlans() { return this.bookingContext()?.plans ?? []; }
+  get patientPlans() { return (this.bookingContext()?.plans ?? []).filter(p=>p.remainingSessions>0); }
   get chosenPlan() { return this.patientPlans.find(p => p.id === this.selectedPlanId); }
   get isWaivedAssessment(): boolean { return this.isNewPatient && (!!this.bookingContext()?.isInsurance || this.assessmentCharge === 'Free'); }
   setBookingMode(mode: 'single' | 'plan') {
@@ -401,6 +413,7 @@ export class BookingsComponent implements OnInit {
         ? { ...p, nameEn: context.patientName, nameAr: context.patientName, gender: context.gender, paymentType: context.paymentType, insuranceCompanyName: context.insuranceCompanyName } : p));
       this.sessionType = context.hasCompletedAssessment ? 'Session' : 'Assessment';
       if (context.plans.length === 1) this.selectedPlanId = context.plans[0].id;
+      this.selectedDays=[1,3,6,0,2,4,5].slice(0,this.chosenPlan?.frequencyPerWeek ?? 0);
       if (context.isInsurance && !context.hasCompletedAssessment) this.assessmentCharge = 'Free';
       this.syncAgreement();
       if (!context.hasCompletedAssessment || this.selectedPlanId != null) {
@@ -426,6 +439,7 @@ export class BookingsComponent implements OnInit {
   onPlanChange() {
     this.clinicianGeneration++; this.planChanged.next();
     this.syncAgreement(); this.selectedDoctorId = '';
+    this.selectedDays=[1,3,6,0,2,4,5].slice(0,this.chosenPlan?.frequencyPerWeek ?? 0);
     if (this.selectedPlanId != null) { this.refreshRoomAvailability(); void this.loadEligibleClinicians(); }
     else this.clinicianService.loading.set(false);
   }
@@ -452,7 +466,7 @@ export class BookingsComponent implements OnInit {
     const context = this.bookingContext();
     if (!context || context.patientId !== Number(this.selectedPatientId) || !this.selectedDoctorId || !this.selectedRoomId)
       throw new ReceptionError('BOOKING_SELECTION_REQUIRED', 'Select a saved patient, eligible clinician and active room.');
-    const dates = this.bookingMode === 'plan' ? this.generateBulkDates() : this.scheduledDate ? [this.scheduledDate] : [];
+    const dates = this.bookingDates;
     if (!dates.length || dates.some(d => !Number.isFinite(d.getTime()))) throw new ReceptionError('BOOKING_TIME_REQUIRED', 'Select a valid appointment time.');
     const waived = this.isWaivedAssessment;
     return {
@@ -482,7 +496,8 @@ export class BookingsComponent implements OnInit {
       const request = this.buildBooking();
       const preview = await firstValueFrom(this.bookingApi.preview(request));
       this.previewFingerprint = JSON.stringify(request); this.preview.set(preview);
-    } catch (error) { this.bookingError.set(error instanceof ReceptionError ? this.locale.text(error.key, error.message) : apiError(error)); }
+      if(!preview.canSave)this.warnings.show([...new Set([...preview.errors,...preview.appointments.flatMap(a=>a.conflicts)])].map(code=>this.bookingRuleLabel(code)).join('\n'));
+    } catch (error) { this.bookingError.set(this.bookingErrorMessage(error)); this.warnings.show(this.bookingError()); }
     finally { this.bookingBusy.set(false); }
   }
   async submitBooking() {
@@ -507,6 +522,7 @@ export class BookingsComponent implements OnInit {
         ? this.locale.text('BOOKING_SAVED_CONTEXT_FAILED', 'Booking saved. Patient information could not refresh; do not book again.')
         : this.bookingApi.uncertainKey() ? this.locale.text('BOOKING_RECONCILE_REQUIRED', 'The booking outcome is unknown. Reconcile it before retrying.')
         : this.bookingErrorMessage(error));
+      this.warnings.show(this.bookingError());
     } finally { this.bookingBusy.set(false); }
   }
   async reconcileBooking() {
@@ -602,7 +618,7 @@ export class BookingsComponent implements OnInit {
       this.quickRegistrationValidationErrors.set(error instanceof PatientValidationError ? error.errors : error instanceof PatientInputError ? [error] : []);
       this.registrationFields?.focusFirstInvalid();
       this.messageService.add({
-        severity: "error",
+        severity: "warn",
         summary: this.locale.text("REGISTRATION_FAILED", "Registration Failed"),
         detail,
       });

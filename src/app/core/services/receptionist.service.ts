@@ -24,6 +24,8 @@ export interface DashboardStats {
 export interface TodaySession {
   id: number;
   appointmentId?: number;
+  treatmentStartedAt?: string|null;
+  treatmentEndedAt?: string|null;
   patientId: number;
   patientName?: string;
   doctorId?: string | null;

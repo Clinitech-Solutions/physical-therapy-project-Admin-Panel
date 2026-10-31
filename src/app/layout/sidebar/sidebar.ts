@@ -29,10 +29,7 @@ const ROLE_MENU_MAP: Record<string, NavItem[]> = {
     { icon: 'bi bi-person-fill-slash', labelKey: 'SIDEBAR.ABSENCE_COVERAGE', route: '/senior/absence-coverage' },
   ],
   doctor: [
-    { icon: 'bi bi-grid-1x2', labelKey: 'SIDEBAR.DASHBOARD', route: '/doctor/dashboard' },
-    { icon: 'bi bi-calendar-event', labelKey: 'SIDEBAR.TODAYS_SCHEDULE', route: '/doctor' },
-    { icon: 'bi bi-people', labelKey: 'SIDEBAR.MY_PATIENTS', route: '/doctor/patients' },
-    { icon: 'bi bi-journal-medical', labelKey: 'SIDEBAR.SESSION_NOTES', route: '/doctor/session-notes' },
+    { icon: 'bi bi-activity', labelKey: 'DOCTOR.WORKSPACE', route: '/doctor/dashboard' },
   ],
   ceo: [
     { icon: 'bi bi-grid-1x2', labelKey: 'SIDEBAR.OVERVIEW', route: '/ceo' },

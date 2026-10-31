@@ -15,7 +15,7 @@ import { AppointmentWorkflowService } from './appointment-workflow.service';
 const url = environment.apiUrl;
 const context: BookingContext = { patientId: 1, patientName: 'Test patient', gender: 'Male', paymentType: 'Cash', hasCompletedAssessment: false,
   isInsurance: false, insuranceApproved: false, remainingApprovedSessions: null, copayPercentage: null, insuranceCompanyName: null, assessments: [], plans: [] };
-const plan = { id: 5, doctorId: 'doctor', doctorName: 'Doctor', treatmentType: 'Physio', plannedSessions: 6, bookedSessions: 1, completedSessions: 0, remainingSessions: 5 };
+const plan = { id: 5, doctorId: 'doctor', doctorName: 'Doctor', treatmentType: 'Physio', plannedSessions: 6, bookedSessions: 1, completedSessions: 0, remainingSessions: 5, frequencyPerWeek:2,bookedStartsAt:[] };
 const quote: BookingPreview = { canSave: true, appointments: [{ startTime: '2030-02-04T10:00:00Z', endTime: '2030-02-04T11:00:00Z', conflicts: [] }],
   errors: [], totalAmount: 100, patientAmount: 100, insuranceAmount: 0, deposit: 0, remainingAmount: 100, waiverReason: null, discountAmount: 0 };
 const receipt = (key: string): BookingReceipt => ({ idempotencyKey: key, patientId: 1, outcome: 'Committed',
@@ -31,7 +31,7 @@ describe('Patient-first booking workflow', () => {
     TestBed.inject(PatientService).patients.set([{ id: '1', nameEn: 'Test patient', nameAr: '', avatar: 'TP', phone: '010', gender: 'Male', paymentType: 'Cash', lastVisit: '', documents: { medicalConsent: false, liabilityWaiver: false, idCard: false } }]);
     component = TestBed.runInInjectionContext(() => new BookingsComponent());
   });
-  afterEach(() => { http.verify(); sessionStorage.removeItem('ptcenter.pending-booking-key'); sessionStorage.removeItem('ptcenter.pending-collection-key'); });
+  afterEach(() => { http.match(r=>r.url.endsWith('/Bookings/patients')).forEach(r=>r.flush({items:[],pageNumber:1,totalPages:1,hasNextPage:false})); http.verify(); sessionStorage.removeItem('ptcenter.pending-booking-key'); sessionStorage.removeItem('ptcenter.pending-collection-key'); });
   async function select(value = context) {
     const loading = component.onPatientChange('1');
     http.expectOne(`${url}/Bookings/patients/1`).flush(value); await Promise.resolve();
@@ -44,7 +44,7 @@ describe('Patient-first booking workflow', () => {
   }
   async function preview() {
     http.match(`${url}/Rooms/availability`).forEach(request => request.flush([{ id: 1, name: 'Room', capacity: 1, isActive: true, status: 'Available' }]));
-    const pending = component.previewBooking(); const request = http.expectOne(`${url}/Bookings/preview`); request.flush(quote); await pending; return request;
+    const pending = component.previewBooking(); const request = http.expectOne(`${url}/Bookings/preview`); request.flush({...quote,appointments:request.request.body.startsAt.map((time:string)=>({startTime:time,endTime:new Date(new Date(time).getTime()+3600000).toISOString(),conflicts:[]}))}); await pending; return request;
   }
   it('loads only the patient directory before selection', () => {
     component.ngOnInit(); http.expectOne(r => r.url.endsWith('/Bookings/patients')).flush({ items: [], pageNumber: 1, totalPages: 1, hasNextPage: false });
@@ -110,7 +110,7 @@ describe('Patient-first booking workflow', () => {
   });
   it('previews every bulk slot, package agreement and installment before saving', async () => {
     await select({ ...context, hasCompletedAssessment: true, plans: [plan] }); component.setBookingMode('plan');
-    component.planSessionCount = 3; component.planStartDate = new Date(2030, 1, 4); component.planPreferredTime = new Date(2030, 1, 4, 10); component.selectedDays = [0, 1, 2, 3, 4, 5, 6];
+    component.planSessionCount = 3; component.planStartDate = new Date(2030, 1, 4); component.planPreferredTime = new Date(2030, 1, 4, 10); component.selectedDays = [1, 3];
     component.pricingMode = 'Package'; component.unitPrice = 150; component.discountType = 'Fixed'; component.discountValue = 100; component.deposit = 100; component.paymentMethod = 'Cash'; component.installments = [{ dueDate: '2030-03-01', amount: 700 }];
     const request = await preview(); expect(request.request.body.startsAt).toHaveLength(3);
     expect(request.request.body).toMatchObject({ pricingMode: 'Package', unitPrice: 150, packagePrice: null, discount: 0, discountType: 'Fixed', discountValue: 100, deposit: 100, paymentMethod: 'Cash', installments: [{ dueDate: '2030-03-01', amount: 700 }] });

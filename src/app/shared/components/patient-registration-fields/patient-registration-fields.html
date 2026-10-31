@@ -1,8 +1,9 @@
 <div class="modal-form-vertical d-flex flex-column gap-3">
   <div class="row g-3">
+    @if(mode === 'edit'){
     <div class="col-md-6">
       <label class="form-label fw-bold small w-100">
-        {{ 'RECEPTIONIST.UI.PATIENT_USERNAME' | translate }} {{ mode === 'create' ? '*' : '' }}
+        {{ 'RECEPTIONIST.UI.PATIENT_USERNAME' | translate }}
         <input
           [id]="formId + '-userName'"
           name="userName"
@@ -13,7 +14,6 @@
           type="text"
           [(ngModel)]="draft.userName"
           [ngModelOptions]="{standalone: true}"
-          [required]="mode === 'create'"
           minlength="3"
           maxlength="50"
           dir="auto"
@@ -21,7 +21,7 @@
         <small
           class="text-secondary d-block fw-normal"
           [id]="formId + '-userName-help'"
-          >{{ (mode === 'create' ? 'RECEPTIONIST.UI.PATIENT_USERNAME_HINT' : 'RECEPTIONIST.UI.PATIENT_USERNAME_EDIT_HINT') | translate }}</small
+          >{{ 'RECEPTIONIST.UI.PATIENT_USERNAME_EDIT_HINT' | translate }}</small
         >
         @if (errorFor('userName'); as error) {
         <small
@@ -32,6 +32,7 @@
         }
       </label>
     </div>
+    }
     <div class="col-md-6">
       <label class="form-label fw-bold small w-100">
         {{ 'RECEPTIONIST.UI.PATIENT_FULL_NAME' | translate }} *

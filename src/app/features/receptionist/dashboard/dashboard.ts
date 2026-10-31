@@ -1,3 +1,4 @@
+import {ReassessmentQueue} from '../../../shared/components/reassessment-queue/reassessment-queue';
 import { RoomService } from '../../../core/services/room.service';
 import { ClinicianService } from '../../../core/services/clinician.service';
 import { AppointmentWorkflowService } from '../../../core/services/appointment-workflow.service';
@@ -23,7 +24,7 @@ import { PatientProfileComponent } from '../../../shared/components/patient-prof
 @Component({
   selector: "app-receptionist-dashboard",
   standalone: true,
-  imports: [CommonModule, TranslateModule, FormsModule, ButtonModule, TooltipModule, DialogModule, InputNumberModule, PatientProfileComponent],
+  imports: [ReassessmentQueue,CommonModule, TranslateModule, FormsModule, ButtonModule, TooltipModule, DialogModule, InputNumberModule, PatientProfileComponent],
   templateUrl: "./dashboard.html",
   styleUrl: "./dashboard.css",
 })

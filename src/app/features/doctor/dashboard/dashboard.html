@@ -1,60 +1,145 @@
-<div class="dashboard-header mb-4">
-  <h2>{{ 'DOCTOR.DASHBOARD_TITLE' | translate }}</h2>
-  <p class="text-secondary">{{ 'DOCTOR.DASHBOARD_SUB' | translate }}</p>
-</div>
-
-<!-- Empty state when no sessions today -->
-@if (groupedSlots().length === 0) {
-  <div class="card card-sm d-flex justify-content-center align-items-center" style="padding: 3rem; opacity: 0.6;">
-    <span class="text-sm text-secondary">{{ 'DOCTOR.NO_SESSIONS_TODAY' | translate }}</span>
-  </div>
-}
-
-<div class="d-flex flex-column gap-4">
-  @for (slot of groupedSlots(); track slot.sortKey) {
+<section class="clinical-page">
+  <header class="clinical-heading">
     <div>
-      <!-- Time Slot Header -->
-      <h4 class="text-sm text-muted mb-2">{{ slot.label }}</h4>
-
-      <div class="grid-2 gap-4">
-        @for (item of slot.items; track $index) {
-
-          <!-- Patient Card -->
-          @if (item.type === 'patient') {
-            <div class="card card-sm">
-              <div class="d-flex justify-content-between align-items-start mb-3">
-                <div class="d-flex align-items-center gap-3">
-                  <div class="avatar">{{ item.patientAvatar }}</div>
-                  <div>
-                    <div class="fw-medium">{{ item.patientName }}</div>
-                    <div class="text-xs text-secondary">{{ 'DOCTOR.ROOM' | translate }}: {{ item.roomName }}</div>
-                  </div>
-                </div>
-
-                @if (item.sessionType === 'Assessment' || item.sessionType === 'Re-Assessment') {
-                  <span class="badge badge-warning">{{ 'DOCTOR.ASSESSMENT' | translate }}</span>
-                } @else {
-                  <span class="badge badge-info">{{ item.sessionBadge }}</span>
-                }
-              </div>
-
-              <button
-                class="btn btn-primary w-100"
-                (click)="startSession(item.session!.id)">
-                {{ 'DOCTOR.START_SESSION' | translate }}
-              </button>
-            </div>
-          }
-
-          <!-- Available Slot Placeholder -->
-          @if (item.type === 'available') {
-            <div class="card card-sm d-flex justify-content-center align-items-center"
-                 style="border-style: dashed; background: transparent; opacity: 0.5;">
-              <span class="text-sm">{{ 'DOCTOR.AVAILABLE_SLOT' | translate }}</span>
-            </div>
-          }
-        }
-      </div>
+      <h1>{{ 'DOCTOR.WORKSPACE' | translate }}</h1>
+      <p>{{ 'DOCTOR.WORKSPACE_HINT' | translate }}</p>
     </div>
+    <div class="clinical-controls">
+      <button
+        type="button"
+        class="btn btn-outline-secondary"
+        (click)="day(-1)"
+        [attr.aria-label]="'DOCTOR.PREVIOUS_DAY'|translate"
+      >
+        &lsaquo;
+      </button>
+      <input
+        type="date"
+        [ngModel]="date()"
+        (ngModelChange)="date.set($event);load()"
+        [attr.aria-label]="'DOCTOR.DATE'|translate"
+      />
+      <button
+        type="button"
+        class="btn btn-outline-secondary"
+        (click)="day(1)"
+        [attr.aria-label]="'DOCTOR.NEXT_DAY'|translate"
+      >
+        &rsaquo;
+      </button>
+      <button
+        type="button"
+        class="btn btn-outline-secondary"
+        (click)="load()"
+        [disabled]="loading()"
+      >
+        {{ 'DOCTOR.REFRESH' | translate }}
+      </button>
+    </div>
+  </header>
+  @if(loading()){
+  <p role="status">{{ 'DOCTOR.LOADING'|translate }}</p>
+  } @if(error()){
+  <div class="clinical-alert" role="alert">
+    {{error()}} @if(shortfall()!==null){<strong
+      >{{'DOCTOR.SHORTFALL'|translate}}:
+      {{shortfall()|currency:'EGP':'code':'1.2-2':locale.language}}</strong
+    >}
+  </div>
+  } @if(data();as schedule){
+  <div class="clinical-summary" aria-live="polite">
+    <div>
+      <span>{{'DOCTOR.SCHEDULED_TODAY'|translate}}</span
+      ><strong>{{counts().scheduled}}</strong>
+    </div>
+    <div>
+      <span>{{'DOCTOR.WAITING'|translate}}</span
+      ><strong>{{counts().waiting}}</strong>
+    </div>
+    <div>
+      <span>{{'DOCTOR.CURRENTLY_TREATING'|translate}}</span
+      ><strong>{{counts().treating}} / 2</strong>
+    </div>
+    <div>
+      <span>{{'DOCTOR.COMPLETED'|translate}}</span
+      ><strong>{{counts().completed}}</strong>
+    </div>
+  </div>
+  @if(schedule.activeTreatments.length){
+  <section class="clinical-card active-treatments">
+    <h2>{{'DOCTOR.ACTIVE_TREATMENTS'|translate}}</h2>
+    <div class="active-list">
+      @for(a of schedule.activeTreatments;track a.appointmentId){<a
+        class="active-patient"
+        [routerLink]="['/doctor/session-notes',a.appointmentId]"
+        ><strong>{{a.patientName}}</strong
+        ><span>{{a.roomName||('DOCTOR.NOT_RECORDED'|translate)}}</span
+        ><span
+          >{{'DOCTOR.STARTED'|translate}}
+          {{locale.date(a.treatmentStartedAt,true)}}</span
+        ><b>{{'DOCTOR.CONTINUE_SESSION'|translate}} &rarr;</b></a
+      >}
+    </div>
+  </section>
   }
-</div>
+  <div class="clinical-controls clinical-filters">
+    <label
+      >{{'DOCTOR.SEARCH'|translate}}<input
+        type="search"
+        [ngModel]="search()"
+        (ngModelChange)="search.set($event)" /></label
+    ><label
+      >{{'DOCTOR.STATUS'|translate}}<select
+        [ngModel]="filter()"
+        (ngModelChange)="filter.set($event)"
+      >
+        <option value="">{{'DOCTOR.ALL_STATUSES'|translate}}</option>
+        @for(state of states;track state){
+        <option [value]="state">{{'DOCTOR.STATES.'+state|translate}}</option>
+        }
+      </select></label
+    >
+  </div>
+  <div class="clinical-card visit-list">
+    @for(a of visible();track a.appointmentId){
+    <article
+      class="clinical-visit"
+      [attr.data-appointment-id]="a.appointmentId"
+    >
+      <div class="visit-time">
+        <time>{{locale.time(a.plannedStart)}}</time
+        ><span>{{locale.time(a.plannedEnd)}}</span>
+      </div>
+      <div class="visit-patient">
+        <h2>{{a.patientName}}</h2>
+        <p>
+          {{a.roomName||('DOCTOR.NOT_RECORDED'|translate)}} &middot;
+          {{'DOCTOR.SESSION'|translate}} {{a.sessionNumber}} &middot;
+          {{a.planSummary||('DOCTOR.NOT_RECORDED'|translate)}}
+        </p>
+        <span class="clinical-badge" [class.is-active]="a.state==='Treating'"
+          >{{'DOCTOR.STATES.'+a.state|translate}}</span
+        >
+      </div>
+      <div class="visit-actions">
+        <a
+          class="btn btn-outline-secondary"
+          [routerLink]="['/doctor/session-notes',a.appointmentId]"
+          >{{(a.state==='Treating'?'DOCTOR.CONTINUE_SESSION':'DOCTOR.OPEN_PATIENT')|translate}}</a
+        >@if(a.state==='Arrived'){<button
+          type="button"
+          class="btn btn-primary"
+          data-start-treatment
+          [disabled]="busy()!==null"
+          (click)="start(a)"
+        >
+          {{'DOCTOR.START_SESSION'|translate}}</button
+        >}@if(a.state==='Scheduled'){<small>{{'DOCTOR.AWAITING_ARRIVAL'|translate}}</small>}
+      </div>
+    </article>
+    }@empty{
+    <p class="clinical-empty">{{'DOCTOR.NO_APPOINTMENTS'|translate}}</p>
+    }
+  </div>
+  }
+</section>

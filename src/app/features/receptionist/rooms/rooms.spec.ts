@@ -72,10 +72,10 @@ describe("Backend room cards", () => {
     expect(fixture.nativeElement.querySelector('.room-status').textContent).toContain('RECEPTIONIST.UI.ROOM_AVAILABLE');
     expect(fixture.nativeElement.querySelector('.room-status.is-active')).toBeTruthy();
   });
-  it("keeps maintenance unknown for active and inactive records instead of inferring its state", () => {
+  it("has no end-maintenance action and uses the saved maintenance state", () => {
     rooms.set([
       { id: 1, name: "Active", capacity: 2, isActive: true },
-      { id: 2, name: "Inactive", capacity: 1, isActive: false },
+      { id: 2, name: "Inactive", capacity: 1, isActive: false,status:'Maintenance' },
     ]);
     fixture.detectChanges();
     const toggles = fixture.nativeElement.querySelectorAll(
@@ -85,7 +85,8 @@ describe("Backend room cards", () => {
       [...toggles].map((toggle: Element) =>
         toggle.getAttribute("aria-checked"),
       ),
-    ).toEqual(["mixed", "mixed"]);
+    ).toEqual(["false", "true"]);
+    expect(fixture.nativeElement.querySelector('.maintenance-clear')).toBeNull();expect(toggles[1].disabled).toBe(true);
     expect(
       fixture.nativeElement.querySelector(".room-doctors").textContent,
     ).toContain("RECEPTIONIST.UI.ROOM_ASSIGNMENTS_UNAVAILABLE");
@@ -113,7 +114,7 @@ describe("Backend room cards", () => {
       fixture.nativeElement
         .querySelector(".maintenance-switch")
         .getAttribute("aria-checked"),
-    ).toBe("true");
+    ).toBe("false");
     service.maintenance.mockReturnValue(of(null));
     await fixture.componentInstance.setMaintenance(room, false);
     fixture.detectChanges();
@@ -139,7 +140,7 @@ describe("Backend room cards", () => {
     expect(fixture.componentInstance.maintenanceRoomId()).toBeNull();
     expect(
       fixture.nativeElement.querySelector('[role="alert"]').textContent,
-    ).toContain("Request failed");
+    ).toContain("REQUEST_FAILED_SAFE");
   });
   it("blocks maintenance actions after an uncertain outcome", async () => {
     service.mutation.uncertain.set(true);

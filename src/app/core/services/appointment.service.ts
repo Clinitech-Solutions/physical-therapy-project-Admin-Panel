@@ -17,6 +17,8 @@ import { backendEnumNumber } from './reception-contracts';
 export interface Appointment {
   id?: number;
   assessmentCompleted?: boolean;
+  treatmentStartedAt?: string|null;
+  treatmentEndedAt?: string|null;
   actualCheckIn?: string | null;
   actualCheckOut?: string | null;
   patientId: number;
@@ -73,6 +75,8 @@ export function decodeAppointment(value: unknown): Appointment {
     assessmentCompleted: r['assessmentCompleted'] === true,
     actualCheckIn: typeof r['actualCheckIn'] === 'string' ? r['actualCheckIn'] : null,
     actualCheckOut: typeof r['actualCheckOut'] === 'string' ? r['actualCheckOut'] : null,
+    treatmentStartedAt: typeof r["treatmentStartedAt"] === "string" ? r["treatmentStartedAt"] : null,
+    treatmentEndedAt: typeof r["treatmentEndedAt"] === "string" ? r["treatmentEndedAt"] : null,
     patientId: numericId(r["patientId"]),
     doctorId: clinician(r["doctorId"]),
     seniorId: clinician(r["seniorId"]),

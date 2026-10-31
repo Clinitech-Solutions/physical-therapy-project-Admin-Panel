@@ -13,12 +13,14 @@
   </div>
 </div>
 
+<app-reassessment-queue [review]="true" (pendingCount)="reviewCount.set($event)" />
+
 <!-- ── KPI Row ─────────────────────────────────────────────── -->
 <div class="kpi-row">
   <!-- Total Pending Tasks -->
   <div class="stat-card border-start-teal">
     <div class="stat-label">{{ 'SENIOR.PENDING_TASKS' | translate }}</div>
-    <div class="stat-value">{{ totalPendingTasks() }}</div>
+    <div class="stat-value">{{ totalPendingTasks() ?? '—' }}</div>
     <div class="stat-sub">{{ 'SENIOR.PENDING_TASKS_SUB' | translate }}</div>
   </div>
 
@@ -29,18 +31,11 @@
     <div class="stat-sub">{{ 'SENIOR.ASSESSMENTS_SUB' | translate }}</div>
   </div>
 
-  <!-- Re-assessments -->
-  <div class="stat-card" style="border-left-color: var(--color-warning);">
-    <div class="stat-label">{{ 'SENIOR.REASSESSMENTS' | translate }}</div>
-    <div class="stat-value">{{ reassessmentCount() }}</div>
-    <div class="stat-sub">{{ 'SENIOR.REASSESSMENTS_SUB' | translate }}</div>
-  </div>
-
   <!-- Available Doctors -->
   <div class="stat-card" style="border-left-color: var(--color-success);">
     <div class="stat-label">{{ 'SENIOR.DOCTORS_AVAILABLE' | translate }}</div>
-    <div class="stat-value">{{ availableDoctorsCount() }}</div>
-    <div class="stat-sub">{{ busyDoctorsCount() }} {{ 'SENIOR.DOCTORS_BUSY' | translate }}</div>
+    <div class="stat-value">{{ capacityLoading() || capacityError() ? '—' : availableDoctorsCount() }}</div>
+    <div class="stat-sub">{{ capacityLoading() || capacityError() ? '—' : busyDoctorsCount() }} {{ 'SENIOR.DOCTORS_BUSY' | translate }}</div>
   </div>
 </div>
 
@@ -61,11 +56,6 @@
              [class.active]="activeTab() === 'assessments'"
              (click)="switchTab('assessments')">
           {{ 'SENIOR.ASSESSMENTS' | translate }} ({{ assessmentCount() }})
-        </div>
-        <div class="tab"
-             [class.active]="activeTab() === 'reassessments'"
-             (click)="switchTab('reassessments')">
-          {{ 'SENIOR.REASSESSMENTS' | translate }} ({{ reassessmentCount() }})
         </div>
       </div>
 
@@ -117,6 +107,9 @@
         {{ 'SENIOR.LIVE_VIEW_CAPACITY' | translate }}
       </h4>
 
+      @if(capacityLoading()){<p role="status">{{'DOCTOR.LOADING'|translate}}</p>}
+      @if(capacityError()){<p class="alert alert-warning" role="alert">{{locale.label(capacityError())}} <button class="btn btn-outline-secondary" (click)="refreshCapacity()">{{'DOCTOR.RETRY'|translate}}</button></p>}
+      @if(!capacityError()&&!capacityLoading()){
       <div class="doctor-grid">
         @for (doctor of activeDoctorsWorkload(); track doctor.doctorId) {
           <div class="doctor-card" [style.border-left-color]="doctor.borderColor">
@@ -142,6 +135,7 @@
           </div>
         }
       </div>
+      }
     </div>
   </div>
 

@@ -24,7 +24,8 @@ export class ReceptionistLocale {
       return this.text(`${kind}_NUMBER`, label, { id: numbered[2] });
     }
     const key = label.replace(/([a-z])([A-Z])/g, '$1_$2').replace(/[^a-zA-Z0-9]+/g, '_').toUpperCase();
-    return this.text(key, label);
+    const fallback=/^BOOKING_RULE_[A-Z_]+$/.test(label)?this.text('BUSINESS_REVIEW_REQUIRED','Review the saved details and current availability before retrying.'):label;
+    return this.text(key, fallback);
   }
 
   patientName(patient?: { nameEn?: string; nameAr?: string } | null): string {

@@ -1,4 +1,7 @@
-import { Component, OnInit, inject, signal } from "@angular/core";
+import { Component, OnInit, inject, signal, DestroyRef } from "@angular/core";
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { interval } from 'rxjs';
+import { ReceptionWarnings } from '../../../core/services/reception-warnings';
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { TranslateModule } from "@ngx-translate/core";
@@ -24,6 +27,8 @@ export class RoomsComponent implements OnInit {
   readonly locale = new ReceptionistLocale();
   readonly roomService = inject(RoomService);
   private messages = inject(MessageService);
+  private warnings=inject(ReceptionWarnings,{optional:true}) ?? new ReceptionWarnings();
+  private destroy=inject(DestroyRef);
   readonly rooms = this.roomService.rooms;
   readonly loading = this.roomService.loading;
   readonly error = this.roomService.error;
@@ -37,6 +42,7 @@ export class RoomsComponent implements OnInit {
   newRoom: RoomWriteRequest = { name: "", capacity: 1, isActive: true };
   ngOnInit() {
     this.retry();
+    interval(30000).pipe(takeUntilDestroyed(this.destroy)).subscribe(()=>{if(!document.hidden&&!this.loading())this.retry();});
   }
   retry() {
     this.roomService.load();
@@ -63,6 +69,7 @@ export class RoomsComponent implements OnInit {
       this.isAddRoomModalOpen.set(true);
     } catch (error) {
       this.formError.set(apiError(error));
+      this.warnings.show(this.formError());
     }
   }
   async saveNewRoom() {
@@ -103,7 +110,8 @@ export class RoomsComponent implements OnInit {
     }
   }
   maintenanceState(id: number): boolean | null {
-    return this.maintenanceRequests()[id] ?? null;
+    const status=this.rooms().find(room=>room.id===id)?.status;
+    return this.maintenanceRequests()[id] ?? (status==='Maintenance'?true:status==='Available'||status==='Occupied'?false:null);
   }
   private async perform(request: Observable<unknown>, close = false) {
     this.formError.set("");
@@ -111,6 +119,7 @@ export class RoomsComponent implements OnInit {
       await firstValueFrom(request);
     } catch (error) {
       this.formError.set(apiError(error));
+      this.warnings.show(this.formError());
       return false;
     }
     if (close) this.closeAddRoomModal();

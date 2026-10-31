@@ -30,7 +30,7 @@ describe('Rendered patient-first booking controls', () => {
     http.expectOne(`${url}/Bookings/patients/1`).flush({ patientId: 1, patientName: 'Patient', gender: 'Male', paymentType: isInsurance ? 'Insurance' : 'Cash',
       hasCompletedAssessment: treatment, isInsurance, insuranceApproved: isInsurance && treatment, approvedSessions: isInsurance ? 4 : null,
       remainingApprovedSessions: isInsurance ? 4 : null, copayPercentage: isInsurance ? 20 : null, insuranceCompanyName: isInsurance ? 'Insurer' : null, assessments: [],
-      plans: treatment ? [{id:5,doctorId:'doctor',doctorName:'Doctor',treatmentType:'Physio',plannedSessions:6,bookedSessions:1,completedSessions:1,remainingSessions:4}] : [] });
+      plans: treatment ? [{id:5,doctorId:'doctor',doctorName:'Doctor',treatmentType:'Physio',plannedSessions:6,bookedSessions:1,completedSessions:1,remainingSessions:4,frequencyPerWeek:2,bookedStartsAt:[]}] : [] });
     await Promise.resolve();
     http.expectOne(`${url}/Rooms/availability`).flush([{id:1,name:'Room',capacity:1,isActive:true,status:'Available'}]);
     http.expectOne(r=>r.url===`${url}/Bookings/patients/1/clinicians`).flush([{id:treatment?'doctor':'senior',name:treatment?'Doctor':'Senior',gender:'Male',role:treatment?'Doctor':'Senior',preferred:true,currentLoad:0}]);
@@ -113,7 +113,7 @@ describe('Rendered patient-first booking controls', () => {
     (fixture.nativeElement.querySelector('[data-booking-preview]') as HTMLButtonElement).click();
     const request=http.expectOne(`${url}/Bookings/preview`);
     expect(request.request.body).toMatchObject({patientId:1,treatmentPlanId:5,pricingMode:'Package',unitPrice:100});
-    request.flush({canSave:true,appointments:[{startTime:'2030-02-04T10:00:00Z',endTime:'2030-02-04T11:00:00Z',conflicts:[]}],errors:[],totalAmount:600,patientAmount:600,insuranceAmount:0,discountAmount:0,deposit:0,remainingAmount:600,waiverReason:null});
+    request.flush({canSave:true,appointments:request.request.body.startsAt.map((startTime:string)=>({startTime,endTime:new Date(new Date(startTime).getTime()+3600000).toISOString(),conflicts:[]})),errors:[],totalAmount:600,patientAmount:600,insuranceAmount:0,discountAmount:0,deposit:0,remainingAmount:600,waiverReason:null});
     await fixture.whenStable();
     expect(fixture.nativeElement.querySelector('[data-booking-confirm]').disabled).toBe(false);
     expect(fixture.nativeElement.querySelectorAll('.slot-status.available')).toHaveLength(1);
@@ -127,5 +127,25 @@ describe('Rendered patient-first booking controls', () => {
     component.resetBookingForm();await fixture.whenStable();
     expect(component.bookingContext()).toBeNull();expect(component.unitPrice).toBeNull();expect(component.deposit).toBe(0);expect(component.paymentMethod).toBeNull();expect(component.discountType).toBe('None');
     http.expectNone(r=>r.method==='POST');
+  });
+  it('limits selected weekdays to the saved prescription and warns once',async()=>{
+    await select(false,true);const c=fixture.componentInstance;const messages=vi.spyOn(TestBed.inject(MessageService),'add');
+    expect(c.selectedDays).toHaveLength(2);c.toggleBookingDay(6);
+    expect(c.selectedDays).toHaveLength(2);expect(messages).toHaveBeenCalledTimes(1);expect(messages.mock.calls[0][0].severity).toBe('warn');
+    http.expectNone(r=>r.method==='POST');
+  });
+  it('renders complete data for every one of ten generated rows and correlates the server preview',async()=>{
+    await select(false,true);const c=fixture.componentInstance;
+    c.bookingContext.update(value=>({...value!,plans:[{...value!.plans[0],plannedSessions:10,remainingSessions:10,bookedStartsAt:[]}]}));
+    c.planSessionCount=10;c.planStartDate=new Date(2030,1,4);c.planPreferredTime=new Date(2030,1,4,18);c.setBookingMode('plan');
+    http.expectOne(`${url}/Rooms/availability`).flush([{id:1,name:'Room',capacity:1,isActive:true,status:'Available'}]);
+    c.selectedRoomId='1';c.unitPrice=100;
+    const preview=c.previewBooking();const req=http.expectOne(`${url}/Bookings/preview`);const times=req.request.body.startsAt;
+    expect(times).toHaveLength(10);expect(new Set(times).size).toBe(10);
+    req.flush({canSave:true,appointments:times.map((startTime:string)=>({startTime,endTime:new Date(new Date(startTime).getTime()+3600000).toISOString(),conflicts:[]})),errors:[],totalAmount:1000,patientAmount:1000,insuranceAmount:0,discountAmount:0,deposit:0,remainingAmount:1000,waiverReason:null});await preview;
+    fixture.changeDetectorRef.markForCheck();fixture.detectChanges();
+    const rows=[...fixture.nativeElement.querySelectorAll('.appointment-table tbody tr')] as HTMLTableRowElement[];
+    expect(rows).toHaveLength(10);for(const row of rows){expect(row.cells).toHaveLength(8);expect(row.cells[1].textContent?.trim()).toBeTruthy();expect(row.cells[5].textContent).toContain('Doctor');expect(row.cells[6].textContent).toContain('Room');}
+    expect(c.canConfirm).toBe(true);
   });
 });

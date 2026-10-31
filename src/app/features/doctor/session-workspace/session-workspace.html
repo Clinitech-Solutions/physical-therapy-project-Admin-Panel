@@ -1,0 +1,391 @@
+<section class="clinical-page">
+  <a routerLink="/doctor/dashboard" class="back-link"
+    >← {{'DOCTOR.BACK_TO_SCHEDULE'|translate}}</a
+  >
+  @if(loading()){
+  <p role="status">{{'DOCTOR.LOADING'|translate}}</p>
+  } @if(error()){
+  <div class="clinical-alert" role="alert">
+    {{error()}} @if(shortfall()!==null){<strong
+      >{{'DOCTOR.SHORTFALL'|translate}}:
+      {{shortfall()|currency:'EGP':'code':'1.2-2':locale.language}}</strong
+    >}<button
+      class="btn btn-outline-secondary"
+      type="button"
+      (click)="reviewLatest()"
+    >
+      {{'DOCTOR.REVIEW_LATEST'|translate}}
+    </button>
+  </div>
+  } @if(!data()&&!loading()){<button
+    type="button"
+    class="btn btn-outline-secondary"
+    (click)="load()"
+  >
+    {{'DOCTOR.RETRY'|translate}}</button
+  >} @if(data();as w){
+  <header class="clinical-heading patient-heading">
+    <div>
+      <h1>{{w.visit.patientName}}</h1>
+      <p>
+        {{w.visit.phone||('DOCTOR.NOT_RECORDED'|translate)}} ·
+        {{'DOCTOR.GENDER.'+w.visit.gender|translate}} · {{w.visit.doctorName}} ·
+        {{w.visit.roomName||('DOCTOR.NOT_RECORDED'|translate)}}
+      </p>
+    </div>
+    <span class="clinical-badge" [class.is-active]="w.visit.state==='Treating'"
+      >{{'DOCTOR.STATES.'+w.visit.state|translate}}</span
+    >
+  </header>
+  <div class="clinical-summary">
+    <div>
+      <span>{{'DOCTOR.PRESCRIBED'|translate}}</span
+      ><strong>{{w.plan.prescribed}}</strong>
+    </div>
+    <div>
+      <span>{{'DOCTOR.BOOKED'|translate}}</span
+      ><strong>{{w.plan.booked}}</strong>
+    </div>
+    <div>
+      <span>{{'DOCTOR.COMPLETED'|translate}}</span
+      ><strong>{{w.plan.completed}}</strong>
+    </div>
+    <div>
+      <span>{{'DOCTOR.CURRENT_SESSION'|translate}}</span
+      ><strong>{{w.visit.sessionNumber}}</strong>
+    </div>
+  </div>
+  <aside class="safety-note">
+    <i class="bi bi-shield-exclamation" aria-hidden="true"></i>
+    <div>
+      <strong>{{'DOCTOR.CLINICAL_SAFETY'|translate}}</strong>
+      <p>{{'DOCTOR.SAFETY_NOT_RECORDED'|translate}}</p>
+    </div>
+  </aside>
+  <nav
+    class="clinical-tabs"
+    [attr.aria-label]="'DOCTOR.CLINICAL_SECTIONS'|translate"
+  >
+    @for(t of tabs;track t){<button
+      type="button"
+      [class.active]="tab()===t"
+      [attr.aria-current]="tab()===t?'page':null"
+      (click)="tab.set(t)"
+    >
+      {{'DOCTOR.'+t|translate}}</button
+    >}
+  </nav>
+  @if(tab()==='CURRENT_SESSION'){
+  <section class="clinical-card">
+    <div class="session-toolbar">
+      <div>
+        <h2>
+          {{'DOCTOR.CURRENT_SESSION'|translate}} {{w.visit.sessionNumber}}
+        </h2>
+        <span role="status" aria-live="polite" class="save-state"
+          >{{'DOCTOR.SAVE_STATES.'+saveState()|translate}}
+          @if(w.notes.savedAt){· {{locale.date(w.notes.savedAt,true)}}}</span
+        >
+      </div>
+      <div class="clinical-controls">
+        @if(w.visit.state==='Arrived'){<button
+          type="button"
+          class="btn btn-primary"
+          [disabled]="busy()"
+          (click)="start()"
+        >
+          {{'DOCTOR.START_SESSION'|translate}}</button
+        >}@if(w.visit.state==='Treating'){<button
+          type="button"
+          class="btn btn-outline-secondary"
+          [disabled]="finalizing()||conflict()"
+          (click)="saveDraft()"
+        >
+          {{(saveState()==='Failed'?'DOCTOR.RETRY_SAVE':'DOCTOR.SAVE_DRAFT')|translate}}</button
+        ><button
+          type="button"
+          class="btn btn-primary"
+          data-end-treatment
+          [disabled]="finalizing()||conflict()||!draft.progressNotes.trim()"
+          (click)="end()"
+        >
+          {{'DOCTOR.END_SESSION'|translate}}</button
+        >}
+      </div>
+    </div>
+    <dl class="session-times">
+      <div>
+        <dt>{{'DOCTOR.PLANNED'|translate}}</dt>
+        <dd>
+          {{locale.date(w.visit.plannedStart,true)}} –
+          {{locale.time(w.visit.plannedEnd)}} · 60
+          {{'DOCTOR.MINUTES'|translate}}
+        </dd>
+      </div>
+      <div>
+        <dt>{{'DOCTOR.ARRIVAL'|translate}}</dt>
+        <dd>{{locale.date(w.visit.arrivedAt,true)}}</dd>
+      </div>
+      <div>
+        <dt>{{'DOCTOR.TREATMENT_STARTED'|translate}}</dt>
+        <dd>{{locale.date(w.visit.treatmentStartedAt,true)}}</dd>
+      </div>
+      <div>
+        <dt>{{'DOCTOR.TREATMENT_ENDED'|translate}}</dt>
+        <dd>{{locale.date(w.visit.treatmentEndedAt,true)}}</dd>
+      </div>
+      <div>
+        <dt>{{'DOCTOR.DEPARTURE'|translate}}</dt>
+        <dd>{{locale.date(w.visit.departedAt,true)}}</dd>
+      </div>
+    </dl>
+    @if(w.visit.state==='Scheduled'){
+    <p class="clinical-alert">{{'DOCTOR.AWAITING_ARRIVAL'|translate}}</p>
+    } @if(w.notes.finalizedAt){
+    <p class="clinical-alert">
+      {{'DOCTOR.FINAL_RECORD'|translate}} · {{w.notes.authorName}} ·
+      {{locale.date(w.notes.finalizedAt,true)}}
+    </p>
+    }
+    <div class="clinical-note-grid">
+      <label for="doctor-progress"
+        >{{'DOCTOR.PROGRESS_NOTES'|translate}}<textarea
+          id="doctor-progress"
+          rows="5"
+          maxlength="10000"
+          [(ngModel)]="draft.progressNotes"
+          (ngModelChange)="changed()"
+          [readOnly]="!editable()"
+        ></textarea></label
+      ><label for="doctor-condition"
+        >{{'DOCTOR.CONDITION_CHANGES'|translate}}<textarea
+          id="doctor-condition"
+          rows="5"
+          maxlength="10000"
+          [(ngModel)]="draft.conditionChanges"
+          (ngModelChange)="changed()"
+          [readOnly]="!editable()"
+        ></textarea></label
+      ><label for="doctor-response"
+        >{{'DOCTOR.RESPONSE_TO_TREATMENT'|translate}}<textarea
+          id="doctor-response"
+          rows="4"
+          maxlength="10000"
+          [(ngModel)]="draft.responseToTreatment"
+          (ngModelChange)="changed()"
+          [readOnly]="!editable()"
+        ></textarea></label
+      ><label for="doctor-performed"
+        >{{'DOCTOR.TREATMENT_PERFORMED'|translate}}<textarea
+          id="doctor-performed"
+          rows="4"
+          maxlength="10000"
+          [(ngModel)]="draft.treatmentPerformed"
+          (ngModelChange)="changed()"
+          [readOnly]="!editable()"
+        ></textarea>
+      </label>
+    </div>
+  </section>
+  } @if(latest();as latest){
+  <section class="clinical-card">
+    <h2>{{'DOCTOR.LATEST_SERVER_NOTES'|translate}}</h2>
+    <p class="preserve-lines">
+      {{latest.notes.progressNotes||('DOCTOR.NOT_RECORDED'|translate)}}
+    </p>
+    <dl>
+      <dt>{{'DOCTOR.CONDITION_CHANGES'|translate}}</dt>
+      <dd class="preserve-lines">
+        {{latest.notes.conditionChanges||('DOCTOR.NOT_RECORDED'|translate)}}
+      </dd>
+      <dt>{{'DOCTOR.RESPONSE_TO_TREATMENT'|translate}}</dt>
+      <dd class="preserve-lines">
+        {{latest.notes.responseToTreatment||('DOCTOR.NOT_RECORDED'|translate)}}
+      </dd>
+      <dt>{{'DOCTOR.TREATMENT_PERFORMED'|translate}}</dt>
+      <dd class="preserve-lines">
+        {{latest.notes.treatmentPerformed||('DOCTOR.NOT_RECORDED'|translate)}}
+      </dd>
+    </dl>
+    <p>
+      {{latest.notes.authorName}} · {{locale.date(latest.notes.savedAt,true)}}
+    </p>
+    <button
+      class="btn btn-outline-secondary"
+      type="button"
+      (click)="useLatest()"
+    >
+      {{'DOCTOR.USE_LATEST'|translate}}
+    </button>
+  </section>
+  } @if(tab()==='TREATMENT_PLAN'){
+  <section class="clinical-card">
+    <h2>{{'DOCTOR.SENIOR_ASSESSMENT'|translate}}</h2>
+    <p>{{w.plan.seniorName}} · {{locale.date(w.plan.assessedAt,true)}}</p>
+    <dl class="plan-details">
+      <dt>{{'DOCTOR.DIAGNOSIS'|translate}}</dt>
+      <dd>{{w.plan.diagnosis||('DOCTOR.NOT_RECORDED'|translate)}}</dd>
+      <dt>{{'DOCTOR.ASSESSMENT_NOTES'|translate}}</dt>
+      <dd class="preserve-lines">
+        {{w.plan.assessmentNotes||('DOCTOR.NOT_RECORDED'|translate)}}
+      </dd>
+      <dt>{{'DOCTOR.TREATMENT_PLAN'|translate}}</dt>
+      <dd>
+        {{w.plan.treatmentType}} · {{w.plan.frequencyPerWeek}}
+        {{'DOCTOR.PER_WEEK'|translate}}
+      </dd>
+      <dt>{{'DOCTOR.EXERCISES'|translate}}</dt>
+      <dd class="preserve-lines">
+        {{w.plan.exercises||('DOCTOR.NOT_RECORDED'|translate)}}
+      </dd>
+      <dt>{{'DOCTOR.ASSIGNED_CLINICIAN'|translate}}</dt>
+      <dd>{{w.plan.assignedDoctor}}</dd>
+    </dl>
+    @if(w.plan.staffReviewRequired){
+    <p class="clinical-alert">{{'DOCTOR.BOOKING_REVIEW_REQUIRED'|translate}}</p>
+    }
+  </section>
+  <section class="clinical-card">
+    <h2>{{'DOCTOR.DOCUMENTS'|translate}}</h2>
+    @for(document of w.documents;track document.id){<button
+      class="btn btn-outline-secondary"
+      type="button"
+      (click)="download(document)"
+    >
+      {{document.fileName}}</button
+    >}@empty{
+    <p>{{'DOCTOR.NO_DOCUMENTS'|translate}}</p>
+    }
+  </section>
+  } @if(tab()==='PREVIOUS_SESSIONS'){
+  <section class="clinical-card">
+    <h2>{{'DOCTOR.PREVIOUS_SESSIONS'|translate}}</h2>
+    @for(previous of w.previousSessions;track $index){
+    <article class="previous-note">
+      <h3>{{'DOCTOR.SESSION'|translate}} {{previous.sessionNumber}}</h3>
+      <p>
+        {{previous.authorName||('DOCTOR.NOT_RECORDED'|translate)}} ·
+        {{locale.date(previous.recordedAt,true)}}
+      </p>
+      <p>
+        {{'DOCTOR.PLANNED'|translate}}: {{locale.date(previous.plannedAt,true)}}
+      </p>
+      <p>
+        {{'DOCTOR.TREATMENT_STARTED'|translate}}:
+        {{locale.date(previous.treatmentStartedAt,true)}} ·
+        {{'DOCTOR.TREATMENT_ENDED'|translate}}:
+        {{locale.date(previous.treatmentEndedAt,true)}}
+      </p>
+      <p class="preserve-lines">
+        {{previous.progressNotes||('DOCTOR.NOT_RECORDED'|translate)}}
+      </p>
+      @if(previous.conditionChanges){
+      <p>
+        {{'DOCTOR.CONDITION_CHANGES'|translate}}: {{previous.conditionChanges}}
+      </p>
+      }@if(previous.responseToTreatment){
+      <p>
+        {{'DOCTOR.RESPONSE_TO_TREATMENT'|translate}}:
+        {{previous.responseToTreatment}}
+      </p>
+      }@if(previous.treatmentPerformed){
+      <p>
+        {{'DOCTOR.TREATMENT_PERFORMED'|translate}}:
+        {{previous.treatmentPerformed}}
+      </p>
+      }
+    </article>
+    }@empty{
+    <p>{{'DOCTOR.NO_PREVIOUS_SESSIONS'|translate}}</p>
+    }
+  </section>
+  } @if(tab()==='REASSESSMENT'){
+  <section class="clinical-card">
+    <h2>{{'DOCTOR.REQUEST_REASSESSMENT'|translate}}</h2>
+    <button
+      type="button"
+      class="btn btn-outline-secondary"
+      (click)="refreshReviews()"
+    >
+      {{'DOCTOR.REFRESH'|translate}}
+    </button>
+    <p>{{'DOCTOR.REVIEW_NO_FINANCE'|translate}}</p>
+    @for(r of w.reassessments;track r.id){
+    <article class="previous-note">
+      <span class="clinical-badge"
+        >{{'DOCTOR.REVIEW_STATES.'+r.state|translate}}</span
+      >
+      <p>{{r.requestedBy}} · {{locale.date(r.requestedAt,true)}}</p>
+      <p>
+        {{'DOCTOR.REASONS.'+r.reasonCategory|translate}} ·
+        {{'DOCTOR.RECOMMENDATIONS.'+r.recommendation|translate}}
+      </p>
+      <p class="preserve-lines">{{r.notes}}</p>
+      @if(r.reviewNotes){
+      <h3>{{'DOCTOR.CLINICAL_REVIEW'|translate}}</h3>
+      <p class="preserve-lines">{{r.reviewNotes}}</p>
+      }@if(r.decision){
+      <p>{{'DOCTOR.DECISIONS.'+r.decision|translate}}</p>
+      }@if(r.resolvedAt){
+      <p>{{r.resolvedBy||r.seniorName}} &middot; {{locale.date(r.resolvedAt,true)}}</p>
+      }@if(r.cancellationReason){
+      <p>{{r.cancellationReason}}</p>
+      }
+    </article>
+    } @if(requestError()){
+    <p role="alert" class="clinical-alert">{{requestError()}}</p>
+    }
+    <form class="review-request" (ngSubmit)="requestReview()">
+      <label for="review-reason"
+        >{{'DOCTOR.REASON'|translate}}<select
+          id="review-reason"
+          name="reason"
+          [disabled]="requestBusy()||!!requestIntent||hasActiveReview"
+          [(ngModel)]="reason"
+        >
+          @for(reason of
+          ['SymptomsChanged','ProgressConcern','PlanReview','Other'];track
+          reason){
+          <option [value]="reason">
+            {{'DOCTOR.REASONS.'+reason|translate}}
+          </option>
+          }
+        </select></label
+      ><label for="review-recommendation"
+        >{{'DOCTOR.RECOMMENDATION'|translate}}<select
+          id="review-recommendation"
+          name="recommendation"
+          [disabled]="requestBusy()||!!requestIntent||hasActiveReview"
+          [(ngModel)]="recommendation"
+        >
+          <option value="Continue">
+            {{'DOCTOR.RECOMMENDATIONS.Continue'|translate}}
+          </option>
+          <option value="Pause">
+            {{'DOCTOR.RECOMMENDATIONS.Pause'|translate}}
+          </option>
+        </select></label
+      ><label for="review-notes"
+        >{{'DOCTOR.CLINICAL_NOTES'|translate}}<textarea
+          id="review-notes"
+          name="notes"
+          rows="4"
+          maxlength="4000"
+          required
+          [readOnly]="requestBusy()||!!requestIntent||hasActiveReview"
+          [(ngModel)]="requestNotes"
+        ></textarea>
+      </label>
+      <p>{{'DOCTOR.RECOMMENDATION_ONLY'|translate}}</p>
+      <button
+        type="submit"
+        data-review-request
+        class="btn btn-primary"
+        [disabled]="requestBusy()||!requestNotes.trim()||hasActiveReview&&!requestIntent"
+      >
+        {{'DOCTOR.SUBMIT_REQUEST'|translate}}
+      </button>
+    </form>
+  </section>
+  } }
+</section>

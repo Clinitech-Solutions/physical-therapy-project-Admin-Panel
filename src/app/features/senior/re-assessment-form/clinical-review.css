@@ -1,0 +1,31 @@
+.review-form fieldset {
+  display: grid;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.review-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.review-history {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+.preserve-lines {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.review-form textarea {
+  resize: vertical;
+}
+details > summary {
+  cursor: pointer;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+@media (max-width: 700px) {
+  .review-fields {
+    grid-template-columns: 1fr;
+  }
+}

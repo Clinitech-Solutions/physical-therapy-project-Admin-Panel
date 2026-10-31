@@ -10,4 +10,6 @@ export interface MaintenanceRequest {
 export interface RoomRecord extends RoomWriteRequest {
   id: number;
   status?: 'Available' | 'Occupied' | 'Maintenance' | 'Unknown';
+  currentLoad?: number;
+  occupants?: {appointmentId:number;patientName:string;clinicianName:string|null;state:string}[];
 }

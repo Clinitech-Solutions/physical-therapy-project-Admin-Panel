@@ -112,9 +112,11 @@
           <h4 [id]="'room-doctors-' + room.id">
             {{ 'RECEPTIONIST.UI.ROOM_DOCTORS' | translate }}
           </h4>
-          <p>
-            {{ 'RECEPTIONIST.UI.ROOM_ASSIGNMENTS_UNAVAILABLE' | translate }}
-          </p>
+          @if(room.occupants===undefined){<p>{{'RECEPTIONIST.UI.ROOM_ASSIGNMENTS_UNAVAILABLE'|translate}}</p>} @else {
+          @for(occupant of room.occupants;track occupant.appointmentId){
+            <p><strong>{{occupant.patientName}}</strong> · {{occupant.clinicianName || ('DOCTOR.NOT_RECORDED'|translate)}} <small class="d-block">{{'DOCTOR.STATES.'+occupant.state|translate}}</small></p>
+          } @empty { <p>{{'RECEPTIONIST.UI.ROOM_NO_OCCUPANTS'|translate}}</p> }
+          }
         </div>
       </section>
       <div class="room-footer">
@@ -142,14 +144,13 @@
             type="button"
             class="maintenance-switch"
             role="checkbox"
-            [class.is-on]="maintenanceState(room.id) === true"
-            [class.is-unknown]="maintenanceState(room.id) === null"
-            [attr.aria-checked]="maintenanceState(room.id) === null ? 'mixed' : maintenanceState(room.id)"
+            [class.is-on]="room.status === 'Maintenance'"
+            [attr.aria-checked]="room.status === 'Maintenance'"
             [attr.aria-label]="'RECEPTIONIST.MAINTENANCE' | translate"
             [attr.aria-describedby]="'maintenance-state-' + room.id"
-            [title]="(maintenanceState(room.id) === true ? 'RECEPTIONIST.UI.CLEAR_MAINTENANCE' : 'RECEPTIONIST.UI.ROOM_ENABLE_MAINTENANCE') | translate"
-            [disabled]="isSubmitting() || roomService.mutation.uncertain() || maintenanceRoomId() !== null"
-            (click)="setMaintenance(room, maintenanceState(room.id) !== true)"
+            [title]="'RECEPTIONIST.UI.ROOM_ENABLE_MAINTENANCE' | translate"
+            [disabled]="room.status === 'Maintenance' || isSubmitting() || roomService.mutation.uncertain() || maintenanceRoomId() !== null"
+            (click)="setMaintenance(room, true)"
           >
             <span class="switch-thumb" aria-hidden="true">
               @if (maintenanceRoomId() === room.id) {
@@ -161,16 +162,6 @@
             </span>
           </button>
         </div>
-        @if (maintenanceState(room.id) === null) {
-        <button
-          type="button"
-          class="maintenance-clear"
-          (click)="setMaintenance(room, false)"
-          [disabled]="isSubmitting() || roomService.mutation.uncertain() || maintenanceRoomId() !== null"
-        >
-          {{ 'RECEPTIONIST.UI.CLEAR_MAINTENANCE' | translate }}
-        </button>
-        }
       </div>
     </article>
     }

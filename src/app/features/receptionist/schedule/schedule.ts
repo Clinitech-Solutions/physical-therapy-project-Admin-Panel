@@ -1,3 +1,4 @@
+import { ReceptionWarnings } from '../../../core/services/reception-warnings';
 import { RoomService } from '../../../core/services/room.service';
 import { ClinicianService } from '../../../core/services/clinician.service';
 import { AppointmentWorkflowService } from '../../../core/services/appointment-workflow.service';
@@ -57,6 +58,7 @@ export interface ScheduleRoomOption {
   styleUrls: ['./schedule.css', './schedule-timeline.css', './schedule-session-cards.css']
 })
 export class ScheduleComponent implements OnInit {
+  private warnings=inject(ReceptionWarnings,{optional:true}) ?? new ReceptionWarnings();
   readonly locale = new ReceptionistLocale();
   messageService = inject(MessageService);
   receptionistService =
@@ -82,10 +84,12 @@ export class ScheduleComponent implements OnInit {
   get editVisible() { return this.editingAppointment() !== null; }
   set editVisible(value: boolean) { if (!value && !this.appointmentService?.mutation.busy()) this.editingAppointment.set(null); }
   async openEditAppointment(session: TodaySession) {
+    if(!this.canScheduleEdit(session))return;
     if (!this.appointmentService || this.editingLoading()) return;
     this.editingLoading.set(true); this.actionError.set('');
     try {
       const appointment = await firstValueFrom(this.appointmentService.getAppointment(session.id));
+      if(!this.canScheduleEdit(appointment))throw new ReceptionError('BOOKING_RULE_NOT_UPCOMING','Started or completed appointments cannot be rescheduled.');
       if (typeof appointment.status !== 'number' || !Number.isInteger(appointment.status)) {
         throw new ReceptionError('ENUM_DEFINITION_PENDING', 'This operation needs a confirmed backend status definition.');
       }
@@ -96,12 +100,12 @@ export class ScheduleComponent implements OnInit {
       this.editStart = local(appointment.startTime);
       this.editClinicianId = appointment.doctorId ?? appointment.seniorId ?? '';
       this.editRoomId = appointment.roomId ?? null; this.editingAppointment.set(appointment);
-    } catch (error) { this.actionError.set(error instanceof ReceptionError ? this.locale.text(error.key,error.message) : apiError(error)); }
+    } catch (error) { this.actionError.set(error instanceof ReceptionError ? this.locale.text(error.key,error.message) : apiError(error)); this.warnings.show(this.actionError()); }
     this.editingLoading.set(false);
   }
   async saveAppointmentEdit() {
     const appointment = this.editingAppointment();
-    if (!appointment || !this.appointmentService || this.appointmentService.mutation.busy()) return;
+    if (!appointment || !this.canScheduleEdit(appointment) || !this.appointmentService || this.appointmentService.mutation.busy()) return;
     this.actionError.set('');
     try {
       const clinician = this.allDoctors().find(d => d.id === this.editClinicianId);
@@ -113,10 +117,14 @@ export class ScheduleComponent implements OnInit {
         roomId: this.editRoomId, appointmentType: appointment.appointmentType,
         startTime: new Date(this.editStart), endTime: new Date(this.editEnd), status: appointment.status as number
       }));
-    } catch (error) { this.actionError.set(error instanceof ReceptionError ? this.locale.text(error.key,error.message) : apiError(error)); return; }
+    } catch (error) { this.actionError.set(error instanceof ReceptionError ? this.locale.text(error.key,error.message) : apiError(error)); this.warnings.show(this.actionError()); return; }
     this.editingAppointment.set(null);
     this.messageService.add({severity:'success',summary:this.locale.text('SUCCESS','Success'),detail:this.locale.text('APPOINTMENT_OPERATION_SAVED','Appointment change saved. Refreshing the schedule separately.')});
     this.onSearchOrFilterChange();
+  }
+
+  canScheduleEdit(a:{status:string|number;actualCheckIn?:string|null;actualCheckOut?:string|null;treatmentStartedAt?:string|null;treatmentEndedAt?:string|null}) {
+    return [0,'Pending','Upcoming','Confirmed'].includes(a.status) && !a.actualCheckIn && !a.actualCheckOut && !a.treatmentStartedAt && !a.treatmentEndedAt;
   }
 
   viewMode = signal<'Week' | 'Day'>('Day');
@@ -450,7 +458,7 @@ export class ScheduleComponent implements OnInit {
     if(this.workflow.mutation.busy())return;
     this.actionError.set('');
     try { await firstValueFrom(request()); }
-    catch(error) { this.actionError.set(error instanceof ReceptionError ? this.locale.text(error.key,error.message) : apiError(error)); return; }
+    catch(error) { this.actionError.set(error instanceof ReceptionError ? this.locale.text(error.key,error.message) : apiError(error)); this.warnings.show(this.actionError()); return; }
     this.messageService.add({severity:'success',summary:this.locale.text('SUCCESS','Success'),detail:this.locale.text('APPOINTMENT_OPERATION_SAVED','Appointment change saved. Refreshing the schedule separately.')});
     this.onSearchOrFilterChange(); this.receptionistService.getDashboardStats();
   }

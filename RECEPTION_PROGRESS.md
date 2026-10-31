@@ -1,5 +1,17 @@
 # MediQova Reception progress
 
+## Thirteen acceptance fixes - 2026-10-31
+
+See [RECEPTION_ACCEPTANCE_FIXES.md](RECEPTION_ACCEPTANCE_FIXES.md) for the numbered root-cause/fix/verification report. Saved room capacity and actual occupants, future-vs-live Doctor capacity, pending-only scheduling edits, alphabetical/username-free patient registration, allocation filtering, Saturday-Friday prescribed frequency, complete bulk rows, warnings and CEO-owned insurer collections are implemented. 187 backend tests and current focused frontend checks pass; full frontend remains 303 pass/25 legacy failures. The real Reception -> Doctor -> Senior -> CEO browser flow uses isolated synthetic SQLite data. Configured SQL Server has no pending migrations/model drift; no migration was necessary. User restarted the local API and updated contract/permission/read checks pass. No shared test records, push or deploy.
+
+## Authorized Doctor migration applied - 2026-10-31
+
+The newly authorized `20261031164400_DoctorClinicalWorkspace` migration was applied alone to freshly verified `db56823.public.databaseasp.net / db56823` after forward SQL review. History/schema checks confirm zero pending migrations. Existing counts and financial totals are unchanged; current-source SQL Server clinical/profile/dashboard/invoice service reads pass. See the sibling backend's [application report](../Physical-Therapy-Center/Database/ReviewedMigrations/20261031164400_DoctorClinicalWorkspace.APPLIED.md). Earlier pending/approval notes below describe the prior implementation stage. No shared test records, application restart, push or deployment.
+
+## Doctor clinical lifecycle and internal Senior review - 2026-10-31
+
+See [DOCTOR_WORKSPACE.md](DOCTOR_WORKSPACE.md) for the integrated Doctor workspace, separate arrival/start/end/departure, whole-interval two-patient capacity, server clinical drafts, and internal no-fee/no-appointment Senior reassessment. Reception arrival keeps its payment gate; ordinary treatment departure now requires explicit Doctor completion and does not increment progress twice. Pending review queue errors remain distinct from zero results. Current validation: 177 backend tests and 62 focused frontend tests pass; full frontend 302 passed/25 legacy failures; real three-role browser flow uses isolated SQLite. The new DoctorClinicalWorkspace migration is reviewed but **not applied**. Earlier applied-migration notes below do not authorize this new migration. Shared user processes/database were preserved; no push or deploy.
+
 ## Current audit status — 2026-10-31
 
 Reception finance/reporting/retry fixes and the Arabic Billing amount-input correction are documented in [RECEPTION_FINANCIAL_AUDIT.md](RECEPTION_FINANCIAL_AUDIT.md), including actual browser evidence, SQL Server read-only verification, 154 backend tests, 40 current focused payment tests, the current 285-pass/27-fail frontend suite, and the required Angular restart on port 4200. This status supersedes historical runtime/schema blockers below only where explicitly verified. No database writes, migrations, push or deployment were performed in this audit/resume.
