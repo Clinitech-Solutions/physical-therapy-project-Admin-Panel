@@ -13,12 +13,14 @@
   </div>
 </div>
 
+<app-reassessment-queue [review]="true" (pendingCount)="reviewCount.set($event)" />
+
 <!-- ── KPI Row ─────────────────────────────────────────────── -->
 <div class="kpi-row">
   <!-- Total Pending Tasks -->
   <div class="stat-card border-start-teal">
     <div class="stat-label">{{ 'SENIOR.PENDING_TASKS' | translate }}</div>
-    <div class="stat-value">{{ totalPendingTasks() }}</div>
+    <div class="stat-value">{{ totalPendingTasks() ?? '—' }}</div>
     <div class="stat-sub">{{ 'SENIOR.PENDING_TASKS_SUB' | translate }}</div>
   </div>
 
@@ -27,13 +29,6 @@
     <div class="stat-label">{{ 'SENIOR.ASSESSMENTS' | translate }}</div>
     <div class="stat-value">{{ assessmentCount() }}</div>
     <div class="stat-sub">{{ 'SENIOR.ASSESSMENTS_SUB' | translate }}</div>
-  </div>
-
-  <!-- Re-assessments -->
-  <div class="stat-card" style="border-left-color: var(--color-warning);">
-    <div class="stat-label">{{ 'SENIOR.REASSESSMENTS' | translate }}</div>
-    <div class="stat-value">{{ reassessmentCount() }}</div>
-    <div class="stat-sub">{{ 'SENIOR.REASSESSMENTS_SUB' | translate }}</div>
   </div>
 
   <!-- Available Doctors -->
@@ -61,11 +56,6 @@
              [class.active]="activeTab() === 'assessments'"
              (click)="switchTab('assessments')">
           {{ 'SENIOR.ASSESSMENTS' | translate }} ({{ assessmentCount() }})
-        </div>
-        <div class="tab"
-             [class.active]="activeTab() === 'reassessments'"
-             (click)="switchTab('reassessments')">
-          {{ 'SENIOR.REASSESSMENTS' | translate }} ({{ reassessmentCount() }})
         </div>
       </div>
 

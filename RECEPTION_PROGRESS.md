@@ -1,5 +1,9 @@
 # MediQova Reception progress
 
+## Doctor clinical lifecycle and internal Senior review - 2026-10-31
+
+See [DOCTOR_WORKSPACE.md](DOCTOR_WORKSPACE.md) for the integrated Doctor workspace, separate arrival/start/end/departure, whole-interval two-patient capacity, server clinical drafts, and internal no-fee/no-appointment Senior reassessment. Reception arrival keeps its payment gate; ordinary treatment departure now requires explicit Doctor completion and does not increment progress twice. Pending review queue errors remain distinct from zero results. Current validation: 177 backend tests and 62 focused frontend tests pass; full frontend 302 passed/25 legacy failures; real three-role browser flow uses isolated SQLite. The new DoctorClinicalWorkspace migration is reviewed but **not applied**. Earlier applied-migration notes below do not authorize this new migration. Shared user processes/database were preserved; no push or deploy.
+
 ## Current audit status — 2026-10-31
 
 Reception finance/reporting/retry fixes and the Arabic Billing amount-input correction are documented in [RECEPTION_FINANCIAL_AUDIT.md](RECEPTION_FINANCIAL_AUDIT.md), including actual browser evidence, SQL Server read-only verification, 154 backend tests, 40 current focused payment tests, the current 285-pass/27-fail frontend suite, and the required Angular restart on port 4200. This status supersedes historical runtime/schema blockers below only where explicitly verified. No database writes, migrations, push or deployment were performed in this audit/resume.

@@ -83,6 +83,17 @@ describe('Receptionist localization', () => {
     }
   });
 
+  it('keeps Doctor translations complete and Arabic readable', () => {
+    const flatten=(data:Record<string,unknown>,prefix=''):Record<string,string>=>Object.assign({},...Object.entries(data).map(([key,value])=>typeof value==='string'?{[prefix+key]:value}:flatten(value as Record<string,unknown>,prefix+key+'.')));
+    const english=flatten(en.DOCTOR),arabic=flatten(ar.DOCTOR);
+    expect(Object.keys(arabic).sort()).toEqual(Object.keys(english).sort());
+    for(const [key,value] of Object.entries(arabic)) {
+      expect(value,key).not.toContain('???');
+      expect(value,key).toMatch(/[\u0600-\u06ff]/);
+      expect(value.match(/\{\{\w+\}\}|\{\d+\}/g)||[],key).toEqual(english[key].match(/\{\{\w+\}\}|\{\d+\}/g)||[]);
+    }
+  });
+
   it('has matching translation keys and interpolation parameters without Arabic placeholders', () => {
     expect(Object.keys(ar.RECEPTIONIST).sort()).toEqual(Object.keys(en.RECEPTIONIST).sort());
     expect(Object.keys(ar.RECEPTIONIST.UI).sort()).toEqual(Object.keys(en.RECEPTIONIST.UI).sort());

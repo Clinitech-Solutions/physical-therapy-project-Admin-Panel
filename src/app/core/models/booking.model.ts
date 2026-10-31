@@ -2,6 +2,7 @@ export interface BookingPlan {
   id: number; doctorId: string; doctorName: string; treatmentType: string;
   plannedSessions: number; bookedSessions: number; completedSessions: number; remainingSessions: number;
   financial?: CourseFinancialSummary | null;
+  staffReviewRequired?:boolean;
 }
 export interface BookingContext {
   patientId: number; patientName: string; gender: 'Male' | 'Female'; paymentType: string | null;

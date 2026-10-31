@@ -17,6 +17,7 @@ describe('Senior dashboard with persisted appointments',()=>{
     const appointment={id:101,patientId:1,patientName:'Patient',seniorId:'senior',doctorId:null,roomId:1,appointmentType:'Assessment',status:'Pending',startTime:new Date().toISOString(),endTime:new Date(Date.now()+3600000).toISOString()};
     http.expectOne(r=>r.url===`${url}/Appointments/GetAll`).flush({items:[appointment,{...appointment,id:102,seniorId:'another-senior'},{...appointment,id:103,status:'InProgress',assessmentCompleted:true}],pageNumber:1,totalPages:1,hasNextPage:false});
     http.expectOne(`${url}/Bookings/clinicians/workload`).flush([{id:'doctor',name:'Doctor',gender:'Male',role:'Doctor',preferred:false,currentLoad:1}]);
+    http.expectOne(`${url}/ReassessmentRequests`).flush([]);
     await fixture.whenStable();vi.spyOn(TestBed.inject(Router),'navigate').mockResolvedValue(true);
   });
   afterEach(()=>{fixture.destroy();http.verify();});

@@ -1,0 +1,120 @@
+.back-link {
+  display: inline-block;
+  margin-bottom: 12px;
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+.patient-heading {
+  margin-bottom: 12px;
+}
+.safety-note {
+  display: flex;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--bg-elevated);
+  border-radius: 9px;
+  margin-bottom: 14px;
+  font-size: 13px;
+}
+.safety-note i {
+  color: var(--mq-teal);
+  font-size: 20px;
+}
+.session-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.save-state {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.session-times {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  font-size: 12px;
+  padding: 12px 0;
+  border-block: 1px solid var(--border-color);
+}
+.session-times dt {
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+.session-times dd {
+  margin: 3px 0;
+}
+.clinical-note-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.clinical-note-grid textarea {
+  resize: vertical;
+  min-height: 115px;
+  line-height: 1.65;
+}
+.clinical-note-grid textarea[readonly] {
+  background: var(--bg-elevated);
+}
+.preserve-lines {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.plan-details {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 12px;
+  margin-top: 18px;
+}
+.plan-details dt {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.plan-details dd {
+  margin: 0;
+}
+.previous-note {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+.previous-note:last-child {
+  border: 0;
+}
+.previous-note h3 {
+  font-size: 15px;
+}
+.review-request {
+  display: grid;
+  gap: 14px;
+  margin-top: 16px;
+}
+.review-request .btn {
+  justify-self: start;
+}
+@media (max-width: 700px) {
+  .session-toolbar {
+    align-items: start;
+    flex-direction: column;
+  }
+  .clinical-note-grid {
+    grid-template-columns: 1fr;
+  }
+  .plan-details {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+  .plan-details dd {
+    margin-bottom: 12px;
+  }
+  .session-times {
+    gap: 10px 16px;
+  }
+}
+
+.patient-heading h1 {
+  font-size: 20px;
+  overflow-wrap: anywhere;
+}

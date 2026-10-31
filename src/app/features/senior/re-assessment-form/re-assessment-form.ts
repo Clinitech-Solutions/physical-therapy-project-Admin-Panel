@@ -1,116 +1,172 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
-import { TranslateModule } from '@ngx-translate/core';
-import { ClinicStateService } from '../../../core/services/state/clinic-state.service';
-import { MessageService } from 'primeng/api';
-import { Patient } from '../../../core/models/patient.model';
+import { Component, inject, OnInit, signal, DestroyRef } from "@angular/core";
+import { CommonModule } from "@angular/common";
+import { FormsModule } from "@angular/forms";
+import { ActivatedRoute, RouterLink } from "@angular/router";
+import { TranslateModule, TranslateService } from "@ngx-translate/core";
+import { firstValueFrom } from "rxjs";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import {
+  DoctorWorkspaceService,
+  clinicalError,
+} from "../../../core/services/doctor-workspace.service";
+import { BookingService } from "../../../core/services/booking.service";
+import {
+  ReassessmentRequest,
+  CompleteReassessment,
+} from "../../../core/models/doctor-workspace.model";
+import { BookingClinician } from "../../../core/models/booking.model";
+import { ReassessmentQueue } from "../../../shared/components/reassessment-queue/reassessment-queue";
+import { ClinicalLocale } from "../../../shared/clinical-locale";
 
 @Component({
-  selector: 'app-re-assessment-form',
+  selector: "app-re-assessment-form",
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, TranslateModule],
-  templateUrl: './re-assessment-form.html',
-  styleUrls: ['./re-assessment-form.css']
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterLink,
+    TranslateModule,
+    ReassessmentQueue,
+  ],
+  templateUrl: "./re-assessment-form.html",
+  styleUrls: ["../../doctor/doctor-workspace.css", "./clinical-review.css"],
 })
 export class ReAssessmentForm implements OnInit {
+  private api = inject(DoctorWorkspaceService);
+  private booking = inject(BookingService);
   private route = inject(ActivatedRoute);
-  private router = inject(Router);
-  private clinicState = inject(ClinicStateService);
-  private fb = inject(FormBuilder);
-  private messageService = inject(MessageService);
-
-  patientId = signal<string>('');
-  sessionId = '';
-
-  // Signal for the patient data
-  patient = computed(() => {
-    const pId = this.patientId();
-    return this.clinicState.patients().find(p => p.id === pId);
-  });
-
-  form!: FormGroup;
-
-  ngOnInit(): void {
-    this.patientId.set(this.route.snapshot.paramMap.get('patientId') || '');
-    this.sessionId = this.route.snapshot.paramMap.get('sessionId') || '';
-
-    this.initForm();
+  private translate = inject(TranslateService);
+  private destroy = inject(DestroyRef);
+  readonly locale = new ClinicalLocale();
+  readonly data = signal<ReassessmentRequest | null>(null);
+  readonly loading = signal(false);
+  readonly busy = signal(false);
+  readonly error = signal("");
+  readonly clinicianError = signal("");
+  readonly clinicians = signal<BookingClinician[]>([]);
+  id = 0;
+  notes = "";
+  decision: "Continue" | "Revise" | "Discharge" = "Continue";
+  diagnosis = "";
+  doctorId = "";
+  count = 1;
+  frequency = 2;
+  treatmentType = "";
+  exercises = "";
+  cancelReason = "";
+  completionIntent: CompleteReassessment | null = null;
+  private generation = 0;
+  ngOnInit() {
+    this.route.queryParamMap
+      .pipe(takeUntilDestroyed(this.destroy))
+      .subscribe((params) => {
+        this.id = Number(params.get("requestId"));
+        if (this.id) void this.load();
+      });
   }
-
-  private initForm(): void {
-    this.form = this.fb.group({
-      progressNotes: ['', Validators.required],
-      clinicalDecision: ['', Validators.required],
-      additionalSessions: [null],
-      adjustedExercises: ['']
-    });
-
-    // Handle dynamic validation based on clinicalDecision
-    this.form.get('clinicalDecision')?.valueChanges.subscribe(decision => {
-      const additionalSessionsCtrl = this.form.get('additionalSessions');
-      const adjustedExercisesCtrl = this.form.get('adjustedExercises');
-
-      if (decision === 'Discharge') {
-        additionalSessionsCtrl?.clearValidators();
-        additionalSessionsCtrl?.setValue(null);
-        additionalSessionsCtrl?.disable();
-
-        adjustedExercisesCtrl?.setValue('');
-        adjustedExercisesCtrl?.disable();
-      } else {
-        additionalSessionsCtrl?.setValidators([Validators.required, Validators.min(1)]);
-        additionalSessionsCtrl?.enable();
-        adjustedExercisesCtrl?.enable();
+  async load() {
+    const generation = ++this.generation;
+    this.loading.set(true);
+    this.error.set("");
+    try {
+      const data = await firstValueFrom(this.api.review(this.id));
+      if (generation !== this.generation) return;
+      this.data.set(data);
+      this.diagnosis = data.diagnosis;
+      this.doctorId = data.doctorId;
+      this.count = data.prescribedSessions;
+      this.frequency = data.frequencyPerWeek;
+      this.treatmentType = data.treatmentType;
+      this.exercises = data.exercises ?? "";
+      if (data.state === "Completed") {
+        this.notes = data.reviewNotes ?? "";
+        this.decision = (data.decision as typeof this.decision) ?? "Continue";
+        this.completionIntent = null;
       }
-      
-      additionalSessionsCtrl?.updateValueAndValidity();
-    });
+    } catch (e) {
+      if (generation === this.generation) {
+        this.data.set(null);
+        this.error.set(clinicalError(e, this.translate));
+      }
+    } finally {
+      if (generation === this.generation) this.loading.set(false);
+    }
   }
-
-  submit(): void {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
+  async loadClinicians() {
+    if (this.clinicians().length) return;
+    this.clinicianError.set("");
+    try {
+      this.clinicians.set(
+        await firstValueFrom(
+          this.booking.clinicians(this.data()!.patientId, null, true),
+        ),
+      );
+    } catch (e) {
+      this.clinicianError.set(clinicalError(e, this.translate));
+    }
+  }
+  async start() {
+    const data = this.data();
+    if (!data || this.busy()) return;
+    this.busy.set(true);
+    this.error.set("");
+    try {
+      this.data.set(
+        await firstValueFrom(this.api.startReview(data.id, data.version)),
+      );
+    } catch (e) {
+      this.error.set(clinicalError(e, this.translate));
+    } finally {
+      this.busy.set(false);
+    }
+  }
+  async submit() {
+    const data = this.data();
+    if (!data || this.busy() || !this.notes.trim() || data.state !== "InReview")
       return;
+    this.completionIntent ??= {
+      expectedVersion: data.version,
+      progressNotes: this.notes,
+      decision: this.decision,
+      diagnosis: this.diagnosis,
+      doctorId: this.doctorId,
+      numberOfSessions: Number(this.count),
+      frequencyPerWeek: Number(this.frequency),
+      treatmentType: this.treatmentType,
+      exercises: this.exercises || null,
+    };
+    this.busy.set(true);
+    this.error.set("");
+    try {
+      this.data.set(
+        await firstValueFrom(
+          this.api.completeReview(data.id, this.completionIntent),
+        ),
+      );
+      this.completionIntent = null;
+    } catch (e) {
+      this.error.set(clinicalError(e, this.translate));
+      if ((e as { status?: number }).status === 400)
+        this.completionIntent = null;
+    } finally {
+      this.busy.set(false);
     }
-
-    const val = this.form.value;
-    const currentPatient = this.patient();
-    
-    if (currentPatient) {
-      // Create an updated treatment plan keeping the old data and appending the new sessions if applicable
-      const oldTreatmentPlan: any = currentPatient.treatmentPlan || {};
-      
-      let newTotalSessions = oldTreatmentPlan.totalSessions || 0;
-      if (val.clinicalDecision !== 'Discharge' && val.additionalSessions) {
-        newTotalSessions += val.additionalSessions;
-      }
-
-      const updatedPatient: Partial<Patient> = {
-        treatmentPlan: {
-          ...oldTreatmentPlan,
-          totalSessions: newTotalSessions,
-          progressNotes: val.progressNotes,
-          clinicalDecision: val.clinicalDecision,
-          exercises: val.adjustedExercises ? val.adjustedExercises : oldTreatmentPlan.exercises
-        }
-      };
-      
-      this.clinicState.updatePatient(currentPatient.id, updatedPatient);
+  }
+  async cancel() {
+    const data = this.data();
+    if (!data || this.busy() || !this.cancelReason.trim()) return;
+    this.busy.set(true);
+    this.error.set("");
+    try {
+      this.data.set(
+        await firstValueFrom(
+          this.api.cancelReview(data.id, data.version, this.cancelReason),
+        ),
+      );
+    } catch (e) {
+      this.error.set(clinicalError(e, this.translate));
+    } finally {
+      this.busy.set(false);
     }
-
-    // Mark the Re-Assessment Session as Completed
-    if (this.sessionId) {
-      this.clinicState.updateSessionStatus(this.sessionId, 'Completed');
-    }
-
-    this.messageService.add({ 
-      severity: 'success', 
-      summary: 'Success', 
-      detail: 'Re-assessment recorded successfully.' 
-    });
-
-    this.router.navigate(['/senior/dashboard']);
   }
 }

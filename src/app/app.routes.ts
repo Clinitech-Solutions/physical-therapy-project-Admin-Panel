@@ -32,7 +32,9 @@ export const routes: Routes = [
       // ── Doctor Routes ──
       { path: 'doctor', redirectTo: 'doctor/dashboard', pathMatch: 'full' },
       { path: 'doctor/dashboard', loadComponent: () => import('./features/doctor/dashboard/dashboard').then(m => m.Dashboard), canActivate: [roleGuard], data: { roles: ['Doctor', 'Ceo'] } },
-      { path: 'doctor/session-notes/:sessionId', loadComponent: () => import('./features/doctor/dashboard/dashboard').then(m => m.Dashboard), canActivate: [roleGuard], data: { roles: ['Doctor', 'Ceo'] } }, // TODO: Replace with SessionNotes component
+      { path: 'doctor/session-notes/:appointmentId', loadComponent: () => import('./features/doctor/session-workspace/session-workspace').then(m => m.SessionWorkspace), canActivate: [roleGuard], canDeactivate: [(component: {canLeave:()=>boolean}) => component.canLeave()], data: { roles: ['Doctor', 'Ceo'] } },
+      { path: 'doctor/session-notes', redirectTo:'doctor/dashboard', pathMatch:'full' },
+      { path: 'doctor/patients', redirectTo:'doctor/dashboard', pathMatch:'full' },
       
       // ── CEO Routes ──
       { path: 'ceo', loadComponent: () => import('./features/ceo/dashboard/dashboard').then(m => m.Dashboard), canActivate: [roleGuard], data: { roles: ['Ceo'] } },

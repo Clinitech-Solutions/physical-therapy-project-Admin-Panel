@@ -1,3 +1,4 @@
+import {ReassessmentQueue} from '../../../shared/components/reassessment-queue/reassessment-queue';
 import { Component, inject, computed, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
@@ -13,7 +14,7 @@ import { apiError, localDay, numericId } from '../../../core/services/reception-
 import { ReceptionistLocale, ReceptionistTextPipe } from '../../../shared/receptionist-locale';
 
 @Component({ selector: 'app-live-dashboard', standalone: true,
-  imports: [CommonModule, TranslateModule, ReceptionistTextPipe], templateUrl: './live-dashboard.html', styleUrl: './live-dashboard.css' })
+  imports: [ReassessmentQueue,CommonModule, TranslateModule, ReceptionistTextPipe], templateUrl: './live-dashboard.html', styleUrl: './live-dashboard.css' })
 export class LiveDashboard implements OnInit {
   private appointments = inject(AppointmentService);
   private workflow = inject(AppointmentWorkflowService);
@@ -25,6 +26,7 @@ export class LiveDashboard implements OnInit {
   readonly error = signal(''); readonly busy = signal(false); readonly doctors = signal<BookingClinician[]>([]);
   readonly loading = this.appointments.loading;
   activeTab = signal<'assessments' | 'reassessments'>('assessments');
+  readonly reviewCount=signal<number|null>(null);
   ngOnInit() {
     this.appointments.getAppointments({ date: new Date().toISOString() });
     this.booking.workload().subscribe({ next: doctors => this.doctors.set(doctors), error: error => this.error.set(apiError(error)) });
@@ -44,12 +46,12 @@ export class LiveDashboard implements OnInit {
   todayReassessments = computed(() => this.tasks('Re-Assessment'));
   assessmentCount = computed(() => this.todayAssessments().length);
   reassessmentCount = computed(() => this.todayReassessments().length);
-  totalPendingTasks = computed(() => this.assessmentCount() + this.reassessmentCount());
+  totalPendingTasks = computed(() => this.reviewCount()===null||this.loading()||this.error()?null:this.assessmentCount()+this.reviewCount()!);
   activeTasks = computed(() => this.activeTab() === 'assessments' ? this.todayAssessments() : this.todayReassessments());
   activeDoctorsWorkload = computed(() => this.doctors().map(d => ({ doctorId: d.id, name: d.name, currentLoad: d.currentLoad,
-    maxLoad: 1, borderColor: d.currentLoad === 0 ? 'var(--mq-teal)' : 'var(--color-warning)', loadClass: d.currentLoad === 0 ? 'load-0' : 'load-2', roomId: null })));
-  availableDoctorsCount = computed(() => this.activeDoctorsWorkload().filter(d => d.currentLoad === 0).length);
-  busyDoctorsCount = computed(() => this.activeDoctorsWorkload().filter(d => d.currentLoad > 0).length);
+    maxLoad: 2, borderColor: d.currentLoad < 2 ? 'var(--mq-teal)' : 'var(--color-warning)', loadClass: d.currentLoad < 2 ? 'load-0' : 'load-2', roomId: null })));
+  availableDoctorsCount = computed(() => this.activeDoctorsWorkload().filter(d => d.currentLoad < 2).length);
+  busyDoctorsCount = computed(() => this.activeDoctorsWorkload().filter(d => d.currentLoad >= 2).length);
   switchTab(tab: 'assessments' | 'reassessments') { this.activeTab.set(tab); }
   async startTask(task: { sessionId: string; patientId: string; type: 'Assessment' | 'Re-Assessment' }) {
     if (this.busy()) return;

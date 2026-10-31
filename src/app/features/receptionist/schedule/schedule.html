@@ -270,7 +270,7 @@
                     }
                     @if (statusStr === 'In Progress' || statusStr === 'Waiting') {
                       <button type="button" class="btn-session-action btn-checkout"
-                        [disabled]="workflow.mutation.busy() || !workflow.canTransition('Completed')" (click)="checkoutSession(session.id); $event.stopPropagation()">
+                        [disabled]="workflow.mutation.busy() || !workflow.canTransition('Completed') || session.appointmentType === 'Session' && !session.treatmentEndedAt" (click)="checkoutSession(session.id); $event.stopPropagation()">
                         <i class="bi bi-box-arrow-right"></i>
                         <span>{{ 'RECEPTIONIST.CHECK_OUT' | translate }}</span>
                       </button>
