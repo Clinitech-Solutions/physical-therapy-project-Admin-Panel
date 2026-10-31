@@ -1,5 +1,9 @@
 # MediQova Reception progress
 
+## Authorized Doctor migration applied - 2026-10-31
+
+The newly authorized `20261031164400_DoctorClinicalWorkspace` migration was applied alone to freshly verified `db56823.public.databaseasp.net / db56823` after forward SQL review. History/schema checks confirm zero pending migrations. Existing counts and financial totals are unchanged; current-source SQL Server clinical/profile/dashboard/invoice service reads pass. See the sibling backend's [application report](../Physical-Therapy-Center/Database/ReviewedMigrations/20261031164400_DoctorClinicalWorkspace.APPLIED.md). Earlier pending/approval notes below describe the prior implementation stage. No shared test records, application restart, push or deployment.
+
 ## Doctor clinical lifecycle and internal Senior review - 2026-10-31
 
 See [DOCTOR_WORKSPACE.md](DOCTOR_WORKSPACE.md) for the integrated Doctor workspace, separate arrival/start/end/departure, whole-interval two-patient capacity, server clinical drafts, and internal no-fee/no-appointment Senior reassessment. Reception arrival keeps its payment gate; ordinary treatment departure now requires explicit Doctor completion and does not increment progress twice. Pending review queue errors remain distinct from zero results. Current validation: 177 backend tests and 62 focused frontend tests pass; full frontend 302 passed/25 legacy failures; real three-role browser flow uses isolated SQLite. The new DoctorClinicalWorkspace migration is reviewed but **not applied**. Earlier applied-migration notes below do not authorize this new migration. Shared user processes/database were preserved; no push or deploy.

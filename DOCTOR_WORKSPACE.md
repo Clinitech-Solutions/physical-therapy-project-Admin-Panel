@@ -1,5 +1,9 @@
 # Doctor workspace - 2026-10-31
 
+## Authorized migration applied - 2026-10-31
+
+Following the user's subsequent migration request, only `20261031164400_DoctorClinicalWorkspace` was applied to freshly confirmed `db56823.public.databaseasp.net / db56823` after exact generated/reviewed SQL comparison. History, zero pending migrations and clinical schema are verified. Existing counts and financial totals remain unchanged; current-source clinical/profile/dashboard/invoice service reads pass against SQL Server. See the sibling backend's `Database/ReviewedMigrations/20261031164400_DoctorClinicalWorkspace.APPLIED.md`. This supersedes the unapplied/approval blocker below, retained as implementation history. Application processes were preserved; no shared test records, push or deployment.
+
 ## Delivered behavior
 
 The Doctor dashboard now reads the authenticated clinician's real schedule. It defaults to the Cairo clinic date, supports date navigation/search/status filters, shows every appointment, and keeps overdue active treatments visible. Start/Continue/Open Patient lead directly to the saved appointment workspace. There are no sample patients, fixed Doctor IDs, invented notes, or performance scores.
