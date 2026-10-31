@@ -5,7 +5,7 @@ import { environment } from "../../../environments/environment";
 import {
   apiError,
   finiteNumber,
-  localDay,
+  clinicDay,
   MutationState,
   numericId,
   record,
@@ -56,6 +56,7 @@ export interface Payment {
   amount: number;
   method: number | string;
   payerType?: string; collectionMethod?: string | null; insuranceClaimId?: number | null; transactionId?: string | null;
+  status?: number | string;
   paymentDate?: string;
   createdAt?: string;
 }
@@ -77,6 +78,13 @@ export class BillingService {
   readonly pendingPaymentInvoices = signal<number[]>([]);
   private expectedPaid = new Map<number, number>();
   private readGeneration = 0;
+  private paymentIntents: Record<string,{amount:number;method:number;paidBefore:number}> = this.readPaymentIntents();
+  private readPaymentIntents() { try { return JSON.parse(sessionStorage.getItem('ptcenter.pending-invoice-payment-details') ?? '{}'); } catch { return {}; } }
+  paymentIntent(id:number) { return this.paymentIntents[id]; }
+  private savePaymentIntent(id:number,value:{amount:number;method:number;paidBefore:number}|null) {
+    if(value)this.paymentIntents[id]=value;else delete this.paymentIntents[id];
+    try{sessionStorage.setItem('ptcenter.pending-invoice-payment-details',JSON.stringify(this.paymentIntents));}catch{}
+  }
   private paymentKeys: Record<string, string> = this.readPaymentKeys();
   get unresolvedInvoicePaymentIds(): number[] { return Object.keys(this.paymentKeys).map(Number); }
   constructor() { if (Object.keys(this.paymentKeys).length) this.mutation.uncertain.set(true); }
@@ -84,12 +92,12 @@ export class BillingService {
     try { return typeof sessionStorage === 'undefined' ? {} : JSON.parse(sessionStorage.getItem('ptcenter.pending-invoice-payment-keys') ?? '{}'); } catch { return {}; }
   }
   private savePaymentKey(invoiceId: number, key: string | null) {
-    if (key) this.paymentKeys[invoiceId] = key; else delete this.paymentKeys[invoiceId];
+    if (key) this.paymentKeys[invoiceId] = key; else { delete this.paymentKeys[invoiceId]; this.savePaymentIntent(invoiceId,null); }
     try { if (typeof sessionStorage !== 'undefined') sessionStorage.setItem('ptcenter.pending-invoice-payment-keys', JSON.stringify(this.paymentKeys)); } catch { /* Keep the retry identity in memory. */ }
   }
   readonly todayInvoices = computed(() =>
     this.invoices().filter(
-      (i) => !!i.createdAt && localDay(i.createdAt) === localDay(new Date()),
+      (i) => !!i.createdAt && clinicDay(i.createdAt) === clinicDay(new Date()),
     ),
   );
   readonly expectedTodayRevenue = computed(() =>
@@ -302,6 +310,8 @@ export class BillingService {
             return {
               id: r['id'] == null ? undefined : numericId(r['id']),
               idempotencyKey: typeof r['idempotencyKey'] === 'string' ? r['idempotencyKey'] : undefined,
+              status: r['status'] == null ? 'Unknown' : backendEnumNumber('paymentStatus',r['status']) as number|string,
+              paymentDate: typeof r['paymentDate'] === 'string' ? r['paymentDate'] : undefined,
               invoiceId: numericId(r["invoiceId"]),
               amount: finiteNumber(r["amount"]),
               method: finiteNumber(backendEnumNumber('paymentMethod', r["paymentMethod"] ?? r["method"])),
@@ -312,7 +322,9 @@ export class BillingService {
         }),
         tap(payments => {
           const key = this.paymentKeys[invoiceId]; if (!key) return;
-          const saved = payments.some(p => p.idempotencyKey === `invoice:${invoiceId}:${key}`);
+          const intent = this.paymentIntents[invoiceId];
+          const saved = payments.some(p => p.idempotencyKey === `invoice:${invoiceId}:${key}` && p.status===1 &&
+            (!intent || p.amount===intent.amount && Number(p.method)===intent.method));
           if (saved) { this.savePaymentKey(invoiceId, null); this.getInvoices(); }
           // If not yet committed, retain this key for an explicit retry; never create a fresh collection identity.
           this.mutation.uncertain.set(Object.keys(this.paymentKeys).some(id => Number(id) !== invoiceId));
@@ -341,6 +353,10 @@ export class BillingService {
             "PAYMENT_AMOUNT_INVALID",
             "Enter a positive payment no greater than the saved invoice balance.",
           );
+        const prior=this.paymentIntents[invoiceId];
+        if(prior && (prior.amount!==data.amount || prior.method!==data.method)) throw new ReceptionError('FINANCE_ORIGINAL_RECEIPT_REQUIRED','Recover the original receipt details before making another collection.');
+        const intent=prior ?? {amount:data.amount,method:data.method,paidBefore:invoice.paidAmount ?? 0};
+        this.savePaymentIntent(invoiceId,intent);
         const wasUncertain = !!this.paymentKeys[invoiceId];
         const key = this.paymentKeys[invoiceId] ?? crypto.randomUUID();
         this.savePaymentKey(invoiceId, key);
@@ -363,14 +379,15 @@ export class BillingService {
             this.savePaymentKey(invoiceId, null);
             this.expectedPaid.set(
               invoiceId,
-              (invoice.paidAmount ?? 0) + data.amount,
+              intent.paidBefore + data.amount,
             );
             this.pendingPaymentInvoices.update((ids) => [
               ...new Set([...ids, invoiceId]),
             ]);
           }),
           catchError(error => {
-            if (!wasUncertain && error instanceof HttpErrorResponse && !unknownOutcome(error) && error.error?.code !== 'Billing.RetryKeyConflict') this.savePaymentKey(invoiceId, null);
+            if(error instanceof HttpErrorResponse && ['Billing.RetryKeyConflict','Billing.ConcurrentChange'].includes(error.error?.code))this.mutation.uncertain.set(true);
+            if (!wasUncertain && error instanceof HttpErrorResponse && !unknownOutcome(error) && !['Billing.RetryKeyConflict','Billing.ConcurrentChange'].includes(error.error?.code)) this.savePaymentKey(invoiceId, null);
             return throwError(() => error);
           }),
         );

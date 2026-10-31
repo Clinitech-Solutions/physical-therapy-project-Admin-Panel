@@ -18,6 +18,7 @@ import { BookingService } from '../../../core/services/booking.service';
 import { BookingAccount, BookingPaymentMethod } from '../../../core/models/booking.model';
 import { TabsModule } from 'primeng/tabs';
 import { InsurerAccountsComponent } from './insurer-accounts';
+import { CourseFinanceService } from '../../../core/services/course-finance.service';
 
 @Component({
   selector: "p-dropdown",
@@ -25,7 +26,7 @@ import { InsurerAccountsComponent } from './insurer-accounts';
   imports: [ReceptionistTextPipe, CommonModule, FormsModule, SelectModule],
   template: `
     <p-select 
-      [options]="options" 
+      [options]="options" [disabled]="disabled"
       [(ngModel)]="value" 
       (ngModelChange)="onValueChange($event)"
       [placeholder]="placeholder"
@@ -47,6 +48,7 @@ export class DropdownComponent implements ControlValueAccessor {
   @Input() options: any[] = [];
   @Input() placeholder: string = '';
   @Input() appendTo: any = 'body';
+  @Input() disabled = false;
   @Input() styleClass: string = 'w-100 p-select-sm';
 
   value: any = null;
@@ -95,6 +97,7 @@ export class BillingComponent implements OnInit {
   patientService = inject(PatientService, { optional: true });
   messageService = inject(MessageService);
   readonly bookingApi = inject(BookingService);
+  readonly finance = inject(CourseFinanceService);
   readonly accounts = signal<BookingAccount[]>([]);
   readonly accountsError = signal('');
   readonly accountsLoading = signal(false);
@@ -108,12 +111,14 @@ export class BillingComponent implements OnInit {
     if (this.isSubmittingPayment()) return;
     this.selectedAccountKey = account.key; this.selectedInvoiceId = null;
     this.amountToCollect = account.remainingAmount; this.selectedPaymentMethod = ''; this.invoicePayments.set([]);
+    const original=this.bookingApi.pendingCollection();
+    if(original?.accountKey===account.key && original.amount!==undefined){this.amountToCollect=original.amount;this.selectedPaymentMethod=original.method ?? '';}
     this.paymentError.set(''); this.showPaymentModal = true;
   }
   async reconcileCollection() {
     if (this.isSubmittingPayment()) return;
     this.isSubmittingPayment.set(true);
-    try { await firstValueFrom(this.bookingApi.reconcileCollection()); this.paymentError.set(''); this.refreshAccounts(); this.billingService.getInvoices(); }
+    try { await firstValueFrom(this.bookingApi.reconcileCollection()); this.paymentError.set(''); this.showPaymentModal=false;this.selectedAccountKey=null;this.refreshAccounts(); this.billingService.getInvoices(); }
     catch { this.paymentError.set(this.locale.text('COLLECTION_NOT_CONFIRMED', 'No committed collection has been confirmed. Retry only the original collection with the same key.')); }
     finally { this.isSubmittingPayment.set(false); }
   }
@@ -182,6 +187,8 @@ export class BillingComponent implements OnInit {
     this.selectedPaymentMethod = '';
     this.paymentError.set(''); this.invoicePayments.set([]);
     this.amountToCollect = this.billingService.findInvoiceById(invoiceId)?.remainingAmount ?? 0;
+    const original=this.billingService.paymentIntent(Number(invoiceId));
+    if(original){this.amountToCollect=original.amount;this.selectedPaymentMethod=this.billingService.mapMethodToString(original.method);}
     this.showPaymentModal = true;
     this.loadPaymentHistory();
   }
@@ -204,12 +211,15 @@ export class BillingComponent implements OnInit {
   /**
    * Confirms manual payment via BillingService.recordPayment()
    */
+  get collectionDetailsLocked() {
+    return this.isSubmittingPayment() || (this.selectedAccountKey ? this.bookingApi.pendingCollection()?.accountKey===this.selectedAccountKey : !!this.billingService.paymentIntent(Number(this.selectedInvoiceId)));
+  }
   async confirmPayment(): Promise<void> {
     if (this.selectedAccountKey) {
       if (this.isSubmittingPayment()) return;
       this.isSubmittingPayment.set(true); this.paymentError.set('');
       try {
-        if (!['Cash', 'Visa', 'EWallet', 'BankTransfer'].includes(this.selectedPaymentMethod)) throw new Error(this.locale.text('PAYMENT_METHOD_REQUIRED', 'Select the actual patient payment method.'));
+        if (!this.paymentMethods.includes(this.selectedPaymentMethod)) throw new Error(this.locale.text('PAYMENT_METHOD_REQUIRED', 'Select the actual patient payment method.'));
         await firstValueFrom(this.bookingApi.collectAccount(this.selectedAccountKey, this.amountToCollect, this.selectedPaymentMethod as BookingPaymentMethod));
         this.showPaymentModal = false; this.selectedAccountKey = null; this.refreshAccounts(); this.billingService.getInvoices();
       } catch (error) { this.paymentError.set(this.bookingApi.pendingCollection() ? this.locale.text('COLLECTION_OUTCOME_UNKNOWN', 'The collection outcome is unknown. Reconcile it before collecting again.') : apiError(error)); }

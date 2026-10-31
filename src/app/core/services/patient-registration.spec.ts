@@ -7,7 +7,7 @@ import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, HttpErrorResponse } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, Subject } from 'rxjs';
 import { TranslateModule } from '@ngx-translate/core';
 import { PatientRegistrationFieldsComponent } from '../../shared/components/patient-registration-fields/patient-registration-fields';
 import { MessageService } from 'primeng/api';
@@ -42,8 +42,8 @@ describe('Patient registration contracts and safety', () => {
       { provide: ClinicalRecordsService, useValue: { load() {}, plansForPatient: () => [], sessions: () => [] } },
       { provide: AppointmentWorkflowService, useValue: {} },
       { provide: ReceptionContracts, useValue: {} },
-      { provide: RoomService, useValue: { rooms: signal([]) } },
-      { provide: ClinicianService, useValue: { clinicians: signal([]) } },
+      { provide: RoomService, useValue: { rooms: signal([]), refreshed: new Subject<void>() } },
+      { provide: ClinicianService, useValue: { clinicians: signal([]), loading: signal(false), error: signal(null) } },
       { provide: BillingService, useValue: { getInvoices() {} } },
       { provide: AppointmentService, useValue: {} }
     ] });

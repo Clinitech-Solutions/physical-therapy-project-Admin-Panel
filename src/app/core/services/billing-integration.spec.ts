@@ -23,7 +23,7 @@ describe('Reception billing and profile persistence',()=>{
     ]});
     http=TestBed.inject(HttpTestingController);billing=TestBed.inject(BillingService);
   });
-  afterEach(()=>{http.verify();sessionStorage.removeItem('ptcenter.pending-invoice-payment-keys');});
+  afterEach(()=>{http.verify();sessionStorage.removeItem('ptcenter.pending-invoice-payment-keys');sessionStorage.removeItem('ptcenter.pending-invoice-payment-details');});
   it('preserves documented paid and remaining amounts without inferring status or daily collections',()=>{
     const invoice=billing.normalizeInvoice(invoiceFixture);billing.invoices.set([invoice]);
     expect(invoice.paidAmount).toBe(50);expect(invoice.remainingBalance).toBe(150);
@@ -58,7 +58,7 @@ describe('Reception billing and profile persistence',()=>{
     const request=http.expectOne(`${url}/Billing/payments`);const key=request.request.body.idempotencyKey;
     request.error(new ProgressEvent('error'));await pending;expect(billing.unresolvedInvoicePaymentIds).toEqual([11]);
     const history=firstValueFrom(billing.getPaymentsForInvoice(11));
-    http.expectOne(`${url}/Billing/invoices/11/payments`).flush([{id:1,invoiceId:11,amount:150,paymentMethod:27,idempotencyKey:`invoice:11:${key}`}]);
+    http.expectOne(`${url}/Billing/invoices/11/payments`).flush([{id:1,invoiceId:11,amount:150,paymentMethod:27,status:1,idempotencyKey:`invoice:11:${key}`}]);
     http.expectOne(`${url}/Billing/invoices`).flush([{...invoiceFixture,paidAmount:200,remainingAmount:0}]);await history;
     expect(billing.unresolvedInvoicePaymentIds).toEqual([]);expect(billing.mutation.uncertain()).toBe(false);
   });
@@ -91,5 +91,29 @@ describe('Reception billing and profile persistence',()=>{
     component.data.set({patientId:1,assessments:[],courses:[{id:5,prescribedSessions:10,completedSessions:2,sessions:[{id:20,sessionNumber:1,status:'Unknown'}],payments:[],activity:[]}]} as never);
     expect(component.sessions.map(s=>s.id)).toEqual([20]);expect(component.totalSessions).toBe(10);
     expect(component.completedSessionsCount).toBe(2);expect(component.sessions[0].status).toBe('Unknown');
+  });
+  it('recovers an invoice receipt with its original values and original paid baseline',async()=>{
+    billing.invoices.set([billing.normalizeInvoice(invoiceFixture)]);
+    const first=firstValueFrom(billing.recordPayment({invoiceId:11,amount:40,method:27})).catch(e=>e);
+    const req=http.expectOne(`${url}/Billing/payments`);const key=req.request.body.idempotencyKey;req.error(new ProgressEvent('error'));await first;
+    const recreated=TestBed.runInInjectionContext(()=>new BillingService());
+    recreated.invoices.set([recreated.normalizeInvoice({...invoiceFixture,paidAmount:90,remainingAmount:110})]);
+    expect(recreated.paymentIntent(11)).toEqual({amount:40,method:27,paidBefore:50});
+    // A history read with no confirmed receipt permits only the original retry.
+    const history=firstValueFrom(recreated.getPaymentsForInvoice(11));http.expectOne(`${url}/Billing/invoices/11/payments`).flush([]);await history;
+    await expect(firstValueFrom(recreated.recordPayment({invoiceId:11,amount:41,method:27}))).rejects.toThrow('original receipt');
+    const retry=firstValueFrom(recreated.recordPayment({invoiceId:11,amount:40,method:27}));
+    const saved=http.expectOne(`${url}/Billing/payments`);expect(saved.request.body.idempotencyKey).toBe(key);saved.flush({id:1,invoiceId:11,amount:40,paymentMethod:27});await retry;
+    recreated.getInvoices();http.expectOne(`${url}/Billing/invoices`).flush([{...invoiceFixture,paidAmount:90,remainingAmount:110}]);
+    expect(recreated.pendingPaymentInvoices()).toEqual([]);
+  });
+  it('does not confirm a pending or mismatched receipt just because its retry key matches',async()=>{
+    billing.invoices.set([billing.normalizeInvoice(invoiceFixture)]);
+    const first=firstValueFrom(billing.recordPayment({invoiceId:11,amount:40,method:27})).catch(e=>e);
+    const request=http.expectOne(`${url}/Billing/payments`);const key=request.request.body.idempotencyKey;request.error(new ProgressEvent('error'));await first;
+    for(const payment of [{amount:40,status:0},{amount:39,status:1}]){
+      const read=firstValueFrom(billing.getPaymentsForInvoice(11));http.expectOne(`${url}/Billing/invoices/11/payments`).flush([{id:1,invoiceId:11,paymentMethod:27,idempotencyKey:`invoice:11:${key}`,...payment}]);await read;
+      expect(billing.unresolvedInvoicePaymentIds).toEqual([11]);expect(billing.paymentIntent(11)?.amount).toBe(40);
+    }
   });
 });

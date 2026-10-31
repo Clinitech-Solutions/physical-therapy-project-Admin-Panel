@@ -16,6 +16,8 @@ export interface DashboardStats {
   collectedTodayRevenue: number;
   expectedTodayRevenue: number;
   collectionRateToday: number;
+  patientCollectedToday?: number;
+  insurerCollectedToday?: number;
   presentDoctors?: number;
   walkInsToday?: number;
 }
@@ -76,6 +78,8 @@ export class ReceptionistService {
       collectedTodayRevenue: finiteNumber(r["totalCollectedToday"]),
       expectedTodayRevenue: finiteNumber(r["totalExpectedToday"]),
       collectionRateToday: finiteNumber(r["collectionRate"]),
+      patientCollectedToday: r['patientCollectedToday']==null ? undefined : finiteNumber(r['patientCollectedToday']),
+      insurerCollectedToday: r['insurerCollectedToday']==null ? undefined : finiteNumber(r['insurerCollectedToday']),
     };
   }
   normalizeSession(value: unknown): TodaySession {

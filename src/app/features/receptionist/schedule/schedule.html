@@ -28,7 +28,9 @@
     <p class="alert alert-warning" role="alert">{{ 'RECEPTIONIST.UI.PATIENTS_LOAD' | translate }}: {{ locale.label(patientLookupError()) }}
       <button class="btn btn-outline-secondary btn-sm" (click)="refreshPatientLookup()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button></p>
   }
-  <p class="text-muted small">{{ 'RECEPTIONIST.UI.STATUS_CONFIGURATION_NOTICE' | translate }}</p>
+  @if (receptionistService.mapStatusToString(0) === 'Unknown' || receptionistService.mapStatusToString(4) === 'Unknown') {
+    <p class="text-muted small">{{ 'RECEPTIONIST.UI.STATUS_CONFIGURATION_NOTICE' | translate }}</p>
+  }
   <!-- Modern Page Header -->
   <div class="schedule-hero-header">
     <div class="schedule-header-layout d-flex flex-wrap justify-content-between align-items-center gap-3">

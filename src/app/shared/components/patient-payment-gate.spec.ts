@@ -24,4 +24,17 @@ describe('Rendered patient payment shortfall',()=>{
   const starting=fixture.componentInstance.start();http.expectOne(`${environment.apiUrl}/Receptionist/appointments/42/status`).flush(null);await starting;
   expect(finance.blockedAppointment()).toBeNull();fixture.destroy();http.verify();
  });
+ it('restores an unconfirmed original receipt after closing and reopening, even if coverage now passes',async()=>{
+  sessionStorage.clear();TestBed.configureTestingModule({imports:[PatientPaymentGateComponent,TranslateModule.forRoot()],providers:[provideHttpClient(),provideHttpClientTesting(),provideNoopAnimations()]});
+  const http=TestBed.inject(HttpTestingController),finance=TestBed.inject(CourseFinanceService);
+  const paid={appointmentId:42,canStart:true,accountKey:'course:1',invoiceId:1,pricingMode:'Package',patientPaid:1500,requiredCumulative:1500,additionalPaymentRequired:0,patientBalance:500,consumedSessions:2};
+  const {firstValueFrom}=await import('rxjs');const attempted=firstValueFrom(finance.collect(42,'original',500,'Online')).catch(e=>e);
+  http.expectOne(`${environment.apiUrl}/Finance/appointments/42/payments`).error(new ProgressEvent('error'));await attempted;
+  const fixture=TestBed.createComponent(PatientPaymentGateComponent);finance.blockedAppointment.set(42);fixture.detectChanges();
+  http.expectOne(`${environment.apiUrl}/Finance/appointments/42/payment-gate`).flush(paid);await fixture.whenStable();
+  expect(fixture.componentInstance.amount).toBe(500);expect(fixture.componentInstance.method).toBe('Online');expect(fixture.componentInstance.retryKey).toBe('original');
+  await fixture.componentInstance.start();http.expectNone(r=>r.url.endsWith('/status'));
+  const recovering=fixture.componentInstance.collect();const req=http.expectOne(`${environment.apiUrl}/Finance/appointments/42/payments`);expect(req.request.body.idempotencyKey).toBe('original');req.flush(paid);await recovering;
+  expect(fixture.componentInstance.retryKey).toBeNull();fixture.destroy();http.verify();sessionStorage.clear();
+ });
 });

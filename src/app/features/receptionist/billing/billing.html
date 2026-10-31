@@ -17,6 +17,12 @@
       <button class="btn btn-outline-secondary btn-sm" (click)="refreshPatientLookup()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button></p>
   }
   @if (billingService.mutation.uncertain()) { <p class="alert alert-warning" role="alert">{{ 'RECEPTIONIST.UI.OPERATION_OUTCOME_UNKNOWN' | translate }}</p> }
+  @for (operation of finance.pendingPatients(); track operation.scope) {
+    <div class="alert alert-warning" role="status">
+      {{ 'RECEPTIONIST.UI.FINANCE_ORIGINAL_RECEIPT' | translate }}: {{ operation.body['amount'] | currency:'EGP':'symbol':'1.2-2':locale.language }} / {{ operation.body['method'] | receptionistText }}
+      <button type="button" class="btn btn-outline-secondary btn-sm" [disabled]="isSubmittingPayment()" (click)="finance.blockedAppointment.set(+operation.scope.slice(8))">{{ 'RECEPTIONIST.UI.RECONCILE_COLLECTION' | translate }} #{{ operation.scope.slice(8) }}</button>
+    </div>
+  }
   @if (bookingApi.pendingCollection()) {
     <p class="alert alert-warning" role="alert">{{ 'RECEPTIONIST.UI.COLLECTION_OUTCOME_UNKNOWN' | translate }}
       <button class="btn btn-outline-secondary btn-sm" (click)="reconcileCollection()" [disabled]="isSubmittingPayment()">{{ 'RECEPTIONIST.UI.RECONCILE_COLLECTION' | translate }}</button>
@@ -151,14 +157,14 @@
       <label class="form-label mb-2">
         {{ 'AMOUNT_TO_COLLECT' | translate }} <span class="required-asterisk text-danger">*</span>
       </label>
-      <p-inputNumber [(ngModel)]="amountToCollect" mode="currency" currency="EGP" [locale]="locale.language" styleClass="w-100" class="w-full d-block"></p-inputNumber>
+      <p-inputNumber [disabled]="collectionDetailsLocked" [(ngModel)]="amountToCollect" mode="currency" currency="EGP" [locale]="locale.language" styleClass="w-100" class="w-full d-block"></p-inputNumber>
     </div>
     <div class="form-group mb-3">
       <label class="form-label mb-2">
         {{ 'RECEPTIONIST.PAYMENT_METHOD' | translate }} <span class="required-asterisk text-danger">*</span>
       </label>
       <p-dropdown 
-        [options]="paymentMethods" 
+        [options]="paymentMethods" [disabled]="collectionDetailsLocked"
         [(ngModel)]="selectedPaymentMethod" 
         [placeholder]="'RECEPTIONIST.PAYMENT_METHOD' | translate"
         appendTo="body"
@@ -171,8 +177,8 @@
         <div class="text-secondary small fw-semibold mb-1">{{ 'RECEPTIONIST.BILLING.PREVIOUS_PAYMENTS' | translate }}</div>
         @for (pay of invoicePayments(); track pay.id || $index) {
           <div class="d-flex justify-content-between align-items-center small py-1">
-            <span class="text-muted">{{ (pay.payerType === 'Insurer' ? 'RECEPTIONIST.UI.FINANCE_INSURANCE' : 'RECEPTIONIST.UI.PATIENT') | translate }} / {{ (pay.collectionMethod || billingService.mapMethodToString(pay.method)) | receptionistText }}<small class="d-block">{{ pay.transactionId }} @if (pay.insuranceClaimId) { / #{{ pay.insuranceClaimId }} }</small></span>
-            <span class="fw-semibold text-success">{{ pay.amount | currency:'EGP':'symbol':'1.2-2':locale.language }}</span>
+            <span class="text-muted">{{ ((pay.payerType === 'Insurer' || pay.payerType === 'Insurance' || billingService.mapMethodToString(pay.method) === 'Insurance') ? 'RECEPTIONIST.UI.FINANCE_INSURANCE' : 'RECEPTIONIST.UI.PATIENT') | translate }} / {{ (pay.collectionMethod || billingService.mapMethodToString(pay.method)) | receptionistText }}<small class="d-block">{{ locale.date(pay.paymentDate, true) }} {{ pay.transactionId }} @if (pay.insuranceClaimId) { / #{{ pay.insuranceClaimId }} }</small></span>
+            <span class="fw-semibold" [class.text-success]="pay.status === 1"><small>{{ (pay.status === 1 ? 'Paid' : pay.status === 0 ? 'Pending' : 'Unknown') | receptionistText }}</small>{{ pay.amount | currency:'EGP':'symbol':'1.2-2':locale.language }}</span>
           </div>
         }
       </div>

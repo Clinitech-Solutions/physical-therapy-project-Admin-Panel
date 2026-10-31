@@ -14,7 +14,6 @@ import { ReceptionistService, TodaySession } from '../../../core/services/recept
 import { PatientService } from '../../../core/services/patient.service';
 import { BillingService } from '../../../core/services/billing.service';
 import { MessageService } from 'primeng/api';
-import { ProgressBar } from 'primeng/progressbar';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 import { DialogModule } from 'primeng/dialog';
@@ -24,7 +23,7 @@ import { PatientProfileComponent } from '../../../shared/components/patient-prof
 @Component({
   selector: "app-receptionist-dashboard",
   standalone: true,
-  imports: [CommonModule, TranslateModule, FormsModule, ProgressBar, ButtonModule, TooltipModule, DialogModule, InputNumberModule, PatientProfileComponent],
+  imports: [CommonModule, TranslateModule, FormsModule, ButtonModule, TooltipModule, DialogModule, InputNumberModule, PatientProfileComponent],
   templateUrl: "./dashboard.html",
   styleUrl: "./dashboard.css",
 })

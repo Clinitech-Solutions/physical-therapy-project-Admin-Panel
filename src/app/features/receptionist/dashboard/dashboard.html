@@ -36,7 +36,9 @@
     <p class="alert alert-warning" role="alert">{{ 'RECEPTIONIST.UI.PATIENTS_LOAD' | translate }}: {{ locale.label(patientLookupError()) }}
       <button class="btn btn-outline-secondary btn-sm" (click)="refreshPatientLookup()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button></p>
   }
-  <p class="text-muted small">{{ 'RECEPTIONIST.UI.STATUS_CONFIGURATION_NOTICE' | translate }}</p>
+  @if (receptionistService.mapStatusToString(0) === 'Unknown' || receptionistService.mapStatusToString(4) === 'Unknown') {
+    <p class="text-muted small">{{ 'RECEPTIONIST.UI.STATUS_CONFIGURATION_NOTICE' | translate }}</p>
+  }
   <!-- KPI Row (Bound Strictly to receptionistService.stats()) -->
   <div class="kpi-row">
     <div class="stat-card border-start-teal">
@@ -52,18 +54,13 @@
       <div class="stat-value text-amber">{{ receptionistService.stats()?.pendingPayments ?? '?' }}</div>
     </div>
     <div class="stat-card border-start-teal">
-      <div class="stat-label">{{ 'RECEPTIONIST.TOTAL_TODAY_REVENUE' | translate }}</div>
-      <div class="stat-value text-teal d-flex align-items-baseline gap-1" style="font-size: 1.15rem;">
-        <span>{{ (receptionistService.stats()?.collectedTodayRevenue | currency:'EGP':'symbol':'1.2-2':locale.language) ?? '?' }}</span>
-        <span class="text-secondary small fw-normal" style="font-size: 0.8rem;">/ {{ (receptionistService.stats()?.expectedTodayRevenue | currency:'EGP':'symbol':'1.2-2':locale.language) ?? '?' }}</span>
-      </div>
-      <div class="mt-2 w-100">
-        <div class="d-flex justify-content-between align-items-center mb-1 text-muted" style="font-size: 0.7rem;">
-          <span>{{ 'RECEPTIONIST.COLLECTION_RATE' | translate }}</span>
-          <span class="fw-semibold">{{ receptionistService.stats()?.collectionRateToday ?? '?' }}%</span>
-        </div>
-        <p-progressBar [value]="receptionistService.stats()?.collectionRateToday ?? 0" [showValue]="false" [style]="{ height: '4px' }"></p-progressBar>
-      </div>
+      <div class="stat-label">{{ 'RECEPTIONIST.UI.ACTUAL_RECEIPTS_TODAY' | translate }}</div>
+      <div class="stat-value text-teal" style="font-size:1.15rem">{{ (receptionistService.stats()?.collectedTodayRevenue | currency:'EGP':'symbol':'1.2-2':locale.language) ?? '?' }}</div>
+      <small class="d-block text-secondary">{{ 'RECEPTIONIST.UI.INVOICE_CHARGES_TODAY' | translate }}: {{ (receptionistService.stats()?.expectedTodayRevenue | currency:'EGP':'symbol':'1.2-2':locale.language) ?? '?' }}</small>
+      @if (receptionistService.stats()?.patientCollectedToday !== undefined) {
+        <small class="d-block text-secondary">{{ 'RECEPTIONIST.UI.PATIENT_RECEIPTS_TODAY' | translate }}: {{ receptionistService.stats()?.patientCollectedToday | currency:'EGP':'symbol':'1.2-2':locale.language }}</small>
+        <small class="d-block text-secondary">{{ 'RECEPTIONIST.UI.INSURER_RECEIPTS_TODAY' | translate }}: {{ receptionistService.stats()?.insurerCollectedToday | currency:'EGP':'symbol':'1.2-2':locale.language }}</small>
+      }
     </div>
   </div>
 

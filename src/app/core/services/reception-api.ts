@@ -89,6 +89,12 @@ export function localDay(date: Date | string): string {
   const d = new Date(date);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
+export function clinicDay(value: Date | string): string {
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return '';
+  const parts = new Intl.DateTimeFormat('en-CA', {timeZone:'Africa/Cairo',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(date);
+  return ['year','month','day'].map(type=>parts.find(part=>part.type===type)?.value).join('-');
+}
 
 @Injectable({ providedIn: "root" })
 export class ReceptionEvents {

@@ -24,12 +24,12 @@ describe('Course finance API and recovery', () => {
    const recreated=TestBed.runInInjectionContext(()=>new CourseFinanceService());
    const retry=firstValueFrom(recreated.collect(42,'different-key',500,'Cash'));
    const request=http.expectOne(`${url}/Finance/appointments/42/payments`);expect(request.request.body.idempotencyKey).toBe('original-key');
-   request.flush({appointmentId:42,canStart:true,additionalPaymentRequired:0});await retry;
+   request.flush({appointmentId:42,canStart:true,invoiceId:10,accountKey:'course:1',pricingMode:'Package',patientPaid:500,requiredCumulative:500,additionalPaymentRequired:0,patientBalance:0,consumedSessions:0});await retry;
    expect(sessionStorage.getItem('ptcenter.finance.patient-42')).toBeNull();
  });
  it('separates insurer claim submissions from actual settlement collection methods', async () => {
    const claim=firstValueFrom(api.claim(10,'claim-key','CLAIM-123'));
-   http.expectOne(`${url}/Finance/insurance/claims`).flush({id:8});await claim;
+   http.expectOne(`${url}/Finance/insurance/claims`).flush({id:8,invoiceId:10});await claim;
    const settle=firstValueFrom(api.settle(8,'settle-key',80,'Online','BANK-456'));
    const request=http.expectOne(`${url}/Finance/insurance/claims/8/settlements`);
    expect(request.request.body).toEqual({idempotencyKey:'settle-key',amount:80,method:'Online',settlementReference:'BANK-456'});request.flush({paymentId:100});await settle;
@@ -49,5 +49,33 @@ describe('Course finance API and recovery', () => {
    const preview=firstValueFrom(TestBed.inject(BookingService).preview({} as never));const rejected=expect(preview).rejects.toThrow('could not be verified');
    http.expectOne(`${url}/Bookings/preview`).flush({canSave:true,totalAmount:100,patientAmount:100,insuranceAmount:0,deposit:0,remainingAmount:100});await rejected;
    http.expectNone(`${url}/Bookings`);
+ });
+ it('retains a complete intent after an unreadable success and blocks changed retry details before HTTP',async()=>{
+   const failed=firstValueFrom(api.collect(42,'original',50,'Online')).catch(e=>e);
+   http.expectOne(`${url}/Finance/appointments/42/payments`).flush(null);await failed;
+   const recreated=TestBed.runInInjectionContext(()=>new CourseFinanceService());
+   expect(recreated.pending('patient-42')?.body).toEqual({amount:50,method:'Online'});
+   await expect(firstValueFrom(recreated.collect(42,'new',60,'Cash'))).rejects.toThrow('original receipt');
+   http.expectNone(`${url}/Finance/appointments/42/payments`);
+   const retry=firstValueFrom(recreated.collect(42,'new',50,'Online'));
+   const req=http.expectOne(`${url}/Finance/appointments/42/payments`);expect(req.request.body.idempotencyKey).toBe('original');
+   req.flush({appointmentId:42,canStart:true,invoiceId:1,patientPaid:50,requiredCumulative:50,additionalPaymentRequired:0,patientBalance:0});await retry;
+   expect(recreated.pending('patient-42')).toBeNull();
+ });
+ it('retains claim and settlement details for recovery instead of accepting an empty receipt',async()=>{
+   const failed=firstValueFrom(api.settle(8,'settlement',80,'Online','BANK-456')).catch(e=>e);
+   http.expectOne(`${url}/Finance/insurance/claims/8/settlements`).flush({});await failed;
+   expect(api.pendingInsurance()[0]).toMatchObject({key:'settlement',body:{amount:80,method:'Online',settlementReference:'BANK-456'}});
+   await expect(firstValueFrom(api.settle(8,'new',80,'Online','OTHER'))).rejects.toThrow('original receipt');
+   http.expectNone(`${url}/Finance/insurance/claims/8/settlements`);
+ });
+ it('pins account collection amount and method across service recreation',async()=>{
+   const first=firstValueFrom(TestBed.inject(BookingService).collectAccount('course:1',25,'Online')).catch(e=>e);
+   const req=http.expectOne(`${url}/Bookings/accounts/course%3A1/payments`);const key=req.request.body.idempotencyKey;
+   req.error(new ProgressEvent('error'));await first;
+   const recreated=TestBed.runInInjectionContext(()=>new BookingService());
+   expect(recreated.pendingCollection()).toMatchObject({key,amount:25,method:'Online'});
+   await expect(firstValueFrom(recreated.collectAccount('course:1',26,'Online'))).rejects.toThrow('original receipt');
+   http.expectNone(`${url}/Bookings/accounts/course%3A1/payments`);
  });
 });

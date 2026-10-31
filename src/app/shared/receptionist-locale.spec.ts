@@ -72,6 +72,11 @@ describe('Receptionist localization', () => {
       for (const file of readdirSync(directory, { recursive: true }).filter(file => /\.(html|ts)$/.test(String(file)) && !String(file).endsWith('.spec.ts'))) {
         const source = readFileSync(`${directory}/${file}`, 'utf8');
         for (const match of source.matchAll(/['"]((?:RECEPTIONIST|COMMON|SIDEBAR)\.[A-Z0-9_.]+)['"]/g)) {
+          if (match[1] === 'RECEPTIONIST.UI.FINANCE_') {
+            for (const column of ['PLANNED','EARNED','SUBMITTED','COLLECTED','OUTSTANDING'])
+              for (const dictionary of [en,ar]) expect(lookup(dictionary,match[1]+column)).toBeTypeOf('string');
+            continue;
+          }
           for (const dictionary of [en, ar]) expect(lookup(dictionary, match[1]), `${file}: ${match[1]}`).toBeTypeOf('string');
         }
       }

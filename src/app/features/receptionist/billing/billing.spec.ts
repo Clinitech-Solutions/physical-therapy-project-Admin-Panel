@@ -5,6 +5,8 @@ import { MessageService } from 'primeng/api';
 import { BillingService } from '../../../core/services/billing.service';
 import { BillingComponent } from './billing';
 import { environment } from '../../../../environments/environment';
+import { of } from 'rxjs';
+import { BookingReceipt } from '../../../core/models/booking.model';
 const invoice={id:11,invoiceNumber:'INV-11',appointmentId:10,patientId:1,patientName:'Patient',patientPhone:null,insuranceCompany:null,
   type:72,totalAmount:500,insuranceAmount:300,patientAmount:200,paidAmount:50,remainingAmount:150,status:57,appointmentDate:'2026-11-01T09:00:00Z',createdAt:new Date().toISOString(),paymentMethod:null};
 describe('Billing component with backend invoice data',()=>{
@@ -42,5 +44,12 @@ describe('Billing component with backend invoice data',()=>{
   });
   it('keeps insurer invoice amounts separate from recorded patient payments',()=>{
     expect(component.insuranceClaims()[0].insuranceAmount).toBe(300);expect(component.totalRevenue()).toBe(50);
+  });
+  it('accepts the offered Online method for a saved course account',async()=>{
+    sessionStorage.clear();
+    component.openAccountPayment({key:'course:1',remainingAmount:100} as never);component.selectedPaymentMethod='Online';component.amountToCollect=25;
+    const collect=vi.spyOn(component.bookingApi,'collectAccount').mockReturnValue(of({} as BookingReceipt));
+    vi.spyOn(component,'refreshAccounts').mockImplementation(()=>{});vi.spyOn(service,'getInvoices').mockImplementation(()=>{});
+    await component.confirmPayment();expect(collect).toHaveBeenCalledWith('course:1',25,'Online');expect(component.paymentError()).toBe('');
   });
 });
