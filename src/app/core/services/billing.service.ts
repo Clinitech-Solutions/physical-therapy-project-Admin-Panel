@@ -19,7 +19,7 @@ import { ReceptionContracts, backendEnumNumber } from "./reception-contracts";
 export interface Invoice {
   id: number;
   invoiceNumber?: string;
-  appointmentId: number;
+  appointmentId: number | null;
   patientId: number;
   patientName?: string;
   patientPhone?: string | null;
@@ -32,7 +32,10 @@ export interface Invoice {
   paidAmount?: number;
   remainingAmount?: number;
   remainingBalance?: number;
-  appointmentDate?: string;
+  appointmentDate?: string | null;
+  courseAgreementId?: number | null;
+  treatmentPlanSessionId?: number | null;
+  deliveredAt?: string | null;
   createdAt?: string;
   paymentMethod?: number | string | null;
   payments?: Payment[];
@@ -52,6 +55,7 @@ export interface Payment {
   invoiceId: number;
   amount: number;
   method: number | string;
+  payerType?: string; collectionMethod?: string | null; insuranceClaimId?: number | null; transactionId?: string | null;
   paymentDate?: string;
   createdAt?: string;
 }
@@ -149,7 +153,10 @@ export class BillingService {
     return {
       id: numericId(r["id"]),
       invoiceNumber: textField(r["invoiceNumber"]),
-      appointmentId: numericId(r["appointmentId"]),
+      appointmentId: r["appointmentId"] == null ? null : numericId(r["appointmentId"]),
+      courseAgreementId: r['courseAgreementId'] == null ? null : numericId(r['courseAgreementId']),
+      treatmentPlanSessionId: r['treatmentPlanSessionId'] == null ? null : numericId(r['treatmentPlanSessionId']),
+      deliveredAt: r['deliveredAt'] as string | null,
       patientId: numericId(r["patientId"]),
       patientName: textField(r["patientName"]),
       patientPhone: r["patientPhone"] as string | null,
@@ -162,7 +169,7 @@ export class BillingService {
       paidAmount: finiteNumber(r["paidAmount"]),
       remainingAmount: remaining,
       remainingBalance: remaining,
-      appointmentDate: textField(r["appointmentDate"]),
+      appointmentDate: r['appointmentDate'] == null ? null : textField(r['appointmentDate']),
       createdAt: textField(r["createdAt"]),
       paymentMethod: r["paymentMethod"] as string | null,
     };
@@ -298,6 +305,8 @@ export class BillingService {
               invoiceId: numericId(r["invoiceId"]),
               amount: finiteNumber(r["amount"]),
               method: finiteNumber(backendEnumNumber('paymentMethod', r["paymentMethod"] ?? r["method"])),
+              payerType: r['payerType'] as string | undefined, collectionMethod: r['collectionMethod'] as string | null,
+              insuranceClaimId: r['insuranceClaimId'] as number | null, transactionId: r['transactionId'] as string | null,
             };
           });
         }),

@@ -22,7 +22,7 @@ describe('Billing component with backend invoice data',()=>{
   it('opens saved invoice details using the actual remaining balance without defaulting a payment method',()=>{
     component.openPaymentModal(11);http.expectOne(environment.apiUrl+'/Billing/invoices/11/payments').flush([]);
     expect(component.amountToCollect).toBe(150);expect(component.selectedPaymentMethod).toBe('');
-    expect(component.paymentMethods).toEqual(['Cash','Visa','EWallet','BankTransfer']);expect(component.showPaymentModal).toBe(true);
+    expect(component.paymentMethods).toEqual(['Cash','Visa','EWallet','BankTransfer','Online']);expect(component.showPaymentModal).toBe(true);
   });
   it('shows history failures independently of invoice details',()=>{
     component.openPaymentModal(11);http.expectOne(environment.apiUrl+'/Billing/invoices/11/payments').flush({}, {status:403,statusText:'Forbidden'});

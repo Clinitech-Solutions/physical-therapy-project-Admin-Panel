@@ -16,7 +16,7 @@ export const BACKEND_RECEPTION_ENUMS: ReceptionEnumDefinitions = {
   appointmentStatus: { Pending: 0, Completed: 1, Cancelled: 2, NoShow: 3, 'In Progress': 4 },
   invoiceStatus: { Pending: 0, Paid: 1, Cancelled: 2, Waived: 3 },
   invoiceType: { Assessment: 0, Session: 1, Installment: 2 },
-  paymentMethod: { Cash: 0, Visa: 1, EWallet: 2, BankTransfer: 3, Insurance: 4 },
+  paymentMethod: { Cash: 0, Visa: 1, EWallet: 2, BankTransfer: 3, Insurance: 4, Online: 5 },
   sessionStatus: { Pending: 0, 'In Progress': 1, Completed: 2, Cancelled: 3 },
   assessmentSeverity: { Low: 0, Medium: 1, High: 2 },
   planStatus: { Active: 0, Inactive: 1 },

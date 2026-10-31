@@ -26,7 +26,7 @@ import { CommonModule } from "@angular/common";
 import { RouterModule } from "@angular/router";
 import { TranslateModule } from "@ngx-translate/core";
 import { FormsModule } from "@angular/forms";
-import { firstValueFrom, Subscription } from "rxjs";
+import { firstValueFrom, Subscription, Subject, takeUntil } from "rxjs";
 import { HttpErrorResponse } from '@angular/common/http';
 import { MessageService } from "primeng/api";
 import { SelectModule } from "primeng/select";
@@ -76,7 +76,7 @@ import { BillingService } from "../../../core/services/billing.service";
     PatientProfileComponent,
   ],
   templateUrl: "./bookings.html",
-  styleUrls: ["./bookings.css", "./booking-form.css", "./booking-summary.css"],
+  styleUrls: ["./bookings.css", "./booking-layout.css", "./booking-controls.css", "./booking-table.css", "./booking-financial.css"],
 })
 export class BookingsComponent implements OnInit {
   readonly locale = new ReceptionistLocale();
@@ -101,10 +101,61 @@ export class BookingsComponent implements OnInit {
   unitPrice: number | null = null;
   packagePrice: number | null = null;
   discount = 0;
+  discountType: 'None' | 'Percent' | 'Fixed' = 'None';
+  discountValue = 0;
+  private readonly patientChanged = new Subject<void>();
+  private readonly planChanged = new Subject<void>();
+  get agreement() { return this.chosenPlan?.financial; }
+  get maxBookingSessions() { return Math.min(this.chosenPlan?.remainingSessions ?? 1, this.bookingContext()?.remainingApprovedSessions ?? 200); }
+  get canPreview(): boolean {
+    const context = this.bookingContext();
+    if (!context || this.bookingBusy() || this.contextLoading() || this.hasUnresolvedBooking || this.clinicianService.loading() || this.roomAvailabilityLoading() || this.roomAvailabilityError()) return false;
+    if (context.hasCompletedAssessment && (!this.chosenPlan || this.maxBookingSessions <= 0 || context.isInsurance && !context.insuranceApproved)) return false;
+    if (!this.selectedDoctorId || !this.selectedRoomId || !this.bookingDates.length || this.bookingMode === 'plan' && this.planSessionCount > this.maxBookingSessions) return false;
+    return this.isWaivedAssessment || (this.assessmentCharge === 'Paid' || context.hasCompletedAssessment) &&
+      (!!this.agreement || Number(this.unitPrice) > 0) && this.deposit >= 0 && (this.deposit === 0 || !!this.paymentMethod) &&
+      (this.discountType === 'None' || this.discountValue >= 0 && (this.discountType !== 'Percent' || this.discountValue <= 100));
+  }
+  get bookingDates(): Date[] { return this.bookingMode === 'plan' ? this.generateBulkDates() : this.scheduledDate && Number.isFinite(this.scheduledDate.getTime()) ? [this.scheduledDate] : []; }
+  get bookingDate() { return this.bookingMode === 'plan' ? this.planStartDate : this.scheduledDate; }
+  get bookingTime() { return this.bookingMode === 'plan' ? this.planPreferredTime : this.scheduledDate; }
+  onBookingDateChange(date: Date | null) {
+    if (this.bookingMode === 'plan') this.planStartDate = date;
+    else if (!date) this.scheduledDate = null;
+    else { const time = this.scheduledDate; this.scheduledDate = new Date(date); if (time) this.scheduledDate.setHours(time.getHours(), time.getMinutes(), 0, 0); }
+    this.refreshRoomAvailability();
+  }
+  onBookingTimeChange(time: Date | null) {
+    if (this.bookingMode === 'plan') this.planPreferredTime = time;
+    else if (!time) this.scheduledDate = null;
+    else { const date = new Date(this.scheduledDate ?? new Date()); date.setHours(time.getHours(), time.getMinutes(), 0, 0); this.scheduledDate = date; }
+    this.refreshRoomAvailability();
+  }
+  get bookingWeekDays() { return [1, 2, 3, 4, 5, 6, 0].map(value => this.localizedWeekDays.find(day => day.value === value)!); }
+  toggleBookingDay(day: number) {
+    this.selectedDays = this.selectedDays.includes(day) ? this.selectedDays.filter(value => value !== day) : [...this.selectedDays, day];
+    this.refreshRoomAvailability();
+  }
+  setPricingMode(mode: 'PerSession' | 'Package') {
+    if (this.agreement || this.bookingContext()?.isInsurance || this.isNewPatient || this.bookingBusy() || this.hasUnresolvedBooking) return;
+    this.pricingMode = mode; this.preview.set(null);
+  }
+  get summaryQuote() { return this.previewIsCurrent ? this.preview() : null; }
+  get summaryFinancial() { return this.summaryQuote?.financial ?? this.agreement ?? null; }
+  get appointmentRows() {
+    return this.summaryQuote?.appointments ?? this.bookingDates.map(date => ({startTime: date.toISOString(), endTime: new Date(date.getTime() + 3600000).toISOString(), conflicts: null}));
+  }
+  formatWeekday(value: string) { return new Date(value).toLocaleDateString(this.locale.language, {weekday: 'short'}); }
+  syncAgreement() {
+    const agreement = this.agreement;
+    this.pricingMode = agreement?.pricingMode ?? (this.bookingContext()?.isInsurance ? 'Package' : 'PerSession');
+    this.unitPrice = agreement?.unitPrice ?? null; this.discountType = agreement?.discountType ?? 'None';
+    this.discountValue = agreement?.discountValue ?? 0; this.preview.set(null);
+  }
   deposit = 0;
   paymentMethod: BookingPaymentMethod | null = null;
   installments: { dueDate: string; amount: number | null }[] = [];
-  readonly paymentMethods: BookingPaymentMethod[] = ['Cash', 'Visa', 'EWallet', 'BankTransfer'];
+  readonly paymentMethods: BookingPaymentMethod[] = ['Cash', 'Visa', 'Online'];
   get scheduledEndDate(): Date | null { return this.scheduledDate ? new Date(this.scheduledDate.getTime() + 3600000) : null; }
   selectedPlanId: number | null = null;
   readonly bulkProgress = signal<number[]>([]);
@@ -305,6 +356,7 @@ export class BookingsComponent implements OnInit {
   get selectedRoomName(): string {
     return (
       this.allRooms().find((r) => r.id === this.selectedRoomId)?.displayName ??
+      this.availableRooms().find((r) => r.id === this.selectedRoomId)?.displayName ??
       ""
     );
   }
@@ -325,18 +377,23 @@ export class BookingsComponent implements OnInit {
     this.preview.set(null);
     this.refreshRoomAvailability();
   }
-  async onPatientChange(id?: string) {
+  async onPatientChange(id?: string | null) {
     if (this.bookingBusy() || this.hasUnresolvedBooking) return;
-    if (id !== undefined) this.selectedPatientId = id;
+    if (id !== undefined) this.selectedPatientId = id ?? '';
     const generation = ++this.contextGeneration;
+    this.clinicianGeneration++;
+    this.patientChanged.next(); this.planChanged.next();
+    this.clinicianService.loading.set(false); this.clinicianService.error.set(null);
     this.bookingContext.set(null); this.preview.set(null); this.selectedPlanId = null;
     this.refreshRoomAvailability();
     this.selectedDoctorId = ''; this.selectedRoomId = ''; this.bookingMode = 'single'; this.bookingError.set('');
-    this.assessmentCharge = null; this.unitPrice = null; this.packagePrice = null; this.discount = 0; this.deposit = 0; this.installments = [];
+    this.assessmentCharge = null; this.unitPrice = null; this.packagePrice = null; this.discount = 0; this.deposit = 0; this.paymentMethod = null; this.installments = [];
+    this.lastReceipt.set(null);
+    this.contextLoading.set(false);
     if (!this.selectedPatientId) return;
     this.contextLoading.set(true);
     try {
-      const context = await firstValueFrom(this.bookingApi.context(numericId(this.selectedPatientId)));
+      const context = await firstValueFrom(this.bookingApi.context(numericId(this.selectedPatientId)).pipe(takeUntil(this.patientChanged), takeUntilDestroyed(this.destroyRef)));
       if (generation !== this.contextGeneration) return;
       this.bookingContext.set(context);
       this.allPatients.update(patients => patients.map(p => p.id === String(context.patientId)
@@ -344,24 +401,33 @@ export class BookingsComponent implements OnInit {
       this.sessionType = context.hasCompletedAssessment ? 'Session' : 'Assessment';
       if (context.plans.length === 1) this.selectedPlanId = context.plans[0].id;
       if (context.isInsurance && !context.hasCompletedAssessment) this.assessmentCharge = 'Free';
-      this.roomService.load();
-      await this.loadEligibleClinicians();
+      this.syncAgreement();
+      if (!context.hasCompletedAssessment || this.selectedPlanId != null) {
+        this.refreshRoomAvailability();
+        await this.loadEligibleClinicians();
+      }
     } catch (error) { if (generation === this.contextGeneration) this.bookingError.set(apiError(error)); }
     finally { if (generation === this.contextGeneration) this.contextLoading.set(false); }
   }
   async loadEligibleClinicians() {
     const context = this.bookingContext(); if (!context) return;
     const generation = ++this.clinicianGeneration;
+    this.planChanged.next();
     this.clinicianService.loading.set(true); this.clinicianService.error.set(null);
     try {
-      const clinicians = await firstValueFrom(this.bookingApi.clinicians(context.patientId, this.selectedPlanId));
+      const clinicians = await firstValueFrom(this.bookingApi.clinicians(context.patientId, this.selectedPlanId).pipe(takeUntil(this.patientChanged), takeUntil(this.planChanged), takeUntilDestroyed(this.destroyRef)));
       if (generation !== this.clinicianGeneration || context.patientId !== this.bookingContext()?.patientId) return;
       this.clinicianService.clinicians.set(clinicians.map(c => ({ ...c, roles: [c.role] })));
       this.selectedDoctorId = clinicians.find(c => c.preferred)?.id ?? '';
     } catch (error) { if (generation === this.clinicianGeneration) this.clinicianService.error.set(apiError(error)); }
     finally { if (generation === this.clinicianGeneration) this.clinicianService.loading.set(false); }
   }
-  onPlanChange() { this.preview.set(null); void this.loadEligibleClinicians(); }
+  onPlanChange() {
+    this.clinicianGeneration++; this.planChanged.next();
+    this.syncAgreement(); this.selectedDoctorId = '';
+    if (this.selectedPlanId != null) { this.refreshRoomAvailability(); void this.loadEligibleClinicians(); }
+    else this.clinicianService.loading.set(false);
+  }
   onAssessmentChargeChange() {
     this.preview.set(null);
     if (this.isWaivedAssessment) { this.unitPrice = null; this.packagePrice = null; this.discount = 0; this.deposit = 0; this.installments = []; }
@@ -393,9 +459,10 @@ export class BookingsComponent implements OnInit {
       treatmentPlanId: context.hasCompletedAssessment ? this.selectedPlanId : null, startsAt: dates.map(d => d.toISOString()),
       assessmentCharge: context.hasCompletedAssessment ? null : context.isInsurance ? 'Free' : this.assessmentCharge,
       pricingMode: context.hasCompletedAssessment ? this.pricingMode : 'PerSession', unitPrice: waived ? null : this.unitPrice,
-      packagePrice: waived ? null : this.packagePrice, discount: waived ? 0 : this.discount, deposit: waived ? 0 : this.deposit,
+      packagePrice: null, discount: 0, discountType: waived ? 'None' : this.discountType,
+      discountValue: waived ? 0 : this.discountType === 'None' ? 0 : this.discountValue, deposit: waived ? 0 : this.deposit,
       paymentMethod: waived ? null : this.paymentMethod,
-      installments: waived ? [] : this.installments.map(i => ({ dueDate: i.dueDate, amount: i.amount ?? 0 }))
+      installments: waived || !!this.agreement ? [] : this.installments.map(i => ({ dueDate: i.dueDate, amount: i.amount ?? 0 }))
     };
   }
   private bookingErrorMessage(error: unknown): string {
@@ -429,10 +496,11 @@ export class BookingsComponent implements OnInit {
     try {
       const receipt = await firstValueFrom(this.bookingApi.create(request));
       this.lastReceipt.set(receipt); this.pendingBooking = null; this.preview.set(null); this.recoveryEditing = false;
+      this.bookingApi.invalidatePatient(request.patientId); this.deposit = 0;
       this.messageService.add({ severity: 'success', summary: this.locale.text('SUCCESS', 'Success'),
         detail: this.locale.text('BOOKING_COMMITTED', 'Booking and financial records saved. Payments are recorded only for the amount collected.') });
       const context = await firstValueFrom(this.bookingApi.context(request.patientId));
-      if (Number(this.selectedPatientId) === request.patientId) this.bookingContext.set(context);
+      if (Number(this.selectedPatientId) === request.patientId) { this.bookingContext.set(context); this.syncAgreement(); }
     } catch (error) {
       this.bookingError.set(this.lastReceipt()?.idempotencyKey === request.idempotencyKey
         ? this.locale.text('BOOKING_SAVED_CONTEXT_FAILED', 'Booking saved. Patient information could not refresh; do not book again.')
@@ -456,7 +524,11 @@ export class BookingsComponent implements OnInit {
   resetBookingForm() {
     if (this.bookingBusy() || this.bookingApi.uncertainKey()) return;
     this.contextGeneration++; this.clinicianGeneration++;
+    this.patientChanged.next(); this.planChanged.next();
     this.selectedPatientId = ''; this.selectedDoctorId = ''; this.selectedRoomId = ''; this.selectedPlanId = null;
+    this.assessmentCharge = null; this.pricingMode = 'PerSession'; this.unitPrice = null; this.packagePrice = null;
+    this.discount = 0; this.discountType = 'None'; this.discountValue = 0; this.deposit = 0; this.paymentMethod = null; this.installments = [];
+    this.clinicianService.loading.set(false); this.clinicianService.error.set(null);
     this.bookingContext.set(null); this.preview.set(null); this.bookingMode = 'single'; this.bookingError.set(''); this.lastReceipt.set(null);
     this.refreshRoomAvailability();
     this.contextLoading.set(false);

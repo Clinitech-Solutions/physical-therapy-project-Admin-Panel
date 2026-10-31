@@ -1,2 +1,5 @@
 <p-toast></p-toast>
 <router-outlet></router-outlet>
+@defer (when finance.appointment() !== null) {
+  <app-patient-payment-gate />
+}

@@ -1,5 +1,4 @@
 import { Routes } from '@angular/router';
-import { Login } from './features/auth/login/login';
 import { AppLayoutComponent } from './layout/app-layout/app-layout';
 import { authGuard } from './core/guards/auth-guard';
 import { roleGuard } from './core/guards/role-guard';
@@ -10,7 +9,7 @@ const receptionProviders = [provideEnvironmentInitializer(() => { inject(Recepti
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
-  { path: 'login', component: Login },
+  { path: 'login', loadComponent: () => import('./features/auth/login/login').then(m => m.Login) },
   { 
     path: '', 
     component: AppLayoutComponent,

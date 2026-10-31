@@ -18,6 +18,7 @@ import { InputNumberModule } from 'primeng/inputnumber';
 import { BookingService } from '../../../core/services/booking.service';
 import { BookingAccount, BookingPaymentMethod } from '../../../core/models/booking.model';
 import { TabsModule } from 'primeng/tabs';
+import { InsurerAccountsComponent } from './insurer-accounts';
 
 @Component({
   selector: "p-dropdown",
@@ -83,12 +84,13 @@ export class DropdownComponent implements ControlValueAccessor {
     SelectModule,
     InputNumberModule,
     TabsModule,
-    DropdownComponent
+    DropdownComponent, InsurerAccountsComponent
   ],
   templateUrl: "./billing.html",
   styleUrl: "./billing.css"
 })
 export class BillingComponent implements OnInit {
+  activeTab: string | number | undefined = '0';
   readonly locale = new ReceptionistLocale();
   billingService = inject(BillingService, { optional: true }) ?? new BillingService();
   patientService = inject(PatientService, { optional: true });

@@ -1,11 +1,12 @@
 import { inject, Injectable, signal } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { catchError, defer, map, tap, throwError } from 'rxjs';
+import { catchError, defer, map, tap, throwError, shareReplay, Observable, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { BookingAccount, BookingClinician, BookingContext, BookingPlan, BookingPreview, BookingReceipt, BookingRequest, BookingPaymentMethod } from '../models/booking.model';
-import { numericId, ReceptionEvents, unknownOutcome } from './reception-api';
+import { numericId, ReceptionEvents, unknownOutcome, ReceptionError } from './reception-api';
 import { pagedRecords } from './reception-pagination';
 import { Patient } from '../models/patient.model';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 const storageKey = 'ptcenter.pending-booking-key';
 function pendingKey(): string | null {
@@ -16,6 +17,7 @@ export class BookingService {
   private readonly http = inject(HttpClient);
   private readonly events = inject(ReceptionEvents);
   private readonly url = `${environment.apiUrl}/Bookings`;
+  constructor() { this.events.changed.pipe(takeUntilDestroyed()).subscribe(() => this.contextCache.clear()); }
   readonly uncertainKey = signal<string | null>(pendingKey());
   readonly pendingCollection = signal<{ accountKey: string; key: string } | null>(this.readCollection());
   private readCollection(): { accountKey: string; key: string } | null {
@@ -30,7 +32,17 @@ export class BookingService {
     // Only an opaque operation key survives reload; patient details and prices are never stored here.
     try { if (typeof sessionStorage !== 'undefined') key ? sessionStorage.setItem(storageKey, key) : sessionStorage.removeItem(storageKey); } catch { /* Reconciliation remains available in this tab. */ }
   }
-  context(id: number) { return this.http.get<BookingContext>(`${this.url}/patients/${numericId(id)}`); }
+  private readonly contextCache = new Map<number, {expires: number; value: Observable<BookingContext>}>();
+  private readonly clinicianCache = new Map<string, {expires: number; value: Observable<BookingClinician[]>}>();
+  invalidatePatient(id: number) { this.contextCache.delete(id); this.clinicianCache.clear(); }
+  context(id: number) {
+    const cached = this.contextCache.get(id);
+    if (cached && cached.expires > Date.now()) return cached.value;
+    const value = this.http.get<BookingContext>(`${this.url}/patients/${numericId(id)}`).pipe(
+      tap(result => this.contextCache.set(id, {expires: Date.now() + 30000, value: of(result)})),
+      catchError(error => { this.contextCache.delete(id); return throwError(() => error); }), shareReplay({bufferSize: 1, refCount: true}));
+    this.contextCache.set(id, {expires: Date.now() + 30000, value}); return value;
+  }
   directory() {
     return pagedRecords<Patient>(this.http, `${this.url}/patients`, value => {
       const row = value as { id: number; fullName: string; phoneNumber: string; gender: 'Male' | 'Female' };
@@ -63,11 +75,18 @@ export class BookingService {
     );
   }
   clinicians(id: number, planId: number | null, treatment = false) {
-    return this.http.get<BookingClinician[]>(`${this.url}/patients/${numericId(id)}/clinicians`, {
+    const key = `${id}:${planId}:${treatment}`; const cached = this.clinicianCache.get(key);
+    if (cached && cached.expires > Date.now()) return cached.value;
+    const value = this.http.get<BookingClinician[]>(`${this.url}/patients/${numericId(id)}/clinicians`, {
       params: { ...(planId == null ? {} : { planId }), ...(treatment ? { treatment: true } : {}) }
-    });
+    }).pipe(tap(result => this.clinicianCache.set(key, {expires: Date.now() + 30000, value: of(result)})), catchError(error => { this.clinicianCache.delete(key); return throwError(() => error); }), shareReplay({bufferSize: 1, refCount: true}));
+    this.clinicianCache.set(key, {expires: Date.now() + 30000, value}); return value;
   }
-  preview(request: BookingRequest) { return this.http.post<BookingPreview>(`${this.url}/preview`, request); }
+  preview(request: BookingRequest) { return this.http.post<BookingPreview>(`${this.url}/preview`, request).pipe(map(quote => {
+    if (!quote || ![quote.totalAmount, quote.patientAmount, quote.insuranceAmount, quote.deposit, quote.remainingAmount, quote.discountAmount].every(value => typeof value === 'number' && Number.isFinite(value) && value >= 0))
+      throw new ReceptionError('BOOKING_QUOTE_UNVERIFIED', 'Booking amounts could not be verified. Refresh the booking details or contact your administrator.');
+    return quote;
+  })); }
   private receipt(value: BookingReceipt): BookingReceipt {
     if (value?.outcome !== 'Committed' || !value.idempotencyKey || !Array.isArray(value.appointments) || !value.appointments.length ||
       !value.appointments.every(a => Number.isSafeInteger(a.id) && a.id > 0 && new Date(a.endTime).getTime() - new Date(a.startTime).getTime() === 3600000) ||
@@ -85,7 +104,7 @@ export class BookingService {
       this.setKey(request.idempotencyKey);
       return this.http.post<BookingReceipt>(this.url, request).pipe(
         map(value => { if (value?.idempotencyKey !== request.idempotencyKey) throw new Error('Booking outcome could not be verified: returned identity mismatch.'); return this.receipt(value); }),
-        tap(() => { this.setKey(null); this.events.changed.next('appointments'); this.events.changed.next('billing'); }),
+        tap(() => { this.invalidatePatient(request.patientId); this.setKey(null); this.events.changed.next('appointments'); }),
         catchError(error => {
           // A confirmed validation rejection rolled back the transaction. Timeouts and unreadable success responses remain unknown.
           if (!wasUncertain && error instanceof HttpErrorResponse && !unknownOutcome(error) && !['Booking.ConcurrentChange', 'Booking.RetryKeyConflict'].includes(error.error?.title)) this.setKey(null);

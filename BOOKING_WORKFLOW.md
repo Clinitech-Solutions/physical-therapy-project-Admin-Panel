@@ -1,5 +1,15 @@
 # Patient-first booking integration
 
+**Visual update, 2026-10-31:** The Booking content is now a single page matching the supplied reference: three numbered sections, aligned equal-height controls, segmented single/bulk and pricing modes, weekday pills, generated appointment rows and a sticky financial summary. This supersedes the earlier wizard presentation while retaining the financial/API rules below. The sidebar/header and backend are unchanged. **93 frontend regression tests pass**, production build is warning-free, and desktop/mobile/Arabic browser checks against the matching local test backend pass. See [BOOKING_FINANCE.md](BOOKING_FINANCE.md) for screenshots and validation details.
+
+## Current finance status — 2026-10-31
+
+The course-finance implementation supersedes the original batch-pricing policy and insurer-UI limitations recorded below. Packages cover the prescribed/approved course and are reused across batches. Check-in uses actual patient receipts and cumulative consumed-session coverage. The Booking wizard and separate insurer claim/settlement ledger are implemented. See [BOOKING_FINANCE.md](BOOKING_FINANCE.md) for current behavior, **87 focused frontend / 52 backend passing checks**, browser evidence and remaining SQL Server prerequisites.
+
+The financial migration `20261030184822_CourseFinancialAgreements` is the sole pending migration on the read-only confirmed SQL Server target. It has not been applied. The matching current backend was exercised only with isolated SQLite through local ASP.NET TestServer; the user's running API on 7223 was not restarted. Working-hours policy is unchanged. No push/deployment was performed.
+
+The following sections retain earlier implementation history and earlier verification counts; their financial policy and pending-UI statements are historical, not the current completion report.
+
 ## Room availability and checkout
 
 After patient selection, Booking checks `POST /api/Rooms/availability` with all selected `startsAt` values. Only active rooms free for every selected 60-minute interval appear in the dropdown. Pending overlapping reservations and ongoing room occupancy exclude a room; changing dates, time, or bulk recurrence reloads availability. Stale reads are cancelled, removed room selections are cleared, and availability failures remain visible with retry.

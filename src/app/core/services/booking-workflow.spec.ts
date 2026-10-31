@@ -17,7 +17,7 @@ const context: BookingContext = { patientId: 1, patientName: 'Test patient', gen
   isInsurance: false, insuranceApproved: false, remainingApprovedSessions: null, copayPercentage: null, insuranceCompanyName: null, assessments: [], plans: [] };
 const plan = { id: 5, doctorId: 'doctor', doctorName: 'Doctor', treatmentType: 'Physio', plannedSessions: 6, bookedSessions: 1, completedSessions: 0, remainingSessions: 5 };
 const quote: BookingPreview = { canSave: true, appointments: [{ startTime: '2030-02-04T10:00:00Z', endTime: '2030-02-04T11:00:00Z', conflicts: [] }],
-  errors: [], totalAmount: 100, patientAmount: 100, insuranceAmount: 0, deposit: 0, remainingAmount: 100, waiverReason: null };
+  errors: [], totalAmount: 100, patientAmount: 100, insuranceAmount: 0, deposit: 0, remainingAmount: 100, waiverReason: null, discountAmount: 0 };
 const receipt = (key: string): BookingReceipt => ({ idempotencyKey: key, patientId: 1, outcome: 'Committed',
   appointments: [{ id: 10, treatmentPlanSessionId: null, startTime: quote.appointments[0].startTime, endTime: quote.appointments[0].endTime }],
   invoiceIds: [20], totalAmount: 100, patientAmount: 100, insuranceAmount: 0, paidAmount: 0, remainingAmount: 100, waiverReason: null, installments: [] });
@@ -35,7 +35,6 @@ describe('Patient-first booking workflow', () => {
   async function select(value = context) {
     const loading = component.onPatientChange('1');
     http.expectOne(`${url}/Bookings/patients/1`).flush(value); await Promise.resolve();
-    http.expectOne(`${url}/Rooms`).flush([{ id: 1, name: 'Room', capacity: 1, isActive: true, status: 'Available' }]);
     http.expectOne(`${url}/Rooms/availability`).flush([{ id: 1, name: 'Room', capacity: 1, isActive: true, status: 'Available' }]);
     http.expectOne(request => request.url === `${url}/Bookings/patients/1/clinicians`).flush([
       { id: value.hasCompletedAssessment ? 'doctor' : 'senior', name: 'Clinician', gender: 'Male', role: value.hasCompletedAssessment ? 'Doctor' : 'Senior', preferred: value.hasCompletedAssessment, currentLoad: 0 }
@@ -112,9 +111,9 @@ describe('Patient-first booking workflow', () => {
   it('previews every bulk slot, package agreement and installment before saving', async () => {
     await select({ ...context, hasCompletedAssessment: true, plans: [plan] }); component.setBookingMode('plan');
     component.planSessionCount = 3; component.planStartDate = new Date(2030, 1, 4); component.planPreferredTime = new Date(2030, 1, 4, 10); component.selectedDays = [0, 1, 2, 3, 4, 5, 6];
-    component.pricingMode = 'Package'; component.packagePrice = 900; component.discount = 100; component.deposit = 100; component.paymentMethod = 'Cash'; component.installments = [{ dueDate: '2030-03-01', amount: 700 }];
+    component.pricingMode = 'Package'; component.unitPrice = 150; component.discountType = 'Fixed'; component.discountValue = 100; component.deposit = 100; component.paymentMethod = 'Cash'; component.installments = [{ dueDate: '2030-03-01', amount: 700 }];
     const request = await preview(); expect(request.request.body.startsAt).toHaveLength(3);
-    expect(request.request.body).toMatchObject({ pricingMode: 'Package', packagePrice: 900, discount: 100, deposit: 100, paymentMethod: 'Cash', installments: [{ dueDate: '2030-03-01', amount: 700 }] });
+    expect(request.request.body).toMatchObject({ pricingMode: 'Package', unitPrice: 150, packagePrice: null, discount: 0, discountType: 'Fixed', discountValue: 100, deposit: 100, paymentMethod: 'Cash', installments: [{ dueDate: '2030-03-01', amount: 700 }] });
   });
   it('requires a fresh valid preview, prevents duplicate clicks, and does not POST invoices separately', async () => {
     await select(); component.assessmentCharge = 'Paid'; component.unitPrice = 100; await preview();

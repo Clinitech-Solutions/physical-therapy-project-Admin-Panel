@@ -1,0 +1,228 @@
+.booking-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px 16px;
+  align-items: end;
+}
+.booking-field {
+  display: block;
+  min-width: 0;
+  font-size: 0.77rem;
+  font-weight: 500;
+  margin: 0;
+}
+.booking-field > label {
+  display: block;
+  margin-bottom: 5px;
+}
+.booking-field > .form-control,
+.booking-field > .form-select,
+.booking-field > .input-shell {
+  margin-top: 5px;
+}
+.booking-editor .form-control,
+.booking-editor .form-select {
+  width: 100%;
+  height: 44px;
+  min-height: 44px;
+  font-size: 0.8rem;
+  border: 1px solid var(--border-color);
+  border-radius: 7px;
+  background-color: var(--bg-card);
+  color: var(--text-primary);
+  padding: 9px 11px;
+  box-sizing: border-box;
+  min-width: 0;
+}
+.booking-editor .readonly-control,
+.booking-editor input[readonly] {
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+}
+.booking-editor output.form-control {
+  display: flex;
+  align-items: center;
+}
+.input-shell {
+  display: flex;
+  align-items: stretch;
+  height: 44px;
+  border: 1px solid var(--border-color);
+  border-radius: 7px;
+  overflow: hidden;
+  background: var(--bg-card);
+}
+.input-shell .form-control {
+  border: 0 !important;
+  height: 42px;
+  min-height: 42px;
+  border-radius: 0;
+  box-shadow: none !important;
+  flex: 1;
+  width: 0;
+}
+.input-addon {
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+.input-shell:focus-within {
+  outline: 2px solid var(--mq-blue);
+  outline-offset: 1px;
+}
+.booking-segment {
+  display: inline-flex;
+  padding: 2px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-elevated);
+  border-radius: 24px;
+  max-width: 100%;
+}
+.booking-segment button {
+  border: 0;
+  border-radius: 22px;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 0.72rem;
+  line-height: 1.4;
+  padding: 6px 15px;
+  cursor: pointer;
+  min-height: 30px;
+}
+.booking-segment button.selected {
+  background: #1d61b8;
+  color: #fff;
+  box-shadow: 0 1px 2px #0a16281a;
+}
+.booking-segment button:disabled {
+  cursor: default;
+}
+.booking-editor button:focus-visible,
+.weekday-pill:focus-within {
+  outline: 2px solid var(--mq-blue);
+  outline-offset: 3px;
+}
+.booking-schedule-footer {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 15px;
+}
+.booking-weekdays {
+  min-width: 0;
+  flex: 1;
+}
+.field-caption {
+  display: block;
+  font-size: 0.77rem;
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+.weekday-buttons {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 5px;
+  max-width: 480px;
+}
+.weekday-pill {
+  position: relative;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  height: 36px;
+  font-size: 0.7rem;
+  cursor: pointer;
+  overflow: hidden;
+}
+.weekday-pill input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+.weekday-pill.selected {
+  background: #1260d2;
+  border-color: #1260d2;
+  color: white;
+}
+.booking-preview {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 40px;
+  white-space: nowrap;
+  font-size: 0.73rem;
+  padding: 8px 12px;
+}
+:host ::ng-deep .booking-editor .p-select,
+:host ::ng-deep .booking-editor .p-datepicker {
+  width: 100%;
+  min-height: 44px;
+  border-radius: 7px;
+  font-size: 0.8rem;
+}
+:host ::ng-deep .booking-editor .p-select-label {
+  padding: 9px 11px;
+  line-height: 24px;
+}
+:host ::ng-deep .booking-editor .p-datepicker-input {
+  width: 100%;
+  height: 44px;
+  font-size: 0.8rem;
+  padding: 9px 32px 9px 11px;
+  border-radius: 7px;
+  box-sizing: border-box;
+}
+:host-context([dir="rtl"]) ::ng-deep .booking-editor .p-datepicker-input {
+  padding-inline: 11px 32px;
+}
+@media (max-width: 650px) {
+  .booking-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .booking-schedule-footer {
+    flex-wrap: wrap;
+  }
+  .booking-weekdays {
+    flex-basis: 100%;
+  }
+  .booking-preview {
+    margin-inline-start: auto;
+  }
+  .booking-segment button {
+    padding: 6px 12px;
+  }
+}
+@media (max-width: 420px) {
+  .booking-grid {
+    grid-template-columns: 1fr;
+  }
+  .booking-section-heading .booking-segment {
+    margin-inline-start: 42px;
+  }
+  .booking-preview {
+    width: 100%;
+  }
+}
+
+:host ::ng-deep .booking-editor .p-select {
+  height: 44px;
+  min-height: 44px;
+  max-height: 44px;
+  box-sizing: border-box;
+  border-width: 1px;
+  align-items: center;
+}

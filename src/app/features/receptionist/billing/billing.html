@@ -33,7 +33,7 @@
     <div class="table-toolbar d-flex justify-content-between align-items-center mb-2">
       <h4 class="mb-0">{{ 'RECEPTIONIST.BILLING_TITLE' | translate }}</h4>
     </div>
-    <p-tabs value="0">
+    <p-tabs value="0" (valueChange)="activeTab = $event">
       <p-tablist>
         <p-tab value="0">
           <i class="bi bi-receipt text-primary me-1"></i> {{ 'RECEPTIONIST.UI.ALL_INVOICES' | translate }}
@@ -44,8 +44,7 @@
           <span class="badge bg-warning text-dark rounded-pill ms-2">{{ pendingInstallments().length }}</span>
         </p-tab>
         <p-tab value="2">
-          <i class="bi bi-shield-check text-success me-1"></i> {{ 'RECEPTIONIST.UI.INSURANCE_INVOICE_AMOUNTS' | translate }}
-          <span class="badge bg-success rounded-pill ms-2">{{ insuranceClaims().length }}</span>
+          <i class="bi bi-shield-check text-success me-1"></i> {{ 'RECEPTIONIST.UI.FINANCE_INSURER_ACCOUNTS' | translate }}
         </p-tab>
       </p-tablist>
 
@@ -84,7 +83,7 @@
                     <p-tag [value]="billingService.mapStatusToString(invoice.status) | receptionistText" [severity]="getStatusSeverity(billingService.mapStatusToString(invoice.status))"></p-tag>
                   </td>
                   <td style="text-align:end">
-                    @if (invoice.remainingAmount > 0) {
+                    @if (invoice.id) {
                       <p-button [label]="'RECEPTIONIST.UI.INVOICE_DETAILS' | translate" icon="bi bi-receipt" severity="success" styleClass="p-button-success p-button-sm" (onClick)="openPaymentModal(invoice.id)"></p-button>
                     }
                   </td>
@@ -119,35 +118,7 @@
         </p-tabpanel>
 
         <!-- TAB 2: Insurance Claims -->
-        <p-tabpanel value="2">
-          <div class="table-scroll-area mt-2">
-            <p-table [value]="insuranceClaims()" [responsiveLayout]="'scroll'" styleClass="p-datatable-striped">
-              <ng-template pTemplate="header">
-                <tr>
-                  <th>{{ 'RECEPTIONIST.BILLING.INVOICE_ID' | translate }}</th>
-                  <th>{{ 'RECEPTIONIST.BILLING.PATIENT' | translate }}</th>
-                  <th>{{ 'RECEPTIONIST.BILLING.TOTAL_AMOUNT' | translate }}</th>
-                  <th>{{ 'RECEPTIONIST.BILLING.INSURANCE_SHARE' | translate }}</th>
-                  <th>{{ 'RECEPTIONIST.BILLING.STATUS' | translate }}</th>
-                  <th>{{ 'RECEPTIONIST.BILLING.DATE' | translate }}</th>
-                </tr>
-              </ng-template>
-              <ng-template pTemplate="body" let-invoice>
-                <tr>
-                  <td><span class="font-bebas text-secondary">{{ invoice.id }}</span></td>
-                  <td><span class="fw-semibold text-body">{{ getPatientName(invoice.patientId, invoice.patientName) }}</span></td>
-                  <td><span class="fw-bold text-success">{{ invoice.totalAmount | currency:'EGP':'symbol':'1.2-2':locale.language }}</span></td>
-                  <td><span class="fw-bold text-info">{{ invoice.insuranceAmount | currency:'EGP':'symbol':'1.2-2':locale.language }}</span></td>
-                  <td><p-tag [value]="billingService.mapStatusToString(invoice.status) | receptionistText" [severity]="getStatusSeverity(billingService.mapStatusToString(invoice.status))"></p-tag></td>
-                  <td><span class="text-secondary small">{{ locale.date(invoice.createdAt) }}</span></td>
-                </tr>
-              </ng-template>
-              <ng-template pTemplate="emptymessage">
-                <tr><td colspan="6" class="text-center py-4 text-muted">{{ 'RECEPTIONIST.BILLING.NO_INSURANCE_CLAIMS' | translate }}</td></tr>
-              </ng-template>
-            </p-table>
-          </div>
-        </p-tabpanel>
+        <p-tabpanel value="2">@if (activeTab === '2') { <app-insurer-accounts /> }</p-tabpanel>
       </p-tabpanels>
     </p-tabs>
   </div>
@@ -196,7 +167,7 @@
         <div class="text-secondary small fw-semibold mb-1">{{ 'RECEPTIONIST.BILLING.PREVIOUS_PAYMENTS' | translate }}</div>
         @for (pay of invoicePayments(); track pay.id || $index) {
           <div class="d-flex justify-content-between align-items-center small py-1">
-            <span class="text-muted">{{ billingService.mapMethodToString(pay.method) | receptionistText }}</span>
+            <span class="text-muted">{{ (pay.payerType === 'Insurer' ? 'RECEPTIONIST.UI.FINANCE_INSURANCE' : 'RECEPTIONIST.UI.PATIENT') | translate }} / {{ (pay.collectionMethod || billingService.mapMethodToString(pay.method)) | receptionistText }}<small class="d-block">{{ pay.transactionId }} @if (pay.insuranceClaimId) { / #{{ pay.insuranceClaimId }} }</small></span>
             <span class="fw-semibold text-success">{{ pay.amount | currency:'EGP':'symbol':'1.2-2':locale.language }}</span>
           </div>
         }
