@@ -1,5 +1,5 @@
 import { ClinicalRecordsService } from '../../../core/services/clinical-records.service';
-import { InsuranceDocumentService } from '../../../core/services/insurance-document.service';
+import { InsuranceDocumentService, InsuranceDocumentRecord } from '../../../core/services/insurance-document.service';
 import { ReceptionContracts } from '../../../core/services/reception-contracts';
 import { apiError, numericId, ReceptionError } from '../../../core/services/reception-api';
 import { firstValueFrom } from 'rxjs';
@@ -46,6 +46,8 @@ export class PatientProfileComponent implements OnChanges {
   readonly patientLoading = signal(false);
   readonly documentsLoading = signal(false);
   readonly documentsError = signal('');
+  readonly documents = signal<InsuranceDocumentRecord[]>([]);
+  readonly documentDownloadError = signal('');
   readonly uploadError = signal('');
   readonly uploadSaved = signal(false);
   private generation = 0;
@@ -68,7 +70,7 @@ export class PatientProfileComponent implements OnChanges {
     if (id !== this.loadedPatientId) { this.files=[];this.uploadError.set('');this.uploadSaved.set(false);this.loadedPatientId=id; }
     const generation = ++this.generation;
     this.profileError.set(''); this.patientLoading.set(true);
-    this.documentsError.set(''); this.documentsLoading.set(false);
+    this.documentsError.set(''); this.documentsLoading.set(false); this.documents.set([]); this.documentDownloadError.set('');
     let patientId: number;
     try { patientId = numericId(id); }
     catch (error) { this.profileError.set(apiError(error)); this.patientLoading.set(false); return; }
@@ -89,9 +91,20 @@ export class PatientProfileComponent implements OnChanges {
     const generation = this.generation;
     this.documentsLoading.set(true); this.documentsError.set('');
     this.documentService.getDocumentsForPatient(patientId).subscribe({
-      next: () => { if(generation===this.generation)this.documentsLoading.set(false); },
+      next: documents => { if(generation===this.generation){this.documents.set(documents);this.documentsLoading.set(false);} },
       error: error => { if(generation===this.generation){this.documentsError.set(error instanceof ReceptionError?this.locale.text(error.key,error.message):apiError(error));this.documentsLoading.set(false);} }
     });
+  }
+  retryDocuments() {
+    if (this.currentPatient && this.isInsurancePatient) this.loadDocuments(numericId(this.currentPatient.id));
+  }
+  async downloadDocument(document: InsuranceDocumentRecord) {
+    if(document.patientId !== Number(this.currentPatient?.id)) return;
+    this.documentDownloadError.set('');
+    try {
+      const blob=await firstValueFrom(this.documentService.downloadDocument(document.id));
+      const url=URL.createObjectURL(blob);const link=window.document.createElement('a');link.href=url;link.download=document.fileName;link.click();setTimeout(()=>URL.revokeObjectURL(url),0);
+    } catch(error) { this.documentDownloadError.set(apiError(error)); }
   }
   get currentPatient(): Patient | undefined {
     const id = this.patientId ?? this.patient?.id;

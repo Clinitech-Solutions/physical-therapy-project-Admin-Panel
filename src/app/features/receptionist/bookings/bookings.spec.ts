@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { environment } from '../../../../environments/environment';
 import { MessageService } from 'primeng/api';
 import { BookingsComponent } from './bookings';
 import { PatientService } from '../../../core/services/patient.service';
@@ -15,6 +16,16 @@ describe('Bookings backend workflow presentation',()=>{
   it('does not infer a new-patient or insurance-approval gate from an empty cache',()=>{
     component.selectedPatientId='1';
     expect(component.isNewPatient).toBe(false);expect(component.isInsurancePending).toBe(false);
+  });
+  it('keeps a failed patient directory distinct from a successfully loaded empty list',()=>{
+    const http=TestBed.inject(HttpTestingController);
+    component.refreshPatients();
+    http.expectOne(r=>r.url===`${environment.apiUrl}/Bookings/patients`).flush({}, {status:403,statusText:'Forbidden'});
+    expect(component.directoryError()).toBeTruthy();expect(component.directoryLoading()).toBe(false);
+    expect(component.bookingError()).toBe('');
+    component.refreshPatients();
+    http.expectOne(r=>r.url===`${environment.apiUrl}/Bookings/patients`).flush({items:[],pageNumber:1,totalPages:1,hasNextPage:false});
+    expect(component.directoryError()).toBe('');expect(component.allPatients()).toEqual([]);http.verify();
   });
   it('keeps real directory IDs, including an unidentified clinician gender',()=>{
     TestBed.inject(PatientService).patients.set([{id:'1'} as never]);

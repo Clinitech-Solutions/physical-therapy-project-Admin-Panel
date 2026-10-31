@@ -2,8 +2,10 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { Observable } from 'rxjs';
-import { MutationState, numericId, ReceptionError } from './reception-api';
+import { MutationState, numericId, ReceptionError, record, textField } from './reception-api';
 import { map } from 'rxjs/operators';
+
+export interface InsuranceDocumentRecord { id: number; patientId: number; fileName: string; contentType: string; uploadedAt: string; }
 
 @Injectable({
   providedIn: 'root'
@@ -25,14 +27,18 @@ export class InsuranceDocumentService {
     return this.mutation.run(() => this.http.post<unknown>(`${this.apiUrl}/Add`, formData));
   }
 
-  getDocumentsForPatient(patientId: number): Observable<unknown[]> {
+  getDocumentsForPatient(patientId: number): Observable<InsuranceDocumentRecord[]> {
     numericId(patientId);
-    return this.http.get<unknown>(this.apiUrl).pipe(map(value => {
-      if (Array.isArray(value) && value.length === 0) return [];
-      // No list schema, patient association or file URL is documented. Never expose another patient's files.
-      throw new ReceptionError('DOCUMENT_RESPONSE_PENDING', 'Document details are unavailable until patient association and file access are verified.');
+    return this.http.get<unknown>(this.apiUrl, {params:{patientId}}).pipe(map(value => {
+      if (!Array.isArray(value)) throw new ReceptionError('DOCUMENT_RESPONSE_PENDING', 'The document response could not be verified.');
+      return value.map(value => {
+        const row=record(value);
+        if (numericId(row['patientId']) !== patientId) throw new ReceptionError('DOCUMENT_RESPONSE_PENDING', 'Document patient association could not be verified.');
+        return {id:numericId(row['id']),patientId,fileName:textField(row['fileName']),contentType:textField(row['contentType']),uploadedAt:textField(row['uploadedAt'])};
+      });
     }));
   }
+  downloadDocument(id: number) { return this.http.get(`${this.apiUrl}/${numericId(id)}/file`, {responseType:'blob'}); }
   updateDocument(id: number, file: File) {
     const data = new FormData(); data.append('File', file, file.name);
     return this.mutation.run(() => this.http.put<unknown>(`${this.apiUrl}/${numericId(id)}`, data));

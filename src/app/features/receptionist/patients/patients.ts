@@ -47,6 +47,7 @@ export class PatientsComponent implements OnInit {
   private editGeneration = 0;
   readonly insuranceError = this.insuranceService.error;
   readonly insuranceLoading = this.insuranceService.loading;
+  readonly patientsError = this.patientService.error;
 
   selectedFiles: File[] = [];
 
@@ -61,6 +62,8 @@ export class PatientsComponent implements OnInit {
     this.refreshPatients();
     this.billingService?.getInvoices();
   }
+
+  retryInsuranceLookup() { this.insuranceService.getCompanies(); }
 
   // Search & Filter
   searchQuery = signal('');

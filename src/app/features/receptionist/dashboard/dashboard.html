@@ -7,10 +7,34 @@
   </div>
 
   @if (loading()) { <p role="status">{{ 'RECEPTIONIST.PROCESSING' | translate }}</p> }
-  @if (receptionistService.error() || actionError() || roomService.error() || clinicianService.error()) {
-    <div class="alert alert-warning" role="alert">{{ locale.label(actionError() || receptionistService.error() || roomService.error() || clinicianService.error()) }}
-      <button class="btn btn-outline-secondary btn-sm" (click)="refresh()" [disabled]="loading()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button>
+  @if (actionError()) {
+    <div class="alert alert-warning" role="alert">{{ locale.label(actionError()) }}
+      <button class="btn btn-outline-secondary btn-sm" (click)="refresh()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button>
     </div>
+  }
+  @if (receptionistService.statsError()) {
+    <div class="alert alert-warning" role="alert">{{ 'RECEPTIONIST.UI.STATS_LOAD' | translate }}: {{ locale.label(receptionistService.statsError()) }}
+      <button class="btn btn-outline-secondary btn-sm" (click)="receptionistService.getDashboardStats()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button>
+    </div>
+  }
+  @if (receptionistService.sessionsError()) {
+    <div class="alert alert-warning" role="alert">{{ 'RECEPTIONIST.UI.SESSIONS_LOAD' | translate }}: {{ locale.label(receptionistService.sessionsError()) }}
+      <button class="btn btn-outline-secondary btn-sm" (click)="receptionistService.refreshTodaySessions()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button>
+    </div>
+  }
+  @if (roomService.error()) {
+    <div class="alert alert-warning" role="alert">{{ 'RECEPTIONIST.UI.ROOMS_LOAD' | translate }}: {{ locale.label(roomService.error()) }}
+      <button class="btn btn-outline-secondary btn-sm" (click)="roomService.load()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button>
+    </div>
+  }
+  @if (clinicianService.error()) {
+    <div class="alert alert-warning" role="alert">{{ 'RECEPTIONIST.UI.CLINICIANS_LOAD' | translate }}: {{ locale.label(clinicianService.error()) }}
+      <button class="btn btn-outline-secondary btn-sm" (click)="clinicianService.load()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button>
+    </div>
+  }
+  @if (patientLookupError()) {
+    <p class="alert alert-warning" role="alert">{{ 'RECEPTIONIST.UI.PATIENTS_LOAD' | translate }}: {{ locale.label(patientLookupError()) }}
+      <button class="btn btn-outline-secondary btn-sm" (click)="refreshPatientLookup()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button></p>
   }
   <p class="text-muted small">{{ 'RECEPTIONIST.UI.STATUS_CONFIGURATION_NOTICE' | translate }}</p>
   <!-- KPI Row (Bound Strictly to receptionistService.stats()) -->
@@ -147,7 +171,7 @@
             </td>
           </tr>
           }
-          @if (filteredTodaySessions().length === 0) {
+          @if (filteredTodaySessions().length === 0 && !receptionistService.sessionsLoading() && !receptionistService.sessionsError()) {
           <tr>
             <td colspan="6" class="text-center py-4 text-muted">
               {{ 'RECEPTIONIST.DASHBOARD.NO_SESSIONS_MATCHING' | translate }}

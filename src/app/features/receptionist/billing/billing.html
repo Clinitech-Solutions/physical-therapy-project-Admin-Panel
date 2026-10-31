@@ -7,10 +7,14 @@
   </div>
 
   @if (billingService.loading()) { <p role="status">{{ 'RECEPTIONIST.PROCESSING' | translate }}</p> }
-  @if (billingService.error() || paymentError()) {
-    <div class="alert alert-warning" role="alert">{{ locale.label(paymentError() || billingService.error()) }}
+  @if (billingService.error()) {
+    <div class="alert alert-warning" role="alert">{{ locale.label(billingService.error()) }}
       <button class="btn btn-outline-secondary btn-sm" (click)="billingService.getInvoices()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button>
     </div>
+  }
+  @if (patientLookupError()) {
+    <p class="alert alert-warning" role="alert">{{ 'RECEPTIONIST.UI.PATIENTS_LOAD' | translate }}: {{ locale.label(patientLookupError()) }}
+      <button class="btn btn-outline-secondary btn-sm" (click)="refreshPatientLookup()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button></p>
   }
   @if (billingService.mutation.uncertain()) { <p class="alert alert-warning" role="alert">{{ 'RECEPTIONIST.UI.OPERATION_OUTCOME_UNKNOWN' | translate }}</p> }
   @if (bookingApi.pendingCollection()) {
@@ -90,7 +94,7 @@
                 </tr>
               </ng-template>
               <ng-template pTemplate="emptymessage">
-                <tr><td colspan="9" class="text-center py-4 text-muted">{{ 'RECEPTIONIST.BILLING.NO_PENDING_CASH' | translate }}</td></tr>
+                <tr><td colspan="9" class="text-center py-4 text-muted">@if (billingService.loading()) { {{ 'RECEPTIONIST.PROCESSING' | translate }} } @else if (!billingService.error()) { {{ 'RECEPTIONIST.BILLING.NO_PENDING_CASH' | translate }} }</td></tr>
               </ng-template>
             </p-table>
           </div>
@@ -112,7 +116,7 @@
                 <td>@for (installment of account.installments; track $index) { <div>{{ locale.date(installment.dueDate) }}: {{ installment.amount | currency:'EGP':'symbol':'1.2-2':locale.language }}</div> }</td>
                 <td><button class="btn btn-outline-primary btn-sm" (click)="openAccountPayment(account)">{{ 'RECEPTIONIST.PROCESS_PAYMENT' | translate }}</button></td>
               </tr></ng-template>
-              <ng-template pTemplate="emptymessage"><tr><td colspan="6" class="text-center py-4 text-muted">{{ 'RECEPTIONIST.UI.NO_PENDING_INSTALLMENTS' | translate }}</td></tr></ng-template>
+              <ng-template pTemplate="emptymessage"><tr><td colspan="6" class="text-center py-4 text-muted">@if (accountsLoading()) { {{ 'RECEPTIONIST.PROCESSING' | translate }} } @else if (!accountsError()) { {{ 'RECEPTIONIST.UI.NO_PENDING_INSTALLMENTS' | translate }} }</td></tr></ng-template>
             </p-table>
           </div>
         </p-tabpanel>

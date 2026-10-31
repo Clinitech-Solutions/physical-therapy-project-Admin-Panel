@@ -272,6 +272,15 @@
     "PRICE_PER_SESSION": "Price Per Session",
     "WAIVED": "Waived",
     "UI": {
+      "STATS_LOAD": "Dashboard statistics could not load",
+      "SESSIONS_LOAD": "Appointments could not load",
+      "ROOMS_LOAD": "Room lookup could not load",
+      "CLINICIANS_LOAD": "Clinician lookup could not load",
+      "INSURANCE_LOAD": "Insurance lookup could not load",
+      "PATIENTS_LOAD": "Patient lookup could not load",
+      "DOWNLOAD_DOCUMENT": "Download",
+      "NO_DOCUMENTS": "No insurance documents saved.",
+
       "SAVED_PLAN_BOOKING_DESCRIPTION": "Schedule existing treatment plan sessions using their saved records.",
       "RECEPTION_ACCESS_REQUIRED": "Your account cannot access this data. Verify Receptionist permissions or sign in again.",
       "EDIT_APPOINTMENT": "Edit appointment",

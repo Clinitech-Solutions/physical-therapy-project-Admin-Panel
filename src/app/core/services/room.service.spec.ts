@@ -68,10 +68,10 @@ describe('Reception room and clinician integration contracts', () => {
     http.expectNone(`${url}/Rooms`);
   });
   it('preserves clinician GUIDs and exposes lookup authorization failure', () => {
-    const data = decodeClinicians({value:[{id:'doctor-guid',fullName:'Doctor',roles:['Doctor'],gender:0}]});
+    const data = decodeClinicians([{id:'doctor-guid',name:'Doctor',roles:['Doctor'],gender:0}]);
     expect(data[0].id).toBe('doctor-guid');
     const service = TestBed.inject(ClinicianService); service.load();
-    http.expectOne(`${url}/Users/GetAll`).flush({}, {status:403,statusText:'Forbidden'});
+    http.expectOne(`${url}/Receptionist/clinicians`).flush({}, {status:403,statusText:'Forbidden'});
     expect(service.clinicians()).toEqual([]); expect(service.error()).toBeTruthy();
   });
   it('uses the documented appointment POST and preserves string clinician IDs', async () => {

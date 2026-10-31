@@ -42,6 +42,15 @@
       </div>
     </div>
 
+    @if (insuranceError()) {
+      <p class="alert alert-warning" role="alert">{{ 'RECEPTIONIST.UI.INSURANCE_LOAD' | translate }}: {{ locale.label(insuranceError()) }}
+        <button class="btn btn-outline-secondary btn-sm" (click)="retryInsuranceLookup()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button></p>
+    }
+    @if (patientsError()) {
+      <p class="alert alert-warning" role="alert">{{ 'RECEPTIONIST.UI.PATIENTS_LOAD' | translate }}: {{ locale.label(patientsError()) }}
+        <button class="btn btn-outline-secondary btn-sm" (click)="refreshPatients()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button></p>
+    }
+    @if (isLoading()) { <p role="status">{{ 'RECEPTIONIST.PROCESSING' | translate }}</p> }
     <!-- Patients Table -->
     <div class="table-scroll-area">
       <table>
@@ -123,7 +132,7 @@
               </td>
             </tr>
           }
-          @if(filteredPatients().length === 0) {
+          @if(filteredPatients().length === 0 && !isLoading() && !patientsError()) {
             <tr>
               <td colspan="6" class="text-center py-5 text-muted">
                 {{ 'RECEPTIONIST.UI.NO_PATIENTS_FOUND_MATCHING_YOUR_SEARCH_' | translate }}

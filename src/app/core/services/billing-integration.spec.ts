@@ -84,7 +84,7 @@ describe('Reception billing and profile persistence',()=>{
   });
   it('does not expose unverified documents for another patient',async()=>{
     const result=firstValueFrom(TestBed.inject(InsuranceDocumentService).getDocumentsForPatient(1));const rejected=expect(result).rejects.toThrow('patient association');
-    http.expectOne(`${url}/InsuranceDocuments`).flush([{id:99,patientId:2}]);await rejected;
+    http.expectOne(r => r.url === `${url}/InsuranceDocuments` && r.params.get("patientId") === "1").flush([{id:99,patientId:2}]);await rejected;
   });
   it('renders only saved clinical sessions and never fills a plan with synthetic records',()=>{
     const clinical=TestBed.inject(ClinicalRecordsService);

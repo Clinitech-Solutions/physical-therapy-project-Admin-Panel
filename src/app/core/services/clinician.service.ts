@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
-import { finalize, map, tap } from "rxjs";
+import { finalize, map, tap, Subscription } from "rxjs";
 import { environment } from "../../../environments/environment";
 import { apiError, record, ReceptionError, textField } from "./reception-api";
 
@@ -9,14 +9,17 @@ export interface Clinician {
   name: string;
   gender?: "Male" | "Female";
   roles: string[];
+  currentLoad?: number;
+  workingHours?: {dayOfWeek: number; startTime: string; endTime: string}[];
+  absenceDates?: string[];
 }
-/** Uses the existing Users/GetAll envelope; authorization/response verification is pending. */
+/** Minimal clinical directory; never queries staff-account administration. */
 export function decodeClinicians(value: unknown): Clinician[] {
-  const users = record(value)["value"];
+  const users = value;
   if (!Array.isArray(users))
     throw new ReceptionError(
       "CLINICIAN_RESPONSE_PENDING",
-      "Clinician lookup response and Receptionist access need verification.",
+      "The clinician directory response could not be verified.",
     );
   return users
     .map((value) => {
@@ -29,8 +32,11 @@ export function decodeClinicians(value: unknown): Clinician[] {
         );
       return {
         id: textField(user["id"]),
-        name: textField(user["fullName"]),
+        name: textField(user["name"]),
         roles,
+        currentLoad: typeof user['currentLoad'] === 'number' ? user['currentLoad'] : undefined,
+        workingHours: Array.isArray(user['workingHours']) ? user['workingHours'] : undefined,
+        absenceDates: Array.isArray(user['absenceDates']) ? user['absenceDates'] : undefined,
         gender:
           user["gender"] === 0 || user["gender"] === "Male"
             ? ("Male" as const)
@@ -47,11 +53,13 @@ export class ClinicianService {
   readonly clinicians = signal<Clinician[]>([]);
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
+  private request?: Subscription;
   load() {
+    this.request?.unsubscribe();
     this.loading.set(true);
     this.error.set(null);
-    this.http
-      .get<unknown>(`${environment.apiUrl}/Users/GetAll`)
+    this.request = this.http
+      .get<unknown>(`${environment.apiUrl}/Receptionist/clinicians`)
       .pipe(
         map(decodeClinicians),
         tap({

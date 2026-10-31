@@ -6,7 +6,6 @@ import { CommonModule } from "@angular/common";
 import { TranslateModule } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 import { BillingService, Invoice, Payment } from '../../../core/services/billing.service';
-import { AppointmentService } from '../../../core/services/appointment.service';
 import { MessageService } from 'primeng/api';
 import { PatientService } from '../../../core/services/patient.service';
 import { TableModule } from 'primeng/table';
@@ -94,15 +93,16 @@ export class BillingComponent implements OnInit {
   readonly locale = new ReceptionistLocale();
   billingService = inject(BillingService, { optional: true }) ?? new BillingService();
   patientService = inject(PatientService, { optional: true });
-  appointmentService = inject(AppointmentService, { optional: true });
   messageService = inject(MessageService);
   readonly bookingApi = inject(BookingService);
   readonly accounts = signal<BookingAccount[]>([]);
   readonly accountsError = signal('');
+  readonly accountsLoading = signal(false);
+  readonly patientLookupError = signal('');
   selectedAccountKey: string | null = null;
   refreshAccounts() {
-    this.accountsError.set('');
-    this.bookingApi.accounts().subscribe({ next: accounts => this.accounts.set(accounts), error: error => this.accountsError.set(apiError(error)) });
+    this.accountsError.set(''); this.accountsLoading.set(true);
+    this.bookingApi.accounts().subscribe({ next: accounts => {this.accounts.set(accounts);this.accountsLoading.set(false);}, error: error => {this.accountsError.set(apiError(error));this.accountsLoading.set(false);} });
   }
   openAccountPayment(account: BookingAccount) {
     if (this.isSubmittingPayment()) return;
@@ -134,8 +134,11 @@ export class BillingComponent implements OnInit {
   ngOnInit(): void {
     this.refreshAccounts();
     this.billingService.getInvoices();
-    this.patientService?.getPatients().subscribe({error:e=>this.paymentError.set(apiError(e))});
-    this.appointmentService?.getAppointments();
+    this.refreshPatientLookup();
+  }
+  refreshPatientLookup() {
+    this.patientLookupError.set('');
+    this.patientService?.getPatients().subscribe({error:e=>this.patientLookupError.set(apiError(e))});
   }
 
   isProcessingPayment = computed(

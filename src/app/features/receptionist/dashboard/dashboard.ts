@@ -65,12 +65,17 @@ export class Dashboard implements OnInit {
     this.showProfileModal.set(true);
   }
 
+  readonly patientLookupError = signal('');
+  refreshPatientLookup() {
+    this.patientLookupError.set('');
+    this.patientService?.getPatients().subscribe({error:e=>this.patientLookupError.set(apiError(e))});
+  }
+
   ngOnInit(): void {
     this.receptionistService.getDashboardStats();
     this.receptionistService.getTodaySessions();
-    this.patientService?.getPatients().subscribe({error:e=>this.actionError.set(apiError(e))});
+    this.refreshPatientLookup();
     this.roomService.load();this.clinicianService.load();
-    this.billingService.getInvoices();
   }
 
   onSearchChange(value: string): void {

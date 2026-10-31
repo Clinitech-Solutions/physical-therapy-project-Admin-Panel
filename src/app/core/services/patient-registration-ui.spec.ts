@@ -88,8 +88,8 @@ describe.each(["patients", "bookings"] as const)(
             totalPages: 1,
             hasNextPage: false,
           });
-        } else if (request.request.url.endsWith("/Users/GetAll"))
-          request.flush({ value: [] });
+        } else if (request.request.url.endsWith("/Receptionist/clinicians"))
+          request.flush([]);
         else request.flush([]);
       }
       if (fixture.componentInstance instanceof PatientsComponent)

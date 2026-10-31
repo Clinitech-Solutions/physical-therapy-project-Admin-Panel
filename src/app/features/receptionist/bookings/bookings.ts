@@ -180,6 +180,7 @@ export class BookingsComponent implements OnInit {
     this.appointmentService?.appointments ?? signal<Appointment[]>([]);
   allPatients = signal<Patient[]>([]);
   readonly directoryLoading = signal(false);
+  readonly directoryError = signal('');
   roomService = inject(RoomService);
   clinicianService = inject(ClinicianService);
   allDoctors = this.clinicianService.clinicians;
@@ -546,7 +547,7 @@ export class BookingsComponent implements OnInit {
   }
 
   refreshPatients(afterSave = false) {
-    this.directoryLoading.set(true);
+    this.directoryLoading.set(true); this.directoryError.set('');
     this.bookingApi.directory().subscribe({
       next: patients => {
         const context = this.bookingContext();
@@ -554,8 +555,8 @@ export class BookingsComponent implements OnInit {
           ? { ...patient, paymentType: context.paymentType, gender: context.gender, insuranceCompanyName: context.insuranceCompanyName } : patient));
         this.directoryLoading.set(false);
       },
-      error: () =>
-      { this.directoryLoading.set(false); this.messageService.add({
+      error: error =>
+      { this.directoryLoading.set(false); this.directoryError.set(apiError(error)); this.messageService.add({
           severity: "warn",
           summary: this.locale.text("ERROR", "Error"),
           detail: this.locale.text(

@@ -200,7 +200,8 @@
         <ng-template pTemplate="emptymessage">
           <tr>
             <td colspan="7" class="text-center py-4 text-muted">
-              {{ 'RECEPTIONIST.NO_SESSIONS_FOUND' | translate }}
+              @if (clinical.loading()) { {{ 'RECEPTIONIST.PROCESSING' | translate }} }
+              @else if (!clinical.error()) { {{ 'RECEPTIONIST.NO_SESSIONS_FOUND' | translate }} }
             </td>
           </tr>
         </ng-template>
@@ -227,7 +228,17 @@
   <div class="card card-body mt-3" data-insurance-documents>
     <h6>{{ 'RECEPTIONIST.UI.INSURANCE_DOCUMENTS' | translate }}</h6>
     @if (documentsLoading()) { <p role="status">{{ 'RECEPTIONIST.PROCESSING' | translate }}</p> }
-    @if (documentsError()) { <p class="alert alert-warning" role="alert">{{ locale.label(documentsError()) }}</p> }
+    @if (documentsError()) { <p class="alert alert-warning" role="alert">{{ locale.label(documentsError()) }}
+      <button class="btn btn-outline-secondary btn-sm" (click)="retryDocuments()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button></p> }
+    @if (documentDownloadError()) { <p class="alert alert-warning" role="alert">{{ locale.label(documentDownloadError()) }}</p> }
+    @if (!documentsLoading() && !documentsError()) {
+      @for (document of documents(); track document.id) {
+        <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
+          <span dir="auto">{{ document.fileName }}</span>
+          <button class="btn btn-outline-primary btn-sm" (click)="downloadDocument(document)">{{ 'RECEPTIONIST.UI.DOWNLOAD_DOCUMENT' | translate }}</button>
+        </div>
+      } @empty { <p class="text-muted">{{ 'RECEPTIONIST.UI.NO_DOCUMENTS' | translate }}</p> }
+    }
     @if (uploadError()) { <p class="alert alert-warning" role="alert">{{ locale.label(uploadError()) }}</p> }
     @if (uploadSaved()) { <p class="alert alert-success" role="status">{{ 'RECEPTIONIST.UI.DOCUMENT_UPLOAD_SAVED' | translate }}</p> }
     @if (documentService.mutation.uncertain()) { <p class="alert alert-warning">{{ 'RECEPTIONIST.UI.OPERATION_OUTCOME_UNKNOWN' | translate }}</p> }

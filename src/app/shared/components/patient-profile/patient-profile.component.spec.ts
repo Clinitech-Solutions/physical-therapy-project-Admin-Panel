@@ -112,7 +112,7 @@ describe('Patient profile coverage and empty history', () => {
     http.expectNone(`${url}/InsuranceDocuments`);
     http.expectOne(`${url}/Patients/GetById/1`).flush({ ...response, paymentType: 'Insurance' });
     flushHistory();
-    http.expectOne(`${url}/InsuranceDocuments`).flush([]);
+    http.expectOne(r => r.url === `${url}/InsuranceDocuments` && r.params.get("patientId") === "1").flush([]);
     await fixture.whenStable();
     const dialog = document.querySelector('.patient-profile-modal')!;
     expect(dialog.querySelector('[data-patient-insurance]')).toBeTruthy();
@@ -126,7 +126,7 @@ describe('Patient profile coverage and empty history', () => {
     open('Insurance');
     http.expectOne(`${url}/Patients/GetById/1`).flush({ ...response, paymentType: 'Insurance' });
     flushHistory();
-    http.expectOne(`${url}/InsuranceDocuments`).flush({}, { status: 404, statusText: 'Not Found' });
+    http.expectOne(r => r.url === `${url}/InsuranceDocuments` && r.params.get("patientId") === "1").flush({}, { status: 404, statusText: 'Not Found' });
     await fixture.whenStable();
     expect(fixture.componentInstance.documentsError()).toBeTruthy();
     fixture.componentInstance.files = [new File(['document'], 'insurance.pdf')];
@@ -145,7 +145,7 @@ describe('Patient profile coverage and empty history', () => {
     open('Insurance');
     http.expectOne(`${url}/Patients/GetById/1`).flush({ ...response, paymentType: 'Insurance' });
     flushHistory();
-    http.expectOne(`${url}/InsuranceDocuments`).flush([]);
+    http.expectOne(r => r.url === `${url}/InsuranceDocuments` && r.params.get("patientId") === "1").flush([]);
     await fixture.whenStable();
     fixture.componentInstance.files = [new File(['document'], 'insurance.pdf')];
     const upload = fixture.componentInstance.uploadDocuments();
@@ -154,8 +154,30 @@ describe('Patient profile coverage and empty history', () => {
     expect(request.request.body.getAll('Files')).toHaveLength(1);
     request.flush(null);
     await upload;
-    http.expectOne(`${url}/InsuranceDocuments`).flush([]);
+    http.expectOne(r => r.url === `${url}/InsuranceDocuments` && r.params.get("patientId") === "1").flush([]);
     expect(fixture.componentInstance.uploadSaved()).toBe(true);
+  });
+
+  it('renders verified patient documents with a protected download action', async () => {
+    open('Insurance');
+    http.expectOne(`${url}/Patients/GetById/1`).flush({ ...response, paymentType:'Insurance' });flushHistory();
+    http.expectOne(r=>r.url===`${url}/InsuranceDocuments`&&r.params.get('patientId')==='1').flush([{id:7,patientId:1,fileName:'approval.pdf',contentType:'application/pdf',uploadedAt:'2030-01-01T10:00:00Z'}]);
+    await fixture.whenStable();
+    const section=document.querySelector('[data-insurance-documents]')!;
+    expect(section.textContent).toContain('approval.pdf');expect(section.textContent).toContain('Download');
+    expect(section.querySelector('a[href]')).toBeNull();expect(section.textContent).not.toContain('No insurance documents saved.');
+  });
+
+  it('does not present a failed document load as an empty result and retries only that section', async () => {
+    open('Insurance');http.expectOne(`${url}/Patients/GetById/1`).flush({ ...response,paymentType:'Insurance' });flushHistory();
+    http.expectOne(r=>r.url===`${url}/InsuranceDocuments`&&r.params.get('patientId')==='1').flush({}, {status:403,statusText:'Forbidden'});
+    await fixture.whenStable();
+    expect(document.querySelector('[data-insurance-documents]')?.textContent).not.toContain('No insurance documents saved.');
+    fixture.componentInstance.retryDocuments();
+    http.expectOne(r=>r.url===`${url}/InsuranceDocuments`&&r.params.get('patientId')==='1').flush([]);
+    await fixture.whenStable();expect(fixture.componentInstance.documentsError()).toBe('');
+    expect(document.querySelector('[data-insurance-documents]')?.textContent).toContain('No insurance documents saved.');
+    http.expectNone(`${url}/Patients/GetById/1`);
   });
 
   it('labels genuine history failures while retaining the cash patient details', async () => {

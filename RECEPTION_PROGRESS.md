@@ -1,5 +1,11 @@
 # MediQova Reception progress
 
+## Receptionist access audit completed — 2026-10-31
+
+See [RECEPTION_ACCESS_CHECKLIST.md](RECEPTION_ACCESS_CHECKLIST.md) for the endpoint-to-permission matrix, confirmed causes and verification boundaries. Insurer reads and the administrative clinician lookup mismatch are fixed; backend role restrictions now cover patients, rooms, documents and clinical record authorship. Actual browser checks found and fixed patient partial-update and soft-delete/Identity incompatibilities. UI lookup failures are scoped and distinguish failed reads from successful empty results.
+
+Final validation: 126 backend tests, 98 focused Angular tests, warning-free production build, real Receptionist-only login across all eight requested reception views, permitted workflow operations and negative authorization probes. Business integration used the matching isolated SQLite-backed ASP.NET test host; one additional clinician-failure browser scenario was explicitly mocked. No main SQL Server database changes, migrations, push or deployment. Main API 7223 needs to load the rebuilt code; its process was preserved. Booking finance, layout, Arabic/RTL and clinician working-hours policies remain intact.
+
 ## Reference-based Booking content redesign — 2026-10-31
 
 - Replaced wizard navigation with three simultaneous numbered sections and a sticky desktop financial summary matching the supplied reference. Shared 44px control sizing, aligned currency addons, single/bulk and pricing segments, weekday checkbox pills and a compact appointment preview table support both themes and responsive RTL layouts.

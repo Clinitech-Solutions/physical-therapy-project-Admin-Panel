@@ -25,7 +25,6 @@ import {
 import { AppointmentService, Appointment } from '../../../core/services/appointment.service';
 import { PatientService } from '../../../core/services/patient.service';
 import { BillingService } from '../../../core/services/billing.service';
-import { UserService } from '../../../core/services/user.service';
 
 export interface ScheduleDoctorOption {
   id: string;
@@ -66,7 +65,6 @@ export class ScheduleComponent implements OnInit {
   patientService = inject(PatientService, { optional: true });
   billingService =
     inject(BillingService, { optional: true }) ?? new BillingService();
-  userService = inject(UserService, { optional: true });
 
   readonly roomService = inject(RoomService);
   readonly clinicianService = inject(ClinicianService);
@@ -154,11 +152,16 @@ export class ScheduleComponent implements OnInit {
     this.showProfileModal.set(true);
   }
 
+  readonly patientLookupError = signal('');
+  refreshPatientLookup() {
+    this.patientLookupError.set('');
+    this.patientService?.getPatients().subscribe({error:e=>this.patientLookupError.set(apiError(e))});
+  }
+
   ngOnInit() {
     this.receptionistService.getDashboardStats();
     this.receptionistService.getTodaySessions();
-    this.patientService?.getPatients().subscribe({error:e=>this.actionError.set(apiError(e))});
-    this.billingService.getInvoices();
+    this.refreshPatientLookup();
     this.clinicianService.load();
     this.roomService.load();
   }
