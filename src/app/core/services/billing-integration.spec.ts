@@ -86,12 +86,10 @@ describe('Reception billing and profile persistence',()=>{
     const result=firstValueFrom(TestBed.inject(InsuranceDocumentService).getDocumentsForPatient(1));const rejected=expect(result).rejects.toThrow('patient association');
     http.expectOne(r => r.url === `${url}/InsuranceDocuments` && r.params.get("patientId") === "1").flush([{id:99,patientId:2}]);await rejected;
   });
-  it('renders only saved clinical sessions and never fills a plan with synthetic records',()=>{
-    const clinical=TestBed.inject(ClinicalRecordsService);
-    clinical.assessments.set([{id:1,patientId:1} as never]);clinical.plans.set([{id:5,assessmentId:1,doctorId:'doctor-guid',doctorName:'Doctor',numberOfSessions:10,completedSessions:2} as never]);
-    clinical.sessions.set([{id:20,treatmentPlanId:5,sessionNumber:1,sessionDate:null,checkIn:null,checkOut:null,status:89} as never]);
-    const component=TestBed.runInInjectionContext(()=>new PatientProfileComponent());component.patientId='1';
-    expect(component.sessions.map(s=>s.id)).toEqual(['20']);expect(component.totalSessions).toBe(10);
+  it('renders only saved profile sessions without manufacturing the prescribed remainder',()=>{
+    const component=TestBed.runInInjectionContext(()=>new PatientProfileComponent());component.patientId='1';component.selectedCourseId=5;
+    component.data.set({patientId:1,assessments:[],courses:[{id:5,prescribedSessions:10,completedSessions:2,sessions:[{id:20,sessionNumber:1,status:'Unknown'}],payments:[],activity:[]}]} as never);
+    expect(component.sessions.map(s=>s.id)).toEqual([20]);expect(component.totalSessions).toBe(10);
     expect(component.completedSessionsCount).toBe(2);expect(component.sessions[0].status).toBe('Unknown');
   });
 });

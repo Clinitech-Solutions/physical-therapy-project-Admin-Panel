@@ -1,251 +1,1005 @@
 <p-dialog
   [visible]="visible"
   (visibleChange)="onVisibleChange($event)"
-  (onHide)="closeModal()"
   [modal]="true"
   appendTo="body"
+  [showHeader]="false"
+  [closable]="false"
+  [closeOnEscape]="false"
+  [dismissableMask]="false"
   [draggable]="false"
   [resizable]="false"
-  [closable]="!isInsurancePatient || !documentService.mutation.busy()"
-  styleClass="clean-modal receptionist-modal patient-profile-modal"
-  [style]="{ width: '920px', maxWidth: '95vw' }">
-
-  <!-- Custom Header -->
-  <ng-template pTemplate="header">
-    @if (currentPatient; as p) {
-    <div class="patient-profile-header w-100">
-      <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 w-100 pe-4">
-        <!-- Patient Info Card -->
-        <div class="d-flex align-items-center gap-3">
-          <div class="avatar avatar-lg shadow-sm border border-2 border-primary-subtle">
-            {{ p.avatar }}
+  [focusTrap]="true"
+  [focusOnShow]="false"
+  (onShow)="onShow()"
+  ariaLabelledBy="profile-title"
+  styleClass="patient-profile-modal"
+  [style]="{
+    width: '1240px',
+    maxWidth: 'calc(100vw - 24px)',
+    maxHeight: '94dvh',
+  }"
+  [contentStyle]="{
+    padding: '0',
+    overflow: 'hidden',
+    display: 'flex',
+    'flex-direction': 'column',
+  }"
+>
+  <div
+    class="profile"
+    [attr.dir]="locale.language === 'ar-EG' ? 'rtl' : 'ltr'"
+    (keydown)="dialogKey($event)"
+  >
+    <div class="profile-top">
+      <header class="profile-header">
+        <div class="identity">
+          <div class="profile-avatar" aria-hidden="true">
+            {{ currentPatient?.avatar }}
           </div>
           <div>
-            <div class="d-flex align-items-center gap-2">
-              <h4 class="mb-0 fw-bold font-clash text-body">{{ locale.patientName(p) }}</h4>
-              <span class="badge badge-neutral" dir="rtl">{{ p.nameAr }}</span>
+            <div class="name-line">
+              <h2 id="profile-title" dir="auto">
+                {{
+                  locale.patientName(currentPatient) ||
+                    t("TITLE", "Patient profile")
+                }}
+              </h2>
+              <span class="profile-badge"
+                >{{ t("PATIENT", "Patient") }} #{{
+                  patientId || currentPatient?.id
+                }}</span
+              >
             </div>
-            <div class="d-flex flex-wrap align-items-center gap-3 mt-1 text-muted small">
-              <span dir="ltr"><i class="bi bi-telephone me-1 text-primary"></i>{{ p.phone }}</span>
-              @if (p.birthDate) {
-                <span>{{ 'RECEPTIONIST.DOB' | translate }}: {{ locale.date(p.birthDate) }}</span>
-              }
-              <span><i class="bi bi-gender-ambiguous me-1"></i>{{ p.gender | receptionistText }}</span>
-              <span class="badge" [ngClass]="{
-                'badge-success': p.paymentType === 'Cash',
-                'badge-info': p.paymentType === 'Insurance',
-                'badge-warning': p.paymentType === 'Online'
-              }">{{ (p.paymentType || 'Not set') | receptionistText }}</span>
-              @if (p.occupation) {
-                <span><i class="bi bi-briefcase me-1 text-primary"></i>{{ p.occupation }}</span>
-              }
-              @if (p.address) {
-                <span><i class="bi bi-geo-alt me-1 text-primary"></i>{{ p.address }}</span>
-              }
-              @if (isInsurancePatient && p.insuranceDetails?.employer) {
-                <span><i class="bi bi-building me-1 text-primary"></i>{{ p.insuranceDetails?.employer }}</span>
-              }
+            <div class="identity-meta">
+              <span dir="ltr"
+                ><i class="bi bi-telephone" aria-hidden="true"></i>
+                {{ currentPatient?.phone || "—" }}</span
+              ><span>{{ currentPatient?.gender | receptionistText }}</span
+              ><span class="profile-badge teal">{{
+                isInsurancePatient
+                  ? t("INSURANCE", "Insurance")
+                  : t("SELF_PAY", "Self-pay")
+              }}</span>
             </div>
           </div>
         </div>
-
-        <!-- Primary Doctor & Progress Overview -->
-        <div class="treatment-meta-box p-3 rounded-3 border">
-          <div class="d-flex align-items-center justify-content-between gap-3 mb-2">
-            <span class="small text-muted fw-semibold d-flex align-items-center gap-1">
-              <i class="bi bi-person-badge text-primary"></i>
-              {{ 'RECEPTIONIST.PRIMARY_DOCTOR' | translate }}:
-            </span>
-            <span class="fw-bold text-primary small">{{ primaryDoctorName }}</span>
-          </div>
-
-          <div>
-            <div class="d-flex justify-content-between align-items-center small mb-1">
-              <span class="text-muted fw-semibold">{{ 'RECEPTIONIST.SESSION_PROGRESS' | translate }}</span>
-              <span class="fw-bold text-700">{{ completedSessionsCount }} / {{ totalSessions }} ({{ progressPercentage }}%)</span>
+        <div class="profile-header-actions">
+          <div class="primary-clinician">
+            <i class="bi bi-person" aria-hidden="true"></i>
+            <div>
+              <small>{{ t("PRIMARY_DOCTOR", "Primary clinician") }}</small
+              ><strong dir="auto">{{ primaryDoctorName }}</strong>
             </div>
-            <p-progressBar
-              [value]="progressPercentage"
-              [showValue]="false"
-              [style]="{ height: '8px', borderRadius: '6px' }">
-            </p-progressBar>
           </div>
+          <details class="patient-details">
+            <summary>
+              {{ t("DETAILS", "Patient details") }}
+              <i class="bi bi-chevron-down" aria-hidden="true"></i>
+            </summary>
+            <dl>
+              <dt>{{ t("DOB", "Date of birth") }}</dt>
+              <dd>{{ formatDate(currentPatient?.birthDate) }}</dd>
+              <dt>{{ t("EMERGENCY", "Emergency contact") }}</dt>
+              <dd dir="auto">{{ currentPatient?.emergencyContact || "—" }}</dd>
+              @if (editableEmail) {
+                <dt>{{ t("EMAIL", "Email") }}</dt>
+                <dd dir="auto">{{ editableEmail }}</dd>
+              }
+              @if (isInsurancePatient) {
+                <dt>{{ t("INSURER", "Insurer") }}</dt>
+                <dd>{{ currentPatient?.insuranceCompanyName || "—" }}</dd>
+                <dt>{{ t("MEMBER", "Member ID") }}</dt>
+                <dd>{{ currentPatient?.insuranceDetails?.memberId || "—" }}</dd>
+              }
+            </dl>
+          </details>
+          <button
+            id="profile-close"
+            class="profile-icon"
+            type="button"
+            [attr.aria-label]="t('CLOSE', 'Close patient profile')"
+            (click)="closeModal()"
+            [disabled]="
+              saving() || !!pending() || documentService.mutation.busy()
+            "
+          >
+            <i class="bi bi-x-lg" aria-hidden="true"></i>
+          </button>
+        </div>
+      </header>
+      @if (data()?.courses?.length) {
+        <div class="course-picker">
+          <label for="profile-course">{{
+            t("COURSE", "Treatment course")
+          }}</label
+          ><select
+            id="profile-course"
+            class="profile-control"
+            [ngModel]="selectedCourseId"
+            (ngModelChange)="chooseCourse($event)"
+            [disabled]="saving() || !!pending()"
+          >
+            @for (item of data()!.courses; track item.id) {
+              <option [ngValue]="item.id">
+                #{{ item.id }} &middot; {{ item.treatmentType }} &middot;
+                {{ item.status | receptionistText }}
+              </option>
+            }</select
+          ><small>{{
+            t(
+              "COURSE_SCOPE",
+              "Counts and balances are for the selected course."
+            )
+          }}</small>
+        </div>
+      }
+      @if (patientError()) {
+        <p class="profile-alert" role="alert">
+          {{ t("DETAILS_FAILED", "Could not load patient details.") }}
+          {{ patientError() }}
+          <button type="button" (click)="refreshProfile()">
+            {{ t("RETRY", "Retry") }}
+          </button>
+        </p>
+      }
+      @if (profileError()) {
+        <p class="profile-alert" role="alert">
+          {{ t("LOAD_FAILED", "Could not load course records.") }}
+          {{ profileError() }}
+          <button type="button" (click)="reloadCourseData()">
+            {{ t("RETRY", "Retry") }}
+          </button>
+        </p>
+      }
+      <div class="profile-stats" [attr.aria-busy]="loading()">
+        <article>
+          <i class="bi bi-calendar3" aria-hidden="true"></i>
+          <div>
+            <small>{{ t("PRESCRIBED", "Prescribed sessions") }}</small
+            ><strong
+              >{{ course && !profileError() ? totalSessions : "—" }}
+              <span>{{ t("SESSION_UNIT", "sessions") }}</span></strong
+            >
+          </div>
+        </article>
+        <article class="completion">
+          <div
+            class="completion-ring"
+            [style.--progress]="progressPercentage + '%'"
+            aria-hidden="true"
+          ></div>
+          <div>
+            <small>{{ t("COMPLETED", "Completed") }}</small
+            ><strong
+              >{{
+                course && !profileError()
+                  ? completedSessionsCount + " / " + totalSessions
+                  : "—"
+              }}
+              <span>{{ t("SESSION_UNIT", "sessions") }}</span></strong
+            >
+          </div>
+          <div class="progress-line">
+            <span [style.width.%]="progressPercentage"></span>
+          </div>
+          <small>{{ progressPercentage | number: "1.0-0" }}%</small>
+        </article>
+        <article>
+          <i class="bi bi-wallet2" aria-hidden="true"></i>
+          <div>
+            <small>{{ t("PATIENT_PAID", "Actual patient payments") }}</small
+            ><strong>{{
+              course && !profileError()
+                ? (course.patientPaid
+                  | currency: "EGP" : "symbol" : "1.0-2" : locale.language)
+                : "—"
+            }}</strong>
+          </div>
+        </article>
+        <article>
+          <i class="bi bi-file-earmark-text" aria-hidden="true"></i>
+          <div>
+            <small>{{
+              t("PATIENT_BALANCE", "Remaining patient balance")
+            }}</small
+            ><strong>{{
+              course && !profileError()
+                ? (course.patientBalance
+                  | currency: "EGP" : "symbol" : "1.0-2" : locale.language)
+                : "—"
+            }}</strong>
+          </div>
+        </article>
+      </div>
+      @if (course && course.insurerAmount > 0) {
+        <p class="insurer-balance">
+          {{
+            t(
+              "INSURER_SEPARATE",
+              "Insurer balance (separate from the patient)"
+            )
+          }}:
+          <strong>{{
+            course.insurerBalance
+              | currency: "EGP" : "symbol" : "1.2-2" : locale.language
+          }}</strong
+          ><span
+            >{{ t("RECEIVED", "Received") }}:
+            {{
+              course.insurerPaid
+                | currency: "EGP" : "symbol" : "1.2-2" : locale.language
+            }}</span
+          >
+        </p>
+      }
+      <nav
+        class="profile-tabs"
+        role="tablist"
+        [attr.aria-label]="t('SECTIONS', 'Patient profile sections')"
+      >
+        @for (tab of tabs; track tab; let i = $index) {
+          <button
+            type="button"
+            role="tab"
+            [id]="'profile-tab-' + tab"
+            [attr.aria-controls]="'profile-panel-' + tab"
+            [attr.aria-selected]="activeTab === tab"
+            [attr.tabindex]="activeTab === tab ? 0 : -1"
+            [class.active]="activeTab === tab"
+            (click)="setTab(tab)"
+            (keydown)="tabKey($event, i)"
+          >
+            <i
+              [class]="
+                tab === 'sessions'
+                  ? 'bi bi-calendar3'
+                  : tab === 'payments'
+                    ? 'bi bi-people'
+                    : tab === 'activity'
+                      ? 'bi bi-clock-history'
+                      : 'bi bi-files'
+              "
+              aria-hidden="true"
+            ></i
+            >{{
+              t(
+                tab.toUpperCase(),
+                tab === "sessions"
+                  ? "Sessions"
+                  : tab === "payments"
+                    ? "Payments"
+                    : tab === "activity"
+                      ? "Activity Log"
+                      : "Documents"
+              )
+            }}
+          </button>
+        }
+      </nav>
+    </div>
+    @if (discardAction) {
+      <div class="discard-prompt" role="alert">
+        <strong>{{
+          t("UNSAVED", "You have unsaved changes to this session.")
+        }}</strong>
+        <div>
+          <button
+            type="button"
+            id="keep-profile-edit"
+            class="profile-button"
+            (click)="keepEditing()"
+          >
+            {{ t("KEEP_EDITING", "Keep editing") }}</button
+          ><button
+            type="button"
+            class="profile-button primary"
+            (click)="discard()"
+          >
+            {{ t("DISCARD", "Discard changes") }}
+          </button>
         </div>
       </div>
-    </div>
     }
-  </ng-template>
-
-  @if (patientLoading() || clinical.loading()) { <p role="status">{{ 'RECEPTIONIST.PROCESSING' | translate }}</p> }
-  @if (profileError() || clinical.error() || billingService.error() || appointmentService?.error()) {
-    <div class="alert alert-warning" role="alert">
-      @if (profileError()) { <p>{{ 'RECEPTIONIST.UI.PATIENT_DETAILS_FAILED' | translate }} {{ locale.label(profileError()) }}</p> }
-      @if (clinical.error()) { <p>{{ 'RECEPTIONIST.UI.PATIENT_TREATMENT_HISTORY_FAILED' | translate }} {{ locale.label(clinical.error()) }}</p> }
-      @if (billingService.error()) { <p>{{ 'RECEPTIONIST.UI.PATIENT_INVOICES_FAILED' | translate }} {{ locale.label(billingService.error()) }}</p> }
-      @if (appointmentService?.error()) { <p>{{ 'RECEPTIONIST.UI.PATIENT_APPOINTMENTS_FAILED' | translate }} {{ locale.label(appointmentService?.error()) }}</p> }
-      <button class="btn btn-outline-secondary btn-sm" (click)="refreshProfile()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button>
-    </div>
-  }
-  @if (currentPatient; as p) {
-    <div class="card card-body mb-3">
-      <div>{{ 'RECEPTIONIST.UI.PATIENT_ID' | translate }}: #{{ p.id }}</div>
-      <div class="text-break">{{ 'RECEPTIONIST.UI.PATIENT_ACCOUNT_ID' | translate }}: {{ p.applicationUserId || '-' }}</div>
-      <div>{{ 'RECEPTIONIST.UI.PATIENT_EMAIL' | translate }}: <span dir="ltr">{{ p.email || '-' }}</span></div>
-      <div>{{ 'RECEPTIONIST.UI.PATIENT_EMERGENCY_CONTACT' | translate }}: <span dir="ltr">{{ p.emergencyContact || '-' }}</span></div>
-      <div>{{ 'RECEPTIONIST.UI.PATIENT_CREATED_AT' | translate }}: {{ locale.date(p.createdAt, true) }}</div>
-      @if (isSelfPayPatient) {
-        <p class="text-muted mt-2 mb-0" data-self-pay>{{ 'RECEPTIONIST.UI.PATIENT_SELF_PAY' | translate }}</p>
-      }
-    </div>
-    @if (isInsurancePatient) {
-    <div class="card card-body mb-3" data-patient-insurance>
-      <h6>{{ 'RECEPTIONIST.INSURANCE_DETAILS' | translate }}</h6>
-      <div>{{ 'RECEPTIONIST.INSURANCE_COMPANY' | translate }}: {{ p.insuranceCompanyName || p.insuranceDetails?.company || '-'  }}</div>
-      <div>{{ 'RECEPTIONIST.UI.PATIENT_INSURANCE_COMPANY_ID' | translate }}: {{ p.insuranceCompanyId ?? '-' }}</div>
-      <div>{{ 'RECEPTIONIST.UI.PATIENT_INSURANCE_STATUS' | translate }}: {{ p.insuranceDetails?.apiStatus ?? '-' }}</div>
-      <div>{{ 'RECEPTIONIST.MEMBER_ID' | translate }}: {{ p.insuranceDetails?.memberId || '-' }}</div>
-      <div>{{ 'RECEPTIONIST.EMPLOYER' | translate }}: {{ p.insuranceDetails?.employer || '-' }}</div>
-      <div>{{ 'RECEPTIONIST.COPAY_PERCENTAGE' | translate }}: {{ p.insuranceDetails?.copayPercentage ?? '-' }}</div>
-      <div>{{ 'RECEPTIONIST.APPROVED_SESSIONS' | translate }}: {{ p.insuranceDetails?.approvedSessions ?? '-' }}</div>
-      @if (p.insuranceDetails) {
-        <p class="text-muted small mb-0">{{ 'RECEPTIONIST.UI.INSURANCE_STATUS_NOTICE' | translate }}</p>
-      }
-    </div>
+    @if (pending()) {
+      <div class="profile-alert" role="alert" data-reschedule-unknown>
+        {{
+          t(
+            "UNKNOWN",
+            "The save outcome is unconfirmed. Check the original operation before making another change."
+          )
+        }}<button
+          type="button"
+          class="profile-button"
+          (click)="reconcile()"
+          [disabled]="saving()"
+        >
+          {{ t("RECONCILE", "Check saved change") }}
+        </button>
+        @if (confirmedMissing()) {
+          <button
+            type="button"
+            class="profile-button"
+            (click)="retryOriginal()"
+            [disabled]="saving()"
+          >
+            {{ t("RETRY_ORIGINAL", "Retry original change") }}
+          </button>
+        }
+        <button
+          type="button"
+          class="profile-button"
+          (click)="closeKeepingPending()"
+          [disabled]="saving()"
+        >
+          {{ t("CLOSE_PENDING", "Close and keep the pending operation") }}
+        </button>
+        @if (saveError()) {
+          <span>{{ saveError() }}</span>
+        }
+      </div>
     }
-  }
-  <!-- Body: PrimeNG Table of Sessions -->
-  <div class="patient-profile-body pt-2">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <h6 class="mb-0 fw-bold d-flex align-items-center gap-2">
-        <i class="bi bi-calendar2-check text-primary"></i>
-        {{ 'RECEPTIONIST.TREATMENT_PLAN' | translate }} ({{ totalSessions }} {{ 'RECEPTIONIST.TOTAL_SESSIONS' | translate }})
-      </h6>
-      <span class="badge badge-neutral small">
-        {{ 'RECEPTIONIST.COMPLETED_SESSIONS' | translate }}: {{ completedSessionsCount }}
-      </span>
-    </div>
-
-    <div class="table-responsive rounded border shadow-none">
-      <p-table
-        [value]="sessions"
-        [responsiveLayout]="'scroll'"
-        styleClass="p-datatable-striped p-datatable-sm align-middle">
-        <ng-template pTemplate="header">
-          <tr>
-            <th style="width: 70px;">{{ 'RECEPTIONIST.SESSION_NUMBER' | translate }}</th>
-            <th>{{ 'COMMON.DOCTOR' | translate }}</th>
-            <th>{{ 'COMMON.DATE' | translate }}</th>
-            <th>{{ 'RECEPTIONIST.CHECK_IN_TIME' | translate }}</th>
-            <th>{{ 'RECEPTIONIST.CHECK_OUT_TIME' | translate }}</th>
-            <th>{{ 'RECEPTIONIST.PAYMENT_STATUS' | translate }}</th>
-            <th style="text-align: end;">{{ 'RECEPTIONIST.SESSION_STATUS' | translate }}</th>
-          </tr>
-        </ng-template>
-
-        <ng-template pTemplate="body" let-session let-i="rowIndex">
-          <tr [ngClass]="{ 'future-pending-row': session.status === 'Pending' }">
-            <td>
-              <span class="font-bold text-700">
-                @if (session.type === 'Assessment') {
-                  {{ 'RECEPTIONIST.UI.ASSESSMENT' | translate }}
-                } @else {
-                  #{{ session.sessionNumber }}
+    <div class="profile-scroll">
+      @if (loading()) {
+        <p class="profile-state" role="status">
+          {{ t("LOADING", "Loading saved records...") }}
+        </p>
+      }
+      <section
+        role="tabpanel"
+        id="profile-panel-sessions"
+        aria-labelledby="profile-tab-sessions"
+        [hidden]="activeTab !== 'sessions'"
+      >
+        <div class="session-card">
+          <div class="section-heading">
+            <h3>{{ t("TREATMENT_SESSIONS", "Treatment sessions") }}</h3>
+            <p>
+              {{ t("SAVED_SESSIONS", "Saved sessions") }}:
+              {{ sessions.length }} &middot; {{ t("COMPLETED", "Completed") }}:
+              {{ completedSessionsCount }}
+            </p>
+            <small>{{
+              t(
+                "COVERAGE_HELP",
+                "Coverage is evaluated for this session as the next start. Check-in rechecks cumulative patient payments; insurer settlement is separate."
+              )
+            }}</small>
+          </div>
+          @if (saved()) {
+            <p class="profile-success" role="status">
+              {{
+                t(
+                  "SAVED",
+                  "This session was rescheduled. Other appointments and financial terms are unchanged."
+                )
+              }}
+            </p>
+          }
+          <div class="profile-table-scroll">
+            <table class="profile-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>{{ t("DAY", "Day") }}</th>
+                  <th>{{ t("DATE", "Date") }}</th>
+                  <th>{{ t("SCHEDULED", "Scheduled time") }}</th>
+                  <th>{{ t("DOCTOR_ROOM", "Doctor / Room") }}</th>
+                  <th>{{ t("ATTENDANCE", "Actual check-in / out") }}</th>
+                  <th>{{ t("COVERAGE", "Patient coverage") }}</th>
+                  <th>{{ t("STATUS", "Status") }}</th>
+                  <th>{{ t("EDIT", "Edit") }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of pageRows; track row.id) {
+                  <tr [class.editing-row]="editing?.id === row.id">
+                    <th scope="row">{{ row.sessionNumber }}</th>
+                    <td>{{ weekday(row.startTime) }}</td>
+                    <td>{{ formatDate(row.startTime) }}</td>
+                    <td>
+                      {{ formatTime(row.startTime) }}
+                      @if (row.endTime) {
+                        &ndash; {{ formatTime(row.endTime) }}
+                      }
+                    </td>
+                    <td dir="auto">
+                      {{ row.doctorName || "—"
+                      }}<small>{{ row.roomName || "—" }}</small>
+                    </td>
+                    <td>
+                      <span
+                        >{{ t("IN", "In") }}
+                        {{ formatTime(row.actualCheckIn) }}</span
+                      ><small
+                        >{{ t("OUT", "Out") }}
+                        {{ formatTime(row.actualCheckOut) }}</small
+                      >
+                    </td>
+                    <td>
+                      <span
+                        class="profile-badge"
+                        [class.teal]="
+                          ['Covered', 'Paid', 'NoPatientCharge'].includes(
+                            row.patientCoverage
+                          )
+                        "
+                        [class.due]="row.patientCoverage === 'Due'"
+                        >{{ label(row.patientCoverage) }}</span
+                      >
+                    </td>
+                    <td>
+                      <span
+                        class="profile-badge"
+                        [class.teal]="row.status === 'Completed'"
+                        >{{ label(row.status) }}</span
+                      >
+                    </td>
+                    <td>
+                      @if (row.canReschedule && canEdit) {
+                        <button
+                          type="button"
+                          [id]="'edit-session-' + row.id"
+                          class="profile-icon"
+                          [attr.aria-label]="
+                            t('EDIT_SESSION', 'Reschedule session {{number}}', {
+                              number: row.sessionNumber,
+                            })
+                          "
+                          [attr.aria-expanded]="editing?.id === row.id"
+                          [attr.aria-controls]="'session-editor-' + row.id"
+                          [disabled]="saving() || !!pending()"
+                          (click)="openEditor(row)"
+                        >
+                          <i
+                            [class]="
+                              editing?.id === row.id
+                                ? 'bi bi-chevron-up'
+                                : 'bi bi-pencil'
+                            "
+                            aria-hidden="true"
+                          ></i>
+                        </button>
+                      } @else {
+                        <span>&mdash;</span>
+                      }
+                    </td>
+                  </tr>
+                  @if (editing?.id === row.id) {
+                    <tr class="editor-row">
+                      <td colspan="9">
+                        <div
+                          class="session-editor"
+                          [id]="'session-editor-' + row.id"
+                          role="region"
+                          [attr.aria-label]="
+                            t('EDIT_SESSION', 'Reschedule session {{number}}', {
+                              number: row.sessionNumber,
+                            })
+                          "
+                        >
+                          <div class="editor-title">
+                            <i
+                              class="bi bi-calendar2-week"
+                              aria-hidden="true"
+                            ></i
+                            ><strong
+                              >{{ t('EDIT_SESSION','Reschedule session {{number
+                              }}',{number:row.sessionNumber}) }}</strong
+                            ><span class="profile-badge teal">{{
+                              t("ONLY", "This session only")
+                            }}</span>
+                          </div>
+                          <fieldset [disabled]="saving() || !!pending()">
+                            <div class="editor-grid">
+                              <div class="editor-main">
+                                <div class="editor-fields">
+                                  <label for="reschedule-date"
+                                    >{{ t("NEW_DATE", "New date")
+                                    }}<input
+                                      id="reschedule-date"
+                                      class="profile-control"
+                                      type="date"
+                                      [min]="minimumDate"
+                                      [ngModel]="draftDate"
+                                      (ngModelChange)="
+                                        dateChanged($event)
+                                      " /></label
+                                  ><label
+                                    >{{ t("DAY", "Day")
+                                    }}<input
+                                      class="profile-control"
+                                      [value]="
+                                        slotData()
+                                          ? weekday(
+                                              slotData()!.slots[0]?.startTime ||
+                                                draftDate + 'T12:00:00Z'
+                                            )
+                                          : ''
+                                      "
+                                      readonly /></label
+                                  ><label
+                                    >{{ t("DOCTOR", "Doctor")
+                                    }}<input
+                                      class="profile-control"
+                                      [value]="editing!.doctorName"
+                                      readonly
+                                  /></label>
+                                </div>
+                                <h4>
+                                  {{ t("SLOTS", "Available 60-minute slots") }}
+                                </h4>
+                                @if (slotsLoading()) {
+                                  <p role="status">
+                                    {{
+                                      t(
+                                        "CHECKING",
+                                        "Checking clinician and room availability..."
+                                      )
+                                    }}
+                                  </p>
+                                }
+                                @if (slotsError()) {
+                                  <p class="profile-alert" role="alert">
+                                    {{ slotsError() }}
+                                    <button type="button" (click)="loadSlots()">
+                                      {{ t("RETRY", "Retry") }}
+                                    </button>
+                                  </p>
+                                }
+                                <div
+                                  class="slot-grid"
+                                  role="radiogroup"
+                                  [attr.aria-label]="
+                                    t('SLOTS', 'Available 60-minute slots')
+                                  "
+                                >
+                                  @for (
+                                    slot of slotData()?.slots || [];
+                                    track slot.startTime + "-" + slot.roomId
+                                  ) {
+                                    <label
+                                      class="slot-option"
+                                      [class.selected]="selectedSlot === slot"
+                                      ><input
+                                        type="radio"
+                                        name="reschedule-slot"
+                                        [checked]="selectedSlot === slot"
+                                        (change)="pickSlot(slot)"
+                                      /><span
+                                        ><strong
+                                          >{{
+                                            formatTime(slot.startTime)
+                                          }}
+                                          &middot;
+                                          {{ formatTime(slot.endTime) }}</strong
+                                        ><small
+                                          >{{ slot.roomName }} &middot;
+                                          {{
+                                            t("CAPACITY", "Capacity remaining")
+                                          }}:
+                                          {{ slot.remainingCapacity }}</small
+                                        ></span
+                                      ></label
+                                    >
+                                  }
+                                </div>
+                                @if (
+                                  !slotsLoading() &&
+                                  !slotsError() &&
+                                  slotData() &&
+                                  !slotData()!.slots.length
+                                ) {
+                                  <p class="profile-state" role="status">
+                                    {{
+                                      t(
+                                        "NO_SLOTS",
+                                        "No available slots for this date."
+                                      )
+                                    }}
+                                    @for (
+                                      notice of slotData()!.notices;
+                                      track notice
+                                    ) {
+                                      <span>{{
+                                        notice | receptionistText
+                                      }}</span>
+                                    }
+                                  </p>
+                                }
+                                <p class="editor-help">
+                                  <i
+                                    class="bi bi-info-circle"
+                                    aria-hidden="true"
+                                  ></i
+                                  >{{
+                                    t(
+                                      "SLOT_HELP",
+                                      "Slots match saved clinician hours, absence, patient conflicts and room reservations. Availability is rechecked when saving."
+                                    )
+                                  }}
+                                </p>
+                                <label for="reschedule-reason"
+                                  >{{ t("REASON", "Reason (optional)")
+                                  }}<input
+                                    id="reschedule-reason"
+                                    class="profile-control"
+                                    maxlength="500"
+                                    [(ngModel)]="reason"
+                                /></label>
+                              </div>
+                              <aside class="editor-summary">
+                                <h4>
+                                  {{ t("BEFORE_AFTER", "Before to After") }}
+                                </h4>
+                                <div class="before-after">
+                                  <span
+                                    >{{ formatDate(editing!.startTime)
+                                    }}<strong
+                                      >{{
+                                        formatTime(editing!.startTime)
+                                      }}
+                                      &middot; {{ editing!.roomName }}</strong
+                                    ></span
+                                  ><i
+                                    class="bi bi-arrow-right"
+                                    aria-hidden="true"
+                                  ></i
+                                  ><span
+                                    >{{
+                                      selectedSlot
+                                        ? formatDate(selectedSlot.startTime)
+                                        : "—"
+                                    }}<strong>{{
+                                      selectedSlot
+                                        ? formatTime(selectedSlot.startTime) +
+                                          " / " +
+                                          selectedSlot.roomName
+                                        : t("CHOOSE_SLOT", "Choose a slot")
+                                    }}</strong></span
+                                  >
+                                </div>
+                                <p>
+                                  <i
+                                    class="bi bi-info-circle"
+                                    aria-hidden="true"
+                                  ></i
+                                  >{{
+                                    t(
+                                      "UNCHANGED",
+                                      "Other sessions and the financial agreement stay unchanged."
+                                    )
+                                  }}
+                                </p>
+                                <div class="editor-actions">
+                                  <button
+                                    type="button"
+                                    class="profile-button"
+                                    (click)="cancelEditor()"
+                                  >
+                                    {{ t("CANCEL", "Cancel") }}</button
+                                  ><button
+                                    type="button"
+                                    class="profile-button primary"
+                                    (click)="saveSession()"
+                                    [disabled]="
+                                      !selectedSlot ||
+                                      slotsLoading() ||
+                                      !!slotsError() ||
+                                      !scheduleChanged
+                                    "
+                                  >
+                                    {{
+                                      saving()
+                                        ? t("SAVING", "Saving...")
+                                        : t("SAVE", "Save this session")
+                                    }}
+                                  </button>
+                                </div>
+                              </aside>
+                            </div>
+                          </fieldset>
+                          @if (saveError() && !pending()) {
+                            <p class="profile-alert" role="alert">
+                              {{ saveError() }}
+                            </p>
+                          }
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                } @empty {
+                  <tr>
+                    <td colspan="9" class="profile-state">
+                      @if (!loading() && !profileError()) {
+                        {{
+                          t("NO_SESSIONS", "No saved sessions for this course.")
+                        }}
+                      }
+                    </td>
+                  </tr>
                 }
-              </span>
-            </td>
-            <td>
-              <div class="d-flex align-items-center gap-2">
-                <i class="bi bi-person-heart text-secondary"></i>
-                <span class="fw-semibold">{{ getDoctorDisplayName(session.doctorId) }}</span>
-              </div>
-            </td>
-            <td>
-              @if (formatDate(session.scheduledAt); as dateStr) {
-                <span class="text-700 text-sm">{{ dateStr }}</span>
-              } @else {
-                <span class="text-400 text-muted">—</span>
-              }
-            </td>
-            <td>
-              @if (session.checkInTime) {
-                <span class="text-700 font-monospace text-sm">{{ formatTime(session.checkInTime) }}</span>
-              } @else {
-                <span class="text-400 text-muted">—</span>
-              }
-            </td>
-            <td>
-              @if (session.checkOutTime) {
-                <span class="text-700 font-monospace text-sm">{{ formatTime(session.checkOutTime) }}</span>
-              } @else {
-                <span class="text-400 text-muted">—</span>
-              }
-            </td>
-            <td>
-              @let payment = getPaymentInfo(session.id);
-              @if (session.type === 'Assessment') {
-                <p-tag [value]="payment.label | translate" [severity]="payment.severity"></p-tag>
-              } @else {
-                <p-tag [value]="payment.label | translate" [severity]="payment.severity"></p-tag>
-              }
-            </td>
-            <td style="text-align: end;">
-              <p-tag
-                [value]="session.status | receptionistText"
-                [severity]="getSessionStatusSeverity(session.status)">
-              </p-tag>
-            </td>
-          </tr>
-        </ng-template>
-
-        <ng-template pTemplate="emptymessage">
-          <tr>
-            <td colspan="7" class="text-center py-4 text-muted">
-              @if (clinical.loading()) { {{ 'RECEPTIONIST.PROCESSING' | translate }} }
-              @else if (!clinical.error()) { {{ 'RECEPTIONIST.NO_SESSIONS_FOUND' | translate }} }
-            </td>
-          </tr>
-        </ng-template>
-      </p-table>
-    </div>
-  </div>
-  <div class="card card-body mt-3">
-    <h6>{{ 'RECEPTIONIST.UI.PATIENT_HISTORY' | translate }}</h6>
-    @for (assessment of patientAssessments; track assessment.id) {
-      <p>#{{ assessment.id }} ? {{ assessment.diagnosis }} ? {{ locale.date(assessment.assessmentDate) }}</p>
-    }
-    @for (appointment of patientAppointments; track appointment.id) {
-      <p>{{ appointment.appointmentType | receptionistText }} ? {{ locale.date(appointment.startTime, true) }}</p>
-      @if (appointment.actualCheckIn) {
-        <p class="small text-muted">{{ 'RECEPTIONIST.CHECK_IN_TIME' | translate }}: {{ locale.date(appointment.actualCheckIn, true) }} ·
-          {{ 'RECEPTIONIST.CHECK_OUT_TIME' | translate }}: {{ appointment.actualCheckOut ? locale.date(appointment.actualCheckOut, true) : '-' }}</p>
-      }
-    }
-    @for (invoice of patientInvoices; track invoice.id) {
-      <p>{{ invoice.invoiceNumber }} ? {{ 'RECEPTIONIST.BILLING.REMAINING' | translate }}: {{ invoice.remainingAmount | currency:'EGP':'symbol':'1.2-2':locale.language }}</p>
-    }
-  </div>
-  @if (isInsurancePatient) {
-  <div class="card card-body mt-3" data-insurance-documents>
-    <h6>{{ 'RECEPTIONIST.UI.INSURANCE_DOCUMENTS' | translate }}</h6>
-    @if (documentsLoading()) { <p role="status">{{ 'RECEPTIONIST.PROCESSING' | translate }}</p> }
-    @if (documentsError()) { <p class="alert alert-warning" role="alert">{{ locale.label(documentsError()) }}
-      <button class="btn btn-outline-secondary btn-sm" (click)="retryDocuments()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button></p> }
-    @if (documentDownloadError()) { <p class="alert alert-warning" role="alert">{{ locale.label(documentDownloadError()) }}</p> }
-    @if (!documentsLoading() && !documentsError()) {
-      @for (document of documents(); track document.id) {
-        <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
-          <span dir="auto">{{ document.fileName }}</span>
-          <button class="btn btn-outline-primary btn-sm" (click)="downloadDocument(document)">{{ 'RECEPTIONIST.UI.DOWNLOAD_DOCUMENT' | translate }}</button>
+              </tbody>
+            </table>
+          </div>
         </div>
-      } @empty { <p class="text-muted">{{ 'RECEPTIONIST.UI.NO_DOCUMENTS' | translate }}</p> }
-    }
-    @if (uploadError()) { <p class="alert alert-warning" role="alert">{{ locale.label(uploadError()) }}</p> }
-    @if (uploadSaved()) { <p class="alert alert-success" role="status">{{ 'RECEPTIONIST.UI.DOCUMENT_UPLOAD_SAVED' | translate }}</p> }
-    @if (documentService.mutation.uncertain()) { <p class="alert alert-warning">{{ 'RECEPTIONIST.UI.OPERATION_OUTCOME_UNKNOWN' | translate }}</p> }
-    <label class="form-label">{{ 'RECEPTIONIST.UI.UPLOAD_DOCUMENT' | translate }}
-      <input class="form-control" type="file" multiple (change)="onFilesSelected($event)" [disabled]="documentService.mutation.busy()">
-    </label>
-    <button class="btn btn-primary btn-sm" (click)="uploadDocuments()" [disabled]="!files.length || !currentPatient || documentService.mutation.busy() || documentService.mutation.uncertain()">{{ 'RECEPTIONIST.UI.UPLOAD_DOCUMENT' | translate }}</button>
+      </section>
+      <section
+        role="tabpanel"
+        id="profile-panel-payments"
+        aria-labelledby="profile-tab-payments"
+        [hidden]="activeTab !== 'payments'"
+      >
+        <h3>{{ t("PAYMENTS", "Payments") }}</h3>
+        <p>
+          {{
+            t(
+              "PAYMENT_HELP",
+              "Actual receipts for the selected course. Patient and insurer collections are separate."
+            )
+          }}
+        </p>
+        <div class="profile-table-scroll">
+          <table class="profile-table">
+            <thead>
+              <tr>
+                <th>{{ t("DATE", "Date") }}</th>
+                <th>{{ t("INVOICE", "Invoice") }}</th>
+                <th>{{ t("PAYER", "Payer") }}</th>
+                <th>{{ t("AMOUNT", "Amount") }}</th>
+                <th>{{ t("METHOD", "Method") }}</th>
+                <th>{{ t("REFERENCE", "Reference") }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (payment of course?.payments || []; track payment.id) {
+                <tr>
+                  <td>{{ formatDate(payment.date) }}</td>
+                  <td>{{ payment.invoiceNumber }}</td>
+                  <td>{{ payment.payer | receptionistText }}</td>
+                  <td>
+                    {{
+                      payment.amount
+                        | currency: "EGP" : "symbol" : "1.2-2" : locale.language
+                    }}
+                  </td>
+                  <td>{{ payment.method | receptionistText }}</td>
+                  <td dir="auto">{{ payment.reference || "—" }}</td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="6" class="profile-state">
+                    @if (!loading() && !profileError()) {
+                      {{
+                        t(
+                          "NO_PAYMENTS",
+                          "No recorded receipts for this course."
+                        )
+                      }}
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        @if (data()?.assessmentPayments?.length) {
+          <details class="assessment-entry">
+            <summary>
+              {{
+                t(
+                  "ASSESSMENT_PAYMENTS",
+                  "Assessment receipts (separate from course balances)"
+                )
+              }}
+            </summary>
+            @for (payment of data()!.assessmentPayments; track payment.id) {
+              <p>
+                {{ formatDate(payment.date) }} ? {{ payment.invoiceNumber }} ?
+                {{
+                  payment.amount
+                    | currency: "EGP" : "symbol" : "1.2-2" : locale.language
+                }}
+                ? {{ payment.payer | receptionistText }} ?
+                {{ payment.method | receptionistText }}
+              </p>
+            }
+          </details>
+        }
+      </section>
+      <section
+        role="tabpanel"
+        id="profile-panel-activity"
+        aria-labelledby="profile-tab-activity"
+        [hidden]="activeTab !== 'activity'"
+      >
+        <h3>{{ t("ACTIVITY", "Activity Log") }}</h3>
+        <p>
+          {{
+            t(
+              "AUDIT_HELP",
+              "Recorded single-session schedule changes for the selected course."
+            )
+          }}
+        </p>
+        <ol class="profile-activity">
+          @for (activity of course?.activity || []; track activity.id) {
+            <li>
+              <div>
+                <strong>{{ activity.actorName }}</strong> &middot;
+                {{ formatDate(activity.changedAt) }}
+                {{ formatTime(activity.changedAt) }}
+              </div>
+              <p>
+                {{ formatDate(activity.previousStart) }}
+                {{ formatTime(activity.previousStart) }} &middot;
+                {{ activity.previousRoomName }} &middot;
+                {{ formatDate(activity.newStart) }}
+                {{ formatTime(activity.newStart) }} &middot;
+                {{ activity.newRoomName }}
+              </p>
+              @if (activity.reason) {
+                <small dir="auto">{{ activity.reason }}</small>
+              }
+            </li>
+          } @empty {
+            @if (!loading() && !profileError()) {
+              <li>
+                {{
+                  t(
+                    "NO_ACTIVITY",
+                    "No recorded schedule changes for this course."
+                  )
+                }}
+              </li>
+            }
+          }
+        </ol>
+        <details>
+          <summary>
+            {{ t("ASSESSMENTS", "Clinical assessment history") }}
+          </summary>
+          @for (assessment of data()?.assessments || []; track assessment.id) {
+            <article class="assessment-entry">
+              <strong
+                >{{ formatDate(assessment.date) }} &middot;
+                {{ assessment.seniorName }}</strong
+              >
+              <p dir="auto">{{ assessment.diagnosis }}</p>
+              <small>{{
+                assessment.completedAt
+                  ? t("ASSESSMENT_COMPLETE", "Assessment completed")
+                  : t("ASSESSMENT_PENDING", "Assessment not yet completed")
+              }}</small>
+            </article>
+          }
+        </details>
+      </section>
+      <section
+        role="tabpanel"
+        id="profile-panel-documents"
+        aria-labelledby="profile-tab-documents"
+        [hidden]="activeTab !== 'documents'"
+        data-insurance-documents
+      >
+        <h3>{{ t("DOCUMENTS", "Documents") }}</h3>
+        @if (isInsurancePatient) {
+          @if (documentsLoading()) {
+            <p role="status">{{ t("LOADING", "Loading saved records...") }}</p>
+          }
+          @if (documentsError()) {
+            <p class="profile-alert" role="alert">
+              {{ documentsError() }}
+              <button type="button" (click)="retryDocuments()">
+                {{ t("RETRY", "Retry") }}
+              </button>
+            </p>
+          }
+          @if (documentDownloadError()) {
+            <p class="profile-alert" role="alert">
+              {{ documentDownloadError() }}
+            </p>
+          }
+          @if (!documentsLoading() && !documentsError()) {
+            @for (doc of documents(); track doc.id) {
+              <div class="document-row">
+                <i class="bi bi-file-earmark" aria-hidden="true"></i
+                ><span dir="auto"
+                  >{{ doc.fileName
+                  }}<small>{{ formatDate(doc.uploadedAt) }}</small></span
+                ><button
+                  type="button"
+                  class="profile-button"
+                  (click)="downloadDocument(doc)"
+                >
+                  {{ t("DOWNLOAD", "Download") }}
+                </button>
+              </div>
+            } @empty {
+              <p>{{ t("NO_DOCUMENTS", "No insurance documents saved.") }}</p>
+            }
+          }
+          @if (uploadError()) {
+            <p class="profile-alert" role="alert">{{ uploadError() }}</p>
+          }
+          @if (uploadSaved()) {
+            <p class="profile-success" role="status">
+              {{ t("UPLOAD_SAVED", "Document upload saved.") }}
+            </p>
+          }
+          @if (documentService.mutation.uncertain()) {
+            <p class="profile-alert" role="alert">
+              {{ "RECEPTIONIST.UI.OPERATION_OUTCOME_UNKNOWN" | translate }}
+            </p>
+          }
+          @if (canEdit) {
+            <label
+              >{{ t("UPLOAD", "Upload insurance documents")
+              }}<input
+                class="profile-control"
+                type="file"
+                multiple
+                (change)="onFilesSelected($event)"
+                [disabled]="documentService.mutation.busy()" /></label
+            ><button
+              type="button"
+              class="profile-button primary"
+              (click)="uploadDocuments()"
+              [disabled]="
+                !files.length ||
+                documentService.mutation.busy() ||
+                documentService.mutation.uncertain()
+              "
+            >
+              {{ t("UPLOAD", "Upload insurance documents") }}
+            </button>
+          }
+        } @else {
+          <p>
+            {{
+              t(
+                "NO_DOCUMENTS_REQUIRED",
+                "Insurance documents are not required for this self-pay profile."
+              )
+            }}
+          </p>
+        }
+      </section>
+    </div>
+    <footer class="profile-footer">
+      <small
+        ><i class="bi bi-info-circle" aria-hidden="true"></i
+        >{{
+          t("EDIT_HELP", "Select Edit to change one upcoming session.")
+        }}</small
+      >
+      @if (activeTab === "sessions") {
+        <div class="profile-pagination">
+          <span
+            >{{ sessions.length ? page * pageSize + 1 : 0 }}&ndash;{{
+              page * pageSize + pageRows.length
+            }}
+            / {{ sessions.length }}</span
+          ><button
+            type="button"
+            class="profile-button"
+            [attr.aria-label]="t('PREVIOUS', 'Previous page')"
+            [disabled]="page === 0 || saving() || !!pending()"
+            (click)="changePage(-1)"
+          >
+            &lsaquo;</button
+          ><span class="profile-badge">{{ page + 1 }}</span
+          ><button
+            type="button"
+            class="profile-button"
+            [attr.aria-label]="t('NEXT', 'Next page')"
+            [disabled]="page + 1 >= pageCount || saving() || !!pending()"
+            (click)="changePage(1)"
+          >
+            &rsaquo;
+          </button>
+        </div>
+      }
+    </footer>
   </div>
-  }
 </p-dialog>

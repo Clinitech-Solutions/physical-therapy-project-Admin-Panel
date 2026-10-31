@@ -1,5 +1,9 @@
 # MediQova Reception progress
 
+## Shared Patient Profile and rescheduling - 2026-10-31
+
+The approved modal redesign, course-scoped summaries/tabs and audited inline single-session editor are implemented. See [PATIENT_PROFILE.md](PATIENT_PROFILE.md) for contracts, financial invariants, UI/error/retry behavior, verification evidence and the activation boundary. Availability is server-derived; no mock slots or shared test financial writes were used. A new additive audit migration, `20261031122754_AppointmentScheduleAudit`, is prepared and reviewed **but not applied**. Its application needs separate authorization and the matching API build; the previously approved finance migration remains applied and unchanged. No push or deployment.
+
 ## Approved finance migration applied - 2026-10-31, 13:29 Cairo
 
 Only `20261030184822_CourseFinancialAgreements` was applied to the explicitly authorized `db56823.public.databaseasp.net` / `db56823` target after fresh target/history/SQL review. Its history entry, missing invoice columns and zero pending migrations are verified. Local dashboard and billing invoice GETs return HTTP 200 against SQL Server. Existing row counts and invoice/payment totals are unchanged; no test financial records, push or deployment. These SQL Server read checks are separate from earlier isolated SQLite/browser tests. See the sibling backend's [application report](../Physical-Therapy-Center/Database/ReviewedMigrations/20261030184822_CourseFinancialAgreements.APPLIED.md). This update supersedes earlier pending-migration/activation-blocker statements below, which describe the prior stage.
