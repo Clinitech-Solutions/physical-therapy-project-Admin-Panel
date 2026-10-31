@@ -517,6 +517,169 @@ describe("Shared profile and inline single-session reschedule (mocked HTTP)", ()
       document.querySelector("#profile-panel-payments")?.textContent,
     ).toBeTruthy();
   });
+  it("keeps edit guidance scoped to Sessions and contextual help out of the summary row", async () => {
+    await open();
+    expect(document.querySelector(".profile-footer")?.textContent).toContain(
+      "Select Edit",
+    );
+    expect(document.querySelectorAll("[role=progressbar]")).toHaveLength(1);
+    expect(document.querySelector(".completion-ring")).toBeNull();
+    expect(
+      document.querySelector("#course-scope-help")?.getAttribute("role"),
+    ).toBe("tooltip");
+    expect(document.querySelector(".course-picker > small")).toBeNull();
+    c.setTab("activity");
+    await render();
+    expect(document.querySelector(".profile-footer")).toBeNull();
+  });
+  it("groups audit events by Cairo event date, newest first, without changing source records", async () => {
+    const event = {
+      id: 7,
+      appointmentId: 102,
+      changedAt: "2026-10-30T22:30:00Z",
+      actorName: "Reception staff",
+      previousStart: "2030-11-04T15:00:00Z",
+      previousEnd: "2030-11-04T16:00:00Z",
+      previousRoomName: "Room 01",
+      newStart: "2030-11-05T15:00:00Z",
+      newEnd: "2030-11-05T16:00:00Z",
+      newRoomName: "Room 01",
+      reason: "Patient request",
+    };
+    const activity = [
+      { ...event, id: 8, changedAt: "2026-10-29T22:30:00Z" },
+      event,
+      { ...event, id: 9, changedAt: "2026-10-30T23:00:00Z" },
+    ];
+    const before = JSON.stringify(activity);
+    await open({ ...profile, courses: [{ ...profile.courses[0], activity }] });
+    c.setTab("activity");
+    await render();
+    expect(c.activityGroups.map((g) => g.day)).toEqual([
+      "2026-10-31",
+      "2026-10-30",
+    ]);
+    expect(c.activityGroups[0].events.map((e) => e.id)).toEqual([9, 7]);
+    expect(JSON.stringify(activity)).toBe(before);
+    expect(
+      document.querySelector(".activity-event-heading h5")?.textContent,
+    ).toContain("Session 2 rescheduled");
+    const stamp = document.querySelector(".activity-recorded time");
+    expect(stamp?.getAttribute("datetime")).toBe("2026-10-30T23:00:00Z");
+    expect(stamp?.textContent).toContain(c.formatDate(event.changedAt));
+    expect(document.querySelector(".activity-reason")?.textContent).toContain(
+      "Patient request",
+    );
+    expect(document.querySelector(".activity-schedule")?.textContent).toContain(
+      c.weekday(event.previousStart),
+    );
+  });
+  it("highlights only changed schedule values and does not invent session or clinician changes", async () => {
+    const event = {
+      id: 7,
+      appointmentId: 999,
+      changedAt: "2026-10-31T12:00:00Z",
+      actorName: "",
+      previousStart: "2030-11-04T15:00:00Z",
+      previousEnd: "2030-11-04T16:00:00Z",
+      previousRoomName: "Room 01",
+      newStart: "2030-11-05T15:00:00Z",
+      newEnd: "2030-11-05T16:00:00Z",
+      newRoomName: "Room 02",
+      reason: null,
+    };
+    await open({
+      ...profile,
+      courses: [{ ...profile.courses[0], activity: [event] }],
+    });
+    c.setTab("activity");
+    await render();
+    expect(
+      document.querySelector(".activity-event-heading h5")?.textContent,
+    ).toContain("Appointment rescheduled");
+    expect(document.querySelectorAll(".new-schedule .changed")).toHaveLength(2);
+    expect(
+      document.querySelector(".new-schedule .schedule-date.changed"),
+    ).toBeTruthy();
+    expect(
+      document.querySelector(".new-schedule .schedule-time.changed"),
+    ).toBeNull();
+    expect(
+      document.querySelector(".new-schedule .schedule-room.changed"),
+    ).toBeTruthy();
+    expect(document.querySelector(".previous-schedule .changed")).toBeNull();
+    expect(document.querySelector(".activity-actor")).toBeNull();
+    expect(document.querySelector(".activity-reason")).toBeNull();
+    expect(
+      document.querySelector(".activity-event-content")?.textContent,
+    ).not.toContain("Local Doctor");
+    expect(
+      c.activityTimeChanged({
+        ...event,
+        newStart: "2030-11-04T16:00:00Z",
+        newEnd: "2030-11-04T17:00:00Z",
+      }),
+    ).toBe(true);
+  });
+  it("keeps clinical history separate, structured and faithful to recorded completion data", async () => {
+    await open({
+      ...profile,
+      assessments: [
+        {
+          id: 1,
+          date: "2030-11-01T10:00:00Z",
+          diagnosis: "Recorded clinical note",
+          seniorName: "Senior clinician",
+          completedAt: "2030-11-02T12:00:00Z",
+        },
+        {
+          id: 2,
+          date: "2030-11-03T10:00:00Z",
+          diagnosis: "",
+          seniorName: "",
+          completedAt: null,
+        },
+      ],
+    });
+    c.setTab("activity");
+    await render();
+    const history = document.querySelector(".assessment-history")!;
+    expect(history.hasAttribute("open")).toBe(false);
+    expect(history.querySelector("summary")?.textContent).toContain(
+      "Clinical assessment history",
+    );
+    expect(history.querySelector("dl")?.textContent).toContain(
+      "Senior clinician",
+    );
+    expect(history.querySelector(".assessment-notes")?.textContent).toContain(
+      "Recorded clinical note",
+    );
+    expect(history.querySelector("time")?.getAttribute("datetime")).toBe(
+      "2030-11-02T12:00:00Z",
+    );
+    expect(
+      history.querySelectorAll("article")[1].querySelectorAll("dl > div"),
+    ).toHaveLength(1);
+    expect(history.textContent).not.toContain("Unknown");
+    expect(history.textContent).not.toContain("Assessment not yet completed");
+  });
+  it("shows an activity empty state only after a successful load", async () => {
+    await open();
+    c.setTab("activity");
+    await render();
+    expect(document.querySelector(".activity-empty")).toBeTruthy();
+    c.loading.set(true);
+    await render();
+    expect(document.querySelector(".activity-empty")).toBeNull();
+    expect(document.querySelector(".profile-state[role=status]")).toBeTruthy();
+    c.loading.set(false);
+    c.profileError.set("Failed request");
+    await render();
+    expect(document.querySelector(".activity-empty")).toBeNull();
+    expect(
+      document.querySelector(".profile-alert[role=alert]")?.textContent,
+    ).toContain("Failed request");
+  });
   it("loads patient documents on demand without exposing raw file paths", async () => {
     await open();
     http.expectNone((r) => r.url.endsWith("/InsuranceDocuments"));

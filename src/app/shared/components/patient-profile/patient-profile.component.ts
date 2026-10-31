@@ -31,6 +31,7 @@ import {
 import { Patient } from "../../../core/models/patient.model";
 import {
   ProfileCourse,
+  ProfileActivity,
   ProfileData,
   ProfileSession,
   RescheduleAvailability,
@@ -154,6 +155,33 @@ export class PatientProfileComponent implements OnChanges, OnDestroy {
   }
   get pageCount() {
     return Math.max(1, Math.ceil(this.sessions.length / this.pageSize));
+  }
+  get activityGroups() {
+    const groups = new Map<string, ProfileActivity[]>();
+    const events = [...(this.course?.activity ?? [])].sort(
+      (a, b) => Date.parse(b.changedAt) - Date.parse(a.changedAt),
+    );
+    for (const event of events) {
+      const day = this.cairoDay(event.changedAt);
+      const group = groups.get(day) ?? [];
+      group.push(event);
+      groups.set(day, group);
+    }
+    return [...groups].map(([day, events]) => ({ day, events }));
+  }
+  activitySessionNumber(event: ProfileActivity) {
+    return this.sessions.find((s) => s.appointmentId === event.appointmentId)
+      ?.sessionNumber;
+  }
+  activityDateChanged(event: ProfileActivity) {
+    return this.cairoDay(event.previousStart) !== this.cairoDay(event.newStart);
+  }
+  activityTimeChanged(event: ProfileActivity) {
+    return (
+      this.formatTime(event.previousStart) !==
+        this.formatTime(event.newStart) ||
+      this.formatTime(event.previousEnd) !== this.formatTime(event.newEnd)
+    );
   }
   get isInsurancePatient() {
     return this.currentPatient?.paymentType === "Insurance";

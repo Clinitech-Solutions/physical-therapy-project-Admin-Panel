@@ -66,7 +66,6 @@
         </div>
         <div class="profile-header-actions">
           <div class="primary-clinician">
-            <i class="bi bi-person" aria-hidden="true"></i>
             <div>
               <small>{{ t("PRIMARY_DOCTOR", "Primary clinician") }}</small
               ><strong dir="auto">{{ primaryDoctorName }}</strong>
@@ -125,13 +124,24 @@
                 #{{ item.id }} &middot; {{ item.treatmentType }} &middot;
                 {{ item.status | receptionistText }}
               </option>
-            }</select
-          ><small>{{
-            t(
-              "COURSE_SCOPE",
-              "Counts and balances are for the selected course."
-            )
-          }}</small>
+            }
+          </select>
+          <span class="context-help">
+            <button
+              type="button"
+              class="profile-icon"
+              aria-describedby="course-scope-help"
+              [attr.aria-label]="t('COURSE_HELP', 'About course summaries')"
+            >
+              <i class="bi bi-info-circle" aria-hidden="true"></i>
+            </button>
+            <span role="tooltip" id="course-scope-help">{{
+              t(
+                "COURSE_SCOPE",
+                "Counts and balances are for the selected course."
+              )
+            }}</span>
+          </span>
         </div>
       }
       @if (patientError()) {
@@ -164,26 +174,28 @@
           </div>
         </article>
         <article class="completion">
-          <div
-            class="completion-ring"
-            [style.--progress]="progressPercentage + '%'"
-            aria-hidden="true"
-          ></div>
+          <i class="bi bi-check2-circle" aria-hidden="true"></i>
           <div>
             <small>{{ t("COMPLETED", "Completed") }}</small
             ><strong
-              >{{
+              ><bdi dir="ltr">{{
                 course && !profileError()
                   ? completedSessionsCount + " / " + totalSessions
                   : "—"
-              }}
+              }}</bdi>
               <span>{{ t("SESSION_UNIT", "sessions") }}</span></strong
             >
+            <div
+              class="progress-line"
+              role="progressbar"
+              [attr.aria-label]="t('COMPLETED', 'Completed')"
+              [attr.aria-valuenow]="completedSessionsCount"
+              [attr.aria-valuemin]="0"
+              [attr.aria-valuemax]="totalSessions || 1"
+            >
+              <span [style.width.%]="progressPercentage"></span>
+            </div>
           </div>
-          <div class="progress-line">
-            <span [style.width.%]="progressPercentage"></span>
-          </div>
-          <small>{{ progressPercentage | number: "1.0-0" }}%</small>
         </article>
         <article>
           <i class="bi bi-wallet2" aria-hidden="true"></i>
@@ -353,18 +365,32 @@
       >
         <div class="session-card">
           <div class="section-heading">
-            <h3>{{ t("TREATMENT_SESSIONS", "Treatment sessions") }}</h3>
+            <div class="section-title">
+              <h3>{{ t("TREATMENT_SESSIONS", "Treatment sessions") }}</h3>
+              <span class="context-help">
+                <button
+                  type="button"
+                  class="profile-icon"
+                  aria-describedby="coverage-help"
+                  [attr.aria-label]="
+                    t('COVERAGE_INFO', 'About patient coverage')
+                  "
+                >
+                  <i class="bi bi-info-circle" aria-hidden="true"></i>
+                </button>
+                <span role="tooltip" id="coverage-help">{{
+                  t(
+                    "COVERAGE_HELP",
+                    "Coverage is evaluated for this session as the next start. Check-in rechecks cumulative patient payments; insurer settlement is separate."
+                  )
+                }}</span>
+              </span>
+            </div>
             <p>
               {{ t("SAVED_SESSIONS", "Saved sessions") }}:
               {{ sessions.length }} &middot; {{ t("COMPLETED", "Completed") }}:
               {{ completedSessionsCount }}
             </p>
-            <small>{{
-              t(
-                "COVERAGE_HELP",
-                "Coverage is evaluated for this session as the next start. Check-in rechecks cumulative patient payments; insurer settlement is separate."
-              )
-            }}</small>
           </div>
           @if (saved()) {
             <p class="profile-success" role="status">
@@ -485,6 +511,8 @@
                             ></i
                             ><strong
                               >{{ t('EDIT_SESSION','Reschedule session {{number
+
+
                               }}',{number:row.sessionNumber}) }}</strong
                             ><span class="profile-badge teal">{{
                               t("ONLY", "This session only")
@@ -568,9 +596,7 @@
                                         (change)="pickSlot(slot)"
                                       /><span
                                         ><strong
-                                          >{{
-                                            formatTime(slot.startTime)
-                                          }}
+                                          >{{ formatTime(slot.startTime) }}
                                           &middot;
                                           {{ formatTime(slot.endTime) }}</strong
                                         ><small
@@ -813,67 +839,199 @@
         aria-labelledby="profile-tab-activity"
         [hidden]="activeTab !== 'activity'"
       >
-        <h3>{{ t("ACTIVITY", "Activity Log") }}</h3>
-        <p>
-          {{
-            t(
-              "AUDIT_HELP",
-              "Recorded single-session schedule changes for the selected course."
-            )
-          }}
-        </p>
-        <ol class="profile-activity">
-          @for (activity of course?.activity || []; track activity.id) {
-            <li>
-              <div>
-                <strong>{{ activity.actorName }}</strong> &middot;
-                {{ formatDate(activity.changedAt) }}
-                {{ formatTime(activity.changedAt) }}
-              </div>
-              <p>
-                {{ formatDate(activity.previousStart) }}
-                {{ formatTime(activity.previousStart) }} &middot;
-                {{ activity.previousRoomName }} &middot;
-                {{ formatDate(activity.newStart) }}
-                {{ formatTime(activity.newStart) }} &middot;
-                {{ activity.newRoomName }}
-              </p>
-              @if (activity.reason) {
-                <small dir="auto">{{ activity.reason }}</small>
-              }
-            </li>
+        <div class="activity-heading">
+          <h3>{{ t("ACTIVITY", "Activity Log") }}</h3>
+          <p>
+            {{
+              t(
+                "AUDIT_HELP",
+                "Recorded single-session schedule changes for the selected course."
+              )
+            }}
+          </p>
+        </div>
+        @if (!loading() && !profileError()) {
+          @for (group of activityGroups; track group.day) {
+            <section
+              class="activity-day"
+              [attr.aria-label]="formatDate(group.events[0].changedAt)"
+            >
+              <h4>
+                <time [attr.datetime]="group.day">{{
+                  formatDate(group.events[0].changedAt)
+                }}</time>
+              </h4>
+              <ol class="profile-activity">
+                @for (activity of group.events; track activity.id) {
+                  <li class="activity-event">
+                    <span class="activity-event-icon" aria-hidden="true"
+                      ><i class="bi bi-calendar2-check"></i
+                    ></span>
+                    <article class="activity-event-content">
+                      <header class="activity-event-heading">
+                        <h5>
+                          @if (activitySessionNumber(activity); as number) {
+                            {{ t("SESSION_RESCHEDULED", "Session {{number}}
+                            rescheduled", {number}) }}
+                          } @else {
+                            {{
+                              t(
+                                "APPOINTMENT_RESCHEDULED",
+                                "Appointment rescheduled"
+                              )
+                            }}
+                          }
+                        </h5>
+                        <div class="activity-event-meta">
+                          @if (activity.actorName.trim()) {
+                            <span class="activity-actor" dir="auto"
+                              ><i class="bi bi-person" aria-hidden="true"></i>
+                              {{ activity.actorName }}</span
+                            >
+                          }
+                          <span class="activity-recorded">
+                            {{ t("RECORDED_AT", "Recorded") }}
+                            <time [attr.datetime]="activity.changedAt"
+                              >{{ formatDate(activity.changedAt) }} &middot;
+                              {{ formatTime(activity.changedAt) }}</time
+                            >
+                          </span>
+                        </div>
+                      </header>
+                      <div class="activity-schedule-change">
+                        <div class="activity-schedule previous-schedule">
+                          <h6>{{ t("PREVIOUS_SCHEDULE", "Previous") }}</h6>
+                          <span class="schedule-date"
+                            ><i class="bi bi-calendar3" aria-hidden="true"></i>
+                            {{ weekday(activity.previousStart) }},
+                            {{ formatDate(activity.previousStart) }}</span
+                          >
+                          <span class="schedule-time"
+                            ><i class="bi bi-clock" aria-hidden="true"></i>
+                            {{ formatTime(activity.previousStart) }} &ndash;
+                            {{ formatTime(activity.previousEnd) }}</span
+                          >
+                          @if (activity.previousRoomName.trim()) {
+                            <span class="schedule-room" dir="auto"
+                              ><i
+                                class="bi bi-door-open"
+                                aria-hidden="true"
+                              ></i>
+                              {{ activity.previousRoomName }}</span
+                            >
+                          }
+                        </div>
+                        <i
+                          class="bi bi-arrow-right activity-direction"
+                          aria-hidden="true"
+                        ></i>
+                        <div class="activity-schedule new-schedule">
+                          <h6>{{ t("NEW_SCHEDULE", "New") }}</h6>
+                          <span
+                            class="schedule-date"
+                            [class.changed]="activityDateChanged(activity)"
+                            ><i class="bi bi-calendar3" aria-hidden="true"></i>
+                            {{ weekday(activity.newStart) }},
+                            {{ formatDate(activity.newStart) }}</span
+                          >
+                          <span
+                            class="schedule-time"
+                            [class.changed]="activityTimeChanged(activity)"
+                            ><i class="bi bi-clock" aria-hidden="true"></i>
+                            {{ formatTime(activity.newStart) }} &ndash;
+                            {{ formatTime(activity.newEnd) }}</span
+                          >
+                          @if (activity.newRoomName.trim()) {
+                            <span
+                              class="schedule-room"
+                              dir="auto"
+                              [class.changed]="
+                                activity.previousRoomName !==
+                                activity.newRoomName
+                              "
+                              ><i
+                                class="bi bi-door-open"
+                                aria-hidden="true"
+                              ></i>
+                              {{ activity.newRoomName }}</span
+                            >
+                          }
+                        </div>
+                      </div>
+                      @if (activity.reason?.trim()) {
+                        <p class="activity-reason">
+                          <strong>{{ t("RECORDED_REASON", "Reason") }}</strong>
+                          <span dir="auto">{{ activity.reason }}</span>
+                        </p>
+                      }
+                    </article>
+                  </li>
+                }
+              </ol>
+            </section>
           } @empty {
-            @if (!loading() && !profileError()) {
-              <li>
-                {{
-                  t(
-                    "NO_ACTIVITY",
-                    "No recorded schedule changes for this course."
-                  )
-                }}
-              </li>
+            <p class="profile-state activity-empty">
+              <i class="bi bi-clock-history" aria-hidden="true"></i>
+              {{
+                t(
+                  "NO_ACTIVITY",
+                  "No recorded schedule changes for this course."
+                )
+              }}
+            </p>
+          }
+          <details class="assessment-history">
+            <summary>
+              <i class="bi bi-clipboard2-pulse" aria-hidden="true"></i>
+              {{ t("ASSESSMENTS", "Clinical assessment history") }}
+              <i class="bi bi-chevron-down" aria-hidden="true"></i>
+            </summary>
+            @for (
+              assessment of data()?.assessments || [];
+              track assessment.id
+            ) {
+              <article class="assessment-entry">
+                <dl>
+                  @if (assessment.seniorName.trim()) {
+                    <div>
+                      <dt>{{ t("ASSESSMENT_CLINICIAN", "Clinician") }}</dt>
+                      <dd dir="auto">{{ assessment.seniorName }}</dd>
+                    </div>
+                  }
+                  @if (assessment.completedAt) {
+                    <div>
+                      <dt>
+                        {{ t("ASSESSMENT_COMPLETED_ON", "Completed on") }}
+                      </dt>
+                      <dd>
+                        <time [attr.datetime]="assessment.completedAt"
+                          >{{ formatDate(assessment.completedAt) }}
+                          {{ formatTime(assessment.completedAt) }}</time
+                        >
+                      </dd>
+                    </div>
+                  }
+                  @if (assessment.date) {
+                    <div>
+                      <dt>{{ t("ASSESSMENT_DATE", "Assessment date") }}</dt>
+                      <dd>{{ formatDate(assessment.date) }}</dd>
+                    </div>
+                  }
+                  @if (assessment.diagnosis.trim()) {
+                    <div class="assessment-notes">
+                      <dt>{{ t("ASSESSMENT_NOTES", "Clinical notes") }}</dt>
+                      <dd dir="auto">{{ assessment.diagnosis }}</dd>
+                    </div>
+                  }
+                </dl>
+              </article>
+            } @empty {
+              <p class="profile-state">
+                {{ t("NO_ASSESSMENTS", "No clinical assessments recorded.") }}
+              </p>
             }
-          }
-        </ol>
-        <details>
-          <summary>
-            {{ t("ASSESSMENTS", "Clinical assessment history") }}
-          </summary>
-          @for (assessment of data()?.assessments || []; track assessment.id) {
-            <article class="assessment-entry">
-              <strong
-                >{{ formatDate(assessment.date) }} &middot;
-                {{ assessment.seniorName }}</strong
-              >
-              <p dir="auto">{{ assessment.diagnosis }}</p>
-              <small>{{
-                assessment.completedAt
-                  ? t("ASSESSMENT_COMPLETE", "Assessment completed")
-                  : t("ASSESSMENT_PENDING", "Assessment not yet completed")
-              }}</small>
-            </article>
-          }
-        </details>
+          </details>
+        }
       </section>
       <section
         role="tabpanel"
@@ -966,16 +1124,16 @@
         }
       </section>
     </div>
-    <footer class="profile-footer">
-      <small
-        ><i class="bi bi-info-circle" aria-hidden="true"></i
-        >{{
-          t("EDIT_HELP", "Select Edit to change one upcoming session.")
-        }}</small
-      >
-      @if (activeTab === "sessions") {
+    @if (activeTab === "sessions") {
+      <footer class="profile-footer">
+        <small
+          ><i class="bi bi-info-circle" aria-hidden="true"></i
+          >{{
+            t("EDIT_HELP", "Select Edit to change one upcoming session.")
+          }}</small
+        >
         <div class="profile-pagination">
-          <span
+          <span dir="ltr"
             >{{ sessions.length ? page * pageSize + 1 : 0 }}&ndash;{{
               page * pageSize + pageRows.length
             }}
@@ -999,7 +1157,7 @@
             &rsaquo;
           </button>
         </div>
-      }
-    </footer>
+      </footer>
+    }
   </div>
 </p-dialog>
