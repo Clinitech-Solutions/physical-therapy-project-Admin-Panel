@@ -132,6 +132,10 @@ export class BillingComponent implements OnInit {
   readonly paymentHistoryLoading = signal(false);
   readonly invoiceDetailLoading = signal(false);
   amountToCollect: number = 0;
+  // PrimeNG's currency parser splits affixes on the Latin digit "1" and treats
+  // the dots in the Arabic EGP symbol as currency characters. Use Latin input
+  // digits and the ISO currency code so blur preserves the exact decimal value.
+  get collectionInputLocale() { return `${this.locale.language}-u-nu-latn`; }
   get paymentMethods() { return this.billingService.paymentMethods.filter(method => method !== 'Insurance'); }
   invoicePayments = signal<Payment[]>([]);
   isSubmittingPayment = signal<boolean>(false);

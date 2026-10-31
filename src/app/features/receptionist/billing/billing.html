@@ -154,10 +154,10 @@
   @if (paymentHistoryError()) { <p class="alert alert-warning" role="alert">{{ locale.label(paymentHistoryError()) }} <button class="btn btn-outline-secondary btn-sm" (click)="loadPaymentHistory()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button></p> }
   <div class="modal-form-vertical py-2">
     <div class="form-group mb-3">
-      <label class="form-label mb-2">
+      <label for="billing-collection-amount" class="form-label mb-2">
         {{ 'AMOUNT_TO_COLLECT' | translate }} <span class="required-asterisk text-danger">*</span>
       </label>
-      <p-inputNumber [disabled]="collectionDetailsLocked" [(ngModel)]="amountToCollect" mode="currency" currency="EGP" [locale]="locale.language" styleClass="w-100" class="w-full d-block"></p-inputNumber>
+      <p-inputNumber inputId="billing-collection-amount" dir="ltr" [disabled]="collectionDetailsLocked" [(ngModel)]="amountToCollect" mode="currency" currency="EGP" currencyDisplay="code" [locale]="collectionInputLocale" styleClass="w-100" class="w-full d-block"></p-inputNumber>
     </div>
     <div class="form-group mb-3">
       <label class="form-label mb-2">
