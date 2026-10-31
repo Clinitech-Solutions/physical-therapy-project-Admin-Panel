@@ -1,3 +1,4 @@
+import { apiError, localDay, ReceptionError } from '../../../core/services/reception-api';
 import { ReceptionistLocale, ReceptionistTextPipe } from '../../../shared/receptionist-locale';
 import { Component, OnInit, computed, inject, signal, Input, forwardRef } from "@angular/core";
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
@@ -5,7 +6,6 @@ import { CommonModule } from "@angular/common";
 import { TranslateModule } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 import { BillingService, Invoice, Payment } from '../../../core/services/billing.service';
-import { AppointmentService } from '../../../core/services/appointment.service';
 import { MessageService } from 'primeng/api';
 import { PatientService } from '../../../core/services/patient.service';
 import { TableModule } from 'primeng/table';
@@ -14,8 +14,11 @@ import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { SelectModule } from 'primeng/select';
 import { InputNumberModule } from 'primeng/inputnumber';
-import { ProgressBar } from 'primeng/progressbar';
+import { BookingService } from '../../../core/services/booking.service';
+import { BookingAccount, BookingPaymentMethod } from '../../../core/models/booking.model';
 import { TabsModule } from 'primeng/tabs';
+import { InsurerAccountsComponent } from './insurer-accounts';
+import { CourseFinanceService } from '../../../core/services/course-finance.service';
 
 @Component({
   selector: "p-dropdown",
@@ -23,7 +26,7 @@ import { TabsModule } from 'primeng/tabs';
   imports: [ReceptionistTextPipe, CommonModule, FormsModule, SelectModule],
   template: `
     <p-select 
-      [options]="options" 
+      [options]="options" [disabled]="disabled"
       [(ngModel)]="value" 
       (ngModelChange)="onValueChange($event)"
       [placeholder]="placeholder"
@@ -45,6 +48,7 @@ export class DropdownComponent implements ControlValueAccessor {
   @Input() options: any[] = [];
   @Input() placeholder: string = '';
   @Input() appendTo: any = 'body';
+  @Input() disabled = false;
   @Input() styleClass: string = 'w-100 p-select-sm';
 
   value: any = null;
@@ -80,40 +84,70 @@ export class DropdownComponent implements ControlValueAccessor {
     DialogModule,
     SelectModule,
     InputNumberModule,
-    ProgressBar,
     TabsModule,
-    DropdownComponent
+    DropdownComponent, InsurerAccountsComponent
   ],
   templateUrl: "./billing.html",
   styleUrl: "./billing.css"
 })
 export class BillingComponent implements OnInit {
+  activeTab: string | number | undefined = '0';
   readonly locale = new ReceptionistLocale();
   billingService = inject(BillingService, { optional: true }) ?? new BillingService();
   patientService = inject(PatientService, { optional: true });
-  appointmentService = inject(AppointmentService, { optional: true });
   messageService = inject(MessageService);
+  readonly bookingApi = inject(BookingService);
+  readonly finance = inject(CourseFinanceService);
+  readonly accounts = signal<BookingAccount[]>([]);
+  readonly accountsError = signal('');
+  readonly accountsLoading = signal(false);
+  readonly patientLookupError = signal('');
+  selectedAccountKey: string | null = null;
+  refreshAccounts() {
+    this.accountsError.set(''); this.accountsLoading.set(true);
+    this.bookingApi.accounts().subscribe({ next: accounts => {this.accounts.set(accounts);this.accountsLoading.set(false);}, error: error => {this.accountsError.set(apiError(error));this.accountsLoading.set(false);} });
+  }
+  openAccountPayment(account: BookingAccount) {
+    if (this.isSubmittingPayment()) return;
+    this.selectedAccountKey = account.key; this.selectedInvoiceId = null;
+    this.amountToCollect = account.remainingAmount; this.selectedPaymentMethod = ''; this.invoicePayments.set([]);
+    const original=this.bookingApi.pendingCollection();
+    if(original?.accountKey===account.key && original.amount!==undefined){this.amountToCollect=original.amount;this.selectedPaymentMethod=original.method ?? '';}
+    this.paymentError.set(''); this.showPaymentModal = true;
+  }
+  async reconcileCollection() {
+    if (this.isSubmittingPayment()) return;
+    this.isSubmittingPayment.set(true);
+    try { await firstValueFrom(this.bookingApi.reconcileCollection()); this.paymentError.set(''); this.showPaymentModal=false;this.selectedAccountKey=null;this.refreshAccounts(); this.billingService.getInvoices(); }
+    catch { this.paymentError.set(this.locale.text('COLLECTION_NOT_CONFIRMED', 'No committed collection has been confirmed. Retry only the original collection with the same key.')); }
+    finally { this.isSubmittingPayment.set(false); }
+  }
 
   // Modal State
   showPaymentModal = false;
   selectedInvoiceId: number | string | null = null;
-  selectedPaymentMethod = 'Cash';
+  selectedPaymentMethod = '';
+  readonly paymentError = signal('');
+  readonly paymentHistoryError = signal('');
+  readonly paymentHistoryLoading = signal(false);
+  readonly invoiceDetailLoading = signal(false);
   amountToCollect: number = 0;
-  paymentMethods = ['Cash', 'Credit Card', 'E-Wallet', 'InstaPay'];
+  // PrimeNG's currency parser splits affixes on the Latin digit "1" and treats
+  // the dots in the Arabic EGP symbol as currency characters. Use Latin input
+  // digits and the ISO currency code so blur preserves the exact decimal value.
+  get collectionInputLocale() { return `${this.locale.language}-u-nu-latn`; }
+  get paymentMethods() { return this.billingService.paymentMethods.filter(method => method !== 'Insurance'); }
   invoicePayments = signal<Payment[]>([]);
   isSubmittingPayment = signal<boolean>(false);
 
-  // Installment Modal State
-  showInstallmentModal = false;
-  installmentPatientId: string | null = null;
-  installmentAmount: number = 0;
-  installmentPaymentMethod = 'Cash';
-  selectedPatientRemainingDebt: number = 0;
-
   ngOnInit(): void {
+    this.refreshAccounts();
     this.billingService.getInvoices();
-    this.patientService?.getPatients().subscribe();
-    this.appointmentService?.getAppointments();
+    this.refreshPatientLookup();
+  }
+  refreshPatientLookup() {
+    this.patientLookupError.set('');
+    this.patientService?.getPatients().subscribe({error:e=>this.patientLookupError.set(apiError(e))});
   }
 
   isProcessingPayment = computed(
@@ -125,26 +159,8 @@ export class BillingComponent implements OnInit {
   patients = computed(() => this.patientService?.patients() ?? []);
 
   // Tab Computed Signals (strictly using totalAmount, patientAmount, insuranceAmount and enum mapping helpers)
-  dailyCashierInvoices = computed(() =>
-    this.invoices().filter((inv) => {
-      const isToday =
-        !inv.createdAt ||
-        new Date(inv.createdAt).toDateString() === new Date().toDateString();
-      const hasPatientAmount = (inv.patientAmount || 0) > 0;
-      const statusStr = this.billingService.mapStatusToString(inv.status);
-      const typeStr = this.billingService.mapTypeToString(inv.type);
-      const isPaidOrPartialOrPending =
-        statusStr === 'Paid' || statusStr === 'Partial' || statusStr === 'Pending';
-      return isToday && hasPatientAmount && isPaidOrPartialOrPending && typeStr !== 'Installment';
-    })
-  );
-
-  pendingInstallments = computed(() =>
-    this.patients().filter((p) => {
-      const plan = p.financialPlan ?? p.treatmentPlan?.financialPlan;
-      return plan && (plan.remainingDebt ?? 0) > 0;
-    })
-  );
+  dailyCashierInvoices = computed(() => this.invoices());
+  pendingInstallments = computed(() => this.accounts().filter(account => account.remainingAmount > 0 && account.installments.length > 0));
 
   insuranceClaims = computed(() =>
     this.invoices().filter((inv) => (inv.insuranceAmount || 0) > 0)
@@ -159,183 +175,36 @@ export class BillingComponent implements OnInit {
   collectionRateToday = this.billingService.collectionRateToday;
 
   // Real-time computed summary signals for KPI metrics (strictly using totalAmount / patientAmount)
-  totalRevenue = computed(() =>
-    this.invoices()
-      .filter((inv) => this.billingService.mapStatusToString(inv.status) === 'Paid')
-      .reduce((sum, inv) => sum + (inv.totalAmount || 0), 0)
-  );
-
-  cashPayments = computed(() =>
-    this.invoices()
-      .filter((inv) => {
-        const isPaid = this.billingService.mapStatusToString(inv.status) === 'Paid';
-        const methodStr = this.billingService.mapMethodToString(inv.paymentMethod);
-        const typeStr = this.billingService.mapTypeToString(inv.type);
-        return isPaid && (methodStr === 'Cash' || (!inv.paymentMethod && typeStr === 'Session'));
-      })
-      .reduce((sum, inv) => sum + (inv.totalAmount || 0), 0)
-  );
-
-  onlinePayments = computed(() =>
-    this.invoices()
-      .filter((inv) => {
-        const isPaid = this.billingService.mapStatusToString(inv.status) === 'Paid';
-        const methodStr = inv.paymentMethod
-          ? this.billingService.mapMethodToString(inv.paymentMethod)
-          : '';
-        return isPaid && Boolean(methodStr) && methodStr !== 'Cash';
-      })
-      .reduce((sum, inv) => sum + (inv.totalAmount || 0), 0)
-  );
-
-  pendingPaymentsTotal = computed(() =>
-    this.invoices()
-      .filter((inv) => this.billingService.mapStatusToString(inv.status) === 'Pending')
-      .reduce((sum, inv) => sum + (inv.totalAmount || 0), 0)
-  );
+  totalRevenue = computed(() => this.invoices().reduce((sum, invoice) => sum + (invoice.paidAmount ?? 0), 0));
+  cashPayments = computed<number|null>(() => null);
+  onlinePayments = computed<number|null>(() => null);
+  pendingPaymentsTotal = computed(() => this.invoices().reduce((sum,invoice) => sum + (invoice.remainingAmount ?? 0),0));
 
   /**
    * Opens the payment modal for the chosen invoice.
    * Pre-fills amountToCollect with remainingBalance or patientAmount.
    */
   openPaymentModal(invoiceId: number | string) {
+    if(this.isSubmittingPayment()) return;
     this.selectedInvoiceId = invoiceId;
-    this.selectedPaymentMethod = 'Cash';
-    this.invoicePayments.set([]);
-
-    const invoice = this.billingService.findInvoiceById(invoiceId);
-    this.amountToCollect =
-      invoice?.remainingBalance ?? invoice?.patientAmount ?? invoice?.totalAmount ?? 0;
-
-    if (!isNaN(Number(invoiceId))) {
-      this.billingService.getPaymentsForInvoice(Number(invoiceId)).subscribe({
-        next: (payments) => this.invoicePayments.set(payments),
-        error: () => this.invoicePayments.set([])
-      });
-    }
-
+    this.selectedAccountKey = null;
+    this.selectedPaymentMethod = '';
+    this.paymentError.set(''); this.invoicePayments.set([]);
+    this.amountToCollect = this.billingService.findInvoiceById(invoiceId)?.remainingAmount ?? 0;
+    const original=this.billingService.paymentIntent(Number(invoiceId));
+    if(original){this.amountToCollect=original.amount;this.selectedPaymentMethod=this.billingService.mapMethodToString(original.method);}
     this.showPaymentModal = true;
+    this.loadPaymentHistory();
   }
-
-  openInstallmentModal(patientId: string | number) {
-    this.installmentPatientId = patientId.toString();
-    this.installmentPaymentMethod = 'Cash';
-
-    const patient = this.patients().find((p) => p.id === patientId.toString());
-    const plan = patient?.financialPlan ?? patient?.treatmentPlan?.financialPlan;
-    this.selectedPatientRemainingDebt = plan?.remainingDebt ?? 0;
-    this.installmentAmount = this.selectedPatientRemainingDebt;
-
-    this.showInstallmentModal = true;
+  loadPaymentHistory() {
+    if(this.selectedInvoiceId===null)return;
+    const id=Number(this.selectedInvoiceId);
+    this.paymentHistoryLoading.set(true);this.paymentHistoryError.set('');
+    this.billingService.getPaymentsForInvoice(id).subscribe({
+      next:payments=>{if(Number(this.selectedInvoiceId)!==id)return;this.invoicePayments.set(payments);this.paymentHistoryLoading.set(false);},
+      error:error=>{if(Number(this.selectedInvoiceId)!==id)return;this.paymentHistoryError.set(apiError(error));this.paymentHistoryLoading.set(false);}
+    });
   }
-
-  async confirmInstallmentCollection() {
-    if (!this.installmentPatientId) return;
-
-    if (!this.installmentAmount || this.installmentAmount <= 0) {
-      this.messageService.add({
-        severity: 'warn',
-        summary: this.locale.text('INVALID_AMOUNT', "Invalid Amount"),
-        detail: this.locale.text('PLEASE_ENTER_A_VALID_AMOUNT_', "Please enter a valid amount.")
-      });
-      return;
-    }
-
-    this.isSubmittingPayment.set(true);
-    try {
-      const numericPatientId = Number(this.installmentPatientId);
-      const methodNum = this.billingService.mapPaymentMethodToNumber(
-        this.installmentPaymentMethod
-      );
-
-      const existingPendingInvoice = this.billingService
-        .invoices()
-        .find((inv) => {
-          const st = this.billingService.mapStatusToString(inv.status);
-          return (
-            Number(inv.patientId) === numericPatientId &&
-            (st === 'Pending' || st === 'Partial')
-          );
-        });
-
-      if (existingPendingInvoice?.id) {
-        await firstValueFrom(
-          this.billingService.recordPayment({
-            invoiceId: Number(existingPendingInvoice.id),
-            amount: this.installmentAmount,
-            method: methodNum
-          })
-        );
-      } else {
-        const patientAppts = (this.appointmentService?.appointments() ?? []).filter(
-          (a) => Number(a.patientId) === numericPatientId
-        );
-        const latestApptId =
-          patientAppts.length > 0 ? Number(patientAppts[0].id || 0) : 0;
-
-        const createdInv = await firstValueFrom(
-          this.billingService.createInvoice({
-            appointmentId: latestApptId,
-            patientId: numericPatientId,
-            type: this.billingService.mapTypeToNumber('Installment'),
-            totalAmount: this.installmentAmount,
-            insuranceAmount: 0,
-            patientAmount: this.installmentAmount
-          })
-        );
-
-        if (createdInv?.id) {
-          await firstValueFrom(
-            this.billingService.recordPayment({
-              invoiceId: Number(createdInv.id),
-              amount: this.installmentAmount,
-              method: methodNum
-            })
-          );
-        }
-      }
-
-      // Update patient's financial plan in PatientService signal
-      if (this.patientService) {
-        this.patientService.patients.update((list) =>
-          list.map((p) => {
-            if (p.id !== this.installmentPatientId) return p;
-            const plan = p.financialPlan ?? p.treatmentPlan?.financialPlan;
-            if (!plan) return p;
-            const updatedPlan = {
-              ...plan,
-              totalPaidSoFar: (plan.totalPaidSoFar ?? 0) + this.installmentAmount,
-              remainingDebt: Math.max(0, (plan.remainingDebt ?? 0) - this.installmentAmount)
-            };
-            return p.financialPlan
-              ? { ...p, financialPlan: updatedPlan }
-              : {
-                  ...p,
-                  treatmentPlan: { ...p.treatmentPlan!, financialPlan: updatedPlan }
-                };
-          })
-        );
-      }
-
-      this.showInstallmentModal = false;
-      this.installmentPatientId = null;
-      this.installmentAmount = 0;
-      this.messageService.add({
-        severity: 'success',
-        summary: this.locale.text('INSTALLMENT_COLLECTED', "Installment Collected"),
-        detail: this.locale.text('INSTALLMENT_PAYMENT_RECORDED_SUCCESSFULLY_', "Installment payment recorded successfully.")
-      });
-    } catch (error: any) {
-      this.messageService.add({
-        severity: 'error',
-        summary: this.locale.text('ERROR', "Error"),
-        detail: this.locale.error(error, 'PAYMENT_PROCESSING_FAILED', "Payment processing failed")
-      });
-    } finally {
-      this.isSubmittingPayment.set(false);
-    }
-  }
-
   /**
    * Action trigger from table - opens the payment method modal
    */
@@ -346,92 +215,51 @@ export class BillingComponent implements OnInit {
   /**
    * Confirms manual payment via BillingService.recordPayment()
    */
+  get collectionDetailsLocked() {
+    return this.isSubmittingPayment() || (this.selectedAccountKey ? this.bookingApi.pendingCollection()?.accountKey===this.selectedAccountKey : !!this.billingService.paymentIntent(Number(this.selectedInvoiceId)));
+  }
   async confirmPayment(): Promise<void> {
-    if (this.selectedInvoiceId === null) return;
-
-    if (!this.amountToCollect || this.amountToCollect <= 0) {
-      this.messageService.add({
-        severity: 'warn',
-        summary: this.locale.text('INVALID_AMOUNT', "Invalid Amount"),
-        detail: this.locale.text('PLEASE_ENTER_A_VALID_AMOUNT_TO_COLLECT_', "Please enter a valid amount to collect.")
-      });
+    if (this.selectedAccountKey) {
+      if (this.isSubmittingPayment()) return;
+      this.isSubmittingPayment.set(true); this.paymentError.set('');
+      try {
+        if (!this.paymentMethods.includes(this.selectedPaymentMethod)) throw new Error(this.locale.text('PAYMENT_METHOD_REQUIRED', 'Select the actual patient payment method.'));
+        await firstValueFrom(this.bookingApi.collectAccount(this.selectedAccountKey, this.amountToCollect, this.selectedPaymentMethod as BookingPaymentMethod));
+        this.showPaymentModal = false; this.selectedAccountKey = null; this.refreshAccounts(); this.billingService.getInvoices();
+      } catch (error) { this.paymentError.set(this.bookingApi.pendingCollection() ? this.locale.text('COLLECTION_OUTCOME_UNKNOWN', 'The collection outcome is unknown. Reconcile it before collecting again.') : apiError(error)); }
+      finally { this.isSubmittingPayment.set(false); }
       return;
     }
-
-    this.isSubmittingPayment.set(true);
+    if (this.selectedInvoiceId === null || this.isSubmittingPayment()) return;
+    this.isSubmittingPayment.set(true);this.paymentError.set('');
+    const amount=this.amountToCollect, id=Number(this.selectedInvoiceId), method=this.selectedPaymentMethod;
     try {
-      const collected = this.amountToCollect;
-      const method = this.selectedPaymentMethod;
-      const numericInvoiceId = Number(this.selectedInvoiceId);
-
-      await firstValueFrom(
-        this.billingService.recordPayment({
-          invoiceId: numericInvoiceId,
-          amount: collected,
-          method: this.billingService.mapPaymentMethodToNumber(method)
-        })
-      );
-
-      this.showPaymentModal = false;
-      this.selectedInvoiceId = null;
-      this.amountToCollect = 0;
-      this.messageService.add({
-        severity: 'success',
-        summary: this.locale.text('PAYMENT_RECORDED', "Payment Recorded"),
-        detail: this.locale.text('PAYMENT_COLLECTED_DETAIL', "{{amount}} EGP collected via {{method}}.", { amount: collected.toLocaleString(this.locale.language), method: this.locale.label(method) })
-      });
-    } catch (error: any) {
-      this.messageService.add({
-        severity: 'error',
-        summary: this.locale.text('PAYMENT_ERROR', "Payment Error"),
-        detail: this.locale.error(error, 'PAYMENT_PROCESSING_FAILED', "Payment processing failed")
-      });
-    } finally {
-      this.isSubmittingPayment.set(false);
+      // Re-read the invoice before collection. The server remains responsible for atomic balance enforcement.
+      const invoice=await firstValueFrom(this.billingService.getInvoiceById(id));
+      if(!Number.isFinite(amount)||amount<=0||amount>(invoice.remainingAmount??0))throw new ReceptionError('PAYMENT_AMOUNT_INVALID','Enter a positive payment no greater than the saved invoice balance.');
+      await firstValueFrom(this.billingService.recordPayment({invoiceId:id,amount,method:this.billingService.mapPaymentMethodToNumber(method)}));
+    } catch(error) {
+      this.paymentError.set(error instanceof ReceptionError?this.locale.text(error.key,error.message):apiError(error));
+      this.isSubmittingPayment.set(false);return;
     }
+    this.isSubmittingPayment.set(false);
+    this.showPaymentModal=false;this.selectedInvoiceId=null;this.amountToCollect=0;
+    this.messageService.add({severity:'success',summary:this.locale.text('PAYMENT_RECORDED','Payment Recorded'),detail:this.locale.text('PAYMENT_SAVED_REFRESH_SEPARATE','Payment saved. Verify the refreshed balance before collecting again.')});
+    this.billingService.getInvoices();
+    this.refreshAccounts();
   }
 
-  updateInvoiceStatus(invoiceId: number | string, status: string | number): void {
-    const numericId = Number(invoiceId);
-    if (isNaN(numericId)) return;
-    const statusNum = this.billingService.mapStatusToNumber(status);
-    this.billingService.updateInvoiceStatus(numericId, statusNum).subscribe({
-      next: () => {
-        this.messageService.add({
-          severity: 'success',
-          summary: this.locale.text('STATUS_UPDATED', "Status Updated"),
-          detail: this.locale.text('INVOICE_STATUS_UPDATED_SUCCESSFULLY_', "Invoice status updated successfully.")
-        });
-      },
-      error: (err) => {
-        this.messageService.add({
-          severity: 'error',
-          summary: this.locale.text('UPDATE_FAILED', "Update Failed"),
-          detail: this.locale.error(err, 'FAILED_TO_UPDATE_INVOICE_STATUS_', "Failed to update invoice status.")
-        });
-      }
-    });
+  async updateInvoiceStatus(invoiceId: number|string, status: string|number) {
+    if(this.billingService.mutation.busy())return;
+    try { await firstValueFrom(this.billingService.updateInvoiceStatus(Number(invoiceId),this.billingService.mapStatusToNumber(status))); }
+    catch(error){this.paymentError.set(apiError(error));return;}
+    this.billingService.getInvoices();
   }
-
-  deleteInvoice(invoiceId: number | string): void {
-    const numericId = Number(invoiceId);
-    if (isNaN(numericId)) return;
-    this.billingService.deleteInvoice(numericId).subscribe({
-      next: () => {
-        this.messageService.add({
-          severity: 'success',
-          summary: this.locale.text('INVOICE_DELETED', "Invoice Deleted"),
-          detail: this.locale.text('INVOICE_REMOVED_SUCCESSFULLY_', "Invoice removed successfully.")
-        });
-      },
-      error: (err) => {
-        this.messageService.add({
-          severity: 'error',
-          summary: this.locale.text('DELETE_FAILED', "Delete Failed"),
-          detail: this.locale.error(err, 'FAILED_TO_DELETE_INVOICE_', "Failed to delete invoice.")
-        });
-      }
-    });
+  async deleteInvoice(invoiceId: number|string) {
+    if(this.billingService.mutation.busy())return;
+    try { await firstValueFrom(this.billingService.deleteInvoice(Number(invoiceId))); }
+    catch(error){this.paymentError.set(apiError(error));return;}
+    this.billingService.getInvoices();
   }
 
   /**

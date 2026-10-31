@@ -1,8 +1,8 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { AuthService, UserRole } from '../../../core/services/auth';
+import { AuthService } from '../../../core/services/auth';
 import { ThemeService } from '../../../core/services/theme';
 import { LanguageService } from '../../../core/services/language';
 import { MessageService } from 'primeng/api';
@@ -17,7 +17,7 @@ import { TranslateModule } from '@ngx-translate/core';
   templateUrl: './login.html',
   styleUrl: './login.css',
 })
-export class Login {
+export class Login implements OnInit {
   authService = inject(AuthService);
   themeService = inject(ThemeService);
   langService = inject(LanguageService);
@@ -27,6 +27,12 @@ export class Login {
 
   isSubmitting = signal(false);
   showPassword = signal(false);
+
+  ngOnInit() {
+    if (this.authService.hasRole('Admin') || this.authService.hasRole('SuperAdmin')) {
+      this.router.navigate(['/receptionist/dashboard']);
+    }
+  }
 
   togglePasswordVisibility() {
     this.showPassword.update(v => !v);
@@ -49,11 +55,12 @@ export class Login {
       next: () => {
         this.isSubmitting.set(false);
         const user = this.authService.currentUser();
-        const role = user?.roles?.[0];
+        const role = user?.roles[0];
 
         this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Logged in successfully' });
 
-        if (role === 'Ceo' || role === 'Admin' || role === 'SuperAdmin') this.router.navigate(['/ceo']);
+        if (this.authService.hasRole('Admin') || this.authService.hasRole('SuperAdmin')) this.router.navigate(['/receptionist/dashboard']);
+        else if (role === 'Ceo') this.router.navigate(['/ceo']);
         else if (role === 'Senior') this.router.navigate(['/senior/dashboard']);
         else if (role === 'Doctor') this.router.navigate(['/doctor']);
         else if (role === 'Receptionist') this.router.navigate(['/receptionist/dashboard']);

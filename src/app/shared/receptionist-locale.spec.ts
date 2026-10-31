@@ -1,4 +1,7 @@
 /// <reference types="node" />
+import { RoomService } from '../core/services/room.service';
+import { ClinicianService } from '../core/services/clinician.service';
+import { AppointmentWorkflowService } from '../core/services/appointment-workflow.service';
 import { readFileSync, readdirSync } from 'node:fs';
 import { TestBed } from '@angular/core/testing';
 import { signal, Injector, runInInjectionContext } from '@angular/core';
@@ -49,6 +52,9 @@ describe('Receptionist localization', () => {
       { provide: TranslateService, useValue: translate },
       { provide: ReceptionistService, useValue: receptionist },
       { provide: BillingService, useValue: {} },
+      { provide: RoomService, useValue: {rooms:signal([])} },
+      { provide: ClinicianService, useValue: {clinicians:signal([])} },
+      { provide: AppointmentWorkflowService, useValue: {} },
       MessageService
     ] });
     const schedule = runInInjectionContext(injector, () => new ScheduleComponent());
@@ -66,6 +72,11 @@ describe('Receptionist localization', () => {
       for (const file of readdirSync(directory, { recursive: true }).filter(file => /\.(html|ts)$/.test(String(file)) && !String(file).endsWith('.spec.ts'))) {
         const source = readFileSync(`${directory}/${file}`, 'utf8');
         for (const match of source.matchAll(/['"]((?:RECEPTIONIST|COMMON|SIDEBAR)\.[A-Z0-9_.]+)['"]/g)) {
+          if (match[1] === 'RECEPTIONIST.UI.FINANCE_') {
+            for (const column of ['PLANNED','EARNED','SUBMITTED','COLLECTED','OUTSTANDING'])
+              for (const dictionary of [en,ar]) expect(lookup(dictionary,match[1]+column)).toBeTypeOf('string');
+            continue;
+          }
           for (const dictionary of [en, ar]) expect(lookup(dictionary, match[1]), `${file}: ${match[1]}`).toBeTypeOf('string');
         }
       }

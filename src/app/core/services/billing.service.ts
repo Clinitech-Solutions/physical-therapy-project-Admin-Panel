@@ -1,29 +1,46 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
-import { map, tap } from 'rxjs/operators';
-import { environment } from '../../../environments/environment';
+import { Injectable, computed, inject, signal } from "@angular/core";
+import { HttpClient, HttpErrorResponse } from "@angular/common/http";
+import { Observable, throwError, map, tap, finalize, catchError } from "rxjs";
+import { environment } from "../../../environments/environment";
+import {
+  apiError,
+  finiteNumber,
+  clinicDay,
+  MutationState,
+  numericId,
+  record,
+  ReceptionError,
+  ReceptionEvents,
+  textField,
+  unknownOutcome,
+} from "./reception-api";
+import { ReceptionContracts, backendEnumNumber } from "./reception-contracts";
 
 export interface Invoice {
   id: number;
-  appointmentId: number;
+  invoiceNumber?: string;
+  appointmentId: number | null;
   patientId: number;
+  patientName?: string;
+  patientPhone?: string | null;
+  insuranceCompany?: string | null;
   type: number | string;
+  status: number | string;
   totalAmount: number;
   insuranceAmount: number;
   patientAmount: number;
   paidAmount?: number;
+  remainingAmount?: number;
   remainingBalance?: number;
-  status: number | string;
+  appointmentDate?: string | null;
+  courseAgreementId?: number | null;
+  treatmentPlanSessionId?: number | null;
+  deliveredAt?: string | null;
   createdAt?: string;
+  paymentMethod?: number | string | null;
   payments?: Payment[];
-  paymentMethod?: number | string;
-
-  // Fallback UI properties
-  patientName?: string;
   appointmentDetails?: string;
 }
-
 export interface CreateInvoiceDto {
   appointmentId: number;
   patientId: number;
@@ -32,490 +49,349 @@ export interface CreateInvoiceDto {
   insuranceAmount: number;
   patientAmount: number;
 }
-
 export interface Payment {
   id?: number;
+  idempotencyKey?: string;
   invoiceId: number;
   amount: number;
   method: number | string;
+  payerType?: string; collectionMethod?: string | null; insuranceClaimId?: number | null; transactionId?: string | null;
+  status?: number | string;
   paymentDate?: string;
   createdAt?: string;
 }
-
 export interface CreatePaymentDto {
   invoiceId: number;
   amount: number;
   method: number;
 }
-
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: "root" })
 export class BillingService {
   private http = inject(HttpClient, { optional: true });
-  private apiUrl = `${environment.apiUrl}/Billing`;
-
-  invoices = signal<Invoice[]>([]);
-  loading = signal<boolean>(false);
-  error = signal<string | null>(null);
-
-  // Real-time Financial & Revenue Computed Signals (strictly using totalAmount, insuranceAmount, patientAmount)
-  todayInvoices = computed(() => {
-    const today = new Date();
-    const todayYMD = today.toISOString().split('T')[0];
-    const pad = (n: number) => n.toString().padStart(2, '0');
-    const localYMD = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
-
-    return this.invoices().filter((inv) => {
-      if (!inv.createdAt) return true;
-      const invDate = new Date(inv.createdAt);
-      const isSameDay =
-        !isNaN(invDate.getTime()) &&
-        invDate.getFullYear() === today.getFullYear() &&
-        invDate.getMonth() === today.getMonth() &&
-        invDate.getDate() === today.getDate();
-      const invDatePart = inv.createdAt.toString().split('T')[0];
-      return isSameDay || invDatePart === todayYMD || invDatePart === localYMD;
-    });
-  });
-
-  expectedTodayRevenue = computed(() =>
-    this.todayInvoices().reduce(
-      (sum, inv) => sum + (inv.totalAmount || 0),
-      0
-    )
+  private contracts = inject(ReceptionContracts, { optional: true });
+  private events = inject(ReceptionEvents, { optional: true });
+  private url = `${environment.apiUrl}/Billing`;
+  readonly invoices = signal<Invoice[]>([]);
+  readonly loading = signal(false);
+  readonly error = signal<string | null>(null);
+  readonly mutation = new MutationState();
+  readonly pendingPaymentInvoices = signal<number[]>([]);
+  private expectedPaid = new Map<number, number>();
+  private readGeneration = 0;
+  private paymentIntents: Record<string,{amount:number;method:number;paidBefore:number}> = this.readPaymentIntents();
+  private readPaymentIntents() { try { return JSON.parse(sessionStorage.getItem('ptcenter.pending-invoice-payment-details') ?? '{}'); } catch { return {}; } }
+  paymentIntent(id:number) { return this.paymentIntents[id]; }
+  private savePaymentIntent(id:number,value:{amount:number;method:number;paidBefore:number}|null) {
+    if(value)this.paymentIntents[id]=value;else delete this.paymentIntents[id];
+    try{sessionStorage.setItem('ptcenter.pending-invoice-payment-details',JSON.stringify(this.paymentIntents));}catch{}
+  }
+  private paymentKeys: Record<string, string> = this.readPaymentKeys();
+  get unresolvedInvoicePaymentIds(): number[] { return Object.keys(this.paymentKeys).map(Number); }
+  constructor() { if (Object.keys(this.paymentKeys).length) this.mutation.uncertain.set(true); }
+  private readPaymentKeys(): Record<string, string> {
+    try { return typeof sessionStorage === 'undefined' ? {} : JSON.parse(sessionStorage.getItem('ptcenter.pending-invoice-payment-keys') ?? '{}'); } catch { return {}; }
+  }
+  private savePaymentKey(invoiceId: number, key: string | null) {
+    if (key) this.paymentKeys[invoiceId] = key; else { delete this.paymentKeys[invoiceId]; this.savePaymentIntent(invoiceId,null); }
+    try { if (typeof sessionStorage !== 'undefined') sessionStorage.setItem('ptcenter.pending-invoice-payment-keys', JSON.stringify(this.paymentKeys)); } catch { /* Keep the retry identity in memory. */ }
+  }
+  readonly todayInvoices = computed(() =>
+    this.invoices().filter(
+      (i) => !!i.createdAt && clinicDay(i.createdAt) === clinicDay(new Date()),
+    ),
   );
-
-  collectedTodayRevenue = computed(() =>
-    this.todayInvoices().reduce((sum, inv) => {
-      if (inv.paidAmount !== undefined && inv.paidAmount > 0) {
-        return sum + inv.paidAmount;
-      }
-      if (this.mapStatusToString(inv.status) === 'Paid') {
-        return sum + (inv.patientAmount ?? inv.totalAmount ?? 0);
-      }
-      return sum;
-    }, 0)
+  readonly expectedTodayRevenue = computed(() =>
+    this.todayInvoices().reduce((sum, i) => sum + i.totalAmount, 0),
   );
-
-  pendingTodayRevenue = computed(() =>
-    this.todayInvoices()
-      .filter((inv) => {
-        const st = this.mapStatusToString(inv.status);
-        return st === 'Pending' || st === 'Partial';
-      })
-      .reduce((sum, inv) => {
-        const rem =
-          inv.remainingBalance !== undefined
-            ? inv.remainingBalance
-            : inv.patientAmount ?? inv.totalAmount ?? 0;
-        return sum + rem;
-      }, 0)
+  // Cumulative invoice paidAmount cannot identify collections on a particular day or method.
+  readonly collectedTodayRevenue = computed<number | null>(() => null);
+  readonly cashCollectedToday = computed<number | null>(() => null);
+  readonly digitalCollectedToday = computed<number | null>(() => null);
+  readonly collectionRateToday = computed<number | null>(() => null);
+  readonly pendingTodayRevenue = computed(() =>
+    this.invoices().reduce((sum, i) => sum + (i.remainingAmount ?? 0), 0),
   );
-
-  cashCollectedToday = computed(() =>
-    this.todayInvoices().reduce((sum, inv) => {
-      const method = this.mapMethodToString(inv.paymentMethod);
-      if (method !== 'Cash') return sum;
-      if (inv.paidAmount !== undefined && inv.paidAmount > 0) {
-        return sum + inv.paidAmount;
-      }
-      if (this.mapStatusToString(inv.status) === 'Paid') {
-        return sum + (inv.patientAmount ?? inv.totalAmount ?? 0);
-      }
-      return sum;
-    }, 0)
+  readonly pendingPaymentsCount = computed(
+    () => this.invoices().filter((i) => (i.remainingAmount ?? 0) > 0).length,
   );
-
-  digitalCollectedToday = computed(() =>
-    this.todayInvoices().reduce((sum, inv) => {
-      const method = inv.paymentMethod !== undefined ? this.mapMethodToString(inv.paymentMethod) : '';
-      const isDigital =
-        method === 'Credit Card' ||
-        method === 'E-Wallet' ||
-        method === 'InstaPay';
-      if (!isDigital) return sum;
-      if (inv.paidAmount !== undefined && inv.paidAmount > 0) {
-        return sum + inv.paidAmount;
-      }
-      if (this.mapStatusToString(inv.status) === 'Paid') {
-        return sum + (inv.patientAmount ?? inv.totalAmount ?? 0);
-      }
-      return sum;
-    }, 0)
-  );
-
-  collectionRateToday = computed(() => {
-    const expected = this.expectedTodayRevenue();
-    if (expected === 0) return 0;
-    return Math.min(100, Math.round((this.collectedTodayRevenue() / expected) * 100));
-  });
-
-  pendingPaymentsCount = computed(() =>
-    this.invoices().filter((inv) => {
-      const st = this.mapStatusToString(inv.status);
-      return st === 'Pending' || st === 'Partial';
-    }).length
-  );
-
-  // Enum & Schema Mapping Helpers
-  mapTypeToNumber(type: string | number): number {
-    if (typeof type === 'number') return type;
-    switch (type) {
-      case 'Assessment':
-        return 0;
-      case 'Session':
-        return 1;
-      case 'Re-Assessment':
-      case 'ReAssessment':
-        return 2;
-      case 'Installment':
-        return 3;
-      default:
-        return 1;
-    }
+  get paymentMethods(): string[] {
+    return Object.keys(this.contracts?.enums.paymentMethod ?? {});
   }
-
-  mapTypeToString(type: number | string | undefined): string {
-    switch (type) {
-      case 0:
-      case '0':
-      case 'Assessment':
-        return 'Assessment';
-      case 1:
-      case '1':
-      case 'Session':
-        return 'Session';
-      case 2:
-      case '2':
-      case 'Re-Assessment':
-      case 'ReAssessment':
-        return 'Re-Assessment';
-      case 3:
-      case '3':
-      case 'Installment':
-        return 'Installment';
-      default:
-        return type !== undefined && type !== null ? String(type) : 'Session';
-    }
+  mapTypeToNumber(value: string | number): number {
+    return this.enumValue("invoiceType", value);
   }
-
-  mapTypeToLabel(type: number | string | undefined): string {
-    return this.mapTypeToString(type);
+  mapStatusToNumber(value: string | number): number {
+    return this.enumValue("invoiceStatus", value);
   }
-
-  mapStatusToNumber(status: string | number): number {
-    if (typeof status === 'number') return status;
-    switch (status) {
-      case 'Pending':
-      case 'Unpaid':
-        return 0;
-      case 'Paid':
-        return 1;
-      case 'Partial':
-      case 'PartiallyPaid':
-        return 2;
-      case 'Waived':
-      case 'Cancelled':
-        return 3;
-      case 'Refunded':
-        return 4;
-      default:
-        return 0;
-    }
+  mapPaymentMethodToNumber(value: string | number): number {
+    return this.enumValue("paymentMethod", value);
   }
-
-  mapStatusToString(
-    status: number | string | undefined
-  ): 'Pending' | 'Paid' | 'Partial' | 'Waived' | 'Refunded' {
-    switch (status) {
-      case 0:
-      case '0':
-      case 'Pending':
-      case 'Unpaid':
-        return 'Pending';
-      case 1:
-      case '1':
-      case 'Paid':
-        return 'Paid';
-      case 2:
-      case '2':
-      case 'Partial':
-      case 'PartiallyPaid':
-        return 'Partial';
-      case 3:
-      case '3':
-      case 'Waived':
-      case 'Cancelled':
-        return 'Waived';
-      case 4:
-      case '4':
-      case 'Refunded':
-        return 'Refunded';
-      default:
-        return 'Pending';
-    }
+  private enumValue(
+    kind: "invoiceType" | "invoiceStatus" | "paymentMethod",
+    value: string | number,
+  ) {
+    if (!this.contracts)
+      throw new ReceptionError(
+        "ENUM_DEFINITION_PENDING",
+        "This operation needs confirmed backend enum definitions.",
+      );
+    return this.contracts.value(kind, value);
   }
-
-  mapStatusToLabel(
-    status: number | string | undefined
-  ): 'Pending' | 'Paid' | 'Partial' | 'Waived' | 'Refunded' {
-    return this.mapStatusToString(status);
-  }
-
-  mapPaymentMethodToNumber(method: string | number): number {
-    if (typeof method === 'number') return method;
-    switch (method) {
-      case 'Cash':
-        return 0;
-      case 'Credit Card':
-      case 'Card':
-      case 'Visa':
-        return 1;
-      case 'E-Wallet':
-      case 'Wallet':
-        return 2;
-      case 'InstaPay':
-      case 'Bank Transfer':
-      case 'Online':
-        return 3;
-      default:
-        return 0;
-    }
-  }
-
-  mapMethodToString(method: number | string | undefined): string {
-    switch (method) {
-      case 0:
-      case '0':
-      case 'Cash':
-        return 'Cash';
-      case 1:
-      case '1':
-      case 'Credit Card':
-      case 'Card':
-      case 'Visa':
-        return 'Credit Card';
-      case 2:
-      case '2':
-      case 'E-Wallet':
-      case 'Wallet':
-        return 'E-Wallet';
-      case 3:
-      case '3':
-      case 'InstaPay':
-      case 'Bank Transfer':
-      case 'Online':
-        return 'InstaPay';
-      default:
-        return 'Cash';
-    }
-  }
-
-  mapPaymentMethodToLabel(method: number | string | undefined): string {
-    return this.mapMethodToString(method);
-  }
-
-  normalizeInvoice(raw: any): Invoice {
-    const totalAmount = Number(raw?.totalAmount ?? 0);
-    const insuranceAmount = Number(raw?.insuranceAmount ?? 0);
-    const patientAmount = Number(
-      raw?.patientAmount ?? Math.max(0, totalAmount - insuranceAmount)
+  mapTypeToString(value: unknown): string {
+    return (
+      this.contracts?.label("invoiceType", value) ??
+      (typeof value === "string" ? value : "Unknown")
     );
-    const statusLabel = this.mapStatusToString(raw?.status);
-    const typeLabel = this.mapTypeToString(raw?.type);
-    const payments: Payment[] | undefined = Array.isArray(raw?.payments)
-      ? raw.payments.map((p: any) => ({
-          ...p,
-          amount: Number(p?.amount ?? 0),
-          method: this.mapMethodToString(p?.method)
-        }))
-      : undefined;
-
-    const paidFromPayments = payments
-      ? payments.reduce((sum, p) => sum + Number(p.amount || 0), 0)
-      : undefined;
-
-    const paidAmount =
-      raw?.paidAmount !== undefined
-        ? Number(raw.paidAmount)
-        : paidFromPayments !== undefined
-        ? paidFromPayments
-        : statusLabel === 'Paid'
-        ? patientAmount
-        : 0;
-
-    const remainingBalance =
-      raw?.remainingBalance !== undefined
-        ? Number(raw.remainingBalance)
-        : statusLabel === 'Paid' || statusLabel === 'Waived'
-        ? 0
-        : Math.max(0, patientAmount - paidAmount);
-
-    const resolvedStatus =
-      statusLabel === 'Pending' && paidAmount > 0
-        ? remainingBalance <= 0
-          ? 'Paid'
-          : 'Partial'
-        : statusLabel;
-
-    const paymentMethod =
-      payments && payments.length > 0
-        ? this.mapMethodToString(payments[payments.length - 1].method)
-        : raw?.paymentMethod !== undefined
-        ? this.mapMethodToString(raw.paymentMethod)
-        : undefined;
-
+  }
+  mapStatusToString(value: unknown): string {
+    return (
+      this.contracts?.label("invoiceStatus", value) ??
+      (typeof value === "string" ? value : "Unknown")
+    );
+  }
+  mapMethodToString(value: unknown): string {
+    return (
+      this.contracts?.label("paymentMethod", value) ??
+      (typeof value === "string" ? value : "Unknown")
+    );
+  }
+  normalizeInvoice(value: unknown): Invoice {
+    const r = record(value);
+    const remaining = finiteNumber(r["remainingAmount"]);
     return {
-      id: Number(raw?.id ?? 0),
-      appointmentId: Number(raw?.appointmentId ?? 0),
-      patientId: Number(raw?.patientId ?? 0),
-      type: typeLabel,
-      totalAmount,
-      insuranceAmount,
-      patientAmount,
-      paidAmount,
-      remainingBalance,
-      status: resolvedStatus,
-      createdAt:
-        raw?.createdAt ||
-        raw?.issuedAt ||
-        raw?.invoiceDate ||
-        raw?.date ||
-        new Date().toISOString(),
-      payments,
-      paymentMethod,
-      patientName: raw?.patientName,
-      appointmentDetails: raw?.appointmentDetails
+      id: numericId(r["id"]),
+      invoiceNumber: textField(r["invoiceNumber"]),
+      appointmentId: r["appointmentId"] == null ? null : numericId(r["appointmentId"]),
+      courseAgreementId: r['courseAgreementId'] == null ? null : numericId(r['courseAgreementId']),
+      treatmentPlanSessionId: r['treatmentPlanSessionId'] == null ? null : numericId(r['treatmentPlanSessionId']),
+      deliveredAt: r['deliveredAt'] as string | null,
+      patientId: numericId(r["patientId"]),
+      patientName: textField(r["patientName"]),
+      patientPhone: r["patientPhone"] as string | null,
+      insuranceCompany: r["insuranceCompany"] as string | null,
+      type: finiteNumber(backendEnumNumber('invoiceType', r["type"])),
+      status: finiteNumber(backendEnumNumber('invoiceStatus', r["status"])),
+      totalAmount: finiteNumber(r["totalAmount"]),
+      insuranceAmount: finiteNumber(r["insuranceAmount"]),
+      patientAmount: finiteNumber(r["patientAmount"]),
+      paidAmount: finiteNumber(r["paidAmount"]),
+      remainingAmount: remaining,
+      remainingBalance: remaining,
+      appointmentDate: r['appointmentDate'] == null ? null : textField(r['appointmentDate']),
+      createdAt: textField(r["createdAt"]),
+      paymentMethod: r["paymentMethod"] as string | null,
     };
   }
-
-  findInvoiceById(id: number | string | null | undefined): Invoice | undefined {
-    if (id === null || id === undefined) return undefined;
-    return this.invoices().find((inv) => String(inv.id) === String(id));
+  findInvoiceById(id: number | string | null | undefined) {
+    return this.invoices().find((i) => String(i.id) === String(id));
   }
-
-  getInvoiceBySessionId(sessionId: number | string | null | undefined): Invoice | undefined {
-    if (sessionId === null || sessionId === undefined) return undefined;
-    return this.invoices().find(
-      (inv) => String(inv.appointmentId) === String(sessionId)
-    );
+  getInvoiceBySessionId(id: number | string | null | undefined) {
+    return this.invoices().find((i) => String(i.appointmentId) === String(id));
   }
-
-  // CRUD Methods
-  getInvoices(): void {
-    if (!this.http) return;
+  private cache(items: Invoice[]) {
+    this.invoices.set(items);
+    for (const item of items) {
+      const expected = this.expectedPaid.get(item.id);
+      if (expected !== undefined && (item.paidAmount ?? 0) >= expected) {
+        this.expectedPaid.delete(item.id);
+        this.pendingPaymentInvoices.update((ids) =>
+          ids.filter((id) => id !== item.id),
+        );
+      }
+    }
+  }
+  getInvoices() {
+    if (!this.http) {
+      this.error.set("HTTP client unavailable.");
+      return;
+    }
+    const generation = ++this.readGeneration;
     this.loading.set(true);
     this.error.set(null);
-
-    this.http.get<Invoice[]>(`${this.apiUrl}/invoices`).subscribe({
-      next: (data: any) => {
-        const result =
-          data?.value !== undefined
-            ? data.value
-            : data?.data !== undefined
-            ? data.data
-            : data?.items !== undefined
-            ? data.items
-            : data;
-        const list = Array.isArray(result)
-          ? result.map((item: any) => this.normalizeInvoice(item))
-          : [];
-        this.invoices.set(list);
-        this.loading.set(false);
-      },
-      error: (err) => {
-        this.error.set(err.message || 'Failed to fetch invoices');
-        this.loading.set(false);
-      }
-    });
+    this.http
+      .get<unknown>(`${this.url}/invoices`)
+      .pipe(
+        map((value) => {
+          if (!Array.isArray(value))
+            throw new ReceptionError(
+              "RESPONSE_CONTRACT_PENDING",
+              "The invoice list response needs verification.",
+            );
+          return value.map((v) => this.normalizeInvoice(v));
+        }),
+        finalize(() => {
+          if (generation === this.readGeneration) this.loading.set(false);
+        }),
+      )
+      .subscribe({
+        next: (items) => {
+          if (generation === this.readGeneration) this.cache(items);
+        },
+        error: (e) => {
+          if (generation === this.readGeneration) this.error.set(apiError(e));
+        },
+      });
   }
-
   getInvoiceById(id: number): Observable<Invoice> {
-    if (!this.http) return of({} as Invoice);
-    return this.http.get<Invoice>(`${this.apiUrl}/invoices/${id}`).pipe(
-      map((data: any) => {
-        const raw =
-          data?.value !== undefined
-            ? data.value
-            : data?.data !== undefined
-            ? data.data
-            : data;
-        return this.normalizeInvoice(raw);
-      })
+    if (!this.http)
+      return throwError(() => new Error("HTTP client unavailable."));
+    return this.http.get<unknown>(`${this.url}/invoices/${numericId(id)}`).pipe(
+      map((value) => this.normalizeInvoice(value)),
+      tap((item) =>
+        this.cache([item, ...this.invoices().filter((i) => i.id !== item.id)]),
+      ),
     );
   }
-
-  createInvoice(payload: CreateInvoiceDto): Observable<Invoice> {
-    if (!this.http) return of({} as Invoice);
-    return this.http.post<Invoice>(`${this.apiUrl}/invoices`, payload).pipe(
-      map((data: any) => {
-        const raw =
-          data?.value !== undefined
-            ? data.value
-            : data?.data !== undefined
-            ? data.data
-            : data;
-        return raw ? this.normalizeInvoice(raw) : (raw as Invoice);
-      }),
-      tap(() => {
-        this.getInvoices();
+  createInvoice(data: CreateInvoiceDto): Observable<unknown> {
+    return this.mutation
+      .run(() => {
+        if (!this.http) throw new Error("HTTP client unavailable.");
+        const payload = {
+          ...data,
+          appointmentId: numericId(data.appointmentId),
+          patientId: numericId(data.patientId),
+          type: this.enumValue("invoiceType", data.type),
+        };
+        if (
+          [
+            payload.totalAmount,
+            payload.insuranceAmount,
+            payload.patientAmount,
+          ].some((v) => !Number.isFinite(v) || v < 0)
+        )
+          throw new ReceptionError(
+            "INVALID_AMOUNT",
+            "Enter valid invoice amounts.",
+          );
+        return this.http.post<unknown>(`${this.url}/invoices`, payload);
       })
-    );
+      .pipe(tap(() => this.events?.changed.next("billing")));
   }
-
-  deleteInvoice(id: number): Observable<void> {
-    if (!this.http) return of(undefined);
-    return this.http.delete<void>(`${this.apiUrl}/invoices/${id}`).pipe(
-      tap(() => {
-        this.invoices.update((invs) => invs.filter((inv) => inv.id !== id));
+  deleteInvoice(id: number): Observable<unknown> {
+    return this.mutation
+      .run(() => {
+        if (!this.http) throw new Error("HTTP client unavailable.");
+        return this.http.delete<unknown>(
+          `${this.url}/invoices/${numericId(id)}`,
+        );
       })
-    );
+      .pipe(tap(() => this.events?.changed.next("billing")));
   }
-
-  updateInvoiceStatus(id: number, status: number): Observable<any> {
-    if (!this.http) return of(null);
-    return this.http
-      .patch(`${this.apiUrl}/invoices/${id}/status`, { status })
-      .pipe(
-        tap(() => {
-          this.getInvoices();
-        })
-      );
+  updateInvoiceStatus(id: number, status: number): Observable<unknown> {
+    return this.mutation
+      .run(() => {
+        if (!this.http) throw new Error("HTTP client unavailable.");
+        return this.http.patch<unknown>(
+          `${this.url}/invoices/${numericId(id)}/status`,
+          { status: this.enumValue("invoiceStatus", status) },
+        );
+      })
+      .pipe(tap(() => this.events?.changed.next("billing")));
   }
-
-  // Payments Methods
   getPaymentsForInvoice(invoiceId: number): Observable<Payment[]> {
-    if (!this.http) return of([]);
+    if (!this.http)
+      return throwError(() => new Error("HTTP client unavailable."));
     return this.http
-      .get<Payment[]>(`${this.apiUrl}/invoices/${invoiceId}/payments`)
+      .get<unknown>(`${this.url}/invoices/${numericId(invoiceId)}/payments`)
       .pipe(
-        map((data: any) => {
-          const result =
-            data?.value !== undefined
-              ? data.value
-              : data?.data !== undefined
-              ? data.data
-              : data?.items !== undefined
-              ? data.items
-              : data;
-          return Array.isArray(result)
-            ? result.map((p: any) => ({
-                ...p,
-                amount: Number(p?.amount ?? 0),
-                method: this.mapMethodToString(p?.method)
-              }))
-            : [];
-        })
+        map((value) => {
+          if (!Array.isArray(value))
+            throw new ReceptionError(
+              "PAYMENT_HISTORY_PENDING",
+              "The payment history response needs verification.",
+            );
+          return value.map((value) => {
+            const r = record(value);
+            if (numericId(r["invoiceId"]) !== invoiceId)
+              throw new ReceptionError(
+                "PAYMENT_HISTORY_PENDING",
+                "Payment history did not match the selected invoice.",
+              );
+            return {
+              id: r['id'] == null ? undefined : numericId(r['id']),
+              idempotencyKey: typeof r['idempotencyKey'] === 'string' ? r['idempotencyKey'] : undefined,
+              status: r['status'] == null ? 'Unknown' : backendEnumNumber('paymentStatus',r['status']) as number|string,
+              paymentDate: typeof r['paymentDate'] === 'string' ? r['paymentDate'] : undefined,
+              invoiceId: numericId(r["invoiceId"]),
+              amount: finiteNumber(r["amount"]),
+              method: finiteNumber(backendEnumNumber('paymentMethod', r["paymentMethod"] ?? r["method"])),
+              payerType: r['payerType'] as string | undefined, collectionMethod: r['collectionMethod'] as string | null,
+              insuranceClaimId: r['insuranceClaimId'] as number | null, transactionId: r['transactionId'] as string | null,
+            };
+          });
+        }),
+        tap(payments => {
+          const key = this.paymentKeys[invoiceId]; if (!key) return;
+          const intent = this.paymentIntents[invoiceId];
+          const saved = payments.some(p => p.idempotencyKey === `invoice:${invoiceId}:${key}` && p.status===1 &&
+            (!intent || p.amount===intent.amount && Number(p.method)===intent.method));
+          if (saved) { this.savePaymentKey(invoiceId, null); this.getInvoices(); }
+          // If not yet committed, retain this key for an explicit retry; never create a fresh collection identity.
+          this.mutation.uncertain.set(Object.keys(this.paymentKeys).some(id => Number(id) !== invoiceId));
+        }),
       );
   }
-
-  recordPayment(payload: CreatePaymentDto): Observable<Payment> {
-    if (!this.http) return of({} as Payment);
-    return this.http.post<Payment>(`${this.apiUrl}/payments`, payload).pipe(
-      tap(() => {
-        this.getInvoices();
+  recordPayment(data: CreatePaymentDto): Observable<unknown> {
+    return this.mutation
+      .run(() => {
+        if (!this.http) throw new Error("HTTP client unavailable.");
+        const invoiceId = numericId(data.invoiceId),
+          invoice = this.findInvoiceById(invoiceId);
+        if (this.pendingPaymentInvoices().includes(invoiceId))
+          throw new ReceptionError(
+            "PAYMENT_RECONCILIATION_REQUIRED",
+            "A payment was saved for this invoice. Verify its refreshed balance before collecting again.",
+          );
+        if (
+          !invoice ||
+          !Number.isFinite(data.amount) ||
+          data.amount < 0.01 ||
+          data.amount > 999999999 ||
+          data.amount > (invoice.remainingAmount ?? 0)
+        )
+          throw new ReceptionError(
+            "PAYMENT_AMOUNT_INVALID",
+            "Enter a positive payment no greater than the saved invoice balance.",
+          );
+        const prior=this.paymentIntents[invoiceId];
+        if(prior && (prior.amount!==data.amount || prior.method!==data.method)) throw new ReceptionError('FINANCE_ORIGINAL_RECEIPT_REQUIRED','Recover the original receipt details before making another collection.');
+        const intent=prior ?? {amount:data.amount,method:data.method,paidBefore:invoice.paidAmount ?? 0};
+        this.savePaymentIntent(invoiceId,intent);
+        const wasUncertain = !!this.paymentKeys[invoiceId];
+        const key = this.paymentKeys[invoiceId] ?? crypto.randomUUID();
+        this.savePaymentKey(invoiceId, key);
+        const payload = {
+          idempotencyKey: key,
+          invoiceId,
+          amount: data.amount,
+          method: this.enumValue("paymentMethod", data.method),
+        };
+        return this.http.post<unknown>(`${this.url}/payments`, payload).pipe(
+          map(value => {
+            const payment = value as Record<string, unknown> | null;
+            if (!payment || !Number.isSafeInteger(Number(payment['id'])) || Number(payment['id']) <= 0 || Number(payment['invoiceId']) !== invoiceId || Number(payment['amount']) !== data.amount) {
+              this.mutation.uncertain.set(true);
+              throw new ReceptionError('OPERATION_OUTCOME_UNKNOWN', 'The payment response could not be verified. Check its saved payment history before retrying.');
+            }
+            return value;
+          }),
+          tap(() => {
+            this.savePaymentKey(invoiceId, null);
+            this.expectedPaid.set(
+              invoiceId,
+              intent.paidBefore + data.amount,
+            );
+            this.pendingPaymentInvoices.update((ids) => [
+              ...new Set([...ids, invoiceId]),
+            ]);
+          }),
+          catchError(error => {
+            if(error instanceof HttpErrorResponse && ['Billing.RetryKeyConflict','Billing.ConcurrentChange'].includes(error.error?.code))this.mutation.uncertain.set(true);
+            if (!wasUncertain && error instanceof HttpErrorResponse && !unknownOutcome(error) && !['Billing.RetryKeyConflict','Billing.ConcurrentChange'].includes(error.error?.code)) this.savePaymentKey(invoiceId, null);
+            return throwError(() => error);
+          }),
+        );
       })
-    );
+      .pipe(tap(() => this.events?.changed.next("billing")));
   }
 }

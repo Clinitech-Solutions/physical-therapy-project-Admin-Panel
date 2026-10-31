@@ -1,8 +1,12 @@
-import { Injectable, inject, signal } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
-import { tap } from 'rxjs/operators';
-import { environment } from '../../../environments/environment';
+import { Injectable, inject, signal, computed } from "@angular/core";
+import { HttpClient, HttpParams } from "@angular/common/http";
+import { finalize, throwError } from "rxjs";
+import { environment } from "../../../environments/environment";
+import { apiError, finiteNumber, record } from "./reception-api";
+import { ReceptionContracts } from "./reception-contracts";
+import { pagedRecords } from "./reception-pagination";
+import { decodeAppointment } from "./appointment.service";
+import { AppointmentWorkflowService } from "./appointment-workflow.service";
 
 export interface DashboardStats {
   todaysSessions: number;
@@ -12,17 +16,19 @@ export interface DashboardStats {
   collectedTodayRevenue: number;
   expectedTodayRevenue: number;
   collectionRateToday: number;
+  patientCollectedToday?: number;
+  insurerCollectedToday?: number;
   presentDoctors?: number;
   walkInsToday?: number;
 }
-
 export interface TodaySession {
   id: number;
   appointmentId?: number;
   patientId: number;
   patientName?: string;
-  doctorId?: number | null;
+  doctorId?: string | null;
   doctorName?: string;
+  seniorId?: string | null;
   roomId?: number | null;
   roomName?: string;
   appointmentType?: string;
@@ -34,266 +40,142 @@ export interface TodaySession {
   totalSessions?: number;
   packageAlert?: string;
 }
-
 export interface TodaySessionsFilters {
   search?: string;
-  doctorId?: number | string;
+  doctorId?: string;
   roomId?: number | string;
   pageNumber?: number;
   pageSize?: number;
 }
-
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: "root" })
 export class ReceptionistService {
   private http = inject(HttpClient, { optional: true });
-  private apiUrl = `${environment.apiUrl}/Receptionist`;
+  private contracts = inject(ReceptionContracts, { optional: true });
+  private workflow = inject(AppointmentWorkflowService, { optional: true });
+  readonly stats = signal<DashboardStats | null>(null);
+  readonly todaySessions = signal<TodaySession[]>([]);
+  readonly statsLoading = signal(false);
+  readonly sessionsLoading = signal(false);
+  readonly loading = computed(
+    () => this.statsLoading() || this.sessionsLoading(),
+  );
+  readonly statsError = signal<string | null>(null);
+  readonly sessionsError = signal<string | null>(null);
+  readonly error = computed(() => this.statsError() || this.sessionsError());
+  private generation = 0;
+  private statsGeneration = 0;
   private lastFilters: TodaySessionsFilters = {};
-
-  stats = signal<DashboardStats | null>(null);
-  todaySessions = signal<TodaySession[]>([]);
-  loading = signal<boolean>(false);
-  error = signal<string | null>(null);
-
-  // Status Enum Mappings for Appointments
-  // 0 = Pending, 1 = Confirmed, 2 = In Progress / Waiting, 3 = Completed, 4 = Cancelled
+  refreshTodaySessions() {
+    this.getTodaySessions(this.lastFilters);
+  }
+  normalizeStats(value: unknown): DashboardStats {
+    const r = record(value);
+    return {
+      todaysSessions: finiteNumber(r["todaysSessions"]),
+      completedSessions: finiteNumber(r["completedSessions"]),
+      pendingPayments: finiteNumber(r["pendingPayments"]),
+      todayRevenue: finiteNumber(r["totalCollectedToday"]),
+      collectedTodayRevenue: finiteNumber(r["totalCollectedToday"]),
+      expectedTodayRevenue: finiteNumber(r["totalExpectedToday"]),
+      collectionRateToday: finiteNumber(r["collectionRate"]),
+      patientCollectedToday: r['patientCollectedToday']==null ? undefined : finiteNumber(r['patientCollectedToday']),
+      insurerCollectedToday: r['insurerCollectedToday']==null ? undefined : finiteNumber(r['insurerCollectedToday']),
+    };
+  }
+  normalizeSession(value: unknown): TodaySession {
+    const a = decodeAppointment(value);
+    return { ...a, id: a.id!, appointmentId: a.id, type: a.appointmentType };
+  }
   mapStatusToNumber(status: number | string): number {
-    if (typeof status === 'number') return status;
-    switch (status) {
-      case 'Pending':
-      case 'Scheduled':
-        return 0;
-      case 'Confirmed':
-        return 1;
-      case 'In Progress':
-      case 'InProgress':
-      case 'Waiting':
-        return 2;
-      case 'Completed':
-        return 3;
-      case 'Cancelled':
-        return 4;
-      default:
-        return 1;
-    }
+    if (!this.contracts)
+      throw new Error("Backend status definitions are unavailable.");
+    return this.contracts.value("appointmentStatus", status);
   }
-
-  mapStatusToString(status: number | string | undefined): string {
-    switch (status) {
-      case 0:
-      case '0':
-      case 'Pending':
-      case 'Scheduled':
-        return 'Pending';
-      case 1:
-      case '1':
-      case 'Confirmed':
-        return 'Confirmed';
-      case 2:
-      case '2':
-      case 'In Progress':
-      case 'InProgress':
-        return 'In Progress';
-      case 'Waiting':
-        return 'Waiting';
-      case 3:
-      case '3':
-      case 'Completed':
-        return 'Completed';
-      case 4:
-      case '4':
-      case 'Cancelled':
-        return 'Cancelled';
-      default:
-        return status !== undefined && status !== null ? String(status) : 'Confirmed';
-    }
+  mapStatusToString(status: unknown): string {
+    return (
+      this.contracts?.label("appointmentStatus", status) ??
+      (typeof status === "string" && !/^\\d+$/.test(status)
+        ? status
+        : "Unknown")
+    );
   }
-
-  normalizeStats(raw: any): DashboardStats {
-    const todaysSessions = Number(
-      raw?.todaysSessions ??
-        raw?.todaySessions ??
-        raw?.totalTodaySessions ??
-        raw?.totalSessionsToday ??
-        0
-    );
-    const completedSessions = Number(
-      raw?.completedSessions ?? raw?.completedTodaySessions ?? 0
-    );
-    const pendingPayments = Number(
-      raw?.pendingPayments ?? raw?.pendingPaymentsCount ?? raw?.pendingInvoices ?? 0
-    );
-    const collectedTodayRevenue = Number(
-      raw?.collectedTodayRevenue ??
-        raw?.todayRevenue ??
-        raw?.collectedRevenue ??
-        raw?.totalRevenue ??
-        0
-    );
-    const expectedTodayRevenue = Number(
-      raw?.expectedTodayRevenue ??
-        raw?.expectedRevenue ??
-        raw?.todayRevenue ??
-        collectedTodayRevenue
-    );
-    const explicitRate =
-      raw?.collectionRateToday ?? raw?.collectionRate ?? undefined;
-    const collectionRateToday =
-      explicitRate !== undefined
-        ? Number(explicitRate)
-        : expectedTodayRevenue > 0
-        ? Math.min(100, Math.round((collectedTodayRevenue / expectedTodayRevenue) * 100))
-        : 0;
-
-    return {
-      ...raw,
-      todaysSessions,
-      completedSessions,
-      pendingPayments,
-      todayRevenue: collectedTodayRevenue,
-      collectedTodayRevenue,
-      expectedTodayRevenue,
-      collectionRateToday,
-      presentDoctors: Number(raw?.presentDoctors ?? 0),
-      walkInsToday: Number(raw?.walkInsToday ?? 0)
-    };
-  }
-
-  normalizeSession(raw: any): TodaySession {
-    const id = Number(raw?.id ?? raw?.appointmentId ?? 0);
-    return {
-      ...raw,
-      id,
-      appointmentId: id,
-      patientId: Number(raw?.patientId ?? 0),
-      patientName: raw?.patientName ?? raw?.patientFullName,
-      doctorId: raw?.doctorId ?? null,
-      doctorName: raw?.doctorName ?? raw?.doctorFullName,
-      roomId: raw?.roomId ?? null,
-      roomName: raw?.roomName ?? raw?.roomDisplayName,
-      appointmentType: raw?.appointmentType ?? raw?.type ?? 'Session',
-      type: raw?.appointmentType ?? raw?.type ?? 'Session',
-      startTime: raw?.startTime ?? raw?.scheduledAt ?? '',
-      endTime: raw?.endTime ?? '',
-      status: this.mapStatusToString(raw?.status)
-    };
-  }
-
-  /**
-   * 1. GET /api/Receptionist/dashboard-stats
-   */
-  getDashboardStats(): void {
-    if (!this.http) return;
-    this.loading.set(true);
-    this.error.set(null);
-
-    this.http.get<any>(`${this.apiUrl}/dashboard-stats`).subscribe({
-      next: (data) => {
-        const raw =
-          data?.value !== undefined
-            ? data.value
-            : data?.data !== undefined
-            ? data.data
-            : data;
-        this.stats.set(this.normalizeStats(raw));
-        this.loading.set(false);
-      },
-      error: (err) => {
-        this.error.set(err.message || 'Failed to fetch dashboard stats');
-        this.loading.set(false);
-      }
-    });
-  }
-
-  /**
-   * 2. GET /api/Receptionist/today-sessions
-   * Query Params: Search, DoctorId, RoomId, PageNumber, PageSize
-   */
-  getTodaySessions(filters: TodaySessionsFilters = {}): void {
-    if (!this.http) return;
-    this.lastFilters = filters;
-    this.loading.set(true);
-    this.error.set(null);
-
-    let params = new HttpParams();
-    if (filters.search) params = params.set('Search', filters.search);
-    if (filters.doctorId !== undefined && filters.doctorId !== '') {
-      params = params.set('DoctorId', filters.doctorId.toString());
+  getDashboardStats() {
+    if (!this.http) {
+      this.statsError.set("HTTP client unavailable.");
+      return;
     }
-    if (filters.roomId !== undefined && filters.roomId !== '') {
-      params = params.set('RoomId', filters.roomId.toString());
-    }
-    if (filters.pageNumber) {
-      params = params.set('PageNumber', filters.pageNumber.toString());
-    }
-    if (filters.pageSize) {
-      params = params.set('PageSize', filters.pageSize.toString());
-    }
-
+    const generation = ++this.statsGeneration;
+    this.statsLoading.set(true);
+    this.statsError.set(null);
     this.http
-      .get<any>(`${this.apiUrl}/today-sessions`, { params })
+      .get<unknown>(`${environment.apiUrl}/Receptionist/dashboard-stats`)
+      .pipe(
+        finalize(() => {
+          if (generation === this.statsGeneration) this.statsLoading.set(false);
+        }),
+      )
       .subscribe({
-        next: (data) => {
-          const raw =
-            data?.value !== undefined
-              ? data.value
-              : data?.data !== undefined
-              ? data.data
-              : data?.items !== undefined
-              ? data.items
-              : data;
-          const items = Array.isArray(raw?.items)
-            ? raw.items
-            : Array.isArray(raw)
-            ? raw
-            : [];
-          this.todaySessions.set(
-            items.map((item: any) => this.normalizeSession(item))
-          );
-          this.loading.set(false);
+        next: (value) => {
+          if (generation !== this.statsGeneration) return;
+          try {
+            this.stats.set(this.normalizeStats(value));
+          } catch (e) {
+            this.statsError.set(apiError(e));
+          }
         },
-        error: (err) => {
-          this.error.set(err.message || 'Failed to fetch today sessions');
-          this.loading.set(false);
-        }
+        error: (e) => {
+          if (generation === this.statsGeneration)
+            this.statsError.set(apiError(e));
+        },
       });
   }
-
-  /**
-   * 3. PUT /api/Receptionist/appointments/{appointmentId}/status
-   * Expects an integer in the body representing the new status.
-   */
-  updateSessionStatus(appointmentId: number, status: number): Observable<any> {
-    if (!this.http) return of(null);
-    return this.http
-      .put(
-        `${this.apiUrl}/appointments/${appointmentId}/status`,
-        status,
-        { headers: { 'Content-Type': 'application/json' } }
+  getTodaySessions(filters: TodaySessionsFilters = {}) {
+    if (!this.http) {
+      this.sessionsError.set("HTTP client unavailable.");
+      return;
+    }
+    this.lastFilters = { ...filters };
+    const generation = ++this.generation;
+    this.sessionsLoading.set(true);
+    this.sessionsError.set(null);
+    let params = new HttpParams();
+    if (filters.search) params = params.set("Search", filters.search);
+    if (filters.doctorId) params = params.set("DoctorId", filters.doctorId);
+    if (filters.roomId) params = params.set("RoomId", String(filters.roomId));
+    pagedRecords(
+      this.http,
+      `${environment.apiUrl}/Receptionist/today-sessions`,
+      (value) => this.normalizeSession(value),
+      params,
+    )
+      .pipe(
+        finalize(() => {
+          if (generation === this.generation) this.sessionsLoading.set(false);
+        }),
       )
-      .pipe(
-        tap(() => {
-          this.getTodaySessions(this.lastFilters);
-          this.getDashboardStats();
-        })
-      );
+      .subscribe({
+        next: (items) => {
+          if (generation === this.generation) this.todaySessions.set(items);
+        },
+        error: (e) => {
+          if (generation === this.generation)
+            this.sessionsError.set(apiError(e));
+        },
+      });
   }
-
-  /**
-   * 4. PUT /api/Receptionist/appointments/{appointmentId}/cancel
-   * Cancels the appointment (no body required).
-   */
-  cancelSession(appointmentId: number): Observable<any> {
-    if (!this.http) return of(null);
-    return this.http
-      .put(`${this.apiUrl}/appointments/${appointmentId}/cancel`, null)
-      .pipe(
-        tap(() => {
-          this.getTodaySessions(this.lastFilters);
-          this.getDashboardStats();
-        })
+  updateSessionStatus(id: number, status: number) {
+    if (!this.workflow || !this.contracts)
+      return throwError(
+        () => new Error("Backend status definitions are unavailable."),
       );
+    const label = this.contracts.label("appointmentStatus", status);
+    if (label !== "In Progress" && label !== "Completed")
+      return throwError(() => new Error("Unsupported status transition."));
+    return this.workflow.transition(id, label);
+  }
+  cancelSession(id: number) {
+    return this.workflow
+      ? this.workflow.cancel(id)
+      : throwError(() => new Error("HTTP client unavailable."));
   }
 }
-

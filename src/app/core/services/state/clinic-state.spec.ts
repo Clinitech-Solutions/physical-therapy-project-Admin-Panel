@@ -1,3 +1,4 @@
+import { mockRooms } from '../../mock-data/mock-db';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { ClinicStateService } from './clinic-state.service';
 
@@ -8,6 +9,8 @@ describe('ClinicStateService Business Rules & Date Filtering Unit Tests', () => 
     service = new ClinicStateService();
     // Wait for initial simulation delay
     await new Promise(resolve => setTimeout(resolve, 600));
+    // Explicit legacy algorithm fixtures: production no longer loads sample rooms or browser storage.
+    (service as any).roomsSig.set(mockRooms.map(room => ({...room})));
   });
 
   describe('Business Rule: isPatientNew (Assessment First)', () => {

@@ -6,6 +6,8 @@
     </div>
   </div>
 
+  @if (insuranceService.loading()) { <p role="status">{{ 'RECEPTIONIST.PROCESSING' | translate }}</p> }
+  @if (insuranceService.error()) { <p class="alert alert-warning" role="alert">{{ locale.label(insuranceService.error()) }} <button class="btn btn-outline-secondary btn-sm" (click)="insuranceService.getCompanies()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button></p> }
   <!-- Business Rule Highlight: Insurance Workflow Gate -->
   <div class="card card-bg border mb-4 p-3 rounded d-flex flex-row align-items-center gap-3">
     <div class="avatar avatar-md bg-info-subtle text-info d-flex align-items-center justify-content-center" style="min-width: 44px; height: 44px; font-size: 1.3rem;">
@@ -13,10 +15,10 @@
     </div>
     <div class="flex-1">
       <div class="fw-bold small text-info text-uppercase mb-1 d-flex align-items-center gap-2">
-        <i class="bi bi-info-circle"></i> <span>{{ 'RECEPTIONIST.INSURANCE_GATE_TITLE' | translate }}</span>
+        <i class="bi bi-info-circle"></i> <span>{{ 'RECEPTIONIST.INSURANCE_DETAILS' | translate }}</span>
       </div>
       <p class="mb-0 text-muted small">
-        {{ 'RECEPTIONIST.INSURANCE_GATE_SUB' | translate }}
+        {{ 'RECEPTIONIST.UI.INSURANCE_STATUS_NOTICE' | translate }}
       </p>
     </div>
   </div>
@@ -32,7 +34,7 @@
             </div>
             <div>
               <h5 class="fw-bold mb-0 text-body">{{ provider.name }}</h5>
-              <span class="badge border text-muted mt-1" style="font-size: 10px;">{{ provider.code }}</span>
+              <span class="badge border text-muted mt-1" style="font-size: 10px;">#{{ provider.id }}</span>
             </div>
           </div>
           <span class="portal-provider-status badge badge-success d-inline-flex align-items-center gap-1">
@@ -61,7 +63,7 @@
         </div>
       </div>
     } @empty {
-      <p class="text-muted py-4">{{ 'RECEPTIONIST.UI.NO_PROVIDERS_FOUND_' | translate }}</p>
+      @if (!insuranceService.loading() && !insuranceService.error()) { <p class="text-muted py-4">{{ 'RECEPTIONIST.UI.NO_PROVIDERS_FOUND_' | translate }}</p> }
     }
   </div>
 </div>

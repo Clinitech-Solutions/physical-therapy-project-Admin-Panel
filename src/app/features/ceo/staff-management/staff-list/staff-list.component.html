@@ -52,13 +52,13 @@
             <td class="py-3 px-4 text-secondary">{{ user.userName }}</td>
             <td class="py-3 px-4">
               <span class="badge" [ngClass]="{
-                      'badge-ceo': user.roles?.[0] === 'Ceo' || user.roles?.[0] === 'CEO',
-                      'badge-doctor': user.roles?.[0] === 'Doctor',
-                      'badge-senior': user.roles?.[0] === 'Senior Therapist',
-                      'badge-recep': user.roles?.[0] === 'Receptionist',
-                      'badge-neutral': !['CEO', 'Ceo', 'Doctor', 'Senior Therapist', 'Receptionist'].includes(user.roles?.[0] || '')
+                      'badge-ceo': user.roles[0] === 'Ceo' || user.roles[0] === 'CEO',
+                      'badge-doctor': user.roles[0] === 'Doctor',
+                      'badge-senior': user.roles[0] === 'Senior Therapist',
+                      'badge-recep': user.roles[0] === 'Receptionist',
+                      'badge-neutral': !['CEO', 'Ceo', 'Doctor', 'Senior Therapist', 'Receptionist'].includes(user.roles[0] || '')
                     }">
-                {{ user.roles?.[0] }}
+                {{ user.roles[0] }}
               </span>
             </td>
             <td class="py-3 px-4 ltr:text-right rtl:text-left">
@@ -92,6 +92,7 @@
     </div>
     <div class="modal-body p-0">
       <form [formGroup]="editForm" (ngSubmit)="onUpdate()">
+        <fieldset class="border-0 p-0 m-0" [disabled]="isUpdating">
         <div class="mb-3">
           <label class="form-label">{{ 'CEO.STAFF.FULL_NAME' | translate }}</label>
           <input type="text" class="form-control" formControlName="fullName" [placeholder]="'CEO.STAFF.ENTER_FULL_NAME' | translate">
@@ -119,7 +120,7 @@
         
         <div class="mb-4">
           <label class="form-label">{{ 'CEO.STAFF.ROLE' | translate }}</label>
-          <select class="form-control" formControlName="role">
+          <select class="form-control" formControlName="role" (change)="onEditRoleChange()">
             <option value="">{{ 'CEO.STAFF.SELECT_ROLE' | translate }}</option>
             @for (r of roles; track r) {
               <option [value]="r">{{ r }}</option>
@@ -127,10 +128,16 @@
           </select>
         </div>
         
+        @if (editForm.get('role')?.value !== 'Patient') {
+          <div class="mb-3"><app-staff-working-hours [hours]="editForm.get('workingHours')?.value" [disabled]="isUpdating" [showErrors]="!!editForm.get('workingHours')?.touched"
+            (hoursChange)="editForm.get('workingHours')?.setValue($event)" /></div>
+        }
+        @if (updateError) { <p class="text-danger" role="alert">{{ updateError }}</p> }
         <div class="d-flex justify-content-end gap-2">
           <button type="button" class="btn btn-secondary" (click)="closeEditModal()">{{ 'CEO.STAFF.CANCEL' | translate }}</button>
-          <button type="submit" class="btn btn-primary" [disabled]="editForm.invalid">{{ 'CEO.STAFF.UPDATE_USER' | translate }}</button>
+          <button type="submit" class="btn btn-primary" [disabled]="editForm.invalid || isUpdating">{{ 'CEO.STAFF.UPDATE_USER' | translate }}</button>
         </div>
+        </fieldset>
       </form>
     </div>
   </div>

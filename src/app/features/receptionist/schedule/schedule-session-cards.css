@@ -1,0 +1,184 @@
+/* ── Session Cards ── */
+.session-card {
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.65rem;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-color);
+}
+
+.session-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.patient-avatar-circle {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--mq-gradient);
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.patient-name {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.patient-name:hover {
+  color: var(--mq-teal);
+}
+
+.progress-mini-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.66rem;
+  font-weight: 600;
+  color: var(--color-warning);
+  background: var(--color-warning-bg);
+  padding: 1px 7px;
+  border-radius: 999px;
+  margin-top: 2px;
+  cursor: pointer;
+}
+
+.session-status-badge {
+  font-size: 0.66rem;
+  padding: 2px 8px;
+}
+
+.session-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color-subtle);
+}
+
+.meta-chip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+  min-width: 0;
+}
+
+.session-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid var(--border-color-subtle);
+}
+
+.type-pill {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: var(--color-info-bg);
+  color: var(--color-info);
+}
+
+.type-pill.type-assessment {
+  background: var(--mq-teal-dim);
+  color: var(--mq-teal);
+}
+
+.session-time {
+  font-size: 0.72rem;
+  font-family: monospace;
+  color: var(--text-muted);
+}
+
+.session-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-session-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 7px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid transparent;
+}
+
+.btn-checkin {
+  background: var(--mq-teal-dim);
+  color: var(--mq-teal);
+  border-color: rgba(0, 201, 167, 0.3);
+}
+
+.btn-checkin:hover {
+  background: var(--mq-teal);
+  color: #0A1628;
+}
+
+.btn-checkout {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+  border-color: rgba(0, 201, 167, 0.3);
+}
+
+.btn-checkout:hover {
+  background: var(--color-success);
+  color: #0A1628;
+}
+
+.btn-absent-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-absent-icon:hover {
+  background: var(--color-danger);
+  color: #ffffff;
+}
+
+/* ── Distinct Visual States for Session Cards ── */
+.empty-slot-placeholder {
+  display: flex;
+  align-items: center;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-style: italic;
+  padding: 0.5rem 0.25rem;
+}

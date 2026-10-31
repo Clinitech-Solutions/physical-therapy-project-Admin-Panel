@@ -1,3 +1,7 @@
+import { RoomService } from '../../../core/services/room.service';
+import { ClinicianService } from '../../../core/services/clinician.service';
+import { AppointmentWorkflowService } from '../../../core/services/appointment-workflow.service';
+import { apiError, ReceptionError } from '../../../core/services/reception-api';
 import { ReceptionistLocale, ReceptionistTextPipe } from '../../../shared/receptionist-locale';
 import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -18,10 +22,9 @@ import {
   ReceptionistService,
   TodaySession
 } from '../../../core/services/receptionist.service';
-import { AppointmentService } from '../../../core/services/appointment.service';
+import { AppointmentService, Appointment } from '../../../core/services/appointment.service';
 import { PatientService } from '../../../core/services/patient.service';
 import { BillingService } from '../../../core/services/billing.service';
-import { UserService } from '../../../core/services/user.service';
 
 export interface ScheduleDoctorOption {
   id: string;
@@ -51,7 +54,7 @@ export interface ScheduleRoomOption {
     PatientProfileComponent
   ],
   templateUrl: './schedule.html',
-  styleUrls: ['./schedule.css']
+  styleUrls: ['./schedule.css', './schedule-timeline.css', './schedule-session-cards.css']
 })
 export class ScheduleComponent implements OnInit {
   readonly locale = new ReceptionistLocale();
@@ -62,7 +65,59 @@ export class ScheduleComponent implements OnInit {
   patientService = inject(PatientService, { optional: true });
   billingService =
     inject(BillingService, { optional: true }) ?? new BillingService();
-  userService = inject(UserService, { optional: true });
+
+  readonly roomService = inject(RoomService);
+  readonly clinicianService = inject(ClinicianService);
+  readonly workflow = inject(AppointmentWorkflowService);
+  readonly actionError = signal('');
+  readonly editingAppointment = signal<Appointment | null>(null);
+  readonly editingLoading = signal(false);
+  editStart = '';
+  get editEnd(): string {
+    const start = new Date(this.editStart);
+    return Number.isFinite(start.getTime()) ? new Date(start.getTime() + 3600000).toISOString() : '';
+  }
+  editClinicianId = '';
+  editRoomId: number | null = null;
+  get editVisible() { return this.editingAppointment() !== null; }
+  set editVisible(value: boolean) { if (!value && !this.appointmentService?.mutation.busy()) this.editingAppointment.set(null); }
+  async openEditAppointment(session: TodaySession) {
+    if (!this.appointmentService || this.editingLoading()) return;
+    this.editingLoading.set(true); this.actionError.set('');
+    try {
+      const appointment = await firstValueFrom(this.appointmentService.getAppointment(session.id));
+      if (typeof appointment.status !== 'number' || !Number.isInteger(appointment.status)) {
+        throw new ReceptionError('ENUM_DEFINITION_PENDING', 'This operation needs a confirmed backend status definition.');
+      }
+      const local = (value: string) => {
+        const date = new Date(value);
+        return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}T${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
+      };
+      this.editStart = local(appointment.startTime);
+      this.editClinicianId = appointment.doctorId ?? appointment.seniorId ?? '';
+      this.editRoomId = appointment.roomId ?? null; this.editingAppointment.set(appointment);
+    } catch (error) { this.actionError.set(error instanceof ReceptionError ? this.locale.text(error.key,error.message) : apiError(error)); }
+    this.editingLoading.set(false);
+  }
+  async saveAppointmentEdit() {
+    const appointment = this.editingAppointment();
+    if (!appointment || !this.appointmentService || this.appointmentService.mutation.busy()) return;
+    this.actionError.set('');
+    try {
+      const clinician = this.allDoctors().find(d => d.id === this.editClinicianId);
+      const unchanged = this.editClinicianId === (appointment.doctorId ?? appointment.seniorId);
+      if (!unchanged && !clinician) throw new ReceptionError('CLINICIAN_REQUIRED', 'Select a clinician from the server directory.');
+      await firstValueFrom(this.appointmentService.updateAppointment(appointment.id!, {
+        doctorId: unchanged ? appointment.doctorId ?? null : clinician!.roles.includes('Doctor') ? clinician!.id : null,
+        seniorId: unchanged ? appointment.seniorId ?? null : clinician!.roles.includes('Doctor') ? null : clinician!.id,
+        roomId: this.editRoomId, appointmentType: appointment.appointmentType,
+        startTime: new Date(this.editStart), endTime: new Date(this.editEnd), status: appointment.status as number
+      }));
+    } catch (error) { this.actionError.set(error instanceof ReceptionError ? this.locale.text(error.key,error.message) : apiError(error)); return; }
+    this.editingAppointment.set(null);
+    this.messageService.add({severity:'success',summary:this.locale.text('SUCCESS','Success'),detail:this.locale.text('APPOINTMENT_OPERATION_SAVED','Appointment change saved. Refreshing the schedule separately.')});
+    this.onSearchOrFilterChange();
+  }
 
   viewMode = signal<'Week' | 'Day'>('Day');
   isLoading = this.receptionistService.loading;
@@ -72,63 +127,8 @@ export class ScheduleComponent implements OnInit {
   todaySessionsSignal = this.receptionistService.todaySessions;
   allPatients = computed<Patient[]>(() => this.patientService?.patients() ?? []);
 
-  // Derive doctors list from API Users (Role: Doctor / Senior) + active session doctors
-  allDoctors = computed<ScheduleDoctorOption[]>(() => {
-    const map = new Map<string, ScheduleDoctorOption>();
-
-    const users = this.userService?.users() ?? [];
-    users
-      .filter((u) =>
-        u.roles?.some(
-          (r) =>
-            r.toLowerCase() === 'doctor' ||
-            r.toLowerCase() === 'senior' ||
-            r.toLowerCase() === 'therapist'
-        )
-      )
-      .forEach((u) => {
-        if (u.id) {
-          map.set(String(u.id), {
-            id: String(u.id),
-            name: u.fullName || u.userName,
-            gender: u.gender
-          });
-        }
-      });
-
-    this.todaySessionsSignal().forEach((s) => {
-      const id = s.doctorId != null ? String(s.doctorId) : '';
-      const name = s.doctorName || (id ? `Doctor #${id}` : '');
-      if (id && !map.has(id)) {
-        map.set(id, { id, name });
-      }
-    });
-
-    return Array.from(map.values());
-  });
-
-  // Derive rooms list from API TodaySessions & Appointments
-  allRooms = computed<ScheduleRoomOption[]>(() => {
-    const map = new Map<string, ScheduleRoomOption>();
-
-    this.todaySessionsSignal().forEach((s) => {
-      const id = s.roomId != null ? String(s.roomId) : '';
-      const displayName = s.roomName || (id ? `Room ${id}` : '');
-      if (id && !map.has(id)) {
-        map.set(id, { id, displayName });
-      }
-    });
-
-    (this.appointmentService?.appointments() ?? []).forEach((a) => {
-      const id = a.roomId != null ? String(a.roomId) : '';
-      const displayName = a.roomName || (id ? `Room ${id}` : '');
-      if (id && !map.has(id)) {
-        map.set(id, { id, displayName });
-      }
-    });
-
-    return Array.from(map.values());
-  });
+  allDoctors = this.clinicianService.clinicians;
+  allRooms = computed(() => this.roomService.rooms().map(r => ({id:String(r.id),displayName:r.name})));
 
   // Search & Filter Controls
   searchQuery: string = '';
@@ -152,12 +152,18 @@ export class ScheduleComponent implements OnInit {
     this.showProfileModal.set(true);
   }
 
+  readonly patientLookupError = signal('');
+  refreshPatientLookup() {
+    this.patientLookupError.set('');
+    this.patientService?.getPatients().subscribe({error:e=>this.patientLookupError.set(apiError(e))});
+  }
+
   ngOnInit() {
     this.receptionistService.getDashboardStats();
     this.receptionistService.getTodaySessions();
-    this.patientService?.getPatients().subscribe();
-    this.billingService.getInvoices();
-    this.userService?.getAllUsers();
+    this.refreshPatientLookup();
+    this.clinicianService.load();
+    this.roomService.load();
   }
 
   onSearchOrFilterChange() {
@@ -224,28 +230,31 @@ export class ScheduleComponent implements OnInit {
 
   // Summary KPI getters bound to API data (ReceptionistService stats & todaySessions)
   get totalTodayCount(): number {
-    return this.todaySessions.length || (this.stats()?.todaysSessions ?? 0);
+    return this.todaySessions.length;
   }
 
-  get upcomingCount(): number {
+  get upcomingCount(): number | null {
+    if(this.todaySessions.some(s => this.getMappedStatus(s.status) === 'Unknown'))return null;
     return this.todaySessions.filter((s) => {
       const st = this.receptionistService.mapStatusToString(s.status);
       return st === 'Pending' || st === 'Confirmed';
     }).length;
   }
 
-  get inProgressCount(): number {
+  get inProgressCount(): number | null {
+    if(this.todaySessions.some(s => this.getMappedStatus(s.status) === 'Unknown'))return null;
     return this.todaySessions.filter((s) => {
       const st = this.receptionistService.mapStatusToString(s.status);
       return st === 'In Progress' || st === 'Waiting';
     }).length;
   }
 
-  get completedCount(): number {
+  get completedCount(): number | null {
+    if(this.todaySessions.some(s => this.getMappedStatus(s.status) === 'Unknown'))return null;
     const listCompleted = this.todaySessions.filter(
       (s) => this.receptionistService.mapStatusToString(s.status) === 'Completed'
     ).length;
-    return listCompleted || (this.stats()?.completedSessions ?? 0);
+    return listCompleted;
   }
 
   /**
@@ -417,219 +426,32 @@ export class ScheduleComponent implements OnInit {
       case 'Cancelled':
         return 'status-cancelled';
       default:
-        return 'status-confirmed';
+        return 'status-unknown';
     }
   }
 
-  /**
-   * Check-in patient action with Debt Gate interceptor (using BillingService & ReceptionistService)
-   */
   showDebtModal = false;
   pendingCheckInSessionId: number | null = null;
-  installmentAmount: number = 0;
-  installmentPaymentMethod: string = 'Cash';
-  paymentMethods = ['Cash', 'Credit Card', 'E-Wallet', 'InstaPay'];
-  debtAmount: number = 0;
-
-  async checkInSession(sessionId: number | undefined) {
-    if (sessionId === undefined) return;
-    const session = this.todaySessions.find(
-      (s) => Number(s.id) === Number(sessionId)
-    );
-    if (!session) return;
-
-    const patient = this.allPatients().find(
-      (p) => String(p.id) === String(session.patientId)
-    );
-    const plan = patient?.financialPlan || patient?.treatmentPlan?.financialPlan;
-
-    const unpaidInvoicesDebt = this.billingService
-      .invoices()
-      .filter((inv) => {
-        const st = this.billingService.mapStatusToString(inv.status);
-        return (
-          Number(inv.patientId) === Number(session.patientId) &&
-          (st === 'Pending' || st === 'Partial')
-        );
-      })
-      .reduce(
-        (sum, inv) => sum + (inv.remainingBalance ?? inv.patientAmount ?? 0),
-        0
-      );
-
-    const totalOutstandingDebt = Math.max(
-      plan?.remainingDebt ?? 0,
-      unpaidInvoicesDebt
-    );
-
-    if (totalOutstandingDebt > 0) {
-      this.debtAmount = totalOutstandingDebt;
-      this.pendingCheckInSessionId = Number(sessionId);
-      this.installmentAmount = totalOutstandingDebt;
-      this.installmentPaymentMethod = 'Cash';
-      this.showDebtModal = true;
-      return;
-    }
-
-    await this.executeCheckIn(Number(sessionId));
-  }
-
-  async executeCheckIn(sessionId: number) {
-    try {
-      const inProgressStatus =
-        this.receptionistService.mapStatusToNumber('In Progress');
-      await firstValueFrom(
-        this.receptionistService.updateSessionStatus(
-          sessionId,
-          inProgressStatus
-        )
-      );
-      this.messageService.add({
-        severity: 'success',
-        summary: this.locale.text('SUCCESS', "Success"),
-        detail: this.locale.text('PATIENT_CHECKED_IN', "Patient checked in")
-      });
-    } catch (error: any) {
-      this.messageService.add({
-        severity: 'error',
-        summary: this.locale.text('CHECK_IN_ERROR', "Check-in Error"),
-        detail: this.locale.error(error, 'CHECK_IN_FAILED', "Check-in failed")
-      });
-    }
-  }
-
+  installmentAmount = 0;
+  installmentPaymentMethod = '';
+  paymentMethods: string[] = [];
+  debtAmount = 0;
+  async checkInSession(id: number | undefined) { if (id !== undefined) await this.executeCheckIn(id); }
+  async executeCheckIn(id: number) { await this.perform(() => this.workflow.transition(id,'In Progress')); }
+  async checkoutSession(id: number | undefined) { if (id !== undefined) await this.perform(() => this.workflow.transition(id,'Completed')); }
+  async checkOutPatient(id: number) { await this.checkoutSession(id); }
   async confirmCheckIn(withInstallment: boolean) {
-    if (this.pendingCheckInSessionId === null) return;
-    const sessionId = this.pendingCheckInSessionId;
-
-    const session = this.todaySessions.find(
-      (s) => Number(s.id) === Number(sessionId)
-    );
-    if (!session) return;
-
-    if (withInstallment && this.installmentAmount > 0) {
-      try {
-        const methodNum = this.billingService.mapPaymentMethodToNumber(
-          this.installmentPaymentMethod
-        );
-
-        let targetInvoice =
-          this.billingService.getInvoiceBySessionId(sessionId) ||
-          this.billingService
-            .invoices()
-            .find((inv) => {
-              const st = this.billingService.mapStatusToString(inv.status);
-              return (
-                Number(inv.patientId) === Number(session.patientId) &&
-                (st === 'Pending' || st === 'Partial')
-              );
-            });
-
-        if (!targetInvoice) {
-          targetInvoice = await firstValueFrom(
-            this.billingService.createInvoice({
-              appointmentId: sessionId,
-              patientId: Number(session.patientId),
-              type: this.billingService.mapTypeToNumber('Installment'),
-              totalAmount: this.installmentAmount,
-              insuranceAmount: 0,
-              patientAmount: this.installmentAmount
-            })
-          );
-        }
-
-        if (targetInvoice?.id) {
-          await firstValueFrom(
-            this.billingService.recordPayment({
-              invoiceId: Number(targetInvoice.id),
-              amount: this.installmentAmount,
-              method: methodNum
-            })
-          );
-        }
-
-        this.messageService.add({
-          severity: 'success',
-          summary: this.locale.text('PAYMENT_COLLECTED', "Payment Collected"),
-          detail: this.locale.text('INSTALLMENT_COLLECTED_DETAIL', "{{amount}} EGP installment collected.", { amount: this.installmentAmount.toLocaleString(this.locale.language) })
-        });
-      } catch (error: any) {
-        this.messageService.add({
-          severity: 'error',
-          summary: this.locale.text('PAYMENT_ERROR', "Payment Error"),
-          detail: this.locale.text('FAILED_TO_PROCESS_INSTALLMENT', "Failed to process installment")
-        });
-        return;
-      }
-    }
-
+    if (withInstallment) { this.actionError.set(this.locale.text('INSTALLMENT_SUPPORT_PENDING','Installment plans are not available. Collect against a saved invoice in Billing.')); return; }
+    if(this.pendingCheckInSessionId !== null) await this.executeCheckIn(this.pendingCheckInSessionId);
     this.showDebtModal = false;
-    this.pendingCheckInSessionId = null;
-    await this.executeCheckIn(sessionId);
   }
-
-  /**
-   * Check-out Gate:
-   * Strictly checks BillingService.getInvoiceBySessionId(sessionId) and halts
-   * if the invoice status is not 'Paid' or 'Waived', then updates status via ReceptionistService.
-   */
-  async checkoutSession(sessionId: number | undefined) {
-    if (sessionId === undefined) return;
-    try {
-      const sessionInvoice = this.billingService.getInvoiceBySessionId(sessionId);
-      if (sessionInvoice) {
-        const statusStr = this.billingService.mapStatusToString(
-          sessionInvoice.status
-        );
-        if (statusStr !== 'Paid' && statusStr !== 'Waived') {
-          throw new Error(
-            this.locale.text('CANNOT_CHECK_OUT_THE_INVOICE_FOR_THIS_SESSION_IS_PENDING_PLEASE_PROCESS_PAYMENT_FIRST_', 'Cannot check out: The invoice for this session is pending. Please process payment first.')
-          );
-        }
-      }
-
-      const completedStatus =
-        this.receptionistService.mapStatusToNumber('Completed');
-      await firstValueFrom(
-        this.receptionistService.updateSessionStatus(
-          Number(sessionId),
-          completedStatus
-        )
-      );
-      this.messageService.add({
-        severity: 'success',
-        summary: this.locale.text('SUCCESS', "Success"),
-        detail: this.locale.text('PATIENT_CHECKED_OUT', "Patient checked out")
-      });
-    } catch (error: any) {
-      this.messageService.add({
-        severity: 'error',
-        summary: this.locale.text('CHECK_OUT_BLOCKED', "Check-out Blocked"),
-        detail: this.locale.error(error, 'FAILED_TO_CHECK_OUT', "Failed to check out")
-      });
-    }
-  }
-
-  /**
-   * Mark Absent / Cancel Session via ReceptionistService.cancelSession()
-   */
-  markPatientAbsent(sessionId: number | undefined) {
-    if (sessionId === undefined) return;
-    this.receptionistService.cancelSession(Number(sessionId)).subscribe({
-      next: () => {
-        this.messageService.add({
-          severity: 'success',
-          summary: this.locale.text('SUCCESS', "Success"),
-          detail: this.locale.text('PATIENT_MARKED_AS_ABSENT_AND_SESSION_CANCELLED_', "Patient marked as absent and session cancelled.")
-        });
-      },
-      error: (error) => {
-        this.messageService.add({
-          severity: 'error',
-          summary: this.locale.text('ERROR', "Error"),
-          detail: this.locale.error(error, 'FAILED_TO_MARK_PATIENT_ABSENT_', "Failed to mark patient absent.")
-        });
-      }
-    });
+  async markPatientAbsent(id: number | undefined) { if(id!==undefined) await this.perform(() => this.workflow.cancel(id)); }
+  private async perform(request: () => import('rxjs').Observable<unknown>) {
+    if(this.workflow.mutation.busy())return;
+    this.actionError.set('');
+    try { await firstValueFrom(request()); }
+    catch(error) { this.actionError.set(error instanceof ReceptionError ? this.locale.text(error.key,error.message) : apiError(error)); return; }
+    this.messageService.add({severity:'success',summary:this.locale.text('SUCCESS','Success'),detail:this.locale.text('APPOINTMENT_OPERATION_SAVED','Appointment change saved. Refreshing the schedule separately.')});
+    this.onSearchOrFilterChange(); this.receptionistService.getDashboardStats();
   }
 }
