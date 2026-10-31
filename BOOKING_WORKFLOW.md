@@ -1,5 +1,9 @@
 # Patient-first booking integration
 
+## Approved finance migration applied - 2026-10-31, 13:29 Cairo
+
+Only `20261030184822_CourseFinancialAgreements` was applied to the explicitly authorized `db56823.public.databaseasp.net` / `db56823` target after fresh target/history/SQL review. Its history entry, missing invoice columns and zero pending migrations are verified. Local dashboard and billing invoice GETs return HTTP 200 against SQL Server. Existing row counts and invoice/payment totals are unchanged; no test financial records, push or deployment. These SQL Server read checks are separate from earlier isolated SQLite/browser tests. See the sibling backend's [application report](../Physical-Therapy-Center/Database/ReviewedMigrations/20261030184822_CourseFinancialAgreements.APPLIED.md). This update supersedes earlier pending-migration/activation-blocker statements below, which describe the prior stage.
+
 **Visual update, 2026-10-31:** The Booking content is now a single page matching the supplied reference: three numbered sections, aligned equal-height controls, segmented single/bulk and pricing modes, weekday pills, generated appointment rows and a sticky financial summary. This supersedes the earlier wizard presentation while retaining the financial/API rules below. The sidebar/header and backend are unchanged. **93 frontend regression tests pass**, production build is warning-free, and desktop/mobile/Arabic browser checks against the matching local test backend pass. See [BOOKING_FINANCE.md](BOOKING_FINANCE.md) for screenshots and validation details.
 
 ## Current finance status — 2026-10-31

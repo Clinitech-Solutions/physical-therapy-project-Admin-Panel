@@ -1,5 +1,9 @@
 # MediQova Reception progress
 
+## Approved finance migration applied - 2026-10-31, 13:29 Cairo
+
+Only `20261030184822_CourseFinancialAgreements` was applied to the explicitly authorized `db56823.public.databaseasp.net` / `db56823` target after fresh target/history/SQL review. Its history entry, missing invoice columns and zero pending migrations are verified. Local dashboard and billing invoice GETs return HTTP 200 against SQL Server. Existing row counts and invoice/payment totals are unchanged; no test financial records, push or deployment. These SQL Server read checks are separate from earlier isolated SQLite/browser tests. See the sibling backend's [application report](../Physical-Therapy-Center/Database/ReviewedMigrations/20261030184822_CourseFinancialAgreements.APPLIED.md). This update supersedes earlier pending-migration/activation-blocker statements below, which describe the prior stage.
+
 ## Receptionist access audit completed — 2026-10-31
 
 See [RECEPTION_ACCESS_CHECKLIST.md](RECEPTION_ACCESS_CHECKLIST.md) for the endpoint-to-permission matrix, confirmed causes and verification boundaries. Insurer reads and the administrative clinician lookup mismatch are fixed; backend role restrictions now cover patients, rooms, documents and clinical record authorship. Actual browser checks found and fixed patient partial-update and soft-delete/Identity incompatibilities. UI lookup failures are scoped and distinguish failed reads from successful empty results.

@@ -1,5 +1,9 @@
 # Booking finance UI
 
+## Approved finance migration applied - 2026-10-31, 13:29 Cairo
+
+Only `20261030184822_CourseFinancialAgreements` was applied to the explicitly authorized `db56823.public.databaseasp.net` / `db56823` target after fresh target/history/SQL review. Its history entry, missing invoice columns and zero pending migrations are verified. Local dashboard and billing invoice GETs return HTTP 200 against SQL Server. Existing row counts and invoice/payment totals are unchanged; no test financial records, push or deployment. These SQL Server read checks are separate from earlier isolated SQLite/browser tests. See the sibling backend's [application report](../Physical-Therapy-Center/Database/ReviewedMigrations/20261030184822_CourseFinancialAgreements.APPLIED.md). This update supersedes earlier pending-migration/activation-blocker statements below, which describe the prior stage.
+
 ## Single-page visual redesign — 2026-10-31
 
 Booking content now follows the supplied visual reference: three numbered cards (Patient & treatment plan, Appointment details, Pricing & payment) alongside a sticky financial summary. This replaces the earlier five-step presentation. The application sidebar, topbar, routes and backend financial rules are unchanged by this visual update.
