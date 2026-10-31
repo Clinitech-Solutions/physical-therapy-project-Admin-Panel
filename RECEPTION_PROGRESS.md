@@ -1,5 +1,9 @@
 # MediQova Reception progress
 
+## Authorized profile audit migration applied - 2026-10-31, 15:12 Cairo
+
+Following the user's new authorization, only `20261031122754_AppointmentScheduleAudit` was applied to the rechecked `db56823.public.databaseasp.net` / `db56823` target. Fresh forward SQL matched the reviewed artifact and contained no destructive changes; it was the only pending migration. History and audit columns/indexes/restrictive foreign keys are verified, with zero pending migrations. Local profile for patient 13, dashboard and invoice GETs return **200**. Existing record counts and financial totals are unchanged. No shared test records, scheduling writes, push or deployment. See the sibling [application report](../Physical-Therapy-Center/Database/ReviewedMigrations/20261031122754_AppointmentScheduleAudit.APPLIED.md). This supersedes the audit activation blocker below.
+
 ## Shared Patient Profile and rescheduling - 2026-10-31
 
 The approved modal redesign, course-scoped summaries/tabs and audited inline single-session editor are implemented. See [PATIENT_PROFILE.md](PATIENT_PROFILE.md) for contracts, financial invariants, UI/error/retry behavior, verification evidence and the activation boundary. Availability is server-derived; no mock slots or shared test financial writes were used. A new additive audit migration, `20261031122754_AppointmentScheduleAudit`, is prepared and reviewed **but not applied**. Its application needs separate authorization and the matching API build; the previously approved finance migration remains applied and unchanged. No push or deployment.

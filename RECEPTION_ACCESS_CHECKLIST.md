@@ -1,5 +1,9 @@
 # Reception workflow access audit — 2026-10-31
 
+## Authorized profile audit migration applied - 2026-10-31, 15:12 Cairo
+
+The user authorized the new audit migration, which is now applied and verified on `db56823.public.databaseasp.net` / `db56823`. It was the sole pending migration; reviewed SQL matched the fresh script and contained no destructive changes. History/schema are verified and zero migrations remain pending. Running local profile for patient 13, dashboard and invoice GETs return **200** with read-only Receptionist authentication. Existing counts and financial totals are unchanged. No shared test records, scheduling writes, push or deployment. See the [application report](../Physical-Therapy-Center/Database/ReviewedMigrations/20261031122754_AppointmentScheduleAudit.APPLIED.md). This supersedes the audit migration blocker below; shared SQL Server mutation/concurrency testing remains outside this verification.
+
 ## Shared Patient Profile and rescheduling - 2026-10-31
 
 The approved modal redesign, course-scoped summaries/tabs and audited inline single-session editor are implemented. See [PATIENT_PROFILE.md](PATIENT_PROFILE.md) for contracts, financial invariants, UI/error/retry behavior, verification evidence and the activation boundary. Availability is server-derived; no mock slots or shared test financial writes were used. A new additive audit migration, `20261031122754_AppointmentScheduleAudit`, is prepared and reviewed **but not applied**. Its application needs separate authorization and the matching API build; the previously approved finance migration remains applied and unchanged. No push or deployment.

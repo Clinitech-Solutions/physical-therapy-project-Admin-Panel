@@ -1,5 +1,11 @@
 # Shared Patient Profile and single-session rescheduling
 
+## Current activation status - 2026-10-31, 15:12 Cairo
+
+The user subsequently authorized the audit migration. `20261031122754_AppointmentScheduleAudit` is now **applied and verified** on the freshly rechecked `db56823.public.databaseasp.net` / `db56823` target, with no additional pending migrations. The running local API returns **200** for patient 13's profile, dashboard and invoices. Existing record counts and financial totals are unchanged. See the [application report](../Physical-Therapy-Center/Database/ReviewedMigrations/20261031122754_AppointmentScheduleAudit.APPLIED.md). No shared test records, push or deployment. SQL Server reads are now verified; shared scheduling/financial mutation and concurrency tests were deliberately not attempted. This status supersedes the pending migration/activation statements in the implementation-stage record below.
+
+## Implementation-stage record
+
 Implemented on 2026-10-31 in the shared `PatientProfileComponent` and sibling backend. The approved image is a visual reference; all displayed people, courses, sessions, payments and slots come from backend records. No shared-database test writes, migrations, push or deployment were performed for this task.
 
 ## Presentation and records
