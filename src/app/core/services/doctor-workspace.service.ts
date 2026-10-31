@@ -1,6 +1,6 @@
 import { inject, Injectable } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
-import { map, timeout } from "rxjs";
+import { map, timeout, tap } from "rxjs";
 import { TranslateService } from "@ngx-translate/core";
 import { environment } from "../../../environments/environment";
 import {
@@ -10,7 +10,7 @@ import {
   CompleteReassessment,
   ReassessmentRequest,
 } from "../models/doctor-workspace.model";
-import { numericId, ReceptionError } from "./reception-api";
+import { numericId, ReceptionError, ReceptionEvents } from "./reception-api";
 
 export function clinicDate(value = new Date()): string {
   return value.toLocaleDateString("en-CA", { timeZone: "Africa/Cairo" });
@@ -38,6 +38,7 @@ export function clinicalError(
 }
 @Injectable({ providedIn: "root" })
 export class DoctorWorkspaceService {
+  private events=inject(ReceptionEvents);
   private http = inject(HttpClient);
   private base = environment.apiUrl;
   schedule(date: string) {
@@ -97,6 +98,7 @@ export class DoctorWorkspaceService {
       .pipe(
         timeout(30000),
         map((data) => this.workspace(data,id)),
+        tap(()=>this.events.changed.next('appointments')),
       );
   }
   save(id: number, notes: NotesMutation, final = false) {
@@ -108,6 +110,7 @@ export class DoctorWorkspaceService {
     ).pipe(
       timeout(30000),
       map((data) => this.workspace(data,id)),
+      tap(()=>{if(final)this.events.changed.next('appointments');}),
     );
   }
   document(id: number, documentId: number) {

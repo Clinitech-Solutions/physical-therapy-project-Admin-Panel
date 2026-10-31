@@ -70,10 +70,14 @@ export function apiError(error: unknown): string {
     (error.status === 401 || error.status === 403)
   )
     return "RECEPTION_ACCESS_REQUIRED";
-  return (
-    patientServerError(error) ||
-    (error instanceof Error ? error.message : "Request failed.")
-  );
+  if(error instanceof HttpErrorResponse){
+    if(error.status>=500 || error.status===0)return 'REQUEST_FAILED_SAFE';
+    const code=error.error?.title ?? error.error?.code;
+    if(typeof code==='string' && code.startsWith('Booking.') && code!=='Booking.Validation')return 'BOOKING_RULE_'+code.slice(8).replace(/([a-z])([A-Z])/g,'$1_$2').toUpperCase();
+    if(error.status===409)return 'BUSINESS_REVIEW_REQUIRED';
+    if(error.status===400 || error.status===422)return 'VALIDATION_REVIEW_REQUIRED';
+  }
+  return 'REQUEST_FAILED_SAFE';
 }
 export function unknownOutcome(error: unknown): boolean {
   if (error instanceof Error && error.name === "TimeoutError") return true;

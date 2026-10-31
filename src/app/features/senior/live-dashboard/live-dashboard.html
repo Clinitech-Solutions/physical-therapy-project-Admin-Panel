@@ -34,8 +34,8 @@
   <!-- Available Doctors -->
   <div class="stat-card" style="border-left-color: var(--color-success);">
     <div class="stat-label">{{ 'SENIOR.DOCTORS_AVAILABLE' | translate }}</div>
-    <div class="stat-value">{{ availableDoctorsCount() }}</div>
-    <div class="stat-sub">{{ busyDoctorsCount() }} {{ 'SENIOR.DOCTORS_BUSY' | translate }}</div>
+    <div class="stat-value">{{ capacityLoading() || capacityError() ? '—' : availableDoctorsCount() }}</div>
+    <div class="stat-sub">{{ capacityLoading() || capacityError() ? '—' : busyDoctorsCount() }} {{ 'SENIOR.DOCTORS_BUSY' | translate }}</div>
   </div>
 </div>
 
@@ -107,6 +107,9 @@
         {{ 'SENIOR.LIVE_VIEW_CAPACITY' | translate }}
       </h4>
 
+      @if(capacityLoading()){<p role="status">{{'DOCTOR.LOADING'|translate}}</p>}
+      @if(capacityError()){<p class="alert alert-warning" role="alert">{{locale.label(capacityError())}} <button class="btn btn-outline-secondary" (click)="refreshCapacity()">{{'DOCTOR.RETRY'|translate}}</button></p>}
+      @if(!capacityError()&&!capacityLoading()){
       <div class="doctor-grid">
         @for (doctor of activeDoctorsWorkload(); track doctor.doctorId) {
           <div class="doctor-card" [style.border-left-color]="doctor.borderColor">
@@ -132,6 +135,7 @@
           </div>
         }
       </div>
+      }
     </div>
   </div>
 

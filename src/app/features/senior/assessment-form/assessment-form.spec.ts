@@ -36,6 +36,6 @@ describe('Persisted Senior assessment form',()=>{
   });
   it('does not simulate successful completion for an unreadable response',async()=>{
     const saving=fixture.componentInstance.submit();http.expectOne(`${url}/Bookings/assessments/complete`).flush(null);await saving;
-    expect(fixture.componentInstance.error()).toContain('verified');expect(TestBed.inject(Router).navigate).not.toHaveBeenCalled();
+    expect(fixture.componentInstance.error()).toBe('REQUEST_FAILED_SAFE');expect(TestBed.inject(Router).navigate).not.toHaveBeenCalled();
   });
 });

@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { InsuranceService, InsuranceCompany } from '../../../core/services/insurance.service';
+import { InsurerAccountsComponent } from '../../receptionist/billing/insurer-accounts';
 
 @Component({
   selector: 'app-insurance-management',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, TranslateModule],
+  imports: [CommonModule, ReactiveFormsModule, TranslateModule, InsurerAccountsComponent],
   templateUrl: './insurance-management.component.html',
   styleUrls: ['./insurance-management.component.css']
 })

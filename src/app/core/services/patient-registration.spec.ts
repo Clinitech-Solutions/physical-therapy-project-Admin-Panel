@@ -77,7 +77,7 @@ describe('Patient registration contracts and safety', () => {
 
   it('maps only supported create fields and formats the actual birth date', () => {
     const request = createPatientRequest({ ...draft(), nameAr: 'Other name', address: 'Not in DTO' });
-    expect(request).toEqual({ userName: 'test.patient', fullName: 'Test Patient', phoneNumber: '01012345678', gender: 1,
+    expect(request).toEqual({ fullName: 'Test Patient', phoneNumber: '01012345678', gender: 1,
       birthDate: '1988-03-14T00:00:00.000Z', paymentType: 'Cash', emergencyContact: null, insuranceCompanyId: null, insuranceDetails: null });
   });
 
@@ -103,7 +103,7 @@ describe('Patient registration contracts and safety', () => {
   });
 
   it.each([
-    { userName: '' }, { userName: 'x'.repeat(51) }, { nameEn: ' ' }, { nameEn: 'x'.repeat(151) },
+    { nameEn: ' ' }, { nameEn: 'x'.repeat(151) },
     { phone: '' }, { phone: '1'.repeat(21) }, { dob: '' }, { emergencyContact: '1'.repeat(21) }
   ])('rejects invalid required data before HTTP: %j', async fields => {
     await expect(firstValueFrom(service.addPatient({ ...draft(), ...fields }))).rejects.toThrow();

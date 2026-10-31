@@ -17,7 +17,6 @@ import { InputNumberModule } from 'primeng/inputnumber';
 import { BookingService } from '../../../core/services/booking.service';
 import { BookingAccount, BookingPaymentMethod } from '../../../core/models/booking.model';
 import { TabsModule } from 'primeng/tabs';
-import { InsurerAccountsComponent } from './insurer-accounts';
 import { CourseFinanceService } from '../../../core/services/course-finance.service';
 
 @Component({
@@ -85,7 +84,7 @@ export class DropdownComponent implements ControlValueAccessor {
     SelectModule,
     InputNumberModule,
     TabsModule,
-    DropdownComponent, InsurerAccountsComponent
+    DropdownComponent
   ],
   templateUrl: "./billing.html",
   styleUrl: "./billing.css"

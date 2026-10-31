@@ -1,3 +1,4 @@
+import { ReceptionWarnings } from '../../../core/services/reception-warnings';
 import { Component, inject, OnInit, signal, DestroyRef } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
@@ -32,6 +33,7 @@ import { ClinicalLocale } from "../../../shared/clinical-locale";
   styleUrls: ["../../doctor/doctor-workspace.css", "./clinical-review.css"],
 })
 export class ReAssessmentForm implements OnInit {
+  private warnings=inject(ReceptionWarnings,{optional:true}) ?? new ReceptionWarnings();
   private api = inject(DoctorWorkspaceService);
   private booking = inject(BookingService);
   private route = inject(ActivatedRoute);
@@ -86,7 +88,7 @@ export class ReAssessmentForm implements OnInit {
     } catch (e) {
       if (generation === this.generation) {
         this.data.set(null);
-        this.error.set(clinicalError(e, this.translate));
+        this.error.set(clinicalError(e, this.translate)); this.warnings.show(this.error());
       }
     } finally {
       if (generation === this.generation) this.loading.set(false);
@@ -115,7 +117,7 @@ export class ReAssessmentForm implements OnInit {
         await firstValueFrom(this.api.startReview(data.id, data.version)),
       );
     } catch (e) {
-      this.error.set(clinicalError(e, this.translate));
+      this.error.set(clinicalError(e, this.translate)); this.warnings.show(this.error());
     } finally {
       this.busy.set(false);
     }
@@ -145,7 +147,7 @@ export class ReAssessmentForm implements OnInit {
       );
       this.completionIntent = null;
     } catch (e) {
-      this.error.set(clinicalError(e, this.translate));
+      this.error.set(clinicalError(e, this.translate)); this.warnings.show(this.error());
       if ((e as { status?: number }).status === 400)
         this.completionIntent = null;
     } finally {
@@ -164,7 +166,7 @@ export class ReAssessmentForm implements OnInit {
         ),
       );
     } catch (e) {
-      this.error.set(clinicalError(e, this.translate));
+      this.error.set(clinicalError(e, this.translate)); this.warnings.show(this.error());
     } finally {
       this.busy.set(false);
     }

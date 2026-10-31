@@ -84,6 +84,9 @@ export class BookingService {
     this.clinicianCache.set(key, {expires: Date.now() + 30000, value}); return value;
   }
   preview(request: BookingRequest) { return this.http.post<BookingPreview>(`${this.url}/preview`, request).pipe(map(quote => {
+    if(!Array.isArray(quote?.appointments) || quote.appointments.length!==request.startsAt.length || !quote.appointments.every((a,index)=>
+      new Date(a.startTime).getTime()===new Date(request.startsAt[index]).getTime() && new Date(a.endTime).getTime()-new Date(a.startTime).getTime()===3600000 && Array.isArray(a.conflicts)))
+      throw new ReceptionError('BOOKING_QUOTE_UNVERIFIED','Booking rows could not be verified. Review every appointment before confirming.');
     if (!quote || ![quote.totalAmount, quote.patientAmount, quote.insuranceAmount, quote.deposit, quote.remainingAmount, quote.discountAmount].every(value => typeof value === 'number' && Number.isFinite(value) && value >= 0))
       throw new ReceptionError('BOOKING_QUOTE_UNVERIFIED', 'Booking amounts could not be verified. Refresh the booking details or contact your administrator.');
     return quote;

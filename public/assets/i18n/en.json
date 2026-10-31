@@ -948,7 +948,18 @@
       "BOOKING_PER_SESSION": "Per session",
       "BOOKING_AGREED_TOTAL": "Agreed total",
       "BOOKING_FREE_ASSESSMENT_NOTE": "This assessment is free. No payment will be recorded.",
-      "BOOKING_COVERED_COURSE": "Covered course"
+      "BOOKING_COVERED_COURSE": "Covered course",
+      "WARNING": "Please review",
+      "BOOKING_RULE_WEEKLY_FREQUENCY_LIMIT": "This clinic week exceeds the Senior-prescribed session frequency. Choose fewer days or another week.",
+      "BOOKING_RULE_FREQUENCY_REQUIRED": "The saved plan has no valid weekly frequency. Ask the Senior to clarify the prescription.",
+      "BOOKING_RULE_DOCTOR_SAME_ROOM": "A Doctor’s concurrent patients must be in different rooms.",
+      "BOOKING_RULE_NOT_UPCOMING": "Started or completed appointments cannot be rescheduled. Clinical notes and checkout remain available.",
+      "PRESCRIBED_WEEKLY_FREQUENCY": "Prescribed sessions per Saturday–Friday clinic week",
+      "FREQUENCY_CLARIFICATION": "Senior clarification required",
+      "ROOM_NO_OCCUPANTS": "No patients currently checked in.",
+      "REQUEST_FAILED_SAFE": "The request could not be confirmed. Retry loading; for a payment or booking, reconcile the original action before retrying.",
+      "VALIDATION_REVIEW_REQUIRED": "Review the highlighted fields and required selections before submitting.",
+      "BUSINESS_REVIEW_REQUIRED": "The operation was blocked by updated availability or business rules. Refresh the affected section and review the details."
     },
     "DASHBOARD": {
       "TREATMENT_PROGRESS": "Treatment Progress",
@@ -1229,7 +1240,8 @@
       "OutsideWorkingHours": "Outside saved working hours.",
       "WorkingHoursNotConfigured": "Staff working hours must be configured.",
       "ClinicianAbsent": "The clinician has a recorded absence.",
-      "RoomRequired": "Select an active available room."
+      "RoomRequired": "Select an active available room.",
+      "DoctorSameRoom": "A Doctor’s concurrent patients must be in different rooms."
     },
     "ERRORS": {
       "Unknown": "The clinical request could not be confirmed. Your text is retained. Refresh or retry the original action.",

@@ -1,3 +1,4 @@
+import { ReceptionWarnings } from '../../../core/services/reception-warnings';
 import { Component, computed, inject, OnInit, signal } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
@@ -24,6 +25,7 @@ import { ClinicalLocale } from "../../../shared/clinical-locale";
   styleUrl: "../doctor-workspace.css",
 })
 export class Dashboard implements OnInit {
+  private warnings=inject(ReceptionWarnings,{optional:true}) ?? new ReceptionWarnings();
   readonly api = inject(DoctorWorkspaceService);
   private router = inject(Router);
   private translate = inject(TranslateService);
@@ -83,7 +85,7 @@ export class Dashboard implements OnInit {
     } catch (e) {
       if (generation === this.generation) {
         this.data.set(null);
-        this.error.set(clinicalError(e, this.translate));
+        this.error.set(clinicalError(e, this.translate)); this.warnings.show(this.error());
       }
     } finally {
       if (generation === this.generation) this.loading.set(false);
@@ -104,7 +106,7 @@ export class Dashboard implements OnInit {
       await firstValueFrom(this.api.start(a.appointmentId));
       await this.router.navigate(["/doctor/session-notes", a.appointmentId]);
     } catch (e) {
-      this.error.set(clinicalError(e, this.translate));
+      this.error.set(clinicalError(e, this.translate)); this.warnings.show(this.error());
       const details = (
         e as { error?: { details?: { additionalPaymentRequired?: number } } }
       )?.error?.details;

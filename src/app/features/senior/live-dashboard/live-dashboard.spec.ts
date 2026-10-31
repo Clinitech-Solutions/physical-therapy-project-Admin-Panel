@@ -30,4 +30,8 @@ describe('Senior dashboard with persisted appointments',()=>{
     const request=http.expectOne(`${url}/Receptionist/appointments/101/status`);expect(request.request.body).toBe(4);expect(TestBed.inject(Router).navigate).not.toHaveBeenCalled();request.flush(null);await starting;
     expect(TestBed.inject(Router).navigate).toHaveBeenCalledWith(['/senior/assessment-form'],{queryParams:{patientId:'1',sessionId:'101'}});
   });
+  it('keeps a failed capacity refresh distinct from an empty clinician list',()=>{
+    fixture.componentInstance.refreshCapacity();http.expectOne(`${url}/Bookings/clinicians/workload`).flush({}, {status:503,statusText:'Unavailable'});fixture.detectChanges();
+    expect(fixture.componentInstance.capacityError()).toBeTruthy();expect(fixture.nativeElement.querySelector('.doctor-grid')).toBeNull();expect(fixture.nativeElement.textContent).not.toContain('SENIOR.NO_DOCTORS_AVAILABLE');
+  });
 });

@@ -45,7 +45,6 @@ describe.each(["patients", "bookings"] as const)(
       await fixture.whenStable();
     };
     const fillValid = async () => {
-      await fill("userName", "  reception.test  ");
       await fill("nameEn", "Test Patient");
       await fill("phone", "01012345678");
       await fill("dob", "2001-12-08");
@@ -107,35 +106,26 @@ describe.each(["patients", "bookings"] as const)(
       }
     });
 
-    it("renders an explicit required Username and binds typing to the submitted draft", async () => {
-      const input = field("userName");
-      expect(input).toBeTruthy();
-      expect(input.required).toBe(true);
-      expect(input.minLength).toBe(3);
-      expect(input.maxLength).toBe(50);
-      expect(input.closest("label")?.textContent).toContain("Username");
-      await fill("userName", "patient.explicit");
-      const component = fixture.componentInstance;
-      expect(
-        component instanceof PatientsComponent
-          ? component.newPatient.userName
-          : component.quickPatient.userName,
-      ).toBe("patient.explicit");
+    it("removes Username while preserving required clinical identity fields", async () => {
+      expect(field("userName")).toBeNull();
+      expect(field("nameEn").required).toBe(true);
+      await fillValid();
+      expect(field("nameEn").value).toBe("Test Patient");
     });
 
-    it.each(["", "ab", "x".repeat(51)])(
-      "shows the exact username error on Save without HTTP for invalid value %j",
-      async (username) => {
+    it.each(["", "a", "x".repeat(151)])(
+      "shows the exact fullName error on Save without HTTP for invalid value %j",
+      async (fullName) => {
         await fillValid();
-        await fill("userName", username);
+        await fill("nameEn", fullName);
         save().click();
         await fixture.whenStable();
         http.expectNone(`${base}/Patients/Add`);
         expect(feedback().textContent?.trim()).toBe(
-          "Username must contain 3 to 50 characters.",
+          "Full name must contain 2 to 150 characters.",
         );
-        expect(field("userName").getAttribute("aria-invalid")).toBe("true");
-        expect(document.activeElement).toBe(field("userName"));
+        expect(field("nameEn").getAttribute("aria-invalid")).toBe("true");
+        expect(document.activeElement).toBe(field("nameEn"));
         expect(save().disabled).toBe(false);
       },
     );
@@ -144,20 +134,18 @@ describe.each(["patients", "bookings"] as const)(
       save().click();
       await fixture.whenStable();
       const text = feedback().textContent!;
-      expect(text).toContain("Username must contain 3 to 50 characters.");
       expect(text).toContain("Full name must contain 2 to 150 characters.");
       expect(text).toContain("Enter a phone number");
       expect(text).toContain("Enter a valid date of birth.");
       http.expectNone(`${base}/Patients/Add`);
     });
 
-    it("submits the typed username and valid payload on Save, then uses the real returned ID", async () => {
+    it("submits valid identity data without a username on Save, then uses the real returned ID", async () => {
       await fillValid();
       save().click();
       const request = http.expectOne(`${base}/Patients/Add`);
-      expect(request.request.method).toBe("POST");
+      expect(request.request.method).toBe("POST");expect(request.request.body).not.toHaveProperty("userName");
       expect(request.request.body).toMatchObject({
-        userName: "reception.test",
         fullName: "Test Patient",
         phoneNumber: "01012345678",
         birthDate: "2001-12-08T00:00:00.000Z",
@@ -234,13 +222,13 @@ describe.each(["patients", "bookings"] as const)(
       button.click();
       await fixture.whenStable();
       expect(feedback().textContent).toContain(
-        ar.RECEPTIONIST.UI.PATIENT_USERNAME_LENGTH,
+        ar.RECEPTIONIST.UI.PATIENT_NAME_LENGTH,
       );
       expect(
         document.getElementById(
-          field("userName").getAttribute("aria-describedby")!,
+          field("nameEn").getAttribute("aria-describedby")!,
         )?.textContent,
-      ).toContain(ar.RECEPTIONIST.UI.PATIENT_USERNAME_LENGTH);
+      ).toContain(ar.RECEPTIONIST.UI.PATIENT_NAME_LENGTH);
       http.expectNone(`${base}/Patients/Add`);
     });
   },

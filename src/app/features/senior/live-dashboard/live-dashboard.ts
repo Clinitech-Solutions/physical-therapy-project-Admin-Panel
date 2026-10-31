@@ -1,9 +1,10 @@
 import {ReassessmentQueue} from '../../../shared/components/reassessment-queue/reassessment-queue';
-import { Component, inject, computed, signal, OnInit } from '@angular/core';
+import { Component, inject, computed, signal, OnInit, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, interval } from 'rxjs';
 import { AppointmentService } from '../../../core/services/appointment.service';
 import { AppointmentWorkflowService } from '../../../core/services/appointment-workflow.service';
 import { BookingService } from '../../../core/services/booking.service';
@@ -25,12 +26,17 @@ export class LiveDashboard implements OnInit {
   readonly locale = new ReceptionistLocale();
   readonly error = signal(''); readonly busy = signal(false); readonly doctors = signal<BookingClinician[]>([]);
   readonly loading = this.appointments.loading;
+  private destroy=inject(DestroyRef);
+  readonly capacityLoading=signal(false);
+  readonly capacityError=signal('');
   activeTab = signal<'assessments' | 'reassessments'>('assessments');
   readonly reviewCount=signal<number|null>(null);
   ngOnInit() {
     this.appointments.getAppointments({ date: new Date().toISOString() });
-    this.booking.workload().subscribe({ next: doctors => this.doctors.set(doctors), error: error => this.error.set(apiError(error)) });
+    this.refreshCapacity();
+    interval(30000).pipe(takeUntilDestroyed(this.destroy)).subscribe(()=>{if(!document.hidden&&!this.capacityLoading())this.refreshCapacity();});
   }
+  refreshCapacity(){this.capacityLoading.set(true);this.capacityError.set('');this.booking.workload().subscribe({next:doctors=>{this.doctors.set(doctors);this.capacityLoading.set(false);},error:error=>{this.capacityError.set(apiError(error));this.capacityLoading.set(false);}});}
   private tasks(type: string) {
     const user = this.auth.currentUser();
     const supervisor = user?.roles.some(r => r === 'Ceo');
@@ -49,7 +55,7 @@ export class LiveDashboard implements OnInit {
   totalPendingTasks = computed(() => this.reviewCount()===null||this.loading()||this.error()?null:this.assessmentCount()+this.reviewCount()!);
   activeTasks = computed(() => this.activeTab() === 'assessments' ? this.todayAssessments() : this.todayReassessments());
   activeDoctorsWorkload = computed(() => this.doctors().map(d => ({ doctorId: d.id, name: d.name, currentLoad: d.currentLoad,
-    maxLoad: 2, borderColor: d.currentLoad < 2 ? 'var(--mq-teal)' : 'var(--color-warning)', loadClass: d.currentLoad < 2 ? 'load-0' : 'load-2', roomId: null })));
+    maxLoad: 2, borderColor: d.currentLoad < 2 ? 'var(--mq-teal)' : 'var(--color-warning)', loadClass: 'load-'+Math.min(2,d.currentLoad), roomId: null })));
   availableDoctorsCount = computed(() => this.activeDoctorsWorkload().filter(d => d.currentLoad < 2).length);
   busyDoctorsCount = computed(() => this.activeDoctorsWorkload().filter(d => d.currentLoad >= 2).length);
   switchTab(tab: 'assessments' | 'reassessments') { this.activeTab.set(tab); }

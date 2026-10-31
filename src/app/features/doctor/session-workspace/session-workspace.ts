@@ -1,3 +1,4 @@
+import { ReceptionWarnings } from '../../../core/services/reception-warnings';
 import {
   Component,
   DestroyRef,
@@ -31,6 +32,7 @@ import { ClinicalLocale } from "../../../shared/clinical-locale";
   styleUrls: ["../doctor-workspace.css", "./session-workspace.css"],
 })
 export class SessionWorkspace implements OnInit {
+  private warnings=inject(ReceptionWarnings,{optional:true}) ?? new ReceptionWarnings();
   private api = inject(DoctorWorkspaceService);
   private route = inject(ActivatedRoute);
   private translate = inject(TranslateService);
@@ -139,7 +141,7 @@ export class SessionWorkspace implements OnInit {
     } catch (e) {
       if (generation === this.generation) {
         this.data.set(null);
-        this.error.set(clinicalError(e, this.translate));
+        this.error.set(clinicalError(e, this.translate)); this.warnings.show(this.error());
       }
     } finally {
       if (generation === this.generation) this.loading.set(false);
@@ -188,7 +190,7 @@ export class SessionWorkspace implements OnInit {
       if (generation !== this.generation) return;
       this.retryPayload = request;
       this.saveState.set("Failed");
-      this.error.set(clinicalError(e, this.translate));
+      this.error.set(clinicalError(e, this.translate)); this.warnings.show(this.error());
       if (
         ["Doctor.ConcurrentEdit", "Doctor.Finalized"].includes(
           (e as { error?: { title?: string } })?.error?.title ?? "",
@@ -203,8 +205,9 @@ export class SessionWorkspace implements OnInit {
       const latest = await firstValueFrom(this.api.get(this.id));
       if (generation === this.generation) this.latest.set(latest);
     } catch (e) {
-      if (generation === this.generation)
-        this.error.set(clinicalError(e, this.translate));
+      if (generation === this.generation) {
+        this.error.set(clinicalError(e, this.translate)); this.warnings.show(this.error());
+      }
     }
   }
   useLatest() {
@@ -222,7 +225,7 @@ export class SessionWorkspace implements OnInit {
       if (generation === this.generation) this.accept(data);
     } catch (e) {
       if (generation !== this.generation) return;
-      this.error.set(clinicalError(e, this.translate));
+      this.error.set(clinicalError(e, this.translate)); this.warnings.show(this.error());
       const value = (
         e as { error?: { details?: { additionalPaymentRequired?: number } } }
       )?.error?.details?.additionalPaymentRequired;
@@ -260,7 +263,7 @@ export class SessionWorkspace implements OnInit {
       if (generation === this.generation) this.accept(saved);
     } catch (e) {
       if (generation !== this.generation) return;
-      this.error.set(clinicalError(e, this.translate));
+      this.error.set(clinicalError(e, this.translate)); this.warnings.show(this.error());
       this.saveState.set("Failed");
       if (
         ["Doctor.ConcurrentEdit", "Doctor.Finalized"].includes(
@@ -355,7 +358,7 @@ export class SessionWorkspace implements OnInit {
       link.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (e) {
-      this.error.set(clinicalError(e, this.translate));
+      this.error.set(clinicalError(e, this.translate)); this.warnings.show(this.error());
     }
   }
   canLeave() {

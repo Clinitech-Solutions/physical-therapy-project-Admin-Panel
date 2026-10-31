@@ -26,6 +26,11 @@ export function decodeRoom(value: unknown): RoomRecord {
     name: textField(r["name"]),
     capacity: finiteNumber(r["capacity"]),
     isActive: r["isActive"],
+    currentLoad: typeof r['currentLoad']==='number' ? r['currentLoad'] : undefined,
+    occupants: Array.isArray(r['occupants']) ? r['occupants'].map(value=>{
+      const occupant=record(value);return {appointmentId:numericId(occupant['appointmentId']),patientName:textField(occupant['patientName']),
+        clinicianName:occupant['clinicianName']==null?null:textField(occupant['clinicianName']),state:textField(occupant['state'])};
+    }) : undefined,
     status: ({ 0: 'Available', 1: 'Occupied', 2: 'Maintenance', Available: 'Available', Occupied: 'Occupied', Maintenance: 'Maintenance' } as Record<string, RoomRecord['status']>)[String(r['status'])] ?? 'Unknown',
   };
 }

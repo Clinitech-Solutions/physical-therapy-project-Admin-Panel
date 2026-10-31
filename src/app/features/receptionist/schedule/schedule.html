@@ -264,7 +264,7 @@
                   </div>
 
                   <div class="session-actions">
-                    <button class="btn-absent-icon" [title]="'RECEPTIONIST.UI.EDIT_APPOINTMENT' | translate" [disabled]="editingLoading() || workflow.mutation.busy() || !!appointmentService?.mutation?.busy()" (click)="openEditAppointment(session); $event.stopPropagation()"><i class="bi bi-pencil"></i></button>
+                    @if(canScheduleEdit(session)){<button class="btn-absent-icon" [title]="'RECEPTIONIST.UI.EDIT_APPOINTMENT' | translate" [disabled]="editingLoading() || workflow.mutation.busy() || !!appointmentService?.mutation?.busy()" (click)="openEditAppointment(session); $event.stopPropagation()"><i class="bi bi-pencil"></i></button>}
                     @if (statusStr === 'Unknown') {
                       <button class="btn-absent-icon" [title]="'RECEPTIONIST.CANCEL' | translate" [disabled]="workflow.mutation.busy()" (click)="markPatientAbsent(session.id); $event.stopPropagation()"><i class="bi bi-x-circle"></i></button>
                     }

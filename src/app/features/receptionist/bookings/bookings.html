@@ -28,7 +28,7 @@
         <div class="patient-plan-grid">
           <div class="patient-picker"><label for="booking-patient">{{ 'RECEPTIONIST.UI.PATIENT' | translate }} <span aria-hidden="true">*</span></label>
             <p-select inputId="booking-patient" [options]="allPatients()" [ngModel]="selectedPatientId" (ngModelChange)="onPatientChange($event)" optionLabel="nameEn" optionValue="id" [filter]="true" filterBy="nameEn,nameAr,phone" [showClear]="true" [loading]="directoryLoading()" [disabled]="bookingBusy() || hasUnresolvedBooking || !!directoryError()" [placeholder]="'RECEPTIONIST.UI.BOOKING_SELECT_PATIENT' | translate" appendTo="body" styleClass="w-100">
-              <ng-template pTemplate="item" let-patient>{{ locale.patientName(patient) }}</ng-template>
+              <ng-template pTemplate="item" let-patient>{{ locale.patientName(patient) }} <small>{{patient.phone}}</small></ng-template>
               <ng-template pTemplate="selectedItem" let-patient><span class="selected-control-value"><i class="bi bi-person" aria-hidden="true"></i>{{ locale.patientName(patient) }}</span></ng-template>
             </p-select>
             @if (directoryError()) { <p class="booking-inline-error" role="alert">{{ 'RECEPTIONIST.UI.PATIENTS_LOAD' | translate }}: {{ locale.label(directoryError()) }} <button type="button" class="btn btn-link" (click)="refreshPatients()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button></p> }
@@ -38,6 +38,7 @@
         </div>
         @if (contextLoading()) { <p class="booking-hint" role="status">{{ 'RECEPTIONIST.PROCESSING' | translate }}</p> }
         @if (context?.hasCompletedAssessment) {
+          <p class="booking-hint">{{'RECEPTIONIST.UI.PRESCRIBED_WEEKLY_FREQUENCY'|translate}}: {{chosenPlan?.frequencyPerWeek ?? ('RECEPTIONIST.UI.FREQUENCY_CLARIFICATION'|translate)}}</p>
           @if (chosenPlan?.staffReviewRequired) { <p class="alert alert-info" role="status">{{ 'DOCTOR.BOOKING_REVIEW_REQUIRED' | translate }}</p> }
           @if (patientPlans.length > 1) { <label class="plan-choice">{{ 'RECEPTIONIST.UI.SAVED_TREATMENT_PLAN' | translate }} *<select class="form-select" [(ngModel)]="selectedPlanId" (ngModelChange)="onPlanChange()" [disabled]="bookingBusy() || hasUnresolvedBooking"><option [ngValue]="null">{{ 'RECEPTIONIST.UI.SELECT_SAVED_PLAN' | translate }}</option>@for (plan of patientPlans; track plan.id) { <option [ngValue]="plan.id">#{{ plan.id }} · {{ plan.treatmentType }} · {{ plan.doctorName }}</option> }</select></label> }
           @if (!patientPlans.length) { <p class="booking-hint" role="status">{{ 'RECEPTIONIST.UI.BOOKING_NEEDS_SAVED_PLAN' | translate }}</p> }

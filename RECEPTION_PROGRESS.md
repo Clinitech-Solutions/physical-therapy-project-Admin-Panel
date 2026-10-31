@@ -1,5 +1,9 @@
 # MediQova Reception progress
 
+## Thirteen acceptance fixes - 2026-10-31
+
+See [RECEPTION_ACCEPTANCE_FIXES.md](RECEPTION_ACCEPTANCE_FIXES.md) for the numbered root-cause/fix/verification report. Saved room capacity and actual occupants, future-vs-live Doctor capacity, pending-only scheduling edits, alphabetical/username-free patient registration, allocation filtering, Saturday-Friday prescribed frequency, complete bulk rows, warnings and CEO-owned insurer collections are implemented. 187 backend tests and current focused frontend checks pass; full frontend remains 303 pass/25 legacy failures. The real Reception -> Doctor -> Senior -> CEO browser flow uses isolated synthetic SQLite data. Configured SQL Server has no pending migrations/model drift; no migration was necessary. User restarted the local API and updated contract/permission/read checks pass. No shared test records, push or deploy.
+
 ## Authorized Doctor migration applied - 2026-10-31
 
 The newly authorized `20261031164400_DoctorClinicalWorkspace` migration was applied alone to freshly verified `db56823.public.databaseasp.net / db56823` after forward SQL review. History/schema checks confirm zero pending migrations. Existing counts and financial totals are unchanged; current-source SQL Server clinical/profile/dashboard/invoice service reads pass. See the sibling backend's [application report](../Physical-Therapy-Center/Database/ReviewedMigrations/20261031164400_DoctorClinicalWorkspace.APPLIED.md). Earlier pending/approval notes below describe the prior implementation stage. No shared test records, application restart, push or deployment.

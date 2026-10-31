@@ -24,7 +24,7 @@ export interface PatientResponse {
 }
 
 export interface CreatePatientRequest {
-  userName: string;
+  userName?: never;
   fullName: string;
   gender: number;
   birthDate: string;
