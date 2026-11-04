@@ -1,6 +1,10 @@
-import { ReceptionWarnings } from '../../../core/services/reception-warnings';
+import { ClinicalAutosize } from '../clinical-autosize';
+import { ReceptionWarnings } from "../../../core/services/reception-warnings";
 import {
   Component,
+  ViewChild,
+  ElementRef,
+  computed,
   DestroyRef,
   HostListener,
   inject,
@@ -22,21 +26,76 @@ import {
   NotesFields,
   NotesMutation,
 } from "../../../core/models/doctor-workspace.model";
+import { PatientAvatar } from "../patient-avatar";
+import { ClinicalClock } from "../clinical-clock";
+import { clinicDate } from "../../../core/services/doctor-workspace.service";
+import { DoctorVisit } from "../../../core/models/doctor-workspace.model";
 import { ClinicalLocale } from "../../../shared/clinical-locale";
 
 @Component({
   selector: "app-doctor-session",
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, TranslateModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterLink,
+    TranslateModule,
+    PatientAvatar,
+    ClinicalAutosize,
+  ],
   templateUrl: "./session-workspace.html",
-  styleUrls: ["../doctor-workspace.css", "./session-workspace.css"],
+  styleUrls: [
+    "../doctor-presentation.css",
+    "./session-workspace.css",
+    "./review-sheet.css",
+    "./session-responsive.css",
+    "./session-mobile.css",
+  ],
+  providers: [ClinicalClock],
 })
 export class SessionWorkspace implements OnInit {
-  private warnings=inject(ReceptionWarnings,{optional:true}) ?? new ReceptionWarnings();
+  private warnings =
+    inject(ReceptionWarnings, { optional: true }) ?? new ReceptionWarnings();
   private api = inject(DoctorWorkspaceService);
   private route = inject(ActivatedRoute);
   private translate = inject(TranslateService);
   private destroy = inject(DestroyRef);
+  readonly clock = inject(ClinicalClock);
+  @ViewChild("reviewDialog") reviewDialog?: ElementRef<HTMLDialogElement>;
+  readonly reviewOpen = signal(false);
+  readonly capacity = signal<DoctorVisit[] | null>(null);
+  readonly capacityError = signal("");
+  readonly contextLoading = signal(false);
+  readonly history = computed(() =>
+    [...(this.data()?.previousSessions ?? [])].sort(
+      (a, b) =>
+        (Date.parse(b.plannedAt ?? b.recordedAt ?? "") || 0) -
+        (Date.parse(a.plannedAt ?? a.recordedAt ?? "") || 0) ||
+        b.sessionNumber - a.sessionNumber,
+    ),
+  );
+  readonly noteFields = [
+    {
+      key: "progressNotes" as const,
+      id: "doctor-progress",
+      label: "PROGRESS_NOTES",
+    },
+    {
+      key: "conditionChanges" as const,
+      id: "doctor-condition",
+      label: "CONDITION_CHANGES",
+    },
+    {
+      key: "responseToTreatment" as const,
+      id: "doctor-response",
+      label: "RESPONSE_TO_TREATMENT",
+    },
+    {
+      key: "treatmentPerformed" as const,
+      id: "doctor-performed",
+      label: "TREATMENT_PERFORMED",
+    },
+  ];
   readonly locale = new ClinicalLocale();
   readonly data = signal<DoctorPatientWorkspace | null>(null);
   readonly loading = signal(false);
@@ -98,6 +157,11 @@ export class SessionWorkspace implements OnInit {
         this.id = Number(
           params.get("appointmentId") ?? params.get("sessionId"),
         );
+        this.tab.set(
+          this.route.snapshot?.queryParamMap.get("section") === "REASSESSMENT"
+            ? "REASSESSMENT"
+            : "CURRENT_SESSION",
+        );
         void this.load();
       });
   }
@@ -137,14 +201,124 @@ export class SessionWorkspace implements OnInit {
     this.error.set("");
     try {
       const data = await firstValueFrom(this.api.get(this.id));
-      if (generation === this.generation) this.accept(data);
+      if (generation === this.generation) {
+        this.accept(data);
+        if (data.visit.state === "Arrived") void this.loadCapacity();
+      }
     } catch (e) {
       if (generation === this.generation) {
         this.data.set(null);
-        this.error.set(clinicalError(e, this.translate)); this.warnings.show(this.error());
+        this.error.set(clinicalError(e, this.translate));
+        this.warnings.show(this.error());
       }
     } finally {
       if (generation === this.generation) this.loading.set(false);
+    }
+  }
+  selectTab(tab: string) {
+    if (
+      tab === "REASSESSMENT" &&
+      window.matchMedia("(max-width:1199px)").matches
+    ) {
+      this.openReview();
+      return;
+    }
+    this.tab.set(tab);
+  }
+  tabKey(event: KeyboardEvent) {
+    const buttons = Array.from(
+      (event.currentTarget as HTMLElement).querySelectorAll<HTMLButtonElement>(
+        "[role=tab]",
+      ),
+    );
+    const current = buttons.indexOf(event.target as HTMLButtonElement);
+    let index = current;
+    const rtl = document.documentElement.dir === "rtl";
+    if (event.key === "ArrowRight")
+      index = (current + (rtl ? -1 : 1) + buttons.length) % buttons.length;
+    else if (event.key === "ArrowLeft")
+      index = (current + (rtl ? 1 : -1) + buttons.length) % buttons.length;
+    else if (event.key === "Home") index = 0;
+    else if (event.key === "End") index = buttons.length - 1;
+    else return;
+    event.preventDefault();
+    buttons[index].focus();
+    buttons[index].click();
+  }
+  openReview() {
+    if (window.matchMedia("(min-width:1200px)").matches) {
+      this.tab.set("REASSESSMENT");
+      return;
+    }
+    this.reviewOpen.set(true);
+    this.reviewDialog?.nativeElement.showModal();
+  }
+  closeReview() {
+    this.reviewDialog?.nativeElement.close();
+    this.reviewOpen.set(false);
+  }
+  reviewClosed() {
+    if (!this.reviewDialog?.nativeElement.open) this.reviewOpen.set(false);
+  }
+  focusNote(event: FocusEvent) {
+    const field = event.target as HTMLElement;
+    setTimeout(() => {
+      if (document.activeElement === field)
+        field.scrollIntoView({ block: "center", behavior: "smooth" });
+    }, 150);
+  }
+  async loadCapacity() {
+    this.capacity.set(null);
+    this.capacityError.set("");
+    const generation = this.generation;
+    try {
+      const schedule = await firstValueFrom(this.api.schedule(clinicDate()));
+      if (generation === this.generation)
+        this.capacity.set(schedule.activeTreatments.filter(active=>active.doctorId===this.data()?.visit.doctorId));
+    } catch (e) {
+      if (generation === this.generation)
+        this.capacityError.set(clinicalError(e, this.translate));
+    }
+  }
+  startBlocked() {
+    return (
+      this.capacity() === null ||
+      this.capacity()!.length >= 2 ||
+      this.capacity()!.some((a) => a.roomId === this.data()?.visit.roomId)
+    );
+  }
+  async refreshContext() {
+    if (this.contextLoading()) return;
+    this.contextLoading.set(true);
+    this.requestError.set("");
+    const generation = this.generation;
+    try {
+      const current = await firstValueFrom(this.api.get(this.id));
+      if (generation !== this.generation) return;
+      this.data.update((data) =>
+        data
+          ? {
+              ...data,
+              plan: current.plan,
+              documents: current.documents,
+              previousSessions: current.previousSessions,
+              reassessments: current.reassessments,
+            }
+          : data,
+      );
+      if (
+        current.notes.version !== this.data()?.notes.version &&
+        (this.dirty || this.inFlight)
+      ) {
+        this.latest.set(current);
+        this.conflict.set(true);
+      } else if (!this.dirty && !this.inFlight) this.accept(current);
+      if (current.visit.state === "Arrived") void this.loadCapacity();
+    } catch (e) {
+      if (generation === this.generation)
+        this.requestError.set(clinicalError(e, this.translate));
+    } finally {
+      if (generation === this.generation) this.contextLoading.set(false);
     }
   }
   changed() {
@@ -190,7 +364,8 @@ export class SessionWorkspace implements OnInit {
       if (generation !== this.generation) return;
       this.retryPayload = request;
       this.saveState.set("Failed");
-      this.error.set(clinicalError(e, this.translate)); this.warnings.show(this.error());
+      this.error.set(clinicalError(e, this.translate));
+      this.warnings.show(this.error());
       if (
         ["Doctor.ConcurrentEdit", "Doctor.Finalized"].includes(
           (e as { error?: { title?: string } })?.error?.title ?? "",
@@ -206,7 +381,8 @@ export class SessionWorkspace implements OnInit {
       if (generation === this.generation) this.latest.set(latest);
     } catch (e) {
       if (generation === this.generation) {
-        this.error.set(clinicalError(e, this.translate)); this.warnings.show(this.error());
+        this.error.set(clinicalError(e, this.translate));
+        this.warnings.show(this.error());
       }
     }
   }
@@ -215,7 +391,7 @@ export class SessionWorkspace implements OnInit {
     if (latest) this.accept(latest);
   }
   async start() {
-    if (this.busy()) return;
+    if (this.busy() || this.startBlocked()) return;
     this.busy.set(true);
     this.error.set("");
     this.shortfall.set(null);
@@ -225,7 +401,8 @@ export class SessionWorkspace implements OnInit {
       if (generation === this.generation) this.accept(data);
     } catch (e) {
       if (generation !== this.generation) return;
-      this.error.set(clinicalError(e, this.translate)); this.warnings.show(this.error());
+      this.error.set(clinicalError(e, this.translate));
+      this.warnings.show(this.error());
       const value = (
         e as { error?: { details?: { additionalPaymentRequired?: number } } }
       )?.error?.details?.additionalPaymentRequired;
@@ -263,7 +440,8 @@ export class SessionWorkspace implements OnInit {
       if (generation === this.generation) this.accept(saved);
     } catch (e) {
       if (generation !== this.generation) return;
-      this.error.set(clinicalError(e, this.translate)); this.warnings.show(this.error());
+      this.error.set(clinicalError(e, this.translate));
+      this.warnings.show(this.error());
       this.saveState.set("Failed");
       if (
         ["Doctor.ConcurrentEdit", "Doctor.Finalized"].includes(
@@ -358,7 +536,8 @@ export class SessionWorkspace implements OnInit {
       link.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (e) {
-      this.error.set(clinicalError(e, this.translate)); this.warnings.show(this.error());
+      this.error.set(clinicalError(e, this.translate));
+      this.warnings.show(this.error());
     }
   }
   canLeave() {

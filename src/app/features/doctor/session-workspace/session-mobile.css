@@ -1,0 +1,239 @@
+@media (max-width: 767px) {
+  .session-page {
+    padding-bottom: 12px;
+  }
+  .patient-heading {
+    padding: 12px;
+    gap: 10px;
+  }
+  .patient-heading h1 {
+    font-size: 20px;
+  }
+  .patient-heading .patient-cell {
+    flex: 1;
+  }
+  .patient-heading .clinical-badge {
+    margin-inline-start: 56px;
+  }
+  .review-trigger,
+  .desktop-tabs,
+  .clinical-context {
+    display: none !important;
+  }
+  .patient-progress {
+    gap: 8px;
+    padding: 12px;
+  }
+  .patient-progress strong {
+    font-size: 15px;
+  }
+  .patient-progress span {
+    font-size: 10px;
+  }
+  .safety-note {
+    align-items: start;
+    flex-wrap: wrap;
+  }
+  .safety-note button {
+    min-height: 44px;
+  }
+  .mobile-section-selector {
+    display: grid !important;
+    margin-bottom: 12px;
+  }
+  .mobile-context {
+    display: grid !important;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .mobile-context > details {
+    border-radius: 8px;
+    background: var(--bg-elevated);
+    padding: 0 12px;
+  }
+  .mobile-context summary {
+    min-height: 44px;
+    padding: 12px 0;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .mobile-context .clinical-card {
+    padding: 12px 0;
+    background: transparent;
+    border: 0;
+  }
+  .clinical-note-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .clinical-note-grid textarea {
+    min-height: 100px;
+    max-height: 260px;
+    font-size: 16px;
+  }
+  .session-times {
+    grid-template-columns: 1fr 1fr;
+    padding: 10px;
+    gap: 10px;
+  }
+  .session-times dt {
+    font-size: 11px;
+  }
+  .session-toolbar {
+    gap: 8px;
+  }
+  .plan-details {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  .plan-details dd {
+    margin-bottom: 12px;
+  }
+  .mobile-review-trigger {
+    display: flex !important;
+    width: 100%;
+    margin-bottom: 12px;
+  }
+  .treatment-action-bar {
+    bottom: 0;
+    flex-wrap: wrap;
+    padding: 12px 12px calc(12px + env(safe-area-inset-bottom));
+    gap: 8px;
+  }
+  .treatment-action-bar > div {
+    flex-basis: 100%;
+  }
+  .treatment-action-bar .btn {
+    flex: 1;
+  }
+  .treatment-action-bar .footer-back {
+    display: none;
+  }
+  .treatment-action-bar .end-treatment {
+    width: 100%;
+  }
+  .session-page:has(textarea:focus) .treatment-action-bar {
+    position: static;
+  }
+  .history-entry summary {
+    flex-wrap: wrap;
+  }
+  .note-preview {
+    max-width: 210px;
+  }
+  .review-dialog {
+    margin: auto 0 0;
+    width: 100%;
+    max-width: 100%;
+    max-height: 90dvh;
+    border-radius: 20px 20px 0 0;
+    padding: 16px 18px calc(18px + env(safe-area-inset-bottom));
+    font-size: 16px;
+  }
+  .review-dialog:before {
+    content: "";
+    display: block;
+    width: 44px;
+    height: 4px;
+    background: var(--border-color);
+    border-radius: 4px;
+    margin: 0 auto 10px;
+  }
+  .review-dialog .review-request {
+    gap: 14px;
+  }
+  .review-dialog :is(input, select, textarea) {
+    font-size: 16px;
+  }
+  .review-dialog .rail-heading {
+    display: none;
+  }
+}
+@media (max-width: 767px) {
+  .patient-heading {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .patient-heading .clinical-badge {
+    justify-self: start;
+    margin-inline-start: 56px;
+  }
+  .patient-heading .patient-cell {
+    width: 100%;
+  }
+  .patient-heading h1 {
+    overflow-wrap: anywhere;
+    line-height: 1.3;
+  }
+  .patient-progress {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    padding: 12px;
+  }
+  .patient-progress > div:first-child {
+    grid-column: 1/-1;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    border: 0;
+    padding-bottom: 4px;
+  }
+  .patient-progress > div:first-child progress {
+    grid-column: 1/-1;
+    max-width: none;
+  }
+  .patient-progress > div:last-child strong {
+    font-size: 13px;
+  }
+  .patient-progress strong {
+    font-size: 15px;
+  }
+  .session-times dd {
+    font-size: 14px;
+  }
+  .patient-progress span {
+    font-size: 11px;
+  }
+  .patient-progress > div:nth-child(3) {
+    border-inline-end: 1px solid var(--border-color);
+  }
+}
+@media (max-width: 767px) {
+  .patient-progress > div:not(:first-child) {
+    display: none;
+  }
+  .patient-progress > div:first-child {
+    grid-template-columns: 1fr auto auto;
+    padding: 0;
+    gap: 6px 12px;
+  }
+  .patient-progress .mobile-progress-completed {
+    display: block !important;
+    font-size: 11px;
+  }
+  .patient-progress {
+    padding: 10px;
+    display: block;
+  }
+  .patient-progress > div:first-child progress {
+    grid-column: 1/-1;
+  }
+  .safety-note {
+    flex-wrap: nowrap;
+    align-items: center;
+    font-size: 12px;
+    gap: 6px;
+  }
+  .safety-note button {
+    margin-inline-start: auto;
+    min-height: 44px;
+    flex-shrink: 0;
+  }
+  .safety-note span {
+    flex: 1;
+  }
+  .mobile-section-selector {
+    gap: 0 !important;
+  }
+}
+
+@media(max-width:767px){.workspace-breadcrumb .btn,.workspace-breadcrumb .back-link{min-height:44px}.workspace-breadcrumb .back-link{display:inline-flex;align-items:center}}
+@media(max-width:767px){.notes-card{display:flex;flex-direction:column}.notes-card .clinical-note-grid{order:1}.notes-card>.btn{order:2}.notes-card .planned-time{order:3}.notes-card .session-times{order:4}.treatment-action-bar small{display:none}}

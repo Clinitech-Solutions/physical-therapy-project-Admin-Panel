@@ -93,18 +93,59 @@ describe("Doctor schedule from authenticated backend records", () => {
   it("shows the exact patient shortfall and never creates a payment or navigates on blocked start", async () => {
     const navigate = vi.spyOn(TestBed.inject(Router), "navigate");
     const starting = c.start(visit(1, "2030-02-04T10:00:00Z", "Arrived"));
-    http
-      .expectOne(environment.apiUrl + "/Doctor/appointments/1/start")
-      .flush(
-        {
-          title: "Booking.PaymentCoverageRequired",
-          details: { additionalPaymentRequired: 25.5 },
-        },
-        { status: 409, statusText: "Conflict" },
-      );
+    http.expectOne(environment.apiUrl + "/Doctor/appointments/1/start").flush(
+      {
+        title: "Booking.PaymentCoverageRequired",
+        details: { additionalPaymentRequired: 25.5 },
+      },
+      { status: 409, statusText: "Conflict" },
+    );
     await starting;
     expect(c.shortfall()).toBe(25.5);
     expect(navigate).not.toHaveBeenCalled();
     http.expectNone((r) => r.url.includes("/payments"));
+  });
+  it("searches saved phone numbers and derives mobile groups from the same filtered records", () => {
+    const a = visit(1, "2030-02-04T10:00:00Z", "Arrived");
+    a.phone = "01012345678";
+    c.data.set({
+      date: c.date(),
+      appointments: [a, visit(2, a.plannedStart, "Scheduled")],
+      activeTreatments: [],
+    });
+    c.search.set("123456");
+    expect(c.visible()).toEqual([a]);
+    expect(c.groups().find((g) => g.key === "WAITING")!.rows).toEqual([a]);
+    expect(c.groups().find((g) => g.key === "UPCOMING")!.rows).toEqual([]);
+  });
+  it("blocks a third start in the UI without sending a mutation, while preserving the capacity source", async () => {
+    const a = visit(1, "2030-02-04T10:00:00Z", "Treating"),
+      b = visit(2, a.plannedStart, "Treating");
+    c.data.set({
+      date: c.date(),
+      appointments: [a, b],
+      activeTreatments: [a, b],
+    });
+    await c.start(visit(3, a.plannedStart, "Arrived"));
+    expect(c.atCapacity()).toBe(true);
+    http.expectNone((r) => r.method === "POST");
+  });
+  it("allows an eligible second start and keeps completed filtering separate from status/search", async () => {
+    const a = visit(1, "2030-02-04T10:00:00Z", "Treating"),
+      b = visit(2, a.plannedStart, "Arrived");
+    c.data.set({
+      date: c.date(),
+      appointments: [a, b, visit(3, a.plannedStart, "TreatmentFinished")],
+      activeTreatments: [a],
+    });
+    expect(c.atCapacity()).toBe(false);
+    c.completedOnly.set(true);
+    expect(c.visible().map((a) => a.appointmentId)).toEqual([3]);
+    c.completedOnly.set(false);
+    const start = c.start(b);
+    http
+      .expectOne(environment.apiUrl + "/Doctor/appointments/2/start")
+      .flush({}, { status: 409, statusText: "Conflict" });
+    await start;
   });
 });

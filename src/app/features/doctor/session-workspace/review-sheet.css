@@ -1,0 +1,136 @@
+.review-request {
+  display: grid;
+  gap: 16px;
+  max-width: 780px;
+  margin: 18px 0;
+}
+.review-request .btn {
+  justify-self: start;
+}
+.review-info {
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--bg-elevated);
+  font-size: 13px;
+}
+.recommendations {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.recommendations legend {
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+.recommendations label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-inline-end: 20px;
+  min-height: 44px;
+}
+.recommendations input {
+  width: 20px;
+  height: 20px;
+  min-height: 20px;
+  accent-color: var(--clinical-teal);
+}
+.previous-note {
+  border-top: 1px solid var(--border-color);
+  padding: 16px 0;
+}
+.previous-note p {
+  font-size: 13px;
+}
+.review-dialog {
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  width: min(620px, calc(100% - 32px));
+  max-height: 90dvh;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  padding: 18px;
+  overscroll-behavior: contain;
+}
+.review-dialog::backdrop {
+  background: #12203c88;
+}
+.sheet-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.sheet-heading h2 {
+  font-size: 21px;
+  margin: 0;
+}
+.sheet-heading button {
+  min-width: 44px;
+  min-height: 44px;
+  color: var(--text-primary);
+}
+.review-dialog .clinical-card {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.review-dialog :is(input, select, textarea) {
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  width: 100%;
+  border-radius: 8px;
+  padding: 10px;
+  min-height: 44px;
+}
+.review-dialog label {
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+}
+.review-dialog .recommendations label {
+  display: inline-flex;
+}
+.review-dialog .recommendations input {
+  width: 20px;
+  min-height: 20px;
+}
+.review-dialog .review-request {
+  margin-bottom: 12px;
+}
+.review-dialog .review-request .btn {
+  min-height: 48px;
+  width: 100%;
+}
+.review-dialog .btn-primary {
+  background: #007f83;
+  color: white;
+}
+.review-dialog .rail-heading h2 {
+  font-size: 17px;
+}
+.review-dialog :is(button, input, select, textarea):focus-visible {
+  outline: 3px solid var(--mq-teal);
+  outline-offset: 2px;
+}
+.review-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+  font-size: 12px;
+}
+.review-steps > div {
+  border-top: 2px solid var(--border-color);
+  padding-top: 8px;
+}
+.review-steps > div:first-child,
+.review-steps .reached {
+  border-color: var(--clinical-teal);
+}
+.review-steps small {
+  font-size: 11px;
+}
+
+.review-dialog{position:fixed;inset:0;margin:auto;height:fit-content}.review-dialog .btn:not(.btn-primary){color:var(--text-primary)}
