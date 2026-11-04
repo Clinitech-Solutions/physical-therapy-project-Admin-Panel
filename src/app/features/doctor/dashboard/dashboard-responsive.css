@@ -44,7 +44,7 @@
   .date-controls {
     display: grid;
     width: 100%;
-    grid-template-columns:44px minmax(130px,1fr) 44px auto;
+    grid-template-columns: 44px minmax(130px, 1fr) 44px auto;
     gap: 5px;
   }
   .date-controls input {
@@ -109,4 +109,18 @@
   }
 }
 
-@media(max-width:767px){.date-controls>.refresh{display:none}.mobile-refresh{display:inline-flex;position:absolute;inset-inline-end:0;top:0;width:44px;padding:6px!important}.clinical-heading>div:first-child{width:100%}.clinical-heading h1{padding-inline-end:48px}.date-controls input{font-size:14px}.mobile-filter .btn{flex:1}.clinical-summary span{font-size:11px}}
+@media (max-width: 767px) {
+  .date-controls {
+    grid-template-columns: 36px minmax(0, 1fr) 36px auto 40px;
+  }
+  .date-controls input {
+    min-width: 0;
+    font-size: 14px;
+  }
+  .mobile-filter .btn {
+    flex: 1;
+  }
+  .clinical-summary span {
+    font-size: 11px;
+  }
+}

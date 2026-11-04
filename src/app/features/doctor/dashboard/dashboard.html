@@ -9,14 +9,6 @@
       <h1>{{ "DOCTOR.WORKSPACE" | translate }}</h1>
       <p>{{ locale.date(date() + "T12:00:00Z") }}</p>
     </div>
-    <button
-      class="btn btn-outline-secondary mobile-refresh"
-      (click)="load(); loadReviews()"
-      [disabled]="loading()"
-      [attr.aria-label]="'DOCTOR.REFRESH' | translate"
-    >
-      <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
-    </button>
     <div class="clinical-controls date-controls">
       <button
         class="btn btn-outline-secondary"
@@ -44,8 +36,8 @@
       <button
         class="btn btn-outline-secondary refresh"
         (click)="load(); loadReviews()"
-        [disabled]="loading()"
-        [attr.aria-label]="'DOCTOR.REFRESH' | translate"
+        [disabled]="loading() || reviewsLoading()"
+        [attr.aria-label]="'DOCTOR.REFRESH_WORKSPACE' | translate"
       >
         <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
       </button>

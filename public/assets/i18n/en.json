@@ -1146,6 +1146,7 @@
     "NEXT_DAY": "Next day",
     "DATE": "Date",
     "REFRESH": "Refresh",
+    "REFRESH_WORKSPACE": "Refresh schedule and reviews",
     "LOADING": "Loading clinical records...",
     "SHORTFALL": "Patient amount Reception must collect",
     "SCHEDULED_TODAY": "Scheduled on selected day",
@@ -1335,9 +1336,9 @@
     "SMART_DOCTOR_SELECTION": "Smart Doctor Selection",
     "GENDER_MATCH": "Gender Match",
     "PENDING_TASKS": "Pending Tasks",
-    "PENDING_TASKS_SUB": "Pending Tasks Sub",
+    "PENDING_TASKS_SUB": "Assessments and open reassessments",
     "ASSESSMENTS": "Assessments",
-    "ASSESSMENTS_SUB": "Assessments Sub",
+    "ASSESSMENTS_SUB": "Awaiting assessment",
     "REASSESSMENTS": "Reassessments",
     "REASSESSMENTS_SUB": "Reassessments Sub",
     "DOCTORS_AVAILABLE": "Doctors Available",
@@ -1474,5 +1475,26 @@
       "expandRow": "Expand row",
       "collapseRow": "Collapse row"
     }
+  },
+  "SENIOR_REVIEW": {
+    "TAB": "Reassessment",
+    "OPEN": "Open",
+    "HISTORY": "History",
+    "FILTER_LABEL": "Reassessment request filter",
+    "REFRESH_REQUESTS": "Refresh reassessment requests",
+    "REFRESH_HELP": "Use Refresh to try again.",
+    "NO_HISTORY": "No completed or cancelled reviews.",
+    "BACK_TO_TASKS": "Back to Today's Tasks",
+    "INTERNAL_REVIEW": "Internal clinical review · No appointment or charge.",
+    "REVIEW_REQUEST": "Review request",
+    "DOCTOR_PAUSE": "Doctor recommends pausing",
+    "DOCTOR_CONTINUE": "Doctor recommends continuing",
+    "START_REVIEW": "Start review",
+    "COMPLETE_REVIEW": "Complete review",
+    "CLINICAL_OUTCOME": "Clinical outcome",
+    "CURRENT_PLAN": "Current treatment plan",
+    "COMPLETION_PROGRESS": "{{completed}} of {{total}} completed",
+    "NO_INSTRUCTIONS": "No instructions recorded.",
+    "NOTES_RECORDED": "Notes recorded"
   }
 }

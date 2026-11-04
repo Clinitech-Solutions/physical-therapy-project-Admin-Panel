@@ -10,6 +10,8 @@ import { BehaviorSubject } from "rxjs";
 import { ReAssessmentForm } from "./re-assessment-form";
 import { ReassessmentRequest } from "../../../core/models/doctor-workspace.model";
 import { environment } from "../../../../environments/environment";
+import { AuthService } from "../../../core/services/auth";
+import { signal } from "@angular/core";
 const request: ReassessmentRequest = {
   id: 1,
   patientId: 2,
@@ -49,6 +51,12 @@ describe("Direct Senior clinical review without scheduling or finance", () => {
     TestBed.configureTestingModule({
       imports: [TranslateModule.forRoot()],
       providers: [
+        {
+          provide: AuthService,
+          useValue: {
+            currentUser: signal({ id: "signed-in-senior", roles: ["Senior"] }),
+          },
+        },
         provideHttpClient(),
         provideHttpClientTesting(),
         {
@@ -67,6 +75,30 @@ describe("Direct Senior clinical review without scheduling or finance", () => {
     await Promise.resolve();
   });
   afterEach(() => http.verify());
+  it("keeps the originating queue filter and row ID in its back link", () => {
+    route.next(
+      convertToParamMap({
+        requestId: 1,
+        origin: "dashboard",
+        reviewFilter: "history",
+      }),
+    );
+    http
+      .expectOne(environment.apiUrl + "/ReassessmentRequests/1")
+      .flush(request);
+    expect(c.backParams()).toEqual({
+      reviewFilter: "history",
+      focusReview: 1,
+      taskTab: "reassessments",
+    });
+  });
+  it("shows review actions only for an eligible role and the assigned reviewer once claimed", () => {
+    expect(c.canAct()).toBe(true);
+    c.data.set({ ...request, state: "InReview", seniorId: "other-senior" });
+    expect(c.canAct()).toBe(false);
+    c.data.set({ ...request, state: "InReview", seniorId: "signed-in-senior" });
+    expect(c.canAct()).toBe(true);
+  });
   it("starts a pending same-visit review directly with its saved version", async () => {
     const starting = c.start();
     const r = http.expectOne(

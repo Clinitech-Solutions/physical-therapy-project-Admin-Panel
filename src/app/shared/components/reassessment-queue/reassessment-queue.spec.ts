@@ -19,20 +19,33 @@ describe("Reassessment queue", () => {
     queue = TestBed.runInInjectionContext(() => new ReassessmentQueue());
     http = TestBed.inject(HttpTestingController);
   });
-  afterEach(() => { http.verify(); vi.useRealTimers(); });
-  it('refreshes the pending count when a review is completed in another workspace', async () => {
+  afterEach(() => {
+    http.verify();
+    vi.useRealTimers();
+  });
+  it("refreshes the pending count when a review is completed in another workspace", async () => {
     vi.useFakeTimers();
     queue.ngOnInit();
-    http.expectOne(environment.apiUrl + '/ReassessmentRequests').flush([{id:1,state:'Requested',requestedAt:'2030-02-04T10:00:00Z'}]);
-    await Promise.resolve(); await Promise.resolve();
+    http
+      .expectOne(environment.apiUrl + "/ReassessmentRequests")
+      .flush([
+        { id: 1, state: "Requested", requestedAt: "2030-02-04T10:00:00Z" },
+      ]);
+    await Promise.resolve();
+    await Promise.resolve();
     expect(queue.pending()).toBe(1);
     await vi.advanceTimersByTimeAsync(30000);
-    http.expectOne(environment.apiUrl + '/ReassessmentRequests').flush([{id:1,state:'Completed',requestedAt:'2030-02-04T10:00:00Z'}]);
-    await Promise.resolve(); await Promise.resolve();
+    http
+      .expectOne(environment.apiUrl + "/ReassessmentRequests")
+      .flush([
+        { id: 1, state: "Completed", requestedAt: "2030-02-04T10:00:00Z" },
+      ]);
+    await Promise.resolve();
+    await Promise.resolve();
     expect(queue.pending()).toBe(0);
     expect(queue.visible()).toEqual([]);
-    queue.includeHistory.set(true);
-    expect(queue.visible()[0].state).toBe('Completed');
+    queue.filter.set("history");
+    expect(queue.visible()[0].state).toBe("Completed");
   });
   it("puts actionable requests first, counts only active requests, and retains saved history", async () => {
     const loading = queue.load();
@@ -44,8 +57,8 @@ describe("Reassessment queue", () => {
     await loading;
     expect(queue.pending()).toBe(2);
     expect(queue.visible().map((r) => r.id)).toEqual([3, 2]);
-    queue.includeHistory.set(true);
-    expect(queue.visible().map((r) => r.id)).toEqual([3, 2, 1]);
+    queue.filter.set("history");
+    expect(queue.visible().map((r) => r.id)).toEqual([1]);
   });
   it("reports a failed load separately from an empty queue and supports retry", async () => {
     const loading = queue.load();

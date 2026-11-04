@@ -1,5 +1,12 @@
 import { ReceptionWarnings } from "../../../core/services/reception-warnings";
-import { Component, inject, OnInit, signal, DestroyRef } from "@angular/core";
+import {
+  Component,
+  inject,
+  OnInit,
+  signal,
+  DestroyRef,
+  computed,
+} from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { ActivatedRoute, RouterLink } from "@angular/router";
@@ -20,6 +27,7 @@ import { ReassessmentQueue } from "../../../shared/components/reassessment-queue
 import { ClinicalLocale } from "../../../shared/clinical-locale";
 import { ReassessmentOutcome } from "../../../shared/components/reassessment-outcome/reassessment-outcome";
 import { PatientAvatar } from "../../doctor/patient-avatar";
+import { AuthService } from "../../../core/services/auth";
 
 @Component({
   selector: "app-re-assessment-form",
@@ -34,7 +42,7 @@ import { PatientAvatar } from "../../doctor/patient-avatar";
     PatientAvatar,
   ],
   templateUrl: "./re-assessment-form.html",
-  styleUrls: ["../../doctor/doctor-workspace.css", "./clinical-review.css"],
+  styleUrls: ["./clinical-review.css", "./clinical-review-content.css", "./clinical-review-form.css"],
 })
 export class ReAssessmentForm implements OnInit {
   private warnings =
@@ -44,6 +52,29 @@ export class ReAssessmentForm implements OnInit {
   private route = inject(ActivatedRoute);
   private translate = inject(TranslateService);
   private destroy = inject(DestroyRef);
+  private auth = inject(AuthService);
+  readonly backOrigin = signal<"dashboard" | "queue">("dashboard");
+  readonly backFilter = signal<"open" | "history">("open");
+  readonly canAct = computed(() => {
+    const user = this.auth.currentUser();
+    const r = this.data();
+    if (!user || !r) return false;
+    if (user.roles.some((role) => ["Ceo", "Admin", "Owner"].includes(role)))
+      return true;
+    return (
+      user.roles.includes("Senior") &&
+      (r.state === "Requested" || r.seniorId === user.id)
+    );
+  });
+  backParams() {
+    return {
+      reviewFilter: this.backFilter(),
+      focusReview: this.id || null,
+      ...(this.backOrigin() === "dashboard"
+        ? { taskTab: "reassessments" }
+        : {}),
+    };
+  }
   readonly locale = new ClinicalLocale();
   readonly data = signal<ReassessmentRequest | null>(null);
   readonly loading = signal(false);
@@ -67,6 +98,12 @@ export class ReAssessmentForm implements OnInit {
     this.route.queryParamMap
       .pipe(takeUntilDestroyed(this.destroy))
       .subscribe((params) => {
+        this.backOrigin.set(
+          params.get("origin") === "queue" ? "queue" : "dashboard",
+        );
+        this.backFilter.set(
+          params.get("reviewFilter") === "history" ? "history" : "open",
+        );
         const id = Number(params.get("requestId"));
         if (id !== this.id) {
           ++this.generation;

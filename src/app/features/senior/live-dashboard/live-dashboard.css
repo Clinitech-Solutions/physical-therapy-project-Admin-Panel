@@ -129,3 +129,31 @@
     grid-template-columns: 1fr;
   }
 }
+
+.senior-task-grid {
+  align-items: start;
+}
+.task-tabs .tab {
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  padding: 10px 12px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  min-height: 44px;
+}
+.task-tabs .tab.active {
+  border-bottom-color: var(--mq-teal);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+.task-tabs .tab:focus-visible {
+  outline: 2px solid var(--mq-teal);
+  outline-offset: -3px;
+}
+[role="tabpanel"][hidden] {
+  display: none;
+}
+.empty-state {
+  padding: 20px 12px;
+}

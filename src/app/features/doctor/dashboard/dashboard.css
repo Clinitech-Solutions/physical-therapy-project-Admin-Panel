@@ -214,4 +214,6 @@
   text-align: center;
 }
 
-.mobile-refresh{display:none}.clinical-heading{position:relative}
+.clinical-heading {
+  position: relative;
+}
