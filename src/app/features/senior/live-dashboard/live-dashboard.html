@@ -17,7 +17,7 @@
 </div>
 
 <!-- ── KPI Row ─────────────────────────────────────────────── -->
-<div class="kpi-row">
+<div class="kpi-row senior-summary">
   <!-- Total Pending Tasks -->
   <div class="stat-card border-start-teal">
     <div class="stat-label">{{ 'SENIOR.PENDING_TASKS' | translate }}</div>
@@ -26,14 +26,14 @@
   </div>
 
   <!-- Assessments -->
-  <div class="stat-card" style="border-left-color: var(--color-info)">
+  <div class="stat-card assessment-summary">
     <div class="stat-label">{{ 'SENIOR.ASSESSMENTS' | translate }}</div>
     <div class="stat-value">{{ assessmentCount() }}</div>
     <div class="stat-sub">{{ 'SENIOR.ASSESSMENTS_SUB' | translate }}</div>
   </div>
 
   <!-- Available Doctors -->
-  <div class="stat-card" style="border-left-color: var(--color-success)">
+  <div class="stat-card capacity-summary">
     <div class="stat-label">{{ 'SENIOR.DOCTORS_AVAILABLE' | translate }}</div>
     <div class="stat-value">
       {{ capacityLoading() || capacityError() ? '—' : availableDoctorsCount() }}
@@ -48,13 +48,10 @@
 <!-- ── Main 2-Column Grid ──────────────────────────────────── -->
 <div class="grid-2 gap-6 senior-task-grid">
   <!-- ── LEFT: Today's Tasks (Tabbed) ─────────────────────── -->
-  <div class="card">
+  <div class="card senior-tasks">
     <div class="card-body">
-      <h4 style="margin-bottom: var(--space-3)">
-        <i
-          class="bi bi-clipboard2-pulse"
-          style="color: var(--mq-teal); margin-right: 8px"
-        ></i>
+      <h4 class="panel-heading">
+        <i class="bi bi-clipboard2-pulse" aria-hidden="true"></i>
         {{ 'SENIOR.TODAYS_TASKS' | translate }}
       </h4>
 
@@ -166,13 +163,10 @@
   </div>
 
   <!-- ── RIGHT: Live View Capacity ────────────────────────── -->
-  <div class="card">
+  <div class="card senior-capacity">
     <div class="card-body">
-      <h4 style="margin-bottom: var(--space-3)">
-        <i
-          class="bi bi-people-fill"
-          style="color: var(--mq-teal); margin-right: 8px"
-        ></i>
+      <h4 class="panel-heading">
+        <i class="bi bi-people-fill" aria-hidden="true"></i>
         {{ 'SENIOR.LIVE_VIEW_CAPACITY' | translate }}
       </h4>
 
@@ -188,7 +182,10 @@
       } @if(!capacityError()&&!capacityLoading()){
       <div class="doctor-grid">
         @for (doctor of activeDoctorsWorkload(); track doctor.doctorId) {
-        <div class="doctor-card" [style.border-left-color]="doctor.borderColor">
+        <div
+          class="doctor-card"
+          [style.border-inline-start-color]="doctor.borderColor"
+        >
           <div
             class="flex justify-between items-center"
             style="margin-bottom: var(--space-2)"

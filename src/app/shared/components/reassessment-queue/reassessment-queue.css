@@ -121,6 +121,19 @@
 .queue-error {
   color: var(--color-danger, var(--text-primary));
 }
+.queue-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px 12px;
+  text-align: center;
+}
+.queue-empty i {
+  color: var(--mq-teal);
+  opacity: 0.6;
+  font-size: 32px;
+}
 .queue-filters button:focus-visible,
 .queue-refresh:focus-visible,
 .request-action:focus-visible {

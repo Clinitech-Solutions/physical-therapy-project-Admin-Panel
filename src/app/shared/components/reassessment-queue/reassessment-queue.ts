@@ -216,13 +216,18 @@ import { PatientAvatar } from "../../../features/doctor/patient-avatar";
               }
             </article>
           } @empty {
-            <p class="queue-state">
-              {{
-                (filter() === "history"
-                  ? "SENIOR_REVIEW.NO_HISTORY"
-                  : "DOCTOR.NO_PENDING_REVIEWS"
-                ) | translate
-              }}
+            <p class="queue-state" [class.queue-empty]="embedded()">
+              @if (embedded()) {
+                <i class="bi bi-clipboard2-check" aria-hidden="true"></i>
+              }
+              <span>
+                {{
+                  (filter() === "history"
+                    ? "SENIOR_REVIEW.NO_HISTORY"
+                    : "DOCTOR.NO_PENDING_REVIEWS"
+                  ) | translate
+                }}
+              </span>
             </p>
           }
         }
