@@ -2,9 +2,9 @@
   <header class="clinical-heading">
     <div>
       @if (view() !== "today") {
-        <button class="btn" (click)="view.set('today')">
-          &larr; {{ "DOCTOR.BACK_TO_SCHEDULE" | translate }}
-        </button>
+      <button class="btn" (click)="view.set('today')">
+        &larr; {{ "DOCTOR.BACK_TO_SCHEDULE" | translate }}
+      </button>
       }
       <h1>{{ "DOCTOR.WORKSPACE" | translate }}</h1>
       <p>{{ locale.date(date() + "T12:00:00Z") }}</p>
@@ -52,371 +52,341 @@
     </div>
   </header>
   @if (loading()) {
-    <p role="status">{{ "DOCTOR.LOADING" | translate }}</p>
-  }
-  @if (error()) {
-    <div class="clinical-alert" role="alert">
-      {{ error() }}
-      @if (shortfall() !== null) {
-        <strong
-          >{{ "DOCTOR.SHORTFALL" | translate }}:
-          {{
-            shortfall() | currency: "EGP" : "code" : "1.2-2" : locale.language
-          }}</strong
-        >
-      }
-      <button class="btn" (click)="load()">
-        {{ "DOCTOR.RETRY" | translate }}
+  <p role="status">{{ "DOCTOR.LOADING" | translate }}</p>
+  } @if (error()) {
+  <div class="clinical-alert" role="alert">
+    {{ error() }} @if (shortfall() !== null) {
+    <strong
+      >{{ "DOCTOR.SHORTFALL" | translate }}: {{ shortfall() | currency: "EGP" :
+      "code" : "1.2-2" : locale.language }}</strong
+    >
+    }
+    <button class="btn" (click)="load()">
+      {{ "DOCTOR.RETRY" | translate }}
+    </button>
+  </div>
+  } @if (view() === "account") {
+  <section class="clinical-card">
+    <h2>{{ "DOCTOR.ACCOUNT" | translate }}</h2>
+    <p>{{ auth.currentUser()?.userName }}</p>
+    <p>
+      {{ ("ROLES." + (auth.currentRole() || "Doctor").toUpperCase()) | translate
+      }}
+    </p>
+    <button class="btn btn-outline-secondary" (click)="auth.logout()">
+      {{ "DOCTOR.SIGN_OUT" | translate }}
+    </button>
+  </section>
+  } @else if (view() === "reviews") {
+  <section class="clinical-card">
+    <div class="rail-heading">
+      <h2>{{ "DOCTOR.REASSESSMENT" | translate }}</h2>
+      <button class="btn" (click)="loadReviews()">
+        {{ "DOCTOR.REFRESH" | translate }}
       </button>
     </div>
+    @if (reviewsLoading()) {
+    <p role="status">{{ "DOCTOR.LOADING" | translate }}</p>
+    } @if (reviewsError()) {
+    <p role="alert">{{ reviewsError() }}</p>
+    } @for (r of reviews(); track r.id) {
+    <article class="review-link">
+      <div>
+        <strong>{{ r.patientName }}</strong>
+        <p>{{ "DOCTOR.REASONS." + r.reasonCategory | translate }}</p>
+        <small>{{ locale.date(r.requestedAt, true) }}</small>
+        <app-reassessment-outcome [request]="r" />
+      </div>
+      <span class="clinical-badge"
+        >{{ "DOCTOR.REVIEW_STATES." + r.state | translate }}</span
+      >
+      @if (r.relatedAppointmentId) {
+      <a
+        class="btn btn-outline-secondary"
+        [routerLink]="['/doctor/session-notes', r.relatedAppointmentId]"
+        [queryParams]="{ section: 'REASSESSMENT' }"
+        >{{ "DOCTOR.OPEN_PATIENT" | translate }}</a
+      >
+      }
+    </article>
+    } @empty { @if (reviews() && !reviewsLoading()) {
+    <p class="clinical-empty">{{ "DOCTOR.NO_REVIEWS" | translate }}</p>
+    } }
+  </section>
+  } @else if (data(); as schedule) {
+  <div class="clinical-summary">
+    <div>
+      <i class="bi bi-calendar2-week" aria-hidden="true"></i
+      ><span>{{ "DOCTOR.SCHEDULED_TODAY" | translate }}</span
+      ><strong>{{ counts().scheduled }}</strong>
+    </div>
+    <div>
+      <i class="bi bi-people" aria-hidden="true"></i
+      ><span>{{ "DOCTOR.WAITING" | translate }}</span
+      ><strong>{{ counts().waiting }}</strong>
+    </div>
+    <div>
+      <i class="bi bi-activity" aria-hidden="true"></i
+      ><span>{{ "DOCTOR.CURRENTLY_TREATING" | translate }}</span
+      ><strong dir="ltr">{{ counts().treating }} / 2</strong>
+    </div>
+    <div>
+      <i class="bi bi-check2" aria-hidden="true"></i
+      ><span>{{ "DOCTOR.COMPLETED" | translate }}</span
+      ><strong>{{ counts().completed }}</strong>
+    </div>
+  </div>
+  @if (atCapacity()) {
+  <p class="capacity-hint" role="status">
+    {{ "DOCTOR.CAPACITY_FULL" | translate }}
+  </p>
   }
-  @if (view() === "account") {
-    <section class="clinical-card">
-      <h2>{{ "DOCTOR.ACCOUNT" | translate }}</h2>
-      <p>{{ auth.currentUser()?.userName }}</p>
-      <p>{{ ("ROLES." + (auth.currentRole() || "Doctor").toUpperCase()) | translate }}</p>
-      <button class="btn btn-outline-secondary" (click)="auth.logout()">
-        {{ "DOCTOR.SIGN_OUT" | translate }}
-      </button>
-    </section>
-  } @else if (view() === "reviews") {
-    <section class="clinical-card">
-      <div class="rail-heading">
-        <h2>{{ "DOCTOR.REASSESSMENT" | translate }}</h2>
-        <button class="btn" (click)="loadReviews()">
-          {{ "DOCTOR.REFRESH" | translate }}
+  <div class="schedule-layout">
+    <section class="clinical-card schedule-main">
+      <div class="schedule-tools">
+        <h2>{{ "DOCTOR.DAY_SCHEDULE" | translate }}</h2>
+        <label class="search-field"
+          ><i class="bi bi-search" aria-hidden="true"></i
+          ><input
+            type="search"
+            [ngModel]="search()"
+            (ngModelChange)="search.set($event)"
+            [placeholder]="'DOCTOR.SEARCH_HINT' | translate"
+            [attr.aria-label]="'DOCTOR.SEARCH' | translate"
+        /></label>
+        <label class="status-filter">
+          <!-- {{ "DOCTOR.STATUS" | translate}} -->
+          <select [ngModel]="filter()" (ngModelChange)="filter.set($event)">
+            <option value="">{{ "DOCTOR.ALL_STATUSES" | translate }}</option>
+            @for (state of states; track state) {
+            <option [value]="state">
+              {{ "DOCTOR.STATES." + state | translate }}
+            </option>
+            }
+          </select></label
+        >
+      </div>
+      <div class="mobile-filter">
+        <button
+          class="btn"
+          [class.selected]="!completedOnly()"
+          (click)="completedOnly.set(false)"
+        >
+          {{ "DOCTOR.TODAY" | translate }}</button
+        ><button
+          class="btn"
+          [class.selected]="completedOnly()"
+          (click)="completedOnly.set(true)"
+        >
+          {{ "DOCTOR.COMPLETED_SHORT" | translate }}
         </button>
       </div>
-      @if (reviewsLoading()) {
-        <p role="status">{{ "DOCTOR.LOADING" | translate }}</p>
-      }
-      @if (reviewsError()) {
-        <p role="alert">{{ reviewsError() }}</p>
-      }
-      @for (r of reviews(); track r.id) {
-        <article class="review-link">
-          <div>
-            <strong>{{ r.patientName }}</strong>
-            <p>{{ "DOCTOR.REASONS." + r.reasonCategory | translate }}</p>
-            <small>{{ locale.date(r.requestedAt, true) }}</small>
-          </div>
-          <span class="clinical-badge">{{
-            "DOCTOR.REVIEW_STATES." + r.state | translate
-          }}</span>
-          @if (r.relatedAppointmentId) {
-            <a
-              class="btn btn-outline-secondary"
-              [routerLink]="['/doctor/session-notes', r.relatedAppointmentId]"
-              [queryParams]="{ section: 'REASSESSMENT' }"
-              >{{ "DOCTOR.OPEN_PATIENT" | translate }}</a
-            >
-          }
-        </article>
-      } @empty {
-        @if (reviews() && !reviewsLoading()) {
-          <p class="clinical-empty">{{ "DOCTOR.NO_REVIEWS" | translate }}</p>
-        }
-      }
-    </section>
-  } @else if (data(); as schedule) {
-    <div class="clinical-summary">
-      <div>
-        <i class="bi bi-calendar2-week" aria-hidden="true"></i
-        ><span>{{ "DOCTOR.SCHEDULED_TODAY" | translate }}</span
-        ><strong>{{ counts().scheduled }}</strong>
-      </div>
-      <div>
-        <i class="bi bi-people" aria-hidden="true"></i
-        ><span>{{ "DOCTOR.WAITING" | translate }}</span
-        ><strong>{{ counts().waiting }}</strong>
-      </div>
-      <div>
-        <i class="bi bi-activity" aria-hidden="true"></i
-        ><span>{{ "DOCTOR.CURRENTLY_TREATING" | translate }}</span
-        ><strong dir="ltr">{{ counts().treating }} / 2</strong>
-      </div>
-      <div>
-        <i class="bi bi-check2" aria-hidden="true"></i
-        ><span>{{ "DOCTOR.COMPLETED" | translate }}</span
-        ><strong>{{ counts().completed }}</strong>
-      </div>
-    </div>
-    @if (atCapacity()) {
-      <p class="capacity-hint" role="status">
-        {{ "DOCTOR.CAPACITY_FULL" | translate }}
-      </p>
-    }
-    <div class="schedule-layout">
-      <section class="clinical-card schedule-main">
-        <div class="schedule-tools">
-          <h2>{{ "DOCTOR.DAY_SCHEDULE" | translate }}</h2>
-          <label class="search-field"
-            ><i class="bi bi-search" aria-hidden="true"></i
-            ><input
-              type="search"
-              [ngModel]="search()"
-              (ngModelChange)="search.set($event)"
-              [placeholder]="'DOCTOR.SEARCH_HINT' | translate"
-              [attr.aria-label]="'DOCTOR.SEARCH' | translate"
-          /></label>
-          <label class="status-filter"
-            >{{ "DOCTOR.STATUS" | translate
-            }}<select [ngModel]="filter()" (ngModelChange)="filter.set($event)">
-              <option value="">{{ "DOCTOR.ALL_STATUSES" | translate }}</option>
-              @for (state of states; track state) {
-                <option [value]="state">
-                  {{ "DOCTOR.STATES." + state | translate }}
-                </option>
-              }
-            </select></label
-          >
-        </div>
-        <div class="mobile-filter">
-          <button
-            class="btn"
-            [class.selected]="!completedOnly()"
-            (click)="completedOnly.set(false)"
-          >
-            {{ "DOCTOR.TODAY" | translate }}</button
-          ><button
-            class="btn"
-            [class.selected]="completedOnly()"
-            (click)="completedOnly.set(true)"
-          >
-            {{ "DOCTOR.COMPLETED_SHORT" | translate }}
-          </button>
-        </div>
-        <table class="schedule-table">
-          <thead>
-            <tr>
-              <th>{{ "DOCTOR.PLANNED" | translate }}</th>
-              <th>{{ "DOCTOR.PATIENT" | translate }}</th>
-              <th>{{ "DOCTOR.SESSION_ROOM" | translate }}</th>
-              <th>{{ "DOCTOR.STATUS" | translate }}</th>
-              <th>{{ "DOCTOR.ACTION" | translate }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (a of visible(); track a.appointmentId) {
-              <tr [attr.data-appointment-id]="a.appointmentId">
-                <td>
-                  <strong>{{ locale.time(a.plannedStart) }}</strong
-                  ><small>{{ locale.time(a.plannedEnd) }}</small>
-                </td>
-                <td>
-                  <div class="patient-cell">
-                    <app-patient-avatar [name]="a.patientName" />
-                    <div>
-                      <strong>{{ a.patientName }}</strong
-                      ><small
-                        >{{ "DOCTOR.GENDER." + a.gender | translate }}
-                        @if (a.phone) {
-                          &middot; <bdi>{{ a.phone }}</bdi>
-                        }
-                      </small>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  {{ "DOCTOR.SESSION" | translate }}
-                  {{ a.sessionNumber }} &middot; {{ a.roomName
-                  }}<small
-                    >{{ a.planSummary }} &middot; 60
-                    {{ "DOCTOR.MINUTES" | translate }}</small
-                  >
-                </td>
-                <td>
-                  <ng-container
-                    *ngTemplateOutlet="status; context: { $implicit: a }"
-                  />
-                </td>
-                <td>
-                  <ng-container
-                    *ngTemplateOutlet="action; context: { $implicit: a }"
-                  />
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-        <div class="mobile-visits">
-          @for (group of groups(); track group.key) {
-            @if (group.rows.length) {
-              <h2>
-                {{ "DOCTOR." + group.key | translate }} ({{
-                  group.rows.length
-                }})
-              </h2>
-              @for (a of group.rows; track a.appointmentId) {
-                <article
-                  class="patient-card"
-                  [attr.data-appointment-id]="a.appointmentId"
-                >
-                  <div class="patient-cell">
-                    <app-patient-avatar [name]="a.patientName" />
-                    <div>
-                      <h3>{{ a.patientName }}</h3>
-                      <p>
-                        {{ a.roomName }} &middot;
-                        {{ "DOCTOR.SESSION" | translate }}
-                        {{ a.sessionNumber }}
-                      </p>
-                    </div>
-                  </div>
-                  <ng-container
-                    *ngTemplateOutlet="status; context: { $implicit: a }"
-                  />
-                  <p class="card-time">
-                    <i class="bi bi-clock" aria-hidden="true"></i>
-                    {{ locale.time(a.plannedStart) }} &ndash;
-                    {{ locale.time(a.plannedEnd) }}
-                  </p>
-                  <ng-container
-                    *ngTemplateOutlet="action; context: { $implicit: a }"
-                  />
-                </article>
-              }
-            }
-          }
-        </div>
-        @if (!visible().length) {
-          <p class="clinical-empty">
-            {{ "DOCTOR.NO_APPOINTMENTS" | translate }}
-          </p>
-        }
-      </section>
-      <aside class="schedule-rail">
-        <section class="clinical-card">
-          <div class="rail-heading">
-            <h2>{{ "DOCTOR.ACTIVE_SHORT" | translate }}</h2>
-            <span class="clinical-badge" dir="ltr"
-              >{{ counts().treating }} / 2</span
-            >
-          </div>
-          @for (a of schedule.activeTreatments; track a.appointmentId) {
-            <article class="active-patient">
+      <table class="schedule-table">
+        <thead>
+          <tr>
+            <th>{{ "DOCTOR.PLANNED" | translate }}</th>
+            <th>{{ "DOCTOR.PATIENT" | translate }}</th>
+            <th>{{ "DOCTOR.SESSION_ROOM" | translate }}</th>
+            <th>{{ "DOCTOR.STATUS" | translate }}</th>
+            <th>{{ "DOCTOR.ACTION" | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (a of visible(); track a.appointmentId) {
+          <tr [attr.data-appointment-id]="a.appointmentId">
+            <td>
+              <strong>{{ locale.time(a.plannedStart) }}</strong
+              ><small>{{ locale.time(a.plannedEnd) }}</small>
+            </td>
+            <td>
               <div class="patient-cell">
                 <app-patient-avatar [name]="a.patientName" />
                 <div>
                   <strong>{{ a.patientName }}</strong
                   ><small
-                    >{{ a.roomName }} &middot;
-                    {{ "DOCTOR.SESSION" | translate }}
-                    {{ a.sessionNumber }}</small
-                  >
+                    >{{ "DOCTOR.GENDER." + a.gender | translate }} @if (a.phone)
+                    { &middot; <bdi>{{ a.phone }}</bdi>
+                    }
+                  </small>
                 </div>
               </div>
-              <p>
-                {{ clock.minutes(a.treatmentStartedAt) }}
-                {{ "DOCTOR.MINUTES_ELAPSED" | translate }}
-              </p>
-              <a
-                class="btn btn-primary"
-                [routerLink]="['/doctor/session-notes', a.appointmentId]"
-                >{{ "DOCTOR.CONTINUE_SESSION" | translate }}</a
+            </td>
+            <td>
+              {{ "DOCTOR.SESSION" | translate }} {{ a.sessionNumber }} &middot;
+              {{ a.roomName }}<small
+                >{{ a.planSummary }} &middot; 60 {{ "DOCTOR.MINUTES" | translate
+                }}</small
               >
-            </article>
-          } @empty {
-            <p>{{ "DOCTOR.NO_ACTIVE" | translate }}</p>
+            </td>
+            <td>
+              <ng-container
+                *ngTemplateOutlet="status; context: { $implicit: a }"
+              />
+            </td>
+            <td>
+              <ng-container
+                *ngTemplateOutlet="action; context: { $implicit: a }"
+              />
+            </td>
+          </tr>
           }
-        </section>
-        <section class="clinical-card">
-          <h2>{{ "DOCTOR.UP_NEXT" | translate }}</h2>
-          @for (a of upNext(); track a.appointmentId) {
-            <a
-              class="up-next patient-cell"
-              [routerLink]="['/doctor/session-notes', a.appointmentId]"
-              ><app-patient-avatar [name]="a.patientName" />
-              <div>
-                <strong>{{ a.patientName }}</strong
-                ><small
-                  >{{ locale.time(a.plannedStart) }} &middot;
-                  {{ a.roomName }}</small
-                ><span class="clinical-badge" [attr.data-state]="a.state">{{
-                  "DOCTOR.STATES." + a.state | translate
-                }}</span>
-              </div></a
+        </tbody>
+      </table>
+      <div class="mobile-visits">
+        @for (group of groups(); track group.key) { @if (group.rows.length) {
+        <h2>
+          {{ "DOCTOR." + group.key | translate }} ({{ group.rows.length }})
+        </h2>
+        @for (a of group.rows; track a.appointmentId) {
+        <article
+          class="patient-card"
+          [attr.data-appointment-id]="a.appointmentId"
+        >
+          <div class="patient-cell">
+            <app-patient-avatar [name]="a.patientName" />
+            <div>
+              <h3>{{ a.patientName }}</h3>
+              <p>
+                {{ a.roomName }} &middot; {{ "DOCTOR.SESSION" | translate }} {{
+                a.sessionNumber }}
+              </p>
+            </div>
+          </div>
+          <ng-container *ngTemplateOutlet="status; context: { $implicit: a }" />
+          <p class="card-time">
+            <i class="bi bi-clock" aria-hidden="true"></i>
+            {{ locale.time(a.plannedStart) }} &ndash; {{
+            locale.time(a.plannedEnd) }}
+          </p>
+          <ng-container *ngTemplateOutlet="action; context: { $implicit: a }" />
+        </article>
+        } } }
+      </div>
+      @if (!visible().length) {
+      <p class="clinical-empty">{{ "DOCTOR.NO_APPOINTMENTS" | translate }}</p>
+      }
+    </section>
+    <aside class="schedule-rail">
+      <section class="clinical-card">
+        <div class="rail-heading">
+          <h2>{{ "DOCTOR.ACTIVE_SHORT" | translate }}</h2>
+          <span class="clinical-badge" dir="ltr"
+            >{{ counts().treating }} / 2</span
+          >
+        </div>
+        @for (a of schedule.activeTreatments; track a.appointmentId) {
+        <article class="active-patient">
+          <div class="patient-cell">
+            <app-patient-avatar [name]="a.patientName" />
+            <div>
+              <strong>{{ a.patientName }}</strong
+              ><small
+                >{{ a.roomName }} &middot; {{ "DOCTOR.SESSION" | translate }} {{
+                a.sessionNumber }}</small
+              >
+            </div>
+          </div>
+          <p>
+            {{ clock.minutes(a.treatmentStartedAt) }} {{
+            "DOCTOR.MINUTES_ELAPSED" | translate }}
+          </p>
+          <a
+            class="btn btn-primary"
+            [routerLink]="['/doctor/session-notes', a.appointmentId]"
+            >{{ "DOCTOR.CONTINUE_SESSION" | translate }}</a
+          >
+        </article>
+        } @empty {
+        <p>{{ "DOCTOR.NO_ACTIVE" | translate }}</p>
+        }
+      </section>
+      <section class="clinical-card">
+        <h2>{{ "DOCTOR.UP_NEXT" | translate }}</h2>
+        @for (a of upNext(); track a.appointmentId) {
+        <a
+          class="up-next patient-cell"
+          [routerLink]="['/doctor/session-notes', a.appointmentId]"
+          ><app-patient-avatar [name]="a.patientName" />
+          <div>
+            <strong>{{ a.patientName }}</strong
+            ><small
+              >{{ locale.time(a.plannedStart) }} &middot; {{ a.roomName
+              }}</small
+            ><span class="clinical-badge" [attr.data-state]="a.state"
+              >{{ "DOCTOR.STATES." + a.state | translate }}</span
             >
-          } @empty {
-            <p>{{ "DOCTOR.NO_APPOINTMENTS" | translate }}</p>
-          }
-        </section>
-        <section class="clinical-card">
-          <button class="review-summary" (click)="view.set('reviews')">
-            <i class="bi bi-file-earmark-medical" aria-hidden="true"></i
-            ><span
-              ><strong>{{ "DOCTOR.REASSESSMENT" | translate }}</strong
-              ><small>
-                @if (reviewsError()) {
-                  {{ reviewsError() }}
-                } @else if (reviewsLoading()) {
-                  {{ "DOCTOR.LOADING" | translate }}
-                } @else if (reviews() !== null) {
-                  {{ pendingReviews() }}
-                  {{ "DOCTOR.PENDING_REVIEWS" | translate }}
-                }
-              </small></span
-            ><span aria-hidden="true">&rsaquo;</span>
-          </button>
-        </section>
-      </aside>
-    </div>
+          </div></a
+        >
+        } @empty {
+        <p>{{ "DOCTOR.NO_APPOINTMENTS" | translate }}</p>
+        }
+      </section>
+      <section class="clinical-card">
+        <button class="review-summary" (click)="view.set('reviews')">
+          <i class="bi bi-file-earmark-medical" aria-hidden="true"></i
+          ><span
+            ><strong>{{ "DOCTOR.REASSESSMENT" | translate }}</strong
+            ><small>
+              @if (reviewsError()) { {{ reviewsError() }} } @else if
+              (reviewsLoading()) { {{ "DOCTOR.LOADING" | translate }} } @else if
+              (reviews() !== null) { {{ pendingReviews() }} {{
+              "DOCTOR.PENDING_REVIEWS" | translate }} }
+            </small></span
+          ><span aria-hidden="true">&rsaquo;</span>
+        </button>
+      </section>
+    </aside>
+  </div>
   }
   <nav
     class="doctor-bottom-nav"
     [attr.aria-label]="'DOCTOR.WORKSPACE' | translate"
   >
-    @for (
-      item of [
-        { key: "today", label: "TODAY", icon: "calendar2-week" },
-        { key: "reviews", label: "REVIEWS_NAV", icon: "file-earmark-text" },
-        { key: "account", label: "ACCOUNT", icon: "person" },
-      ];
-      track item.key
-    ) {
-      <button
-        [class.active]="view() === item.key"
-        [attr.aria-current]="view() === item.key ? 'page' : null"
-        (click)="view.set(item.key)"
-      >
-        <i [class]="'bi bi-' + item.icon" aria-hidden="true"></i
-        >{{ "DOCTOR." + item.label | translate }}
-      </button>
+    @for ( item of [ { key: "today", label: "TODAY", icon: "calendar2-week" }, {
+    key: "reviews", label: "REVIEWS_NAV", icon: "file-earmark-text" }, { key:
+    "account", label: "ACCOUNT", icon: "person" }, ]; track item.key ) {
+    <button
+      [class.active]="view() === item.key"
+      [attr.aria-current]="view() === item.key ? 'page' : null"
+      (click)="view.set(item.key)"
+    >
+      <i [class]="'bi bi-' + item.icon" aria-hidden="true"></i>{{ "DOCTOR." +
+      item.label | translate }}
+    </button>
     }
   </nav>
 </section>
 <ng-template #status let-a
-  ><span class="clinical-badge" [attr.data-state]="a.state">{{
-    "DOCTOR.STATES." + a.state | translate
-  }}</span>
+  ><span class="clinical-badge" [attr.data-state]="a.state"
+    >{{ "DOCTOR.STATES." + a.state | translate }}</span
+  >
   @if (a.state === "Treating" && a.treatmentStartedAt) {
-    <small
-      >{{ clock.minutes(a.treatmentStartedAt) }}
-      {{ "DOCTOR.MINUTES_ELAPSED" | translate }}</small
-    >
-  }
-  @if (a.state === "Scheduled") {
-    <small>{{ "DOCTOR.AWAITING_ARRIVAL" | translate }}</small>
+  <small
+    >{{ clock.minutes(a.treatmentStartedAt) }} {{ "DOCTOR.MINUTES_ELAPSED" |
+    translate }}</small
+  >
+  } @if (a.state === "Scheduled") {
+  <small>{{ "DOCTOR.AWAITING_ARRIVAL" | translate }}</small>
   }
 </ng-template>
 <ng-template #action let-a>
   @if (a.state === "Arrived") {
-    <button
-      class="btn btn-primary"
-      data-start-treatment
-      [disabled]="busy() !== null || atCapacity(a)"
-      [attr.title]="atCapacity(a) ? ('DOCTOR.CAPACITY_FULL' | translate) : null"
-      (click)="start(a)"
-    >
-      {{ "DOCTOR.START_SESSION" | translate }}
-    </button>
+  <button
+    class="btn btn-primary"
+    data-start-treatment
+    [disabled]="busy() !== null || atCapacity(a)"
+    [attr.title]="atCapacity(a) ? ('DOCTOR.CAPACITY_FULL' | translate) : null"
+    (click)="start(a)"
+  >
+    {{ "DOCTOR.START_SESSION" | translate }}
+  </button>
   } @else {
-    <a
-      class="btn"
-      [class.btn-primary]="a.state === 'Treating'"
-      [class.btn-outline-secondary]="a.state !== 'Treating'"
-      [routerLink]="['/doctor/session-notes', a.appointmentId]"
-      >{{ "DOCTOR." + actionLabel(a) | translate }}</a
-    >
+  <a
+    class="btn"
+    [class.btn-primary]="a.state === 'Treating'"
+    [class.btn-outline-secondary]="a.state !== 'Treating'"
+    [routerLink]="['/doctor/session-notes', a.appointmentId]"
+    >{{ "DOCTOR." + actionLabel(a) | translate }}</a
+  >
   }
 </ng-template>

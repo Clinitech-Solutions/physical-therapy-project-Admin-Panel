@@ -17,10 +17,11 @@
       {{'DOCTOR.REVIEW_LATEST'|translate}}
     </button>
   </p>
-  } @if(data();as r){
+  } @if(!loading() && data();as r){
   <section class="clinical-card">
     <div class="clinical-heading">
-      <div>
+      <app-patient-avatar [name]="r.patientName" />
+      <div class="review-identity">
         <h2>{{r.patientName}}</h2>
         <p>{{r.requestedBy}} &middot; {{locale.date(r.requestedAt,true)}}</p>
       </div>
@@ -50,13 +51,15 @@
     } @if(r.cancellationReason){
     <p>{{'DOCTOR.CANCELLATION_REASON'|translate}}: {{r.cancellationReason}}</p>
     }
+    <app-reassessment-outcome [request]="r" />
   </section>
   <section class="clinical-card">
     <h2>{{'DOCTOR.CURRENT_PLAN'|translate}}</h2>
     <p>{{'DOCTOR.DIAGNOSIS'|translate}}: {{r.diagnosis}}</p>
     <p>
-      {{r.treatmentType}} &middot; {{r.completedSessions}} / {{r.prescribedSessions}}
-      {{'DOCTOR.COMPLETED'|translate}} &middot; {{r.doctorName}}
+      {{r.treatmentType}} &middot; {{r.completedSessions}} /
+      {{r.prescribedSessions}} {{'DOCTOR.COMPLETED'|translate}} &middot;
+      {{r.doctorName}}
     </p>
     <p class="preserve-lines">
       {{r.exercises||('DOCTOR.NOT_RECORDED'|translate)}}
@@ -73,16 +76,19 @@
         <p class="preserve-lines">
           {{note.progressNotes||('DOCTOR.NOT_RECORDED'|translate)}}
         </p>
+        @if(note.conditionChanges){<p class="preserve-lines"><strong>{{'DOCTOR.CONDITION_CHANGES'|translate}}:</strong> {{note.conditionChanges}}</p>}
+        @if(note.responseToTreatment){<p class="preserve-lines"><strong>{{'DOCTOR.RESPONSE_TO_TREATMENT'|translate}}:</strong> {{note.responseToTreatment}}</p>}
+        @if(note.treatmentPerformed){<p class="preserve-lines"><strong>{{'DOCTOR.TREATMENT_PERFORMED'|translate}}:</strong> {{note.treatmentPerformed}}</p>}
       </article>
       }@empty{
       <p>{{'DOCTOR.NO_PREVIOUS_SESSIONS'|translate}}</p>
       }
     </details>
   </section>
-  @if(r.state==='InReview'||r.state==='Completed'){
+  @if(r.state==='InReview'){
   <form class="clinical-card review-form" (ngSubmit)="submit()">
     <h2>{{'DOCTOR.CLINICAL_REVIEW'|translate}}</h2>
-    <fieldset [disabled]="busy()||r.state==='Completed'||!!completionIntent">
+    <fieldset [disabled]="busy()||!!completionIntent">
       <label for="senior-review-notes"
         >{{'DOCTOR.CLINICAL_NOTES'|translate}}<textarea
           id="senior-review-notes"

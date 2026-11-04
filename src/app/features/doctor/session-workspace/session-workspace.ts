@@ -1,4 +1,4 @@
-import { ClinicalAutosize } from '../clinical-autosize';
+import { ClinicalAutosize } from "../clinical-autosize";
 import { ReceptionWarnings } from "../../../core/services/reception-warnings";
 import {
   Component,
@@ -31,6 +31,7 @@ import { ClinicalClock } from "../clinical-clock";
 import { clinicDate } from "../../../core/services/doctor-workspace.service";
 import { DoctorVisit } from "../../../core/models/doctor-workspace.model";
 import { ClinicalLocale } from "../../../shared/clinical-locale";
+import { ReassessmentOutcome } from "../../../shared/components/reassessment-outcome/reassessment-outcome";
 
 @Component({
   selector: "app-doctor-session",
@@ -42,6 +43,7 @@ import { ClinicalLocale } from "../../../shared/clinical-locale";
     TranslateModule,
     PatientAvatar,
     ClinicalAutosize,
+    ReassessmentOutcome,
   ],
   templateUrl: "./session-workspace.html",
   styleUrls: [
@@ -70,7 +72,7 @@ export class SessionWorkspace implements OnInit {
     [...(this.data()?.previousSessions ?? [])].sort(
       (a, b) =>
         (Date.parse(b.plannedAt ?? b.recordedAt ?? "") || 0) -
-        (Date.parse(a.plannedAt ?? a.recordedAt ?? "") || 0) ||
+          (Date.parse(a.plannedAt ?? a.recordedAt ?? "") || 0) ||
         b.sessionNumber - a.sessionNumber,
     ),
   );
@@ -138,6 +140,16 @@ export class SessionWorkspace implements OnInit {
   private retryPayload: NotesMutation | null = null;
   private generation = 0;
   ngOnInit() {
+    const reviewTimer = setInterval(() => {
+      if (
+        document.visibilityState === "visible" &&
+        (this.tab() === "REASSESSMENT" || this.reviewOpen()) &&
+        !this.requestBusy() &&
+        this.data()
+      )
+        void this.refreshReviews();
+    }, 30000);
+    this.destroy.onDestroy(() => clearInterval(reviewTimer));
     this.changes
       .pipe(debounceTime(650), takeUntilDestroyed(this.destroy))
       .subscribe(() => {
@@ -164,6 +176,9 @@ export class SessionWorkspace implements OnInit {
         );
         void this.load();
       });
+    this.route.queryParamMap
+      .pipe(takeUntilDestroyed(this.destroy))
+      .subscribe(params => this.tab.set(params.get('section') === 'REASSESSMENT' ? 'REASSESSMENT' : 'CURRENT_SESSION'));
   }
   private fields(data: DoctorPatientWorkspace): NotesFields {
     const n = data.notes;
@@ -274,7 +289,11 @@ export class SessionWorkspace implements OnInit {
     try {
       const schedule = await firstValueFrom(this.api.schedule(clinicDate()));
       if (generation === this.generation)
-        this.capacity.set(schedule.activeTreatments.filter(active=>active.doctorId===this.data()?.visit.doctorId));
+        this.capacity.set(
+          schedule.activeTreatments.filter(
+            (active) => active.doctorId === this.data()?.visit.doctorId,
+          ),
+        );
     } catch (e) {
       if (generation === this.generation)
         this.capacityError.set(clinicalError(e, this.translate));

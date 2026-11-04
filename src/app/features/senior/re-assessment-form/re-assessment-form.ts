@@ -1,4 +1,4 @@
-import { ReceptionWarnings } from '../../../core/services/reception-warnings';
+import { ReceptionWarnings } from "../../../core/services/reception-warnings";
 import { Component, inject, OnInit, signal, DestroyRef } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
@@ -18,6 +18,8 @@ import {
 import { BookingClinician } from "../../../core/models/booking.model";
 import { ReassessmentQueue } from "../../../shared/components/reassessment-queue/reassessment-queue";
 import { ClinicalLocale } from "../../../shared/clinical-locale";
+import { ReassessmentOutcome } from "../../../shared/components/reassessment-outcome/reassessment-outcome";
+import { PatientAvatar } from "../../doctor/patient-avatar";
 
 @Component({
   selector: "app-re-assessment-form",
@@ -28,12 +30,15 @@ import { ClinicalLocale } from "../../../shared/clinical-locale";
     RouterLink,
     TranslateModule,
     ReassessmentQueue,
+    ReassessmentOutcome,
+    PatientAvatar,
   ],
   templateUrl: "./re-assessment-form.html",
   styleUrls: ["../../doctor/doctor-workspace.css", "./clinical-review.css"],
 })
 export class ReAssessmentForm implements OnInit {
-  private warnings=inject(ReceptionWarnings,{optional:true}) ?? new ReceptionWarnings();
+  private warnings =
+    inject(ReceptionWarnings, { optional: true }) ?? new ReceptionWarnings();
   private api = inject(DoctorWorkspaceService);
   private booking = inject(BookingService);
   private route = inject(ActivatedRoute);
@@ -62,11 +67,30 @@ export class ReAssessmentForm implements OnInit {
     this.route.queryParamMap
       .pipe(takeUntilDestroyed(this.destroy))
       .subscribe((params) => {
-        this.id = Number(params.get("requestId"));
+        const id = Number(params.get("requestId"));
+        if (id !== this.id) {
+          ++this.generation;
+          this.data.set(null);
+          this.loading.set(false);
+          this.notes = this.cancelReason = "";
+          this.diagnosis =
+            this.doctorId =
+            this.treatmentType =
+            this.exercises =
+              "";
+          this.decision = "Continue";
+          this.completionIntent = null;
+          this.clinicians.set([]);
+          this.clinicianError.set("");
+          this.busy.set(false);
+          this.error.set("");
+        }
+        this.id = id;
         if (this.id) void this.load();
       });
   }
   async load() {
+    if (this.busy() || !this.id) return;
     const generation = ++this.generation;
     this.loading.set(true);
     this.error.set("");
@@ -74,12 +98,15 @@ export class ReAssessmentForm implements OnInit {
       const data = await firstValueFrom(this.api.review(this.id));
       if (generation !== this.generation) return;
       this.data.set(data);
-      this.diagnosis = data.diagnosis;
-      this.doctorId = data.doctorId;
-      this.count = data.prescribedSessions;
-      this.frequency = data.frequencyPerWeek;
-      this.treatmentType = data.treatmentType;
-      this.exercises = data.exercises ?? "";
+      // Refresh the saved status without discarding an unsaved clinical outcome.
+      if (!this.notes.trim() && !this.completionIntent) {
+        this.diagnosis = data.diagnosis;
+        this.doctorId = data.doctorId;
+        this.count = data.prescribedSessions;
+        this.frequency = data.frequencyPerWeek;
+        this.treatmentType = data.treatmentType;
+        this.exercises = data.exercises ?? "";
+      }
       if (data.state === "Completed") {
         this.notes = data.reviewNotes ?? "";
         this.decision = (data.decision as typeof this.decision) ?? "Continue";
@@ -88,44 +115,52 @@ export class ReAssessmentForm implements OnInit {
     } catch (e) {
       if (generation === this.generation) {
         this.data.set(null);
-        this.error.set(clinicalError(e, this.translate)); this.warnings.show(this.error());
+        this.error.set(clinicalError(e, this.translate));
+        this.warnings.show(this.error());
       }
     } finally {
       if (generation === this.generation) this.loading.set(false);
     }
   }
   async loadClinicians() {
-    if (this.clinicians().length) return;
+    const data = this.data();
+    if (!data || this.clinicians().length) return;
+    const generation = this.generation;
     this.clinicianError.set("");
     try {
-      this.clinicians.set(
-        await firstValueFrom(
-          this.booking.clinicians(this.data()!.patientId, null, true),
-        ),
+      const clinicians = await firstValueFrom(
+        this.booking.clinicians(data.patientId, null, true),
       );
+      if (generation === this.generation) this.clinicians.set(clinicians);
     } catch (e) {
-      this.clinicianError.set(clinicalError(e, this.translate));
+      if (generation === this.generation)
+        this.clinicianError.set(clinicalError(e, this.translate));
     }
   }
   async start() {
     const data = this.data();
     if (!data || this.busy()) return;
+    const generation = this.generation;
     this.busy.set(true);
     this.error.set("");
     try {
-      this.data.set(
-        await firstValueFrom(this.api.startReview(data.id, data.version)),
+      const saved = await firstValueFrom(
+        this.api.startReview(data.id, data.version),
       );
+      if (generation === this.generation) this.data.set(saved);
     } catch (e) {
-      this.error.set(clinicalError(e, this.translate)); this.warnings.show(this.error());
+      if (generation !== this.generation) return;
+      this.error.set(clinicalError(e, this.translate));
+      this.warnings.show(this.error());
     } finally {
-      this.busy.set(false);
+      if (generation === this.generation) this.busy.set(false);
     }
   }
   async submit() {
     const data = this.data();
     if (!data || this.busy() || !this.notes.trim() || data.state !== "InReview")
       return;
+    const generation = this.generation;
     this.completionIntent ??= {
       expectedVersion: data.version,
       progressNotes: this.notes,
@@ -140,35 +175,39 @@ export class ReAssessmentForm implements OnInit {
     this.busy.set(true);
     this.error.set("");
     try {
-      this.data.set(
-        await firstValueFrom(
-          this.api.completeReview(data.id, this.completionIntent),
-        ),
+      const saved = await firstValueFrom(
+        this.api.completeReview(data.id, this.completionIntent),
       );
+      if (generation !== this.generation) return;
+      this.data.set(saved);
       this.completionIntent = null;
     } catch (e) {
-      this.error.set(clinicalError(e, this.translate)); this.warnings.show(this.error());
-      if ((e as { status?: number }).status === 400)
+      if (generation !== this.generation) return;
+      this.error.set(clinicalError(e, this.translate));
+      this.warnings.show(this.error());
+      if ([400, 409].includes((e as { status?: number }).status ?? 0))
         this.completionIntent = null;
     } finally {
-      this.busy.set(false);
+      if (generation === this.generation) this.busy.set(false);
     }
   }
   async cancel() {
     const data = this.data();
     if (!data || this.busy() || !this.cancelReason.trim()) return;
+    const generation = this.generation;
     this.busy.set(true);
     this.error.set("");
     try {
-      this.data.set(
-        await firstValueFrom(
-          this.api.cancelReview(data.id, data.version, this.cancelReason),
-        ),
+      const saved = await firstValueFrom(
+        this.api.cancelReview(data.id, data.version, this.cancelReason),
       );
+      if (generation === this.generation) this.data.set(saved);
     } catch (e) {
-      this.error.set(clinicalError(e, this.translate)); this.warnings.show(this.error());
+      if (generation !== this.generation) return;
+      this.error.set(clinicalError(e, this.translate));
+      this.warnings.show(this.error());
     } finally {
-      this.busy.set(false);
+      if (generation === this.generation) this.busy.set(false);
     }
   }
 }

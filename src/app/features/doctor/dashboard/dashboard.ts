@@ -1,5 +1,12 @@
 import { ReceptionWarnings } from "../../../core/services/reception-warnings";
-import { Component, computed, inject, OnInit, signal } from "@angular/core";
+import {
+  Component,
+  computed,
+  inject,
+  OnInit,
+  signal,
+  DestroyRef,
+} from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { Router, RouterLink } from "@angular/router";
@@ -20,6 +27,7 @@ import { ClinicalClock } from "../clinical-clock";
 import { AuthService } from "../../../core/services/auth";
 import { ReassessmentRequest } from "../../../core/models/doctor-workspace.model";
 import { ClinicalLocale } from "../../../shared/clinical-locale";
+import { ReassessmentOutcome } from "../../../shared/components/reassessment-outcome/reassessment-outcome";
 
 @Component({
   selector: "app-doctor-dashboard",
@@ -30,6 +38,7 @@ import { ClinicalLocale } from "../../../shared/clinical-locale";
     RouterLink,
     TranslateModule,
     PatientAvatar,
+    ReassessmentOutcome,
   ],
   templateUrl: "./dashboard.html",
   styleUrls: [
@@ -96,6 +105,7 @@ export class Dashboard implements OnInit {
   search = signal("");
   filter = signal<TreatmentState | "">("");
   private generation = 0;
+  private destroy = inject(DestroyRef);
   readonly states: TreatmentState[] = [
     "Scheduled",
     "Arrived",
@@ -135,6 +145,10 @@ export class Dashboard implements OnInit {
   ngOnInit() {
     void this.load();
     void this.loadReviews();
+    const timer = setInterval(() => {
+      if (document.visibilityState === "visible") void this.loadReviews();
+    }, 30000);
+    this.destroy.onDestroy(() => clearInterval(timer));
   }
   async load() {
     const generation = ++this.generation;
@@ -165,7 +179,11 @@ export class Dashboard implements OnInit {
     void this.load();
   }
   atCapacity(visit?: DoctorVisit) {
-    return (this.data()?.activeTreatments.filter(active => !visit || active.doctorId === visit.doctorId).length ?? 0) >= 2;
+    return (
+      (this.data()?.activeTreatments.filter(
+        (active) => !visit || active.doctorId === visit.doctorId,
+      ).length ?? 0) >= 2
+    );
   }
   isComplete(a: DoctorVisit) {
     return ["TreatmentFinished", "Departed", "LegacyCompleted"].includes(

@@ -3,6 +3,10 @@
   gap: 16px;
   margin-bottom: 16px;
 }
+.review-identity {
+  flex: 1;
+  min-width: 0;
+}
 .review-fields {
   display: grid;
   grid-template-columns: 1fr 1fr;

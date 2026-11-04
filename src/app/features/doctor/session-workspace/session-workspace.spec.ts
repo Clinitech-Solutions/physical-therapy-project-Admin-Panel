@@ -10,7 +10,7 @@ import {
   provideRouter,
 } from "@angular/router";
 import { TranslateModule } from "@ngx-translate/core";
-import { of } from "rxjs";
+import { of, BehaviorSubject } from "rxjs";
 import { SessionWorkspace } from "./session-workspace";
 import { DoctorPatientWorkspace } from "../../../core/models/doctor-workspace.model";
 import { environment } from "../../../../environments/environment";
@@ -71,7 +71,9 @@ export const workspace: DoctorPatientWorkspace = {
 };
 describe("Persisted Doctor notes and explicit finalization", () => {
   let c: SessionWorkspace, http: HttpTestingController;
+  let section: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
   beforeEach(async () => {
+    section = new BehaviorSubject(convertToParamMap({}));
     TestBed.configureTestingModule({
       imports: [TranslateModule.forRoot()],
       providers: [
@@ -82,6 +84,7 @@ describe("Persisted Doctor notes and explicit finalization", () => {
           provide: ActivatedRoute,
           useValue: {
             paramMap: of(convertToParamMap({ appointmentId: "10" })),
+            queryParamMap: section,
           },
         },
       ],
@@ -107,6 +110,15 @@ describe("Persisted Doctor notes and explicit finalization", () => {
     await loading;
     expect(c.data()).toBeNull();
     expect(c.error()).toBeTruthy();
+  });
+  it('opens the Senior Review tab on same-patient query navigation without discarding clinical text', () => {
+    c.draft.progressNotes = 'Unsaved clinical text';
+    section.next(convertToParamMap({section:'REASSESSMENT'}));
+    expect(c.tab()).toBe('REASSESSMENT');
+    expect(c.draft.progressNotes).toBe('Unsaved clinical text');
+    section.next(convertToParamMap({}));
+    expect(c.tab()).toBe('CURRENT_SESSION');
+    http.expectNone(r => r.method === 'PUT' || r.method === 'POST');
   });
   it("does not let a late autosave replace another patient's workspace", async () => {
     c.draft.progressNotes = "Old patient update";

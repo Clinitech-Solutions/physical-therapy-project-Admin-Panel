@@ -25,7 +25,7 @@ const ROLE_MENU_MAP: Record<string, NavItem[]> = {
   senior: [
     { icon: 'bi bi-activity', labelKey: 'SIDEBAR.DASHBOARD', route: '/senior/dashboard' },
     { icon: 'bi bi-clipboard2-pulse', labelKey: 'SIDEBAR.ASSESSMENTS', route: '/senior/assessment-form' },
-    { icon: 'bi bi-arrow-repeat', labelKey: 'SIDEBAR.REASSESSMENTS', route: '/senior/re-assessment-form' },
+    { icon: 'bi bi-arrow-repeat', labelKey: 'DOCTOR.REASSESSMENT_QUEUE', route: '/senior/re-assessment-form' },
     { icon: 'bi bi-person-fill-slash', labelKey: 'SIDEBAR.ABSENCE_COVERAGE', route: '/senior/absence-coverage' },
   ],
   doctor: [

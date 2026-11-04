@@ -11,494 +11,425 @@
     </button>
   </div>
   @if (loading()) {
-    <p role="status">{{ "DOCTOR.LOADING" | translate }}</p>
-  }
-  @if (error()) {
-    <div class="clinical-alert" role="alert">
-      {{ error() }}
-      @if (shortfall() !== null) {
-        <strong
-          >{{ "DOCTOR.SHORTFALL" | translate }}:
-          {{
-            shortfall() | currency: "EGP" : "code" : "1.2-2" : locale.language
-          }}</strong
-        >
-      }
-      <button class="btn" (click)="reviewLatest()">
-        {{ "DOCTOR.REVIEW_LATEST" | translate }}
-      </button>
-    </div>
-  }
-  @if (!data() && !loading()) {
-    <button class="btn btn-outline-secondary" (click)="load()">
-      {{ "DOCTOR.RETRY" | translate }}
-    </button>
-  }
-  @if (data(); as w) {
-    <header class="clinical-card patient-heading">
-      <div class="patient-cell">
-        <app-patient-avatar [name]="w.visit.patientName" />
-        <div>
-          <h1>{{ w.visit.patientName }}</h1>
-          <p>
-            {{ "DOCTOR.GENDER." + w.visit.gender | translate }}
-            @if (w.visit.phone) {
-              &middot; <bdi>{{ w.visit.phone }}</bdi>
-            }
-            &middot;
-            {{ w.visit.roomName }}
-          </p>
-        </div>
-      </div>
-      <span class="clinical-badge" [attr.data-state]="w.visit.state">{{
-        "DOCTOR.STATES." + w.visit.state | translate
-      }}</span
-      ><button
-        class="btn btn-outline-secondary review-trigger"
-        (click)="openReview()"
-      >
-        {{ "DOCTOR.REQUEST_REASSESSMENT" | translate }}
-      </button>
-    </header>
-    <div class="clinical-summary patient-progress">
-      <div>
-        <span>{{ "DOCTOR.SELECTED_SESSION" | translate }}</span
-        ><strong dir="ltr"
-          >{{ w.visit.sessionNumber }} / {{ w.plan.prescribed }}</strong
-        ><small class="mobile-progress-completed"
-          >{{ w.plan.completed }} {{ "DOCTOR.COMPLETED" | translate }}</small
-        ><progress
-          [value]="w.plan.completed"
-          [max]="w.plan.prescribed"
-          [attr.aria-label]="'DOCTOR.COMPLETED' | translate"
-        ></progress>
-      </div>
-      <div>
-        <span>{{ "DOCTOR.PRESCRIBED" | translate }}</span
-        ><strong>{{ w.plan.prescribed }}</strong>
-      </div>
-      <div>
-        <span>{{ "DOCTOR.BOOKED" | translate }}</span
-        ><strong>{{ w.plan.booked }}</strong>
-      </div>
-      <div>
-        <span>{{ "DOCTOR.COMPLETED" | translate }}</span
-        ><strong>{{ w.plan.completed }}</strong>
-      </div>
-    </div>
-    <aside class="safety-note">
-      <i class="bi bi-exclamation-circle" aria-hidden="true"></i
-      ><span>{{ "DOCTOR.PRECAUTIONS_UNKNOWN" | translate }}</span
-      ><button
-        (click)="tab.set('TREATMENT_PLAN')"
-        [attr.aria-label]="'DOCTOR.SENIOR_ASSESSMENT' | translate"
-      >
-        {{ "DOCTOR.VIEW" | translate }}
-      </button>
-    </aside>
-    @if (
-      [
-        "TreatmentFinished",
-        "Departed",
-        "LegacyCompleted",
-        "Cancelled",
-        "NoShow",
-      ].includes(w.visit.state)
-    ) {
-      <p class="historical-label">
-        {{ "DOCTOR.HISTORICAL_SESSION" | translate }} &middot;
-        {{ locale.date(w.visit.plannedStart, true) }}
-      </p>
+  <p role="status">{{ "DOCTOR.LOADING" | translate }}</p>
+  } @if (error()) {
+  <div class="clinical-alert" role="alert">
+    {{ error() }} @if (shortfall() !== null) {
+    <strong
+      >{{ "DOCTOR.SHORTFALL" | translate }}: {{ shortfall() | currency: "EGP" :
+      "code" : "1.2-2" : locale.language }}</strong
+    >
     }
-    <nav
-      class="clinical-tabs desktop-tabs"
-      role="tablist"
-      (keydown)="tabKey($event)"
-      [attr.aria-label]="'DOCTOR.CLINICAL_SECTIONS' | translate"
+    <button class="btn" (click)="reviewLatest()">
+      {{ "DOCTOR.REVIEW_LATEST" | translate }}
+    </button>
+  </div>
+  } @if (!data() && !loading()) {
+  <button class="btn btn-outline-secondary" (click)="load()">
+    {{ "DOCTOR.RETRY" | translate }}
+  </button>
+  } @if (data(); as w) {
+  <header class="clinical-card patient-heading">
+    <div class="patient-cell">
+      <app-patient-avatar [name]="w.visit.patientName" />
+      <div>
+        <h1>{{ w.visit.patientName }}</h1>
+        <p>
+          {{ "DOCTOR.GENDER." + w.visit.gender | translate }} @if
+          (w.visit.phone) { &middot; <bdi>{{ w.visit.phone }}</bdi>
+          } &middot; {{ w.visit.roomName }}
+        </p>
+      </div>
+    </div>
+    <span class="clinical-badge" [attr.data-state]="w.visit.state"
+      >{{ "DOCTOR.STATES." + w.visit.state | translate }}</span
+    ><button
+      class="btn btn-outline-secondary review-trigger"
+      (click)="openReview()"
     >
+      {{ "DOCTOR.REQUEST_REASSESSMENT" | translate }}
+    </button>
+  </header>
+  <div class="clinical-summary patient-progress">
+    <div>
+      <span>{{ "DOCTOR.SELECTED_SESSION" | translate }}</span
+      ><strong dir="ltr"
+        >{{ w.visit.sessionNumber }} / {{ w.plan.prescribed }}</strong
+      ><small class="mobile-progress-completed"
+        >{{ w.plan.completed }} {{ "DOCTOR.COMPLETED" | translate }}</small
+      ><progress
+        [value]="w.plan.completed"
+        [max]="w.plan.prescribed"
+        [attr.aria-label]="'DOCTOR.COMPLETED' | translate"
+      ></progress>
+    </div>
+    <div>
+      <span>{{ "DOCTOR.PRESCRIBED" | translate }}</span
+      ><strong>{{ w.plan.prescribed }}</strong>
+    </div>
+    <div>
+      <span>{{ "DOCTOR.BOOKED" | translate }}</span
+      ><strong>{{ w.plan.booked }}</strong>
+    </div>
+    <div>
+      <span>{{ "DOCTOR.COMPLETED" | translate }}</span
+      ><strong>{{ w.plan.completed }}</strong>
+    </div>
+  </div>
+  <aside class="safety-note">
+    <i class="bi bi-exclamation-circle" aria-hidden="true"></i
+    ><span>{{ "DOCTOR.PRECAUTIONS_UNKNOWN" | translate }}</span
+    ><button
+      (click)="tab.set('TREATMENT_PLAN')"
+      [attr.aria-label]="'DOCTOR.SENIOR_ASSESSMENT' | translate"
+    >
+      {{ "DOCTOR.VIEW" | translate }}
+    </button>
+  </aside>
+  @if ( [ "TreatmentFinished", "Departed", "LegacyCompleted", "Cancelled",
+  "NoShow", ].includes(w.visit.state) ) {
+  <p class="historical-label">
+    {{ "DOCTOR.HISTORICAL_SESSION" | translate }} &middot; {{
+    locale.date(w.visit.plannedStart, true) }}
+  </p>
+  }
+  <nav
+    class="clinical-tabs desktop-tabs"
+    role="tablist"
+    (keydown)="tabKey($event)"
+    [attr.aria-label]="'DOCTOR.CLINICAL_SECTIONS' | translate"
+  >
+    @for (t of tabs; track t) {
+    <button
+      type="button"
+      role="tab"
+      [id]="'tab-' + t"
+      [attr.aria-selected]="tab() === t"
+      [attr.aria-controls]="'panel-' + t"
+      [tabIndex]="tab() === t ? 0 : -1"
+      [class.active]="tab() === t"
+      (click)="selectTab(t)"
+    >
+      {{ "DOCTOR." + t | translate }}
+    </button>
+    }
+  </nav>
+  <label class="mobile-section-selector"
+    ><span class="visually-hidden"
+      >{{ "DOCTOR.CLINICAL_SECTIONS" | translate }}</span
+    ><select [ngModel]="tab()" (ngModelChange)="selectTab($event)">
       @for (t of tabs; track t) {
-        <button
-          type="button"
-          role="tab"
-          [id]="'tab-' + t"
-          [attr.aria-selected]="tab() === t"
-          [attr.aria-controls]="'panel-' + t"
-          [tabIndex]="tab() === t ? 0 : -1"
-          [class.active]="tab() === t"
-          (click)="selectTab(t)"
-        >
-          {{ "DOCTOR." + t | translate }}
-        </button>
+      <option [value]="t">{{ "DOCTOR." + t | translate }}</option>
       }
-    </nav>
-    <label class="mobile-section-selector"
-      ><span class="visually-hidden">{{
-        "DOCTOR.CLINICAL_SECTIONS" | translate
-      }}</span
-      ><select [ngModel]="tab()" (ngModelChange)="selectTab($event)">
-        @for (t of tabs; track t) {
-          <option [value]="t">{{ "DOCTOR." + t | translate }}</option>
-        }
-      </select></label
-    >
-    <div
-      [id]="'panel-' + tab()"
-      role="tabpanel"
-      [attr.aria-labelledby]="'tab-' + tab()"
-    >
-      @if (tab() === "CURRENT_SESSION") {
-        <div class="mobile-context">
-          <details>
-            <summary>{{ "DOCTOR.TREATMENT_PLAN" | translate }}</summary>
-            <ng-container
-              *ngTemplateOutlet="planTemplate; context: { $implicit: w }"
-            />
-          </details>
-          <details>
-            <summary>{{ "DOCTOR.LAST_SESSION" | translate }}</summary>
-            <ng-container *ngTemplateOutlet="lastSession" />
-          </details>
-        </div>
-        <div class="session-layout">
-          <section class="clinical-card notes-card">
-            <div class="session-toolbar">
-              <h2>{{ "DOCTOR.SESSION_NOTES" | translate }}</h2>
-              <div>
-                <span
-                  role="status"
-                  aria-live="polite"
-                  class="save-state"
-                  [class.save-failed]="saveState() === 'Failed'"
-                  >{{ "DOCTOR.SAVE_STATES." + saveState() | translate }}</span
-                >
-                @if (w.notes.savedAt) {
-                  <small>{{ locale.time(w.notes.savedAt) }}</small>
-                }
-              </div>
-            </div>
-            <dl class="session-times">
-              <div>
-                <dt>{{ "DOCTOR.ARRIVAL" | translate }}</dt>
-                <dd>
-                  {{ w.visit.arrivedAt ? locale.time(w.visit.arrivedAt) : "—" }}
-                </dd>
-              </div>
-              <div>
-                <dt>{{ "DOCTOR.TREATMENT_STARTED" | translate }}</dt>
-                <dd>
-                  {{
-                    w.visit.treatmentStartedAt
-                      ? locale.time(w.visit.treatmentStartedAt)
-                      : "—"
-                  }}
-                </dd>
-              </div>
-              <div>
-                <dt>{{ "DOCTOR.TREATMENT_ENDED" | translate }}</dt>
-                <dd>
-                  {{
-                    w.visit.treatmentEndedAt
-                      ? locale.time(w.visit.treatmentEndedAt)
-                      : "—"
-                  }}
-                </dd>
-              </div>
-              <div>
-                <dt>{{ "DOCTOR.DEPARTURE" | translate }}</dt>
-                <dd>
-                  {{
-                    w.visit.departedAt ? locale.time(w.visit.departedAt) : "—"
-                  }}
-                </dd>
-              </div>
-            </dl>
-            <p class="planned-time">
-              {{ "DOCTOR.PLANNED" | translate }}:
-              {{ locale.date(w.visit.plannedStart, true) }} &ndash;
-              {{ locale.time(w.visit.plannedEnd) }} &middot; 60
-              {{ "DOCTOR.MINUTES" | translate }}
-            </p>
-            @if (w.notes.finalizedAt) {
-              <p class="final-record">
-                {{ "DOCTOR.FINAL_RECORD" | translate }} &middot;
-                {{ w.notes.authorName }} &middot;
-                {{ locale.date(w.notes.finalizedAt, true) }}
-              </p>
-            }
-            <div class="clinical-note-grid">
-              @for (field of noteFields; track field.key) {
-                <label [for]="field.id"
-                  >{{ "DOCTOR." + field.label | translate
-                  }}<textarea
-                    [id]="field.id"
-                    rows="4"
-                    maxlength="10000"
-                    [(ngModel)]="draft[field.key]"
-                    (ngModelChange)="changed()"
-                    clinicalAutosize
-                    (focus)="focusNote($event)"
-                    [readOnly]="!editable()"
-                  ></textarea>
-                  <small class="character-count"
-                    >{{ draft[field.key].length }}/10000</small
-                  >
-                </label>
-              }
-            </div>
-            @if (saveState() === "Failed" || saveState() === "Unsaved") {
-              <button
-                class="btn btn-outline-secondary"
-                [disabled]="finalizing() || conflict()"
-                (click)="saveDraft()"
-              >
-                {{ "DOCTOR.RETRY_SAVE" | translate }}
-              </button>
-            }
-          </section>
-          <aside class="clinical-context">
-            <section class="clinical-card">
-              <h2>{{ "DOCTOR.AT_A_GLANCE" | translate }}</h2>
-              <dl class="context-details">
-                <dt>{{ "DOCTOR.SENIOR_ASSESSMENT" | translate }}</dt>
-                <dd>{{ w.plan.seniorName }}</dd>
-                <dt>{{ "DOCTOR.DIAGNOSIS" | translate }}</dt>
-                <dd>{{ w.plan.diagnosis }}</dd>
-                <dt>{{ "DOCTOR.TREATMENT_PLAN" | translate }}</dt>
-                <dd>
-                  {{ w.plan.treatmentType }} &middot;
-                  {{ w.plan.frequencyPerWeek }}
-                  {{ "DOCTOR.PER_WEEK" | translate }}
-                </dd>
-                <dt>{{ "DOCTOR.EXERCISES" | translate }}</dt>
-                <dd class="preserve-lines">
-                  {{ w.plan.exercises || ("DOCTOR.NOT_RECORDED" | translate) }}
-                </dd>
-                <dt>{{ "DOCTOR.ASSIGNED_CLINICIAN" | translate }}</dt>
-                <dd>{{ w.plan.assignedDoctor }}</dd>
-              </dl>
-            </section>
-            <section class="clinical-card">
-              <div class="rail-heading">
-                <h2>{{ "DOCTOR.LAST_SESSION" | translate }}</h2>
-                <button
-                  class="text-link"
-                  (click)="tab.set('PREVIOUS_SESSIONS')"
-                >
-                  {{ "DOCTOR.VIEW_ALL" | translate }}
-                </button>
-              </div>
-              <ng-container *ngTemplateOutlet="lastSession" />
-            </section>
-          </aside>
-        </div>
-        <button
-          class="btn btn-outline-secondary mobile-review-trigger"
-          (click)="openReview()"
-        >
-          {{ "DOCTOR.REQUEST_REASSESSMENT" | translate }}
-        </button>
-      }
-      @if (latest(); as latest) {
-        <section class="clinical-card">
-          <h2>{{ "DOCTOR.LATEST_SERVER_NOTES" | translate }}</h2>
-          <p class="preserve-lines">
-            {{
-              latest.notes.progressNotes || ("DOCTOR.NOT_RECORDED" | translate)
-            }}
-          </p>
-          <dl>
-            <dt>{{ "DOCTOR.CONDITION_CHANGES" | translate }}</dt>
-            <dd class="preserve-lines">
-              {{
-                latest.notes.conditionChanges ||
-                  ("DOCTOR.NOT_RECORDED" | translate)
-              }}
-            </dd>
-            <dt>{{ "DOCTOR.RESPONSE_TO_TREATMENT" | translate }}</dt>
-            <dd class="preserve-lines">
-              {{
-                latest.notes.responseToTreatment ||
-                  ("DOCTOR.NOT_RECORDED" | translate)
-              }}
-            </dd>
-            <dt>{{ "DOCTOR.TREATMENT_PERFORMED" | translate }}</dt>
-            <dd class="preserve-lines">
-              {{
-                latest.notes.treatmentPerformed ||
-                  ("DOCTOR.NOT_RECORDED" | translate)
-              }}
-            </dd>
-          </dl>
-          <p>
-            {{ latest.notes.authorName }} ·
-            {{ locale.date(latest.notes.savedAt, true) }}
-          </p>
-          <button
-            class="btn btn-outline-secondary"
-            type="button"
-            (click)="useLatest()"
-          >
-            {{ "DOCTOR.USE_LATEST" | translate }}
-          </button>
-        </section>
-      }
-      @if (tab() === "TREATMENT_PLAN") {
+    </select></label
+  >
+  <div
+    [id]="'panel-' + tab()"
+    role="tabpanel"
+    [attr.aria-labelledby]="'tab-' + tab()"
+  >
+    @if (tab() === "CURRENT_SESSION") {
+    <div class="mobile-context">
+      <details>
+        <summary>{{ "DOCTOR.TREATMENT_PLAN" | translate }}</summary>
         <ng-container
           *ngTemplateOutlet="planTemplate; context: { $implicit: w }"
         />
-      }
-      @if (tab() === "PREVIOUS_SESSIONS") {
-        <section class="clinical-card">
-          <h2>{{ "DOCTOR.PREVIOUS_SESSIONS" | translate }}</h2>
-          <div class="history-timeline">
-            @for (previous of history(); track $index) {
-              <details class="history-entry">
-                <summary>
-                  <div>
-                    <strong
-                      >{{ "DOCTOR.SESSION" | translate }}
-                      {{ previous.sessionNumber }}</strong
-                    ><small
-                      >{{ locale.date(previous.plannedAt, true) }}
-                      @if (previous.authorName) {
-                        &middot; {{ previous.authorName }}
-                      }
-                    </small>
-                    @if (previous.progressNotes) {
-                      <p class="note-preview">{{ previous.progressNotes }}</p>
-                    }
-                  </div>
-                  <span class="clinical-badge">{{
-                    (previous.treatmentEndedAt
-                      ? "DOCTOR.COMPLETED"
-                      : "DOCTOR.SAVED_RECORD"
-                    ) | translate
-                  }}</span>
-                </summary>
-                <div class="history-body">
-                  <dl class="session-times">
-                    <div>
-                      <dt>{{ "DOCTOR.PLANNED" | translate }}</dt>
-                      <dd>{{ locale.date(previous.plannedAt, true) }}</dd>
-                    </div>
-                    @if (previous.treatmentStartedAt) {
-                      <div>
-                        <dt>{{ "DOCTOR.TREATMENT_STARTED" | translate }}</dt>
-                        <dd>{{ locale.time(previous.treatmentStartedAt) }}</dd>
-                      </div>
-                    }
-                    @if (previous.treatmentEndedAt) {
-                      <div>
-                        <dt>{{ "DOCTOR.TREATMENT_ENDED" | translate }}</dt>
-                        <dd>{{ locale.time(previous.treatmentEndedAt) }}</dd>
-                      </div>
-                    }
-                    @if (
-                      previous.treatmentStartedAt && previous.treatmentEndedAt
-                    ) {
-                      <div>
-                        <dt>{{ "DOCTOR.DURATION" | translate }}</dt>
-                        <dd>
-                          {{
-                            clock.minutes(
-                              previous.treatmentStartedAt,
-                              previous.treatmentEndedAt
-                            )
-                          }}
-                          {{ "DOCTOR.MINUTES" | translate }}
-                        </dd>
-                      </div>
-                    }
-                  </dl>
-                  @for (field of noteFields; track field.key) {
-                    @if (previous[field.key]) {
-                      <h3>{{ "DOCTOR." + field.label | translate }}</h3>
-                      <p class="preserve-lines saved-note">
-                        {{ previous[field.key] }}
-                      </p>
-                    }
-                  }
-                  @if (previous.recordedAt) {
-                    <small
-                      >{{ "DOCTOR.RECORDED" | translate }}:
-                      {{ locale.date(previous.recordedAt, true) }}</small
-                    >
-                  }
-                </div>
-              </details>
-            } @empty {
-              <p class="clinical-empty">
-                {{ "DOCTOR.NO_PREVIOUS_SESSIONS" | translate }}
-              </p>
+      </details>
+      <details>
+        <summary>{{ "DOCTOR.LAST_SESSION" | translate }}</summary>
+        <ng-container *ngTemplateOutlet="lastSession" />
+      </details>
+    </div>
+    <div class="session-layout">
+      <section class="clinical-card notes-card">
+        <div class="session-toolbar">
+          <h2>{{ "DOCTOR.SESSION_NOTES" | translate }}</h2>
+          <div>
+            <span
+              role="status"
+              aria-live="polite"
+              class="save-state"
+              [class.save-failed]="saveState() === 'Failed'"
+              >{{ "DOCTOR.SAVE_STATES." + saveState() | translate }}</span
+            >
+            @if (w.notes.savedAt) {
+            <small>{{ locale.time(w.notes.savedAt) }}</small>
             }
           </div>
+        </div>
+        <dl class="session-times">
+          <div>
+            <dt>{{ "DOCTOR.ARRIVAL" | translate }}</dt>
+            <dd>
+              {{ w.visit.arrivedAt ? locale.time(w.visit.arrivedAt) : "—" }}
+            </dd>
+          </div>
+          <div>
+            <dt>{{ "DOCTOR.TREATMENT_STARTED" | translate }}</dt>
+            <dd>
+              {{ w.visit.treatmentStartedAt ?
+              locale.time(w.visit.treatmentStartedAt) : "—" }}
+            </dd>
+          </div>
+          <div>
+            <dt>{{ "DOCTOR.TREATMENT_ENDED" | translate }}</dt>
+            <dd>
+              {{ w.visit.treatmentEndedAt ?
+              locale.time(w.visit.treatmentEndedAt) : "—" }}
+            </dd>
+          </div>
+          <div>
+            <dt>{{ "DOCTOR.DEPARTURE" | translate }}</dt>
+            <dd>
+              {{ w.visit.departedAt ? locale.time(w.visit.departedAt) : "—" }}
+            </dd>
+          </div>
+        </dl>
+        <p class="planned-time">
+          {{ "DOCTOR.PLANNED" | translate }}: {{
+          locale.date(w.visit.plannedStart, true) }} &ndash; {{
+          locale.time(w.visit.plannedEnd) }} &middot; 60 {{ "DOCTOR.MINUTES" |
+          translate }}
+        </p>
+        @if (w.notes.finalizedAt) {
+        <p class="final-record">
+          {{ "DOCTOR.FINAL_RECORD" | translate }} &middot; {{ w.notes.authorName
+          }} &middot; {{ locale.date(w.notes.finalizedAt, true) }}
+        </p>
+        }
+        <div class="clinical-note-grid">
+          @for (field of noteFields; track field.key) {
+          <label [for]="field.id"
+            >{{ "DOCTOR." + field.label | translate }}<textarea
+              [id]="field.id"
+              rows="4"
+              maxlength="10000"
+              [(ngModel)]="draft[field.key]"
+              (ngModelChange)="changed()"
+              clinicalAutosize
+              (focus)="focusNote($event)"
+              [readOnly]="!editable()"
+            ></textarea>
+            <small class="character-count"
+              >{{ draft[field.key].length }}/10000</small
+            >
+          </label>
+          }
+        </div>
+        @if (saveState() === "Failed" || saveState() === "Unsaved") {
+        <button
+          class="btn btn-outline-secondary"
+          [disabled]="finalizing() || conflict()"
+          (click)="saveDraft()"
+        >
+          {{ "DOCTOR.RETRY_SAVE" | translate }}
+        </button>
+        }
+      </section>
+      <aside class="clinical-context">
+        <section class="clinical-card">
+          <h2>{{ "DOCTOR.AT_A_GLANCE" | translate }}</h2>
+          <dl class="context-details">
+            <dt>{{ "DOCTOR.SENIOR_ASSESSMENT" | translate }}</dt>
+            <dd>{{ w.plan.seniorName }}</dd>
+            <dt>{{ "DOCTOR.DIAGNOSIS" | translate }}</dt>
+            <dd>{{ w.plan.diagnosis }}</dd>
+            <dt>{{ "DOCTOR.TREATMENT_PLAN" | translate }}</dt>
+            <dd>
+              {{ w.plan.treatmentType }} &middot; {{ w.plan.frequencyPerWeek }}
+              {{ "DOCTOR.PER_WEEK" | translate }}
+            </dd>
+            <dt>{{ "DOCTOR.EXERCISES" | translate }}</dt>
+            <dd class="preserve-lines">
+              {{ w.plan.exercises || ("DOCTOR.NOT_RECORDED" | translate) }}
+            </dd>
+            <dt>{{ "DOCTOR.ASSIGNED_CLINICIAN" | translate }}</dt>
+            <dd>{{ w.plan.assignedDoctor }}</dd>
+          </dl>
         </section>
-      }
-      @if (tab() === "REASSESSMENT" && !reviewOpen()) {
-        <ng-container
-          *ngTemplateOutlet="reviewContent; context: { $implicit: w }"
-        />
-      }
+        <section class="clinical-card">
+          <div class="rail-heading">
+            <h2>{{ "DOCTOR.LAST_SESSION" | translate }}</h2>
+            <button class="text-link" (click)="tab.set('PREVIOUS_SESSIONS')">
+              {{ "DOCTOR.VIEW_ALL" | translate }}
+            </button>
+          </div>
+          <ng-container *ngTemplateOutlet="lastSession" />
+        </section>
+      </aside>
     </div>
-    @if (w.visit.state === "Arrived" && !capacity() && !capacityError()) {
-      <p role="status">{{ "DOCTOR.CHECKING_CAPACITY" | translate }}</p>
-    }
-    @if (capacityError()) {
-      <div class="clinical-alert" role="alert">
-        {{ capacityError()
-        }}<button class="btn" (click)="loadCapacity()">
-          {{ "DOCTOR.RETRY" | translate }}
-        </button>
-      </div>
-    }
-    @if (w.visit.state === "Arrived" && capacity() && startBlocked()) {
-      <p role="status" class="capacity-hint">
-        {{ "DOCTOR.CAPACITY_FULL" | translate }}
+    <button
+      class="btn btn-outline-secondary mobile-review-trigger"
+      (click)="openReview()"
+    >
+      {{ "DOCTOR.REQUEST_REASSESSMENT" | translate }}
+    </button>
+    } @if (latest(); as latest) {
+    <section class="clinical-card">
+      <h2>{{ "DOCTOR.LATEST_SERVER_NOTES" | translate }}</h2>
+      <p class="preserve-lines">
+        {{ latest.notes.progressNotes || ("DOCTOR.NOT_RECORDED" | translate) }}
       </p>
-    }
-    @if (requestError() && tab() !== "REASSESSMENT" && !reviewOpen()) {
-      <p role="alert">{{ requestError() }}</p>
-    }
-    <footer class="clinical-card treatment-action-bar">
-      <div>
-        <strong
-          >{{ "DOCTOR.STATES." + w.visit.state | translate }}
-          @if (w.visit.state === "Treating" && w.visit.treatmentStartedAt) {
-            &middot;
-            {{ clock.minutes(w.visit.treatmentStartedAt) }}
-            {{ "DOCTOR.MINUTES" | translate }}
-          }</strong
-        ><small>{{ "DOCTOR.DEPARTURE_HINT" | translate }}</small>
-      </div>
-      <a
-        class="btn btn-outline-secondary footer-back"
-        routerLink="/doctor/dashboard"
-        >{{ "DOCTOR.BACK_TO_SCHEDULE" | translate }}</a
+      <dl>
+        <dt>{{ "DOCTOR.CONDITION_CHANGES" | translate }}</dt>
+        <dd class="preserve-lines">
+          {{ latest.notes.conditionChanges || ("DOCTOR.NOT_RECORDED" |
+          translate) }}
+        </dd>
+        <dt>{{ "DOCTOR.RESPONSE_TO_TREATMENT" | translate }}</dt>
+        <dd class="preserve-lines">
+          {{ latest.notes.responseToTreatment || ("DOCTOR.NOT_RECORDED" |
+          translate) }}
+        </dd>
+        <dt>{{ "DOCTOR.TREATMENT_PERFORMED" | translate }}</dt>
+        <dd class="preserve-lines">
+          {{ latest.notes.treatmentPerformed || ("DOCTOR.NOT_RECORDED" |
+          translate) }}
+        </dd>
+      </dl>
+      <p>
+        {{ latest.notes.authorName }} · {{ locale.date(latest.notes.savedAt,
+        true) }}
+      </p>
+      <button
+        class="btn btn-outline-secondary"
+        type="button"
+        (click)="useLatest()"
       >
-      @if (w.visit.state === "Treating") {
-        <button
-          class="btn end-treatment"
-          data-end-treatment
-          [disabled]="finalizing() || conflict() || !draft.progressNotes.trim()"
-          (click)="end()"
-        >
-          {{ "DOCTOR.END_SESSION" | translate }}
-        </button>
-      }
-      @if (w.visit.state === "Arrived") {
-        <button
-          class="btn btn-primary"
-          data-start-treatment
-          [disabled]="busy() || startBlocked()"
-          (click)="start()"
-        >
-          {{ "DOCTOR.START_SESSION" | translate }}
-        </button>
-      }
-      @if (w.visit.state === "Scheduled") {
-        <span>{{ "DOCTOR.AWAITING_ARRIVAL" | translate }}</span>
-      }
-    </footer>
+        {{ "DOCTOR.USE_LATEST" | translate }}
+      </button>
+    </section>
+    } @if (tab() === "TREATMENT_PLAN") {
+    <ng-container *ngTemplateOutlet="planTemplate; context: { $implicit: w }" />
+    } @if (tab() === "PREVIOUS_SESSIONS") {
+    <section class="clinical-card">
+      <h2>{{ "DOCTOR.PREVIOUS_SESSIONS" | translate }}</h2>
+      <div class="history-timeline">
+        @for (previous of history(); track $index) {
+        <details class="history-entry">
+          <summary>
+            <div>
+              <strong
+                >{{ "DOCTOR.SESSION" | translate }} {{ previous.sessionNumber
+                }}</strong
+              ><small
+                >{{ locale.date(previous.plannedAt, true) }} @if
+                (previous.authorName) { &middot; {{ previous.authorName }} }
+              </small>
+              @if (previous.progressNotes) {
+              <p class="note-preview">{{ previous.progressNotes }}</p>
+              }
+            </div>
+            <span class="clinical-badge"
+              >{{ (previous.treatmentEndedAt ? "DOCTOR.COMPLETED" :
+              "DOCTOR.SAVED_RECORD" ) | translate }}</span
+            >
+          </summary>
+          <div class="history-body">
+            <dl class="session-times">
+              <div>
+                <dt>{{ "DOCTOR.PLANNED" | translate }}</dt>
+                <dd>{{ locale.date(previous.plannedAt, true) }}</dd>
+              </div>
+              @if (previous.treatmentStartedAt) {
+              <div>
+                <dt>{{ "DOCTOR.TREATMENT_STARTED" | translate }}</dt>
+                <dd>{{ locale.time(previous.treatmentStartedAt) }}</dd>
+              </div>
+              } @if (previous.treatmentEndedAt) {
+              <div>
+                <dt>{{ "DOCTOR.TREATMENT_ENDED" | translate }}</dt>
+                <dd>{{ locale.time(previous.treatmentEndedAt) }}</dd>
+              </div>
+              } @if ( previous.treatmentStartedAt && previous.treatmentEndedAt )
+              {
+              <div>
+                <dt>{{ "DOCTOR.DURATION" | translate }}</dt>
+                <dd>
+                  {{ clock.minutes( previous.treatmentStartedAt,
+                  previous.treatmentEndedAt ) }} {{ "DOCTOR.MINUTES" | translate
+                  }}
+                </dd>
+              </div>
+              }
+            </dl>
+            @for (field of noteFields; track field.key) { @if
+            (previous[field.key]) {
+            <h3>{{ "DOCTOR." + field.label | translate }}</h3>
+            <p class="preserve-lines saved-note">{{ previous[field.key] }}</p>
+            } } @if (previous.recordedAt) {
+            <small
+              >{{ "DOCTOR.RECORDED" | translate }}: {{
+              locale.date(previous.recordedAt, true) }}</small
+            >
+            }
+          </div>
+        </details>
+        } @empty {
+        <p class="clinical-empty">
+          {{ "DOCTOR.NO_PREVIOUS_SESSIONS" | translate }}
+        </p>
+        }
+      </div>
+    </section>
+    } @if (tab() === "REASSESSMENT" && !reviewOpen()) {
+    <ng-container
+      *ngTemplateOutlet="reviewContent; context: { $implicit: w }"
+    />
+    }
+  </div>
+  @if (w.visit.state === "Arrived" && !capacity() && !capacityError()) {
+  <p role="status">{{ "DOCTOR.CHECKING_CAPACITY" | translate }}</p>
+  } @if (capacityError()) {
+  <div class="clinical-alert" role="alert">
+    {{ capacityError() }}<button class="btn" (click)="loadCapacity()">
+      {{ "DOCTOR.RETRY" | translate }}
+    </button>
+  </div>
+  } @if (w.visit.state === "Arrived" && capacity() && startBlocked()) {
+  <p role="status" class="capacity-hint">
+    {{ "DOCTOR.CAPACITY_FULL" | translate }}
+  </p>
+  } @if (requestError() && tab() !== "REASSESSMENT" && !reviewOpen()) {
+  <p role="alert">{{ requestError() }}</p>
+  }
+  <footer class="clinical-card treatment-action-bar">
+    <div>
+      <strong
+        >{{ "DOCTOR.STATES." + w.visit.state | translate }} @if (w.visit.state
+        === "Treating" && w.visit.treatmentStartedAt) { &middot; {{
+        clock.minutes(w.visit.treatmentStartedAt) }} {{ "DOCTOR.MINUTES" |
+        translate }} }</strong
+      ><small>{{ "DOCTOR.DEPARTURE_HINT" | translate }}</small>
+    </div>
+    <a
+      class="btn btn-outline-secondary footer-back"
+      routerLink="/doctor/dashboard"
+      >{{ "DOCTOR.BACK_TO_SCHEDULE" | translate }}</a
+    >
+    @if (w.visit.state === "Treating") {
+    <button
+      class="btn end-treatment"
+      data-end-treatment
+      [disabled]="finalizing() || conflict() || !draft.progressNotes.trim()"
+      (click)="end()"
+    >
+      {{ "DOCTOR.END_SESSION" | translate }}
+    </button>
+    } @if (w.visit.state === "Arrived") {
+    <button
+      class="btn btn-primary"
+      data-start-treatment
+      [disabled]="busy() || startBlocked()"
+      (click)="start()"
+    >
+      {{ "DOCTOR.START_SESSION" | translate }}
+    </button>
+    } @if (w.visit.state === "Scheduled") {
+    <span>{{ "DOCTOR.AWAITING_ARRIVAL" | translate }}</span>
+    }
+  </footer>
   }
 </section>
 <ng-template #planTemplate let-w>
@@ -526,8 +457,8 @@
       </dd>
       <dt>{{ "DOCTOR.TREATMENT_PLAN" | translate }}</dt>
       <dd>
-        {{ w.plan.treatmentType }} · {{ w.plan.frequencyPerWeek }}
-        {{ "DOCTOR.PER_WEEK" | translate }}
+        {{ w.plan.treatmentType }} · {{ w.plan.frequencyPerWeek }} {{
+        "DOCTOR.PER_WEEK" | translate }}
       </dd>
       <dt>{{ "DOCTOR.EXERCISES" | translate }}</dt>
       <dd class="preserve-lines">
@@ -537,170 +468,149 @@
       <dd>{{ w.plan.assignedDoctor }}</dd>
     </dl>
     @if (w.plan.staffReviewRequired) {
-      <p class="clinical-alert">
-        {{ "DOCTOR.BOOKING_REVIEW_REQUIRED" | translate }}
-      </p>
+    <p class="clinical-alert">
+      {{ "DOCTOR.BOOKING_REVIEW_REQUIRED" | translate }}
+    </p>
     }
   </section>
   <section class="clinical-card">
     <h2>{{ "DOCTOR.DOCUMENTS" | translate }}</h2>
     @for (document of w.documents; track document.id) {
-      <button
-        class="btn btn-outline-secondary"
-        type="button"
-        (click)="download(document)"
-      >
-        {{ document.fileName }}
-      </button>
+    <button
+      class="btn btn-outline-secondary"
+      type="button"
+      (click)="download(document)"
+    >
+      {{ document.fileName }}
+    </button>
     } @empty {
-      <p>{{ "DOCTOR.NO_DOCUMENTS" | translate }}</p>
+    <p>{{ "DOCTOR.NO_DOCUMENTS" | translate }}</p>
     }
   </section>
 </ng-template>
 <ng-template #lastSession>
   @if (history()[0]; as previous) {
-    <p>
-      {{ "DOCTOR.SESSION" | translate }} {{ previous.sessionNumber }} &middot;
-      {{ locale.date(previous.plannedAt, true) }}
-    </p>
-    @if (previous.progressNotes) {
-      <p class="preserve-lines saved-note">{{ previous.progressNotes }}</p>
-    }
-  } @else {
-    <p>{{ "DOCTOR.NO_PREVIOUS_SESSIONS" | translate }}</p>
+  <p>
+    {{ "DOCTOR.SESSION" | translate }} {{ previous.sessionNumber }} &middot; {{
+    locale.date(previous.plannedAt, true) }}
+  </p>
+  @if (previous.progressNotes) {
+  <p class="preserve-lines saved-note">{{ previous.progressNotes }}</p>
+  } } @else {
+  <p>{{ "DOCTOR.NO_PREVIOUS_SESSIONS" | translate }}</p>
   }
 </ng-template>
 <ng-template #reviewContent let-w
   ><section class="clinical-card review-panel">
     <div class="rail-heading">
-      <h2>{{ "DOCTOR.REQUEST_REASSESSMENT" | translate }}</h2>
+      <h2>{{ (w.reassessments.length ? 'DOCTOR.REASSESSMENT' : 'DOCTOR.REQUEST_REASSESSMENT') | translate }}</h2>
       <button class="btn" (click)="refreshReviews()">
         {{ "DOCTOR.REFRESH" | translate }}
       </button>
     </div>
     <p class="review-info">{{ "DOCTOR.REVIEW_NO_FINANCE" | translate }}</p>
     @if (requestError()) {
-      <p class="clinical-alert" role="alert">{{ requestError() }}</p>
+    <p class="clinical-alert" role="alert">{{ requestError() }}</p>
     }
-    @if (!hasActiveReview) {
-      <form class="review-request" (ngSubmit)="requestReview()">
-        <label for="review-reason"
-          >{{ "DOCTOR.REASON" | translate
-          }}<select
-            id="review-reason"
-            name="reason"
-            [disabled]="requestBusy() || !!requestIntent || hasActiveReview"
-            [(ngModel)]="reason"
-          >
-            @for (
-              reason of [
-                "SymptomsChanged",
-                "ProgressConcern",
-                "PlanReview",
-                "Other",
-              ];
-              track reason
-            ) {
-              <option [value]="reason">
-                {{ "DOCTOR.REASONS." + reason | translate }}
-              </option>
-            }
-          </select></label
+    <div class="review-history">
+      @for (r of w.reassessments; track r.id) {
+      <article class="previous-note">
+        <span class="clinical-badge"
+          >{{ "DOCTOR.REVIEW_STATES." + r.state | translate }}</span
         >
-        <fieldset class="recommendations">
-          <legend>{{ "DOCTOR.RECOMMENDATION" | translate }}</legend>
-          @for (value of ["Continue", "Pause"]; track value) {
-            <label
-              ><input
-                type="radio"
-                name="recommendation"
-                [value]="value"
-                [attr.data-recommendation]="value"
-                [(ngModel)]="recommendation"
-                [disabled]="requestBusy() || !!requestIntent || hasActiveReview"
-              />{{ "DOCTOR.RECOMMENDATIONS." + value | translate }}</label
+        <app-reassessment-outcome [request]="r" />
+        <div class="review-steps">
+          <div>
+            <strong>{{ "DOCTOR.REVIEW_STATES.Requested" | translate }}</strong
+            ><small>{{ locale.date(r.requestedAt, true) }}</small>
+          </div>
+          <div [class.reached]="!!r.reviewStartedAt">
+            <strong>{{ "DOCTOR.REVIEW_STATES.InReview" | translate }}</strong
+            ><small
+              >{{ r.reviewStartedAt ? locale.date(r.reviewStartedAt, true) : "—"
+              }}</small
             >
+          </div>
+          <div [class.reached]="r.state === 'Completed'">
+            <strong>{{ "DOCTOR.REVIEW_STATES.Completed" | translate }}</strong
+            ><small
+              >{{ r.state === "Completed" ? locale.date(r.resolvedAt, true) :
+              "—" }}</small
+            >
+          </div>
+        </div>
+        <p>{{ r.requestedBy }} · {{ locale.date(r.requestedAt, true) }}</p>
+        <p>
+          {{ "DOCTOR.REASONS." + r.reasonCategory | translate }} · {{
+          "DOCTOR.RECOMMENDATIONS." + r.recommendation | translate }}
+        </p>
+        <p class="preserve-lines">{{ r.notes }}</p>
+        @if (r.cancellationReason) {
+        <p>{{ r.cancellationReason }}</p>
+        }
+      </article>
+      } @if (!w.reassessments.length) {
+      <p>{{ "DOCTOR.NO_REVIEWS" | translate }}</p>
+      }
+    </div>
+    @if (!hasActiveReview) {
+    <form class="review-request" (ngSubmit)="requestReview()">
+      <label for="review-reason"
+        >{{ "DOCTOR.REASON" | translate }}<select
+          id="review-reason"
+          name="reason"
+          [disabled]="requestBusy() || !!requestIntent || hasActiveReview"
+          [(ngModel)]="reason"
+        >
+          @for ( reason of [ "SymptomsChanged", "ProgressConcern", "PlanReview",
+          "Other", ]; track reason ) {
+          <option [value]="reason">
+            {{ "DOCTOR.REASONS." + reason | translate }}
+          </option>
           }
-        </fieldset>
-        <label for="review-notes"
-          >{{ "DOCTOR.CLINICAL_NOTES" | translate
-          }}<textarea
-            id="review-notes"
-            name="notes"
-            rows="4"
-            maxlength="4000"
-            required
-            [readOnly]="requestBusy() || !!requestIntent || hasActiveReview"
-            [(ngModel)]="requestNotes"
-          ></textarea>
-        </label>
-        <p>{{ "DOCTOR.RECOMMENDATION_ONLY" | translate }}</p>
-        <button
-          type="submit"
-          data-review-request
-          class="btn btn-primary"
-          [disabled]="
+        </select></label
+      >
+      <fieldset class="recommendations">
+        <legend>{{ "DOCTOR.RECOMMENDATION" | translate }}</legend>
+        @for (value of ["Continue", "Pause"]; track value) {
+        <label
+          ><input
+            type="radio"
+            name="recommendation"
+            [value]="value"
+            [attr.data-recommendation]="value"
+            [(ngModel)]="recommendation"
+            [disabled]="requestBusy() || !!requestIntent || hasActiveReview"
+          />{{ "DOCTOR.RECOMMENDATIONS." + value | translate }}</label
+        >
+        }
+      </fieldset>
+      <label for="review-notes"
+        >{{ "DOCTOR.CLINICAL_NOTES" | translate }}<textarea
+          id="review-notes"
+          name="notes"
+          rows="4"
+          maxlength="4000"
+          required
+          [readOnly]="requestBusy() || !!requestIntent || hasActiveReview"
+          [(ngModel)]="requestNotes"
+        ></textarea>
+      </label>
+      <p>{{ "DOCTOR.RECOMMENDATION_ONLY" | translate }}</p>
+      <button
+        type="submit"
+        data-review-request
+        class="btn btn-primary"
+        [disabled]="
             requestBusy() ||
             !requestNotes.trim() ||
             (hasActiveReview && !requestIntent)
           "
-        >
-          {{ "DOCTOR.SUBMIT_REQUEST" | translate }}
-        </button>
-      </form>
+      >
+        {{ "DOCTOR.SUBMIT_REQUEST" | translate }}
+      </button>
+    </form>
     }
-    <div class="review-history">
-      @for (r of w.reassessments; track r.id) {
-        <article class="previous-note">
-          <span class="clinical-badge">{{
-            "DOCTOR.REVIEW_STATES." + r.state | translate
-          }}</span>
-          <div class="review-steps">
-            <div>
-              <strong>{{ "DOCTOR.REVIEW_STATES.Requested" | translate }}</strong
-              ><small>{{ locale.date(r.requestedAt, true) }}</small>
-            </div>
-            <div [class.reached]="!!r.reviewStartedAt">
-              <strong>{{ "DOCTOR.REVIEW_STATES.InReview" | translate }}</strong
-              ><small>{{
-                r.reviewStartedAt ? locale.date(r.reviewStartedAt, true) : "—"
-              }}</small>
-            </div>
-            <div [class.reached]="r.state === 'Completed'">
-              <strong>{{ "DOCTOR.REVIEW_STATES.Completed" | translate }}</strong
-              ><small>{{
-                r.state === "Completed" ? locale.date(r.resolvedAt, true) : "—"
-              }}</small>
-            </div>
-          </div>
-          <p>{{ r.requestedBy }} · {{ locale.date(r.requestedAt, true) }}</p>
-          <p>
-            {{ "DOCTOR.REASONS." + r.reasonCategory | translate }} ·
-            {{ "DOCTOR.RECOMMENDATIONS." + r.recommendation | translate }}
-          </p>
-          <p class="preserve-lines">{{ r.notes }}</p>
-          @if (r.reviewNotes) {
-            <h3>{{ "DOCTOR.CLINICAL_REVIEW" | translate }}</h3>
-            <p class="preserve-lines">{{ r.reviewNotes }}</p>
-          }
-          @if (r.decision) {
-            <p>{{ "DOCTOR.DECISIONS." + r.decision | translate }}</p>
-          }
-          @if (r.resolvedAt) {
-            <p>
-              {{ r.resolvedBy || r.seniorName }} &middot;
-              {{ locale.date(r.resolvedAt, true) }}
-            </p>
-          }
-          @if (r.cancellationReason) {
-            <p>{{ r.cancellationReason }}</p>
-          }
-        </article>
-      }
-      @if (!w.reassessments.length) {
-        <p>{{ "DOCTOR.NO_REVIEWS" | translate }}</p>
-      }
-    </div>
   </section></ng-template
 >
 <dialog
@@ -722,8 +632,6 @@
     </button>
   </div>
   @if (reviewOpen() && data(); as w) {
-    <ng-container
-      *ngTemplateOutlet="reviewContent; context: { $implicit: w }"
-    />
+  <ng-container *ngTemplateOutlet="reviewContent; context: { $implicit: w }" />
   }
 </dialog>
