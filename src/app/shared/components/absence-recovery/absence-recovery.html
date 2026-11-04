@@ -1,0 +1,526 @@
+<div class="absence-toolbar">
+  <button
+    class="btn btn-outline-primary"
+    type="button"
+    data-record-absence
+    (click)="openRecord()"
+  >
+    <i class="bi bi-calendar-x" aria-hidden="true"></i>{{
+    'ABSENCE.RECORD'|translate }}
+  </button>
+  <button
+    class="btn attention-toggle"
+    type="button"
+    [attr.aria-expanded]="queueOpen()"
+    (click)="queueOpen.set(!queueOpen())"
+  >
+    {{ 'ABSENCE.NEEDS_ATTENTION'|translate }}
+    <span class="count"
+      >{{ cases() === null || error() ? '—' : cases()!.length }}</span
+    >
+  </button>
+  <button
+    class="btn btn-outline-secondary"
+    type="button"
+    [disabled]="loading()"
+    (click)="refresh()"
+    [attr.aria-label]="'ABSENCE.REFRESH'|translate"
+  >
+    <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
+  </button>
+</div>
+@if (error()) {
+<p role="alert" class="absence-error">{{error()}}</p>
+} @if (success()) {
+<p role="status" class="absence-success">{{success()}}</p>
+} @if (loading() && cases()===null) {
+<p role="status">{{ 'ABSENCE.LOADING'|translate }}</p>
+}
+<div class="absence-indicators">
+  @for (absence of absences();track absence.id) { @if (!absence.withdrawn) {
+  <button type="button" class="absence-indicator" (click)="openRecord(absence)">
+    <i class="bi bi-calendar-x" aria-hidden="true"></i
+    ><strong>{{absence.clinicianName}}</strong
+    ><span>{{date(absence.start)}} – {{date(absence.end)}}</span>
+  </button>
+  } }
+</div>
+@if (queueOpen()) {
+<section
+  class="attention-queue"
+  [attr.aria-label]="'ABSENCE.NEEDS_ATTENTION'|translate"
+>
+  <div class="queue-heading">
+    <h3>
+      {{ 'ABSENCE.NEEDS_ATTENTION'|translate }}
+      ({{error()?'—':cases()?.length??'—'}})
+    </h3>
+  </div>
+  @if (!error() && cases()!==null) { @for (row of cases();track
+  row.appointmentId) {
+  <article class="attention-row" [attr.data-affected-id]="row.appointmentId">
+    <time>{{date(row.start)}}</time>
+    <div class="patient">
+      <app-patient-avatar [name]="row.patientName" />
+      <div>
+        <strong>{{row.patientName}}</strong
+        ><small
+          >{{'ABSENCE.'+(row.appointmentType==='Assessment'?'ASSESSMENT':'TREATMENT')|translate}}</small
+        >
+      </div>
+    </div>
+    <div>
+      <span>{{row.clinicianName}}</span
+      ><small>{{'ABSENCE.'+row.contactStatus|translate}}</small>
+    </div>
+    <button
+      type="button"
+      class="btn btn-outline-primary"
+      (click)="openResolve(row)"
+    >
+      {{'ABSENCE.RESOLVE'|translate}}
+    </button>
+  </article>
+  } @empty {
+  <p class="compact-empty">{{'ABSENCE.NO_AFFECTED'|translate}}</p>
+  } }
+</section>
+}
+
+<dialog
+  #absenceDialog
+  class="absence-dialog"
+  aria-labelledby="absence-title"
+  (cancel)="closeRecord($event)"
+>
+  <form #absenceForm="ngForm" (ngSubmit)="absenceForm.valid && saveAbsence()">
+    <header class="dialog-heading">
+      <h2 id="absence-title">
+        {{'ABSENCE.'+(editing()?'DETAILS':'RECORD')|translate}}
+      </h2>
+      <button
+        type="button"
+        class="close-dialog"
+        [disabled]="busy()"
+        [attr.aria-label]="'ABSENCE.CLOSE'|translate"
+        (click)="closeRecord()"
+      >
+        ×
+      </button>
+    </header>
+    <div class="dialog-body">
+      <p class="clinic-zone">
+        {{'ABSENCE.CLINIC_TIME'|translate}} · Africa/Cairo
+      </p>
+      <fieldset [disabled]="busy()">
+        <label
+          >{{'ABSENCE.CLINICIAN'|translate}}<select
+            name="clinician"
+            [(ngModel)]="form.clinicianId"
+            (ngModelChange)="fieldsChanged()"
+            [disabled]="!!editing()"
+            required
+            autofocus
+          >
+            <option value="">{{'ABSENCE.SELECT_CLINICIAN'|translate}}</option>
+            @for(c of directory.clinicians();track c.id){
+            <option [value]="c.id">
+              {{c.name}} ·
+              {{'ABSENCE.'+(c.roles.includes('Senior')?'Senior':'Doctor')|translate}}
+            </option>
+            }
+          </select></label
+        >
+        <small>{{role()}}</small>
+        <div class="form-pair">
+          <label
+            >{{'ABSENCE.DATE'|translate}}<input
+              type="date"
+              name="date"
+              [(ngModel)]="form.date"
+              (ngModelChange)="fieldsChanged()"
+              required /></label
+          ><label
+            >{{'ABSENCE.UNTIL_DATE'|translate}}<input
+              type="date"
+              name="endDate"
+              [(ngModel)]="form.endDate"
+              [min]="form.date"
+              (ngModelChange)="fieldsChanged()"
+          /></label>
+        </div>
+        <div
+          class="segmented"
+          role="group"
+          [attr.aria-label]="'ABSENCE.PERIOD'|translate"
+        >
+          <button
+            type="button"
+            [class.selected]="form.fullDay"
+            [attr.aria-pressed]="form.fullDay"
+            (click)="form.fullDay=true;fieldsChanged()"
+          >
+            {{'ABSENCE.FULL_DAY'|translate}}</button
+          ><button
+            type="button"
+            [class.selected]="!form.fullDay"
+            [attr.aria-pressed]="!form.fullDay"
+            (click)="form.fullDay=false;fieldsChanged()"
+          >
+            {{'ABSENCE.CUSTOM_HOURS'|translate}}
+          </button>
+        </div>
+        @if(!form.fullDay){
+        <div class="form-pair">
+          <label
+            >{{'ABSENCE.FROM'|translate}}<input
+              type="time"
+              name="startTime"
+              [(ngModel)]="form.startTime"
+              (ngModelChange)="fieldsChanged()"
+              required /></label
+          ><label
+            >{{'ABSENCE.TO'|translate}}<input
+              type="time"
+              name="endTime"
+              [(ngModel)]="form.endTime"
+              (ngModelChange)="fieldsChanged()"
+              required
+          /></label>
+        </div>
+        }
+        <label
+          >{{'ABSENCE.NOTE'|translate}}<textarea
+            name="note"
+            [(ngModel)]="form.note"
+            maxlength="500"
+            rows="2"
+          ></textarea>
+        </label>
+      </fieldset>
+      @if(recordError()){
+      <p class="absence-error" role="alert">{{recordError()}}</p>
+      }
+      <section class="impact-preview">
+        <h3>
+          {{'ABSENCE.AFFECTED'|translate}}
+          <span class="count"
+            >{{impactLoading()?'…':impact()?.affected?.length??'—'}}</span
+          >
+        </h3>
+        @if(impactLoading()){
+        <p role="status">{{'ABSENCE.CHECKING'|translate}}</p>
+        } @if(impact();as preview){
+        <details [open]="preview.affected.length<=4">
+          <summary>{{'ABSENCE.VIEW_BOOKINGS'|translate}}</summary>
+          @for(row of preview.affected;track row.appointmentId){
+          <div class="impact-row">
+            <time>{{date(row.start)}}</time><strong>{{row.patientName}}</strong
+            ><span
+              >{{'ABSENCE.'+(row.appointmentType==='Assessment'?'ASSESSMENT':'TREATMENT')|translate}}</span
+            >
+          </div>
+          }@empty{
+          <p class="compact-empty">{{'ABSENCE.NO_AFFECTED'|translate}}</p>
+          }
+        </details>
+        }
+      </section>
+      @if(editing();as absence){
+      <details class="absence-history">
+        <summary>
+          {{'ABSENCE.RECORDED_BY'|translate}} {{absence.recordedBy}} ·
+          {{date(absence.recordedAt)}}
+        </summary>
+        @for(event of absence.history;track $index){
+        <p>
+          {{'ABSENCE.'+event.action|translate}} · {{event.actorName}} ·
+          {{date(event.recordedAt)}}<br />{{date(event.start)}} –
+          {{date(event.end)}}<br />{{event.note}}
+        </p>
+        }
+      </details>
+      }
+    </div>
+    <footer class="dialog-actions">
+      @if(editing() && !editing()!.withdrawn){<button
+        type="button"
+        class="btn btn-outline-danger"
+        [disabled]="busy()"
+        (click)="saveAbsence(true)"
+      >
+        {{'ABSENCE.WITHDRAW'|translate}}</button
+      >}<button
+        type="submit"
+        class="btn btn-primary"
+        data-save-absence
+        [disabled]="busy()||absenceForm.invalid||impactLoading()"
+      >
+        {{'ABSENCE.'+(busy()?'SAVING':'SAVE')|translate}}
+      </button>
+    </footer>
+  </form>
+</dialog>
+
+<dialog
+  #resolveDialog
+  class="recovery-dialog"
+  aria-labelledby="recovery-title"
+  (cancel)="closeResolve($event)"
+>
+  <header class="dialog-heading">
+    <h2 id="recovery-title">{{'ABSENCE.RESOLVE_BOOKING'|translate}}</h2>
+    <button
+      type="button"
+      class="close-dialog"
+      [disabled]="busy()"
+      [attr.aria-label]="'ABSENCE.CLOSE'|translate"
+      (click)="closeResolve()"
+    >
+      ×
+    </button>
+  </header>
+  @if(selectedCase();as row){
+  <div class="dialog-body">
+    <section class="current-booking">
+      <app-patient-avatar [name]="row.patientName" />
+      <div>
+        <h3>{{row.patientName}}</h3>
+        <span
+          >{{'ABSENCE.'+(row.appointmentType==='Assessment'?'ASSESSMENT':'TREATMENT')|translate}}
+          · {{date(row.start)}}</span
+        ><small>{{row.clinicianName}} · {{row.roomName}}</small>
+      </div>
+    </section>
+    <div
+      class="segmented"
+      role="group"
+      [attr.aria-label]="'ABSENCE.ACTION'|translate"
+    >
+      <button
+        type="button"
+        [class.selected]="tab==='keep'"
+        [attr.aria-pressed]="tab==='keep'"
+        (click)="switchTab('keep')"
+      >
+        {{'ABSENCE.KEEP_TIME'|translate}}</button
+      ><button
+        type="button"
+        [class.selected]="tab==='change'"
+        [attr.aria-pressed]="tab==='change'"
+        (click)="switchTab('change')"
+      >
+        {{'ABSENCE.CHANGE_TIME'|translate}}
+      </button>
+    </div>
+    @if(tab==='change'){<label
+      >{{'ABSENCE.DATE'|translate}}<input
+        type="date"
+        [(ngModel)]="changeDate"
+        (ngModelChange)="loadOptions()"
+        [disabled]="busy()" /></label
+    >} @if(resolveError()){
+    <p class="absence-error" role="alert">
+      {{resolveError()}}
+      <button
+        type="button"
+        class="btn"
+        (click)="loadOptions()"
+        [disabled]="busy()"
+      >
+        {{'ABSENCE.REFRESH_OPTIONS'|translate}}
+      </button>
+    </p>
+    } @if(optionsLoading()){
+    <p role="status">{{'ABSENCE.CHECKING'|translate}}</p>
+    } @if(options();as available){
+    <section class="candidate-group">
+      <h3>{{'ABSENCE.MATCHING'|translate}}</h3>
+      @for(candidate of
+      (tab==='keep'?available.matching:available.nearestMatching);track
+      candidate.clinicianId+candidate.start+candidate.roomId){
+      <button
+        type="button"
+        class="candidate-row"
+        [class.chosen]="isSelected(candidate)"
+        [attr.aria-pressed]="isSelected(candidate)"
+        [disabled]="busy()"
+        (click)="choose(candidate)"
+        [attr.data-candidate]="candidate.clinicianId"
+      >
+        <app-patient-avatar [name]="candidate.name" /><span
+          ><strong>{{candidate.name}}</strong
+          ><small
+            >{{'ABSENCE.'+candidate.role|translate}}
+            @if(candidate.coveringTreatment){<b class="coverage-badge"
+              >· {{'ABSENCE.COVERING_TREATMENT'|translate}}</b
+            >}</small
+          ><small
+            >{{date(candidate.start)}} · {{candidate.roomName}}</small
+          ></span
+        ><i
+          class="bi"
+          [class.bi-check-circle-fill]="isSelected(candidate)"
+          [class.bi-circle]="!isSelected(candidate)"
+          aria-hidden="true"
+        ></i>
+      </button>
+      }@empty{
+      <p class="compact-empty">{{'ABSENCE.NO_CANDIDATES'|translate}}</p>
+      }
+    </section>
+    @if(tab==='keep' && !available.matching.length &&
+    available.nearestMatching.length){
+    <section class="candidate-group">
+      <h3>{{'ABSENCE.NEAREST_MATCHING'|translate}}</h3>
+      @for(candidate of available.nearestMatching;track
+      candidate.clinicianId+candidate.start+candidate.roomId){<button
+        type="button"
+        class="candidate-row"
+        [disabled]="busy()"
+        (click)="chooseNearest(candidate)"
+      >
+        <app-patient-avatar [name]="candidate.name" /><span
+          ><strong>{{candidate.name}}</strong
+          ><small
+            >{{'ABSENCE.'+candidate.role|translate}}
+            @if(candidate.coveringTreatment){·
+            {{'ABSENCE.COVERING_TREATMENT'|translate}}}<br />{{date(candidate.start)}}
+            · {{candidate.roomName}}</small
+          ></span
+        ></button
+      >}
+    </section>
+    } @if(tab==='keep' && available.exceptions.length){
+    <section class="candidate-group exception-group">
+      <h3>{{'ABSENCE.EXCEPTION_OPTIONS'|translate}}</h3>
+      @for(candidate of available.exceptions;track
+      candidate.clinicianId+candidate.roomId){
+      <div class="candidate-row">
+        <app-patient-avatar [name]="candidate.name" /><span
+          ><strong>{{candidate.name}}</strong
+          ><small
+            >{{'ABSENCE.'+candidate.role|translate}}
+            @if(candidate.coveringTreatment){·
+            {{'ABSENCE.COVERING_TREATMENT'|translate}}}<br />{{date(candidate.start)}}
+            · {{candidate.roomName}}</small
+          ></span
+        ><button
+          type="button"
+          class="btn btn-outline-warning"
+          data-use-exception
+          [disabled]="busy()"
+          (click)="choose(candidate,true)"
+        >
+          {{'ABSENCE.USE_EXCEPTION'|translate}}
+        </button>
+      </div>
+      }
+    </section>
+    } @if(selected();as candidate){
+    <section class="confirmation-fields">
+      <h3>
+        {{candidate.name}} · {{'ABSENCE.'+candidate.role|translate}}
+        @if(candidate.coveringTreatment){·
+        {{'ABSENCE.COVERING_TREATMENT'|translate}}}<br /><small
+          >{{date(candidate.start)}} · {{candidate.roomName}}</small
+        >
+      </h3>
+      <label
+        >{{'ABSENCE.REASON'|translate}}<textarea
+          [(ngModel)]="reason"
+          [disabled]="busy()"
+          maxlength="500"
+          rows="2"
+          id="recovery-reason"
+        ></textarea>
+      </label>
+      @if(useException){
+      <div class="consent-fields">
+        <label class="consent-check"
+          ><input
+            type="checkbox"
+            [(ngModel)]="phoneConsent"
+            [disabled]="busy()"
+            id="recovery-phone-consent"
+          />{{'ABSENCE.PHONE_CONSENT'|translate}}</label
+        ><label
+          >{{'ABSENCE.EXCEPTION_REASON'|translate}}<textarea
+            [(ngModel)]="exceptionReason"
+            [disabled]="busy()"
+            maxlength="500"
+            rows="2"
+            id="recovery-exception-reason"
+          ></textarea></label
+        ><small>{{'ABSENCE.CONSENT_TIME_NOTE'|translate}}</small>
+      </div>
+      }
+    </section>
+    } }
+    <div class="contact-actions">
+      <span>{{'ABSENCE.'+row.contactStatus|translate}}</span
+      ><button
+        type="button"
+        class="btn"
+        data-patient-declined
+        [disabled]="busy()"
+        (click)="contact('Declined')"
+      >
+        {{'ABSENCE.PATIENT_DECLINED'|translate}}</button
+      ><button
+        type="button"
+        class="btn"
+        data-patient-unreachable
+        [disabled]="busy()"
+        (click)="contact('AwaitingResponse')"
+      >
+        {{'ABSENCE.UNREACHABLE'|translate}}
+      </button>
+    </div>
+    <details class="absence-history">
+      <summary>{{'ABSENCE.ACTIVITY'|translate}}</summary>
+      @for(event of history();track event.id){
+      <article>
+        <strong>{{'ABSENCE.'+event.action|translate}}</strong> ·
+        {{event.actorName}} · {{date(event.changedAt)}}
+        <p>
+          {{event.previousClinicianName}} → {{event.clinicianName}}<br />{{date(event.previousStart)}}
+          → {{date(event.newStart)}}<br />{{event.previousRoomName}} →
+          {{event.newRoomName}}<br />{{event.reason}}
+        </p>
+        @if(event.contactOutcome){
+        <p>{{'ABSENCE.'+event.contactOutcome|translate}}</p>
+        }@if(event.genderException){
+        <p>
+          {{'ABSENCE.PHONE'|translate}} · {{date(event.consentRecordedAt!)}} ·
+          {{event.consentReason}}
+        </p>
+        }
+      </article>
+      }
+    </details>
+  </div>
+  @if(selected();as candidate){
+  <footer class="dialog-actions confirmation-footer">
+    <div>
+      <strong>{{'ABSENCE.BEFORE_AFTER'|translate}}</strong
+      ><small [class.changed]="row.clinicianId!==candidate.clinicianId"
+        >{{row.clinicianName}} → {{candidate.name}}</small
+      >@if(row.start!==candidate.start){<small class="changed"
+        >{{date(row.start)}} → {{date(candidate.start)}}</small
+      >}@if(row.roomId!==candidate.roomId){<small class="changed"
+        >{{row.roomName}} → {{candidate.roomName}}</small
+      >}
+    </div>
+    <button
+      type="button"
+      class="btn btn-primary"
+      data-confirm-recovery
+      [disabled]="busy()||!reason.trim()||useException&&(!phoneConsent||!exceptionReason.trim())"
+      (click)="confirm()"
+    >
+      {{'ABSENCE.'+(busy()?'SAVING':tab==='keep'?'CONFIRM_REPLACEMENT':'CONFIRM_TIME')|translate}}
+    </button>
+  </footer>
+  } }
+</dialog>

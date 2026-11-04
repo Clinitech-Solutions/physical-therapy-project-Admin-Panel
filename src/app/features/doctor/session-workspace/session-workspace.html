@@ -1,6 +1,6 @@
 <section class="clinical-page session-page">
   <div class="workspace-breadcrumb">
-    <a routerLink="/doctor/dashboard" class="back-link"
+    <a [routerLink]="scheduleRoute" class="back-link"
       >&larr; {{ "DOCTOR.BACK_TO_SCHEDULE" | translate }}</a
     ><button
       class="btn"
@@ -28,7 +28,13 @@
   <button class="btn btn-outline-secondary" (click)="load()">
     {{ "DOCTOR.RETRY" | translate }}
   </button>
-  } @if (data(); as w) {
+  } @if (data(); as w) { @if (w.visit.needsAttention) {
+  <p class="clinical-alert" role="alert">
+    {{'ABSENCE.START_BLOCKED'|translate}}
+  </p>
+  } @if (w.visit.coveringTreatment) {
+  <span class="clinical-badge">{{'ABSENCE.COVERING_TREATMENT'|translate}}</span>
+  }
   <header class="clinical-card patient-heading">
     <div class="patient-cell">
       <app-patient-avatar [name]="w.visit.patientName" />
@@ -43,12 +49,12 @@
     </div>
     <span class="clinical-badge" [attr.data-state]="w.visit.state"
       >{{ "DOCTOR.STATES." + w.visit.state | translate }}</span
-    ><button
+    >@if (scheduleRoute === '/doctor/dashboard') {<button
       class="btn btn-outline-secondary review-trigger"
       (click)="openReview()"
     >
-      {{ "DOCTOR.REQUEST_REASSESSMENT" | translate }}
-    </button>
+      {{ "DOCTOR.REQUEST_REASSESSMENT" | translate }}</button
+    >}
   </header>
   <div class="clinical-summary patient-progress">
     <div>
@@ -405,7 +411,7 @@
     </div>
     <a
       class="btn btn-outline-secondary footer-back"
-      routerLink="/doctor/dashboard"
+      [routerLink]="scheduleRoute"
       >{{ "DOCTOR.BACK_TO_SCHEDULE" | translate }}</a
     >
     @if (w.visit.state === "Treating") {
@@ -503,7 +509,10 @@
 <ng-template #reviewContent let-w
   ><section class="clinical-card review-panel">
     <div class="rail-heading">
-      <h2>{{ (w.reassessments.length ? 'DOCTOR.REASSESSMENT' : 'DOCTOR.REQUEST_REASSESSMENT') | translate }}</h2>
+      <h2>
+        {{ (w.reassessments.length ? 'DOCTOR.REASSESSMENT' :
+        'DOCTOR.REQUEST_REASSESSMENT') | translate }}
+      </h2>
       <button class="btn" (click)="refreshReviews()">
         {{ "DOCTOR.REFRESH" | translate }}
       </button>

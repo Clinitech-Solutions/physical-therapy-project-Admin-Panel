@@ -1,0 +1,220 @@
+:host {
+  display: block;
+  min-width: 0;
+  color: var(--text-primary);
+}
+.absence-toolbar,
+.absence-indicators {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.absence-toolbar .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  font-size: 13px;
+}
+.count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  padding: 2px 7px;
+  border-radius: 20px;
+  background: var(--bg-elevated);
+  font-weight: 600;
+}
+.attention-toggle {
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+.absence-indicators {
+  margin-block: 10px;
+}
+.absence-indicator {
+  border: 1px solid var(--border-color);
+  border-inline-start: 3px solid var(--color-warning);
+  border-radius: 8px;
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 8px;
+  padding: 8px 10px;
+  min-height: 44px;
+  font-size: 12px;
+  text-align: start;
+}
+.absence-indicator span {
+  color: var(--text-secondary);
+}
+.attention-queue {
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 14px;
+  margin-block: 12px;
+}
+h3 {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+.attention-row {
+  display: grid;
+  grid-template-columns: 160px minmax(160px, 1fr) minmax(140px, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  border-top: 1px solid var(--border-color);
+  padding: 12px 0;
+  font-size: 13px;
+}
+.patient,
+.current-booking {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+small {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.compact-empty {
+  padding: 16px 0;
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.absence-error {
+  color: var(--color-danger);
+  background: color-mix(in srgb, var(--color-danger) 7%, var(--bg-card));
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 13px;
+}
+.absence-success {
+  color: var(--mq-teal);
+  font-size: 13px;
+  padding: 8px 0;
+  margin: 0;
+}
+.candidate-group {
+  margin-block: 18px;
+}
+.candidate-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  padding: 10px;
+  margin-block: 8px;
+  text-align: start;
+  font-size: 13px;
+  min-height: 60px;
+}
+.candidate-row > span {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.candidate-row.chosen {
+  border-color: var(--mq-teal);
+  background: var(--mq-gradient-subtle);
+}
+.candidate-row i,
+.coverage-badge {
+  color: var(--mq-teal);
+}
+.coverage-badge {
+  font-weight: 500;
+}
+.exception-group {
+  border-top: 1px dashed var(--color-warning);
+  padding-top: 16px;
+}
+.exception-group h3 {
+  color: var(--color-warning);
+}
+.contact-actions {
+  border-block-start: 1px solid var(--border-color);
+  padding-top: 12px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 12px;
+}
+.contact-actions > .btn {
+  font-size: 12px;
+}
+.absence-history {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-block: 14px;
+}
+.absence-history article {
+  border-bottom: 1px solid var(--border-color);
+  padding: 10px 0;
+}
+.absence-history p {
+  margin: 5px 0;
+  overflow-wrap: anywhere;
+}
+.impact-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 8px;
+  font-size: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+.changed {
+  color: var(--mq-teal);
+}
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--mq-teal);
+  outline-offset: 2px;
+}
+@media (max-width: 700px) {
+  .attention-row {
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+  }
+  .attention-row time {
+    grid-column: 1/-1;
+    font-weight: 600;
+  }
+  .attention-row .patient {
+    grid-column: 1/-1;
+  }
+  .attention-row .btn {
+    min-height: 44px;
+  }
+  .impact-row {
+    grid-template-columns: 1fr 1fr;
+  }
+  .impact-row span {
+    grid-column: 2;
+  }
+  .candidate-row {
+    flex-wrap: wrap;
+  }
+  .candidate-row > .btn {
+    margin-inline-start: 48px;
+    min-height: 44px;
+  }
+}

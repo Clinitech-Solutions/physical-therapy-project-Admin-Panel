@@ -1,4 +1,5 @@
 import { ReassessmentQueue } from "../../../shared/components/reassessment-queue/reassessment-queue";
+import { CoveredTreatments } from "../../../shared/components/covered-treatments/covered-treatments";
 import {
   Component,
   inject,
@@ -33,6 +34,7 @@ import {
   standalone: true,
   imports: [
     ReassessmentQueue,
+    CoveredTreatments,
     CommonModule,
     TranslateModule,
     ReceptionistTextPipe,

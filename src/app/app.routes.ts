@@ -28,6 +28,7 @@ export const routes: Routes = [
       { path: 'senior/assessment-form', loadComponent: () => import('./features/senior/assessment-form/assessment-form').then(m => m.AssessmentForm), canActivate: [roleGuard], data: { roles: ['Senior', 'Ceo'] } },
       { path: 'senior/re-assessment-form', loadComponent: () => import('./features/senior/re-assessment-form/re-assessment-form').then(m => m.ReAssessmentForm), canActivate: [roleGuard], data: { roles: ['Senior', 'Ceo'] } },
       { path: 'senior/absence-coverage', loadComponent: () => import('./features/senior/absence-coverage/absence-coverage').then(m => m.AbsenceCoverage), canActivate: [roleGuard], data: { roles: ['Senior', 'Ceo'] } },
+      { path: 'senior/session-notes/:appointmentId', loadComponent: () => import('./features/doctor/session-workspace/session-workspace').then(m => m.SessionWorkspace), canActivate: [roleGuard], canDeactivate: [(component: {canLeave:()=>boolean}) => component.canLeave()], data: { roles: ['Senior', 'Ceo'] } },
       
       // ── Doctor Routes ──
       { path: 'doctor', redirectTo: 'doctor/dashboard', pathMatch: 'full' },

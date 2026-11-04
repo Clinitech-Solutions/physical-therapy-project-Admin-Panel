@@ -8,6 +8,8 @@ export type TreatmentState =
   | "NoShow"
   | "LegacyCompleted";
 export interface DoctorVisit {
+  coveringTreatment?: boolean;
+  needsAttention?: boolean;
   appointmentId: number;
   patientId: number;
   patientName: string;

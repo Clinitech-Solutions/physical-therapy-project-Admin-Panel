@@ -28,6 +28,13 @@ export interface ProfilePayment {
   reference: string | null;
 }
 export interface ProfileActivity {
+  action?: string;
+  previousClinicianName?: string;
+  clinicianName?: string;
+  contactOutcome?: string;
+  consentMethod?: string;
+  consentRecordedAt?: string;
+  consentReason?: string;
   id: number;
   appointmentId: number;
   changedAt: string;
@@ -58,6 +65,7 @@ export interface ProfileCourse {
   activity: ProfileActivity[];
 }
 export interface ProfileData {
+  appointmentActivity?: ProfileActivity[];
   assessmentPayments?: ProfilePayment[];
   patientId: number;
   courses: ProfileCourse[];

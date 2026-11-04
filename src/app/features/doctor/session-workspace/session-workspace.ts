@@ -60,6 +60,11 @@ export class SessionWorkspace implements OnInit {
     inject(ReceptionWarnings, { optional: true }) ?? new ReceptionWarnings();
   private api = inject(DoctorWorkspaceService);
   private route = inject(ActivatedRoute);
+  get scheduleRoute() {
+    return this.route.snapshot.routeConfig?.path?.startsWith("senior/")
+      ? "/senior/dashboard"
+      : "/doctor/dashboard";
+  }
   private translate = inject(TranslateService);
   private destroy = inject(DestroyRef);
   readonly clock = inject(ClinicalClock);
@@ -178,7 +183,13 @@ export class SessionWorkspace implements OnInit {
       });
     this.route.queryParamMap
       .pipe(takeUntilDestroyed(this.destroy))
-      .subscribe(params => this.tab.set(params.get('section') === 'REASSESSMENT' ? 'REASSESSMENT' : 'CURRENT_SESSION'));
+      .subscribe((params) =>
+        this.tab.set(
+          params.get("section") === "REASSESSMENT"
+            ? "REASSESSMENT"
+            : "CURRENT_SESSION",
+        ),
+      );
   }
   private fields(data: DoctorPatientWorkspace): NotesFields {
     const n = data.notes;
@@ -301,8 +312,10 @@ export class SessionWorkspace implements OnInit {
   }
   startBlocked() {
     return (
+      this.data()?.visit.needsAttention ||
       this.capacity() === null ||
-      this.capacity()!.length >= 2 ||
+      this.capacity()!.length >=
+        (this.data()?.visit.coveringTreatment ? 1 : 2) ||
       this.capacity()!.some((a) => a.roomId === this.data()?.visit.roomId)
     );
   }
@@ -318,6 +331,7 @@ export class SessionWorkspace implements OnInit {
         data
           ? {
               ...data,
+              visit: current.visit,
               plan: current.plan,
               documents: current.documents,
               previousSessions: current.previousSessions,

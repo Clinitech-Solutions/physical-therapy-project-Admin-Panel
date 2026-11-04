@@ -870,7 +870,9 @@
                     <article class="activity-event-content">
                       <header class="activity-event-heading">
                         <h5>
-                          @if (activitySessionNumber(activity); as number) {
+                            @if (activity.action && activity.action !== 'Reschedule') {
+                              {{'ABSENCE.'+activity.action|translate}}
+                            } @else if (activitySessionNumber(activity); as number) {
                             {{ t("SESSION_RESCHEDULED", "Session {{number}}
                             rescheduled", {number}) }}
                           } @else {
@@ -958,6 +960,13 @@
                           }
                         </div>
                       </div>
+                      @if (activity.previousClinicianName || activity.clinicianName) {
+                        <p class="activity-reason">{{activity.previousClinicianName}} → {{activity.clinicianName}}</p>
+                      }
+                      @if (activity.contactOutcome) { <p>{{'ABSENCE.'+activity.contactOutcome|translate}}</p> }
+                      @if (activity.consentMethod) {
+                        <p>{{'ABSENCE.PHONE'|translate}} · {{activity.actorName}} · {{activity.consentRecordedAt ? formatDate(activity.consentRecordedAt) : ''}} {{activity.consentRecordedAt ? formatTime(activity.consentRecordedAt) : ''}}<br>{{activity.consentReason}}</p>
+                      }
                       @if (activity.reason?.trim()) {
                         <p class="activity-reason">
                           <strong>{{ t("RECORDED_REASON", "Reason") }}</strong>
