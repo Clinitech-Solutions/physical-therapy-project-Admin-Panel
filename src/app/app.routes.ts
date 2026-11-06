@@ -21,7 +21,7 @@ export const routes: Routes = [
       { path: 'receptionist/schedule', providers: receptionProviders, loadComponent: () => import('./features/receptionist/schedule/schedule').then(m => m.ScheduleComponent), canActivate: [roleGuard], data: { roles: ['Receptionist', 'Ceo'] } },
       { path: 'receptionist/rooms', providers: receptionProviders, loadComponent: () => import('./features/receptionist/rooms/rooms').then(m => m.RoomsComponent), canActivate: [roleGuard], data: { roles: ['Receptionist', 'Ceo'] } },
       { path: 'receptionist/insurance', providers: receptionProviders, loadComponent: () => import('./features/receptionist/insurance/insurance').then(m => m.InsuranceComponent), canActivate: [roleGuard], data: { roles: ['Receptionist', 'Ceo'] } },
-      { path: 'receptionist/billing', providers: receptionProviders, loadComponent: () => import('./features/receptionist/billing/billing').then(m => m.BillingComponent), canActivate: [roleGuard], data: { roles: ['Receptionist', 'Ceo'] } },
+      { path: 'receptionist/billing', providers: receptionProviders, loadComponent: () => import('./features/receptionist/billing/billing').then(m => m.BillingComponent), canActivate: [roleGuard], data: { roles: ['Receptionist', 'Ceo', 'Owner'] } },
       
       // ── Senior Therapist Routes ──
       { path: 'senior/dashboard', loadComponent: () => import('./features/senior/live-dashboard/live-dashboard').then(m => m.LiveDashboard), canActivate: [roleGuard], data: { roles: ['Senior', 'Ceo'] } },
@@ -40,7 +40,7 @@ export const routes: Routes = [
       // ── CEO Routes ──
       { path: 'ceo', loadComponent: () => import('./features/ceo/dashboard/dashboard').then(m => m.Dashboard), canActivate: [roleGuard], data: { roles: ['Ceo'] } },
       { path: 'ceo/staff', loadComponent: () => import('./features/ceo/staff-management/staff-list/staff-list.component').then(m => m.StaffListComponent), canActivate: [roleGuard], data: { roles: ['Ceo'] } },
-      { path: 'ceo/insurance', loadComponent: () => import('./features/ceo/insurance-management/insurance-management.component').then(m => m.InsuranceManagementComponent), canActivate: [roleGuard], data: { roles: ['Ceo'] } },
+      { path: 'ceo/insurance', loadComponent: () => import('./features/ceo/insurance-management/insurance-management.component').then(m => m.InsuranceManagementComponent), canActivate: [roleGuard], data: { roles: ['Ceo', 'Owner'] } },
     ]
   },
   { path: '**', redirectTo: 'login' }

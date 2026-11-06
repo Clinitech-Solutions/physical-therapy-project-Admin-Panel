@@ -7,6 +7,7 @@ import { MessageService } from 'primeng/api';
 import { registerLocaleData } from '@angular/common';
 import ar from '@angular/common/locales/ar';
 import { BillingComponent } from './billing';
+import { GroupedBillingComponent } from './grouped-billing';
 import { environment } from '../../../../environments/environment';
 
 registerLocaleData(ar);
@@ -15,6 +16,7 @@ describe('Rendered Billing collection input', () => {
   beforeEach(() => {
     // Isolate the collection form from unrelated page lookups.
     vi.spyOn(BillingComponent.prototype, 'ngOnInit').mockImplementation(() => {});
+    vi.spyOn(GroupedBillingComponent.prototype, 'ngOnInit').mockImplementation(() => {});
     vi.stubGlobal('ResizeObserver', class { observe() {} unobserve() {} disconnect() {} });
     vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({
       matches: false, addEventListener() {}, removeEventListener() {},
@@ -68,6 +70,9 @@ describe('Rendered Billing collection input', () => {
       expect(input.value).toContain('25.50');
 
       // Verify the amount crossing the HTTP boundary, not just its display.
+      const reviewing=c.reviewAllocation();
+      http.expectOne(request=>request.url.endsWith('/Billing/accounts/course%3A1/allocation')).flush({accountKey:'course:1',amount:25.5,remaining:1234.5,hash:'saved-allocation',items:[{invoiceId:1,reference:'INV-1',balance:1234.5,amount:25.5}]});
+      await reviewing;
       const saving = c.confirmPayment();
       const request = http.expectOne(environment.apiUrl + '/Bookings/accounts/course%3A1/payments');
       expect(request.request.body.amount).toBe(25.5);
@@ -80,6 +85,6 @@ describe('Rendered Billing collection input', () => {
       expect(c.amountToCollect).toBe(25.5);
       fixture.destroy();
       http.verify();
-    });
+    }, 15000);
   }
 });

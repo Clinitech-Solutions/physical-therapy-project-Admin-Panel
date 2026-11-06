@@ -31,23 +31,15 @@
   @for (invoiceId of billingService.unresolvedInvoicePaymentIds; track invoiceId) {
     <button class="btn btn-outline-secondary btn-sm mb-2" (click)="openPaymentModal(invoiceId)" [disabled]="isSubmittingPayment()">{{ 'RECEPTIONIST.UI.RECONCILE_COLLECTION' | translate }} #{{ invoiceId }}</button>
   }
-  <p class="text-muted small">{{ 'RECEPTIONIST.UI.BILLING_COLLECTIONS_NOTICE' | translate }}</p>
-  <div class="row g-3 mb-4">
-    <div class="col-md-4"><div class="card card-body"><span class="text-muted">{{ 'RECEPTIONIST.UI.INVOICE_CHARGES_TODAY' | translate }}</span><strong>{{ expectedTodayRevenue() | currency:'EGP':'symbol':'1.2-2':locale.language }}</strong></div></div>
-    <div class="col-md-4"><div class="card card-body"><span class="text-muted">{{ 'RECEPTIONIST.UI.RECORDED_PATIENT_PAYMENTS' | translate }}</span><strong>{{ totalRevenue() | currency:'EGP':'symbol':'1.2-2':locale.language }}</strong></div></div>
-    <div class="col-md-4"><div class="card card-body"><span class="text-muted">{{ 'RECEPTIONIST.UI.INVOICE_BALANCES' | translate }}</span><strong>{{ pendingPaymentsTotal() | currency:'EGP':'symbol':'1.2-2':locale.language }}</strong></div></div>
-  </div>
-
-  <!-- Real-Time PrimeNG Invoices Table -->
+  @if (invoiceDetailLoading()) { <p role="status">{{ billingText('Loading') }}?</p> }
+  @if (!showPaymentModal && paymentError()) { <p class="alert alert-warning" role="alert">{{ paymentError() }}</p> }
+  @if (savedAllocation(); as saved) { <details class="saved-allocation"><summary>{{ billingText('Saved allocation') }} ? {{ saved.accountKey }}</summary>@for (item of saved.items; track item.invoiceId) { <p>{{ item.reference }}: {{ item.amount | currency:'EGP':'symbol':'1.2-2':locale.language }}</p> }</details> }
   <div class="table-panel">
-    <div class="table-toolbar d-flex justify-content-between align-items-center mb-2">
-      <h4 class="mb-0">{{ 'RECEPTIONIST.BILLING_TITLE' | translate }}</h4>
-    </div>
     <p-tabs value="0" (valueChange)="activeTab = $event">
       <p-tablist>
         <p-tab value="0">
           <i class="bi bi-receipt text-primary me-1"></i> {{ 'RECEPTIONIST.UI.ALL_INVOICES' | translate }}
-          <span class="badge bg-primary rounded-pill ms-2">{{ dailyCashierInvoices().length }}</span>
+
         </p-tab>
         <p-tab value="1">
           <i class="bi bi-clock-history text-warning me-1"></i> {{ 'RECEPTIONIST.BILLING.PENDING_INSTALLMENTS' | translate }}
@@ -58,49 +50,7 @@
       <p-tabpanels>
         <!-- TAB 0: Daily Cashier -->
         <p-tabpanel value="0">
-          <div class="table-scroll-area mt-2">
-            <p-table [value]="dailyCashierInvoices()" [responsiveLayout]="'scroll'" styleClass="p-datatable-striped">
-              <ng-template pTemplate="header">
-                <tr>
-                  <th>{{ 'RECEPTIONIST.INVOICE_ID' | translate }}</th>
-                  <th>{{ 'COMMON.PATIENT' | translate }}</th>
-                  <th>{{ 'RECEPTIONIST.TOTAL_AMOUNT' | translate }}</th>
-                  <th>{{ 'RECEPTIONIST.BILLING.PATIENT_SHARE' | translate }}</th>
-                  <th>{{ 'RECEPTIONIST.BILLING.PAID' | translate }}</th>
-                  <th>{{ 'RECEPTIONIST.BILLING.REMAINING' | translate }}</th>
-                  <th>{{ 'RECEPTIONIST.TYPE' | translate }}</th>
-                  <th>{{ 'COMMON.STATUS' | translate }}</th>
-                  <th style="text-align:end">{{ 'COMMON.ACTION' | translate }}</th>
-                </tr>
-              </ng-template>
-              <ng-template pTemplate="body" let-invoice>
-                <tr>
-                  <td><span class="font-bebas text-secondary">{{ invoice.id }}</span></td>
-                  <td><span class="fw-semibold text-body">{{ getPatientName(invoice.patientId, invoice.patientName) }}</span></td>
-                  <td><span class="fw-bold text-success">{{ invoice.totalAmount | currency:'EGP':'symbol':'1.2-2':locale.language }}</span></td>
-                  <td><span class="fw-bold text-danger">{{ invoice.patientAmount | currency:'EGP':'symbol':'1.2-2':locale.language }}</span></td>
-                  <td><span class="fw-semibold text-body">{{ (invoice.paidAmount || 0) | currency:'EGP':'symbol':'1.2-2':locale.language }}</span></td>
-                  <td><span class="fw-semibold text-danger">{{ (invoice.remainingBalance !== undefined ? invoice.remainingBalance : invoice.patientAmount) | currency:'EGP':'symbol':'1.2-2':locale.language }}</span></td>
-                  <td>
-                    <span class="badge border" [ngClass]="billingService.mapTypeToString(invoice.type) === 'Assessment' ? 'border-primary text-primary' : 'border-info text-info'">
-                      {{ billingService.mapTypeToString(invoice.type) | receptionistText }}
-                    </span>
-                  </td>
-                  <td>
-                    <p-tag [value]="billingService.mapStatusToString(invoice.status) | receptionistText" [severity]="getStatusSeverity(billingService.mapStatusToString(invoice.status))"></p-tag>
-                  </td>
-                  <td style="text-align:end">
-                    @if (invoice.id) {
-                      <p-button [label]="'RECEPTIONIST.UI.INVOICE_DETAILS' | translate" icon="bi bi-receipt" severity="success" styleClass="p-button-success p-button-sm" (onClick)="openPaymentModal(invoice.id)"></p-button>
-                    }
-                  </td>
-                </tr>
-              </ng-template>
-              <ng-template pTemplate="emptymessage">
-                <tr><td colspan="9" class="text-center py-4 text-muted">@if (billingService.loading()) { {{ 'RECEPTIONIST.PROCESSING' | translate }} } @else if (!billingService.error()) { {{ 'RECEPTIONIST.BILLING.NO_PENDING_CASH' | translate }} }</td></tr>
-              </ng-template>
-            </p-table>
-          </div>
+          <app-grouped-billing [collectionLocked]="collectionLocked" (invoiceAction)="openInvoice($event.id,$event.collect)" (profile)="profilePatientId=''+$event" />
         </p-tabpanel>
 
         <!-- TAB 1: Pending Installments -->
@@ -131,24 +81,36 @@
 </div>
 
 <!-- Payment Method Modal (Standard Clean Modal) -->
-<p-dialog 
-  [(visible)]="showPaymentModal" 
-  [modal]="true" 
+<p-dialog
+  [(visible)]="showPaymentModal"
+  [modal]="true"
   appendTo="body"
-  [draggable]="false" 
-  [resizable]="false" 
+  [draggable]="false"
+  [resizable]="false"
   [closable]="!isSubmittingPayment()"
-  [showHeader]="true" 
+  [showHeader]="true"
   styleClass="clean-modal receptionist-modal"
   [style]="{ width: '400px' }"
-  [header]="'RECEPTIONIST.PROCESS_PAYMENT' | translate">
+  [header]="collectionView ? ('RECEPTIONIST.PROCESS_PAYMENT' | translate) : billingText('Invoice detail')">
 
   @if (!paymentMethods.length) { <p class="alert alert-warning">{{ 'RECEPTIONIST.UI.PAYMENT_METHOD_DEFINITION_PENDING' | translate }}</p> }
   @if (paymentError()) { <p class="alert alert-warning" role="alert">{{ locale.label(paymentError()) }}</p> }
   @if (bookingApi.pendingCollection()) { <p class="alert alert-warning" role="alert">{{ 'RECEPTIONIST.UI.COLLECTION_OUTCOME_UNKNOWN' | translate }} <button type="button" class="btn btn-outline-secondary btn-sm" (click)="reconcileCollection()" [disabled]="isSubmittingPayment()">{{ 'RECEPTIONIST.UI.RECONCILE_COLLECTION' | translate }}</button></p> }
   @if (paymentHistoryLoading()) { <p role="status">{{ 'RECEPTIONIST.PROCESSING' | translate }}</p> }
   @if (paymentHistoryError()) { <p class="alert alert-warning" role="alert">{{ locale.label(paymentHistoryError()) }} <button class="btn btn-outline-secondary btn-sm" (click)="loadPaymentHistory()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button></p> }
+  @if (detailInvoice(); as invoice) {
+    <dl class="billing-detail">
+      <div><dt>{{ billingText('Invoice') }}</dt><dd>{{ invoice.invoiceNumber }} ? {{ locale.date(invoice.createdAt) }}</dd></div>
+      <div><dt>{{ billingText('Patient') }}</dt><dd>{{ invoice.patientName }}</dd></div>
+      <div><dt>{{ billingText('Agreed') }}</dt><dd>{{ invoice.totalAmount | currency:'EGP':'symbol':'1.2-2':locale.language }}</dd></div>
+      <div><dt>{{ billingText('Patient share') }}</dt><dd>{{ invoice.patientAmount | currency:'EGP':'symbol':'1.2-2':locale.language }}</dd></div>
+      <div><dt>{{ billingText('Insurer share') }}</dt><dd>{{ invoice.insuranceAmount | currency:'EGP':'symbol':'1.2-2':locale.language }}</dd></div>
+      <div><dt>{{ billingText('Remaining') }}</dt><dd>{{ invoice.remainingAmount | currency:'EGP':'symbol':'1.2-2':locale.language }}</dd></div>
+      <div><dt>{{ billingText('Invoice status') }}</dt><dd>{{ billingText(billingService.mapStatusToString(invoice.status)) }}</dd></div>
+    </dl>
+  }
   <div class="modal-form-vertical py-2">
+    @if (collectionView) {
     <div class="form-group mb-3">
       <label for="billing-collection-amount" class="form-label mb-2">
         {{ 'AMOUNT_TO_COLLECT' | translate }} <span class="required-asterisk text-danger">*</span>
@@ -159,21 +121,27 @@
       <label class="form-label mb-2">
         {{ 'RECEPTIONIST.PAYMENT_METHOD' | translate }} <span class="required-asterisk text-danger">*</span>
       </label>
-      <p-dropdown 
+      <p-dropdown
         [options]="paymentMethods" [disabled]="collectionDetailsLocked"
-        [(ngModel)]="selectedPaymentMethod" 
+        [(ngModel)]="selectedPaymentMethod"
         [placeholder]="'RECEPTIONIST.PAYMENT_METHOD' | translate"
         appendTo="body"
         styleClass="w-100 p-select-sm">
       </p-dropdown>
     </div>
 
+    }
+    @if (selectedAccountKey && collectionView) {
+      <p>{{ billingText('Account') }}: {{ selectedAccountKey }}</p>
+      <button type="button" class="btn btn-outline-primary" (click)="reviewAllocation()" [disabled]="allocationLoading() || collectionDetailsLocked">{{ billingText('Review allocation') }}</button>
+      @if (allocationReady) { <dl class="allocation-preview">@for (item of allocation()!.items; track item.invoiceId) { <div><dt>{{ item.reference }}</dt><dd>{{ item.amount | currency:'EGP':'symbol':'1.2-2':locale.language }}</dd></div> }</dl> }
+    }
     @if (invoicePayments().length > 0) {
       <div class="mt-3 pt-2 border-top">
         <div class="text-secondary small fw-semibold mb-1">{{ 'RECEPTIONIST.BILLING.PREVIOUS_PAYMENTS' | translate }}</div>
         @for (pay of invoicePayments(); track pay.id || $index) {
           <div class="d-flex justify-content-between align-items-center small py-1">
-            <span class="text-muted">{{ ((pay.payerType === 'Insurer' || pay.payerType === 'Insurance' || billingService.mapMethodToString(pay.method) === 'Insurance') ? 'RECEPTIONIST.UI.FINANCE_INSURANCE' : 'RECEPTIONIST.UI.PATIENT') | translate }} / {{ (pay.collectionMethod || billingService.mapMethodToString(pay.method)) | receptionistText }}<small class="d-block">{{ locale.date(pay.paymentDate, true) }} {{ pay.transactionId }} @if (pay.insuranceClaimId) { / #{{ pay.insuranceClaimId }} }</small></span>
+            <span class="text-muted">{{ ((pay.payerType === 'Insurer' || pay.payerType === 'Insurance' || billingService.mapMethodToString(pay.method) === 'Insurance') ? 'RECEPTIONIST.UI.FINANCE_INSURANCE' : 'RECEPTIONIST.UI.PATIENT') | translate }} / {{ (pay.collectionMethod || billingService.mapMethodToString(pay.method)) | receptionistText }}<small class="d-block" style="overflow-wrap:anywhere">{{ pay.idempotencyKey }}</small><small class="d-block">{{ locale.date(pay.paymentDate, true) }} {{ pay.transactionId }} @if (pay.insuranceClaimId) { / #{{ pay.insuranceClaimId }} }</small></span>
             <span class="fw-semibold" [class.text-success]="pay.status === 1"><small>{{ (pay.status === 1 ? 'Paid' : pay.status === 0 ? 'Pending' : 'Unknown') | receptionistText }}</small>{{ pay.amount | currency:'EGP':'symbol':'1.2-2':locale.language }}</span>
           </div>
         }
@@ -183,23 +151,25 @@
 
   <ng-template pTemplate="footer">
     <div class="d-flex justify-content-end gap-2 modal-footer-actions">
-      <button 
-        type="button" 
-        class="btn btn-outline-secondary btn-cancel" 
+      <button
+        type="button"
+        class="btn btn-outline-secondary btn-cancel"
         (click)="showPaymentModal = false" [disabled]="isSubmittingPayment()">
         {{ 'COMMON.CANCEL' | translate }}
       </button>
-      <button 
-        type="button" 
-        class="btn btn-primary" 
+      @if (collectionView) { <button
+        type="button"
+        class="btn btn-primary"
         (click)="confirmPayment()"
-        [disabled]="isProcessingPayment() || !selectedPaymentMethod || !paymentMethods.length || (!selectedAccountKey && (billingService.mutation.uncertain() || billingService.pendingPaymentInvoices().includes(+selectedInvoiceId!)))">
+        [disabled]="isProcessingPayment() || (selectedAccountKey && !allocationReady && !bookingApi.pendingCollection()) || !selectedPaymentMethod || !paymentMethods.length || (!selectedAccountKey && (billingService.mutation.uncertain() || billingService.pendingPaymentInvoices().includes(+selectedInvoiceId!)))">
         @if (isProcessingPayment()) {
           <span class="spinner-border spinner-border-sm me-1"></span> {{ 'RECEPTIONIST.PROCESSING' | translate }}
         } @else {
           {{ 'RECEPTIONIST.PROCESS_PAYMENT' | translate }}
         }
-      </button>
+      </button> }
     </div>
   </ng-template>
 </p-dialog>
+
+@if (profilePatientId) { <app-patient-profile [visible]="true" [patientId]="profilePatientId" (visibleChange)="profilePatientId=null" /> }

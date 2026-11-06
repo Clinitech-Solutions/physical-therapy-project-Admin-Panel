@@ -88,3 +88,5 @@
   border-color: #00b395;
   box-shadow: 0 4px 12px rgba(0, 201, 167, 0.4);
 }
+
+app-grouped-billing{display:block;padding:6px 8px 8px}.billing-detail,.allocation-preview{display:grid;gap:10px;grid-template-columns:1fr 1fr}.billing-detail dt,.allocation-preview dt{font-size:12px;color:var(--text-secondary)}.billing-detail dd,.allocation-preview dd{font-size:13px;margin:3px 0}.saved-allocation{padding:12px;border:1px solid var(--border-color);border-radius:8px;margin-bottom:12px}.saved-allocation p{font-size:12px;margin:6px 0}@media(max-width:600px){app-grouped-billing{padding:0}.page-content{padding-inline:12px!important}}

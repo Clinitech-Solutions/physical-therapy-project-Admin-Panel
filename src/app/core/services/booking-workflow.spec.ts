@@ -150,9 +150,9 @@ describe('Patient-first booking workflow', () => {
   });
   it('reuses the collection identity after a network failure and reconciles the saved collection', async () => {
     const api=TestBed.inject(BookingService);
-    const first=firstValueFrom(api.collectAccount('account-key',50,'Cash')).catch(error=>error);
+    const first=firstValueFrom(api.collectAccount('account-key',50,'Cash','reviewed-allocation')).catch(error=>error);
     const original=http.expectOne(`${url}/Bookings/accounts/account-key/payments`);original.error(new ProgressEvent('error'));await first;
-    const key=api.pendingCollection()!.key;
+    const key=api.pendingCollection()!.key;expect(api.pendingCollection()?.expectedAllocationHash).toBe('reviewed-allocation');
     const retry=firstValueFrom(api.collectAccount('account-key',50,'Cash')).catch(error=>error);
     const repeated=http.expectOne(`${url}/Bookings/accounts/account-key/payments`);expect(repeated.request.body).toEqual(original.request.body);
     repeated.flush({title:'Booking.ConcurrentChange'},{status:409,statusText:'Conflict'});await retry;
