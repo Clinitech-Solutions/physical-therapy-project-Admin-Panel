@@ -1,6 +1,6 @@
 import { apiError, localDay, ReceptionError } from '../../../core/services/reception-api';
 import { ReceptionistLocale, ReceptionistTextPipe } from '../../../shared/receptionist-locale';
-import { Component, OnInit, computed, inject, signal, Input, forwardRef } from "@angular/core";
+import { Component, OnInit, computed, inject, signal, Input, forwardRef, ViewChild } from "@angular/core";
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
 import { CommonModule } from "@angular/common";
 import { TranslateModule } from '@ngx-translate/core';
@@ -17,6 +17,10 @@ import { InputNumberModule } from 'primeng/inputnumber';
 import { BookingService } from '../../../core/services/booking.service';
 import { BookingAccount, BookingPaymentMethod } from '../../../core/models/booking.model';
 import { TabsModule } from 'primeng/tabs';
+import { GroupedBillingService, BillingAllocation, BillingInvoice } from '../../../core/services/grouped-billing.service';
+import { GroupedBillingComponent } from './grouped-billing';
+import { PatientProfileComponent } from '../../../shared/components/patient-profile/patient-profile.component';
+import { billingArabic } from './billing-text';
 import { CourseFinanceService } from '../../../core/services/course-finance.service';
 
 @Component({
@@ -84,12 +88,44 @@ export class DropdownComponent implements ControlValueAccessor {
     SelectModule,
     InputNumberModule,
     TabsModule,
-    DropdownComponent
+    DropdownComponent, GroupedBillingComponent, PatientProfileComponent
   ],
   templateUrl: "./billing.html",
   styleUrl: "./billing.css"
 })
 export class BillingComponent implements OnInit {
+  @ViewChild(GroupedBillingComponent) grouped?: GroupedBillingComponent;
+  readonly groupedApi = inject(GroupedBillingService);
+  readonly allocation = signal<BillingAllocation | null>(null);
+  readonly allocationLoading = signal(false);
+  readonly savedAllocation = signal<BillingAllocation | null>(null);
+  async reviewAllocation() {
+    if(!this.selectedAccountKey || this.allocationLoading())return;
+    this.allocationLoading.set(true);this.paymentError.set('');
+    const key=this.selectedAccountKey,amount=this.amountToCollect;
+    try { const allocation=await firstValueFrom(this.groupedApi.allocation(key,amount));if(this.selectedAccountKey===key && this.amountToCollect===amount)this.allocation.set(allocation); }
+    catch(error) {this.paymentError.set(apiError(error));this.allocation.set(null);}
+    finally {this.allocationLoading.set(false);}
+  }
+  get allocationReady() { return !!this.allocation() && this.allocation()?.accountKey===this.selectedAccountKey && this.allocation()?.amount===this.amountToCollect; }
+  detailInvoice = signal<Invoice | null>(null);
+  detailContext = signal<BillingInvoice | null>(null);
+  collectionView = true;
+  profilePatientId: string | null = null;
+  billingText(text: string) { return this.locale.language === 'ar-EG' ? billingArabic[text] ?? this.locale.label(text) : text; }
+  get collectionLocked() { return this.isSubmittingPayment() || this.billingService.mutation.uncertain() || this.billingService.unresolvedInvoicePaymentIds.length>0 || !!this.bookingApi.pendingCollection() || this.finance.pendingPatients().length>0; }
+  async openInvoice(id: number, collect: boolean) {
+    if(this.invoiceDetailLoading() || this.isSubmittingPayment())return;
+    this.invoiceDetailLoading.set(true);this.paymentError.set('');
+    try {
+      const [invoice,context]=await Promise.all([firstValueFrom(this.billingService.getInvoiceById(id)),firstValueFrom(this.groupedApi.context(id))]);
+      this.detailInvoice.set(invoice);this.detailContext.set(context);
+      this.openPaymentModal(id);
+      this.collectionView=collect && (invoice.remainingAmount ?? 0)>0 && !['Waived','Cancelled'].includes(this.billingService.mapStatusToString(invoice.status)) && !this.collectionLocked;
+    } catch(error) { this.paymentError.set(apiError(error)); }
+    finally { this.invoiceDetailLoading.set(false); }
+  }
+  refreshGrouped() { this.grouped?.refresh(); }
   activeTab: string | number | undefined = '0';
   readonly locale = new ReceptionistLocale();
   billingService = inject(BillingService, { optional: true }) ?? new BillingService();
@@ -108,6 +144,7 @@ export class BillingComponent implements OnInit {
   }
   openAccountPayment(account: BookingAccount) {
     if (this.isSubmittingPayment()) return;
+    this.collectionView=true;this.detailInvoice.set(null);this.detailContext.set(null);this.allocation.set(null);
     this.selectedAccountKey = account.key; this.selectedInvoiceId = null;
     this.amountToCollect = account.remainingAmount; this.selectedPaymentMethod = ''; this.invoicePayments.set([]);
     const original=this.bookingApi.pendingCollection();
@@ -117,7 +154,7 @@ export class BillingComponent implements OnInit {
   async reconcileCollection() {
     if (this.isSubmittingPayment()) return;
     this.isSubmittingPayment.set(true);
-    try { await firstValueFrom(this.bookingApi.reconcileCollection()); this.paymentError.set(''); this.showPaymentModal=false;this.selectedAccountKey=null;this.refreshAccounts(); this.billingService.getInvoices(); }
+    try { await firstValueFrom(this.bookingApi.reconcileCollection()); this.paymentError.set(''); this.showPaymentModal=false;this.selectedAccountKey=null;this.refreshAccounts(); this.refreshGrouped(); }
     catch { this.paymentError.set(this.locale.text('COLLECTION_NOT_CONFIRMED', 'No committed collection has been confirmed. Retry only the original collection with the same key.')); }
     finally { this.isSubmittingPayment.set(false); }
   }
@@ -141,8 +178,7 @@ export class BillingComponent implements OnInit {
 
   ngOnInit(): void {
     this.refreshAccounts();
-    this.billingService.getInvoices();
-    this.refreshPatientLookup();
+
   }
   refreshPatientLookup() {
     this.patientLookupError.set('');
@@ -185,6 +221,7 @@ export class BillingComponent implements OnInit {
    */
   openPaymentModal(invoiceId: number | string) {
     if(this.isSubmittingPayment()) return;
+    this.collectionView=true;
     this.selectedInvoiceId = invoiceId;
     this.selectedAccountKey = null;
     this.selectedPaymentMethod = '';
@@ -193,14 +230,15 @@ export class BillingComponent implements OnInit {
     const original=this.billingService.paymentIntent(Number(invoiceId));
     if(original){this.amountToCollect=original.amount;this.selectedPaymentMethod=this.billingService.mapMethodToString(original.method);}
     this.showPaymentModal = true;
+    this.detailInvoice.set(this.billingService.findInvoiceById(invoiceId) ?? null);
     this.loadPaymentHistory();
   }
   loadPaymentHistory() {
     if(this.selectedInvoiceId===null)return;
-    const id=Number(this.selectedInvoiceId);
+    const id=Number(this.selectedInvoiceId), recovering=!!this.billingService.paymentIntent(id);
     this.paymentHistoryLoading.set(true);this.paymentHistoryError.set('');
     this.billingService.getPaymentsForInvoice(id).subscribe({
-      next:payments=>{if(Number(this.selectedInvoiceId)!==id)return;this.invoicePayments.set(payments);this.paymentHistoryLoading.set(false);},
+      next:payments=>{if(Number(this.selectedInvoiceId)!==id)return;this.invoicePayments.set(payments);this.paymentHistoryLoading.set(false);if(recovering && !this.billingService.paymentIntent(id)){this.refreshGrouped();this.refreshAccounts();}},
       error:error=>{if(Number(this.selectedInvoiceId)!==id)return;this.paymentHistoryError.set(apiError(error));this.paymentHistoryLoading.set(false);}
     });
   }
@@ -223,9 +261,11 @@ export class BillingComponent implements OnInit {
       this.isSubmittingPayment.set(true); this.paymentError.set('');
       try {
         if (!this.paymentMethods.includes(this.selectedPaymentMethod)) throw new Error(this.locale.text('PAYMENT_METHOD_REQUIRED', 'Select the actual patient payment method.'));
-        await firstValueFrom(this.bookingApi.collectAccount(this.selectedAccountKey, this.amountToCollect, this.selectedPaymentMethod as BookingPaymentMethod));
-        this.showPaymentModal = false; this.selectedAccountKey = null; this.refreshAccounts(); this.billingService.getInvoices();
-      } catch (error) { this.paymentError.set(this.bookingApi.pendingCollection() ? this.locale.text('COLLECTION_OUTCOME_UNKNOWN', 'The collection outcome is unknown. Reconcile it before collecting again.') : apiError(error)); }
+        if(!this.allocationReady && !this.bookingApi.pendingCollection())throw new Error(this.billingText('Review allocation'));
+        await firstValueFrom(this.bookingApi.collectAccount(this.selectedAccountKey, this.amountToCollect, this.selectedPaymentMethod as BookingPaymentMethod, this.allocation()?.hash));
+        this.savedAllocation.set(this.allocation());
+        this.showPaymentModal = false; this.selectedAccountKey = null; this.refreshAccounts(); this.refreshGrouped();
+      } catch (error) { if(!this.bookingApi.pendingCollection())this.allocation.set(null);this.paymentError.set(this.bookingApi.pendingCollection() ? this.locale.text('COLLECTION_OUTCOME_UNKNOWN', 'The collection outcome is unknown. Reconcile it before collecting again.') : apiError(error)); }
       finally { this.isSubmittingPayment.set(false); }
       return;
     }
@@ -236,7 +276,7 @@ export class BillingComponent implements OnInit {
       // Re-read the invoice before collection. The server remains responsible for atomic balance enforcement.
       const invoice=await firstValueFrom(this.billingService.getInvoiceById(id));
       if(!Number.isFinite(amount)||amount<=0||amount>(invoice.remainingAmount??0))throw new ReceptionError('PAYMENT_AMOUNT_INVALID','Enter a positive payment no greater than the saved invoice balance.');
-      await firstValueFrom(this.billingService.recordPayment({invoiceId:id,amount,method:this.billingService.mapPaymentMethodToNumber(method)}));
+      await firstValueFrom(this.billingService.recordPayment({invoiceId:id,amount,method:this.billingService.mapPaymentMethodToNumber(method),expectedRemaining:this.detailInvoice()?.id===id ? this.detailInvoice()?.remainingAmount : invoice.remainingAmount}));
     } catch(error) {
       this.paymentError.set(error instanceof ReceptionError?this.locale.text(error.key,error.message):apiError(error));
       this.isSubmittingPayment.set(false);return;
@@ -244,7 +284,7 @@ export class BillingComponent implements OnInit {
     this.isSubmittingPayment.set(false);
     this.showPaymentModal=false;this.selectedInvoiceId=null;this.amountToCollect=0;
     this.messageService.add({severity:'success',summary:this.locale.text('PAYMENT_RECORDED','Payment Recorded'),detail:this.locale.text('PAYMENT_SAVED_REFRESH_SEPARATE','Payment saved. Verify the refreshed balance before collecting again.')});
-    this.billingService.getInvoices();
+    this.refreshGrouped();
     this.refreshAccounts();
   }
 
@@ -252,13 +292,13 @@ export class BillingComponent implements OnInit {
     if(this.billingService.mutation.busy())return;
     try { await firstValueFrom(this.billingService.updateInvoiceStatus(Number(invoiceId),this.billingService.mapStatusToNumber(status))); }
     catch(error){this.paymentError.set(apiError(error));return;}
-    this.billingService.getInvoices();
+    this.refreshGrouped();
   }
   async deleteInvoice(invoiceId: number|string) {
     if(this.billingService.mutation.busy())return;
     try { await firstValueFrom(this.billingService.deleteInvoice(Number(invoiceId))); }
     catch(error){this.paymentError.set(apiError(error));return;}
-    this.billingService.getInvoices();
+    this.refreshGrouped();
   }
 
   /**

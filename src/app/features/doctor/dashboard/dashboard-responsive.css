@@ -1,0 +1,126 @@
+@media (max-width: 1199px) {
+  .schedule-layout {
+    grid-template-columns: 1fr;
+  }
+  .schedule-rail {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .schedule-rail > section:last-child {
+    grid-column: 1/-1;
+  }
+  .schedule-table {
+    display: none;
+  }
+  .mobile-visits {
+    display: block;
+  }
+  .mobile-visits > h2 {
+    margin-top: 18px;
+  }
+  .patient-card {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 4px 12px;
+  }
+  .patient-card .btn {
+    grid-column: 1/-1;
+  }
+  .clinical-summary i {
+    display: none;
+  }
+  .clinical-summary > div {
+    padding-inline-start: 0;
+  }
+  .schedule-tools h2 {
+    min-width: 160px;
+  }
+}
+@media (max-width: 767px) {
+  .doctor-schedule {
+    padding-bottom: 95px;
+  }
+  .date-controls {
+    display: grid;
+    width: 100%;
+    grid-template-columns: 44px minmax(130px, 1fr) 44px auto;
+    gap: 5px;
+  }
+  .date-controls input {
+    width: 100%;
+    padding: 6px;
+  }
+  .date-controls .btn {
+    padding: 6px;
+  }
+  .schedule-tools {
+    flex-wrap: wrap;
+    padding: 0 0 12px;
+  }
+  .schedule-tools h2 {
+    display: none;
+  }
+  .search-field {
+    max-width: none;
+    flex: 1;
+    min-width: 140px;
+  }
+  .status-filter {
+    width: 140px;
+  }
+  .clinical-summary {
+    padding: 12px;
+    gap: 8px;
+  }
+  .clinical-summary strong {
+    font-size: 20px;
+  }
+  .clinical-summary span {
+    font-size: 11px;
+  }
+  .schedule-rail {
+    display: none;
+  }
+  .mobile-filter {
+    display: flex;
+  }
+  .mobile-visits .patient-card {
+    display: block;
+  }
+  .doctor-bottom-nav {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 40;
+    border-top: 1px solid var(--border-color);
+    background: var(--bg-card);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .schedule-main {
+    border: 0;
+    background: transparent;
+    padding: 0;
+  }
+  .patient-card {
+    background: var(--bg-card);
+  }
+}
+
+@media (max-width: 767px) {
+  .date-controls {
+    grid-template-columns: 36px minmax(0, 1fr) 36px auto 40px;
+  }
+  .date-controls input {
+    min-width: 0;
+    font-size: 14px;
+  }
+  .mobile-filter .btn {
+    flex: 1;
+  }
+  .clinical-summary span {
+    font-size: 11px;
+  }
+}

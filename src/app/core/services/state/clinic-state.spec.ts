@@ -1,8 +1,8 @@
-import { mockRooms } from '../../mock-data/mock-db';
+import { mockRooms, mockPatients, mockDoctors, mockDoctorAvailability } from '../../mock-data/mock-db';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { ClinicStateService } from './clinic-state.service';
 
-describe('ClinicStateService Business Rules & Date Filtering Unit Tests', () => {
+describe('Legacy ClinicState algorithms with explicit isolated fixtures', () => {
   let service: ClinicStateService;
 
   beforeEach(async () => {
@@ -11,6 +11,29 @@ describe('ClinicStateService Business Rules & Date Filtering Unit Tests', () => 
     await new Promise(resolve => setTimeout(resolve, 600));
     // Explicit legacy algorithm fixtures: production no longer loads sample rooms or browser storage.
     (service as any).roomsSig.set(mockRooms.map(room => ({...room})));
+    // Demo data now uses p1/p2 and different histories. These algorithm tests own their
+    // numeric identities and lifecycle records; no production sample data is changed.
+    const day = new Date().toISOString().slice(0,10);
+    const historyDay = new Date(Date.now()-10*86400000).toISOString().slice(0,10);
+    const patient=(id:string, gender:'Male'|'Female', paymentType='Cash')=>({
+      ...structuredClone(mockPatients[0]), id, gender, paymentType,
+      treatmentPlan:{totalSessions:10,primaryDoctorId:gender==='Male'?'doc_2':'doc_1'},
+    });
+    (service as any).patientsSig.set([
+      patient('1','Male'), {...patient('2','Female','Insurance'),insuranceDetails:{company:'Test',status:'Approved',approvedSessions:10,copayPercentage:20}},
+      patient('3','Male'),patient('4','Female'),patient('5','Male'),patient('6','Female','Online'),
+      {...patient('7','Male','Insurance'),insuranceDetails:{company:'Test',status:'Pending'}},
+    ]);
+    (service as any).doctorsSig.set(structuredClone(mockDoctors));
+    (service as any).doctorAvailabilitySig.set(structuredClone(mockDoctorAvailability));
+    (service as any).sessionsSig.set([
+      ...['1','2','3','4'].map((id,index)=>({id:'hist_'+id,patientId:id,doctorId:index%2?'doc_1':'doc_2',type:'Assessment',status:'Completed',scheduledAt:historyDay+'T10:00:00Z'})),
+      {id:'1',patientId:'1',doctorId:'doc_2',roomId:'room_1',type:'Session',status:'In Progress',sessionNumber:3,scheduledAt:day+'T10:00:00Z'},
+      {id:'3',patientId:'3',doctorId:'doc_4',roomId:'room_3',type:'Session',status:'Confirmed',sessionNumber:1,scheduledAt:day+'T12:00:00Z'},
+      {id:'5',patientId:'5',doctorId:'doc_2',type:'Assessment',status:'Pending',scheduledAt:day+'T13:00:00Z'},
+      {id:'7',patientId:'1',doctorId:'doc_2',roomId:'room_5',type:'Session',status:'Pending',sessionNumber:2,scheduledAt:day+'T14:00:00Z'},
+    ]);
+    (service as any).invoicesSig.set([{id:'legacy-paid',sessionId:'1',patientId:'1',amount:100,status:'Paid',type:'Session',createdAt:day+'T10:00:00Z'}]);
   });
 
   describe('Business Rule: isPatientNew (Assessment First)', () => {

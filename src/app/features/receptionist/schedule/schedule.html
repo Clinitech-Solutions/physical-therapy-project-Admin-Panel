@@ -65,6 +65,8 @@
     </div>
   </div>
 
+  <app-absence-recovery [scheduleDate]="scheduleDay" (changed)="onSearchOrFilterChange()" />
+
   <!-- Interactive Summary KPI Strip (Bound to ReceptionistService API) -->
   <div class="schedule-kpi-grid">
     <div class="schedule-kpi-card" [class.active-kpi]="selectedFilter === 'All'" (click)="selectedFilter = 'All'">
@@ -229,6 +231,9 @@
                     </div>
                   </div>
 
+                  @if (absenceRecovery?.needsAttention(session.id)) {
+                    <button type="button" class="badge badge-warning" style="min-height:44px;border:0" (click)="absenceRecovery?.resolveAppointment(session.id)">{{'ABSENCE.NEEDS_ATTENTION'|translate}}</button>
+                  }
                   <span class="badge session-status-badge" [ngClass]="{
                     'badge-warning': statusStr === 'Confirmed',
                     'badge-info': statusStr === 'In Progress' || statusStr === 'Waiting',
@@ -258,6 +263,7 @@
                     <span class="type-pill" [class.type-assessment]="(session.appointmentType || session.type) === 'Assessment'">
                       {{ (session.appointmentType || session.type || 'Session') | receptionistText }}
                     </span>
+                    @if(session.appointmentType==='Assessment' && session.actualCheckOut && !session.assessmentCompleted){<span class="badge badge-warning">{{'SENIOR.DEPARTED_UNSIGNED'|translate}}</span>}
                     <span class="session-time">
                       <i class="bi bi-clock me-1"></i>{{ formatTime(session.startTime.toString()) }}
                     </span>
@@ -269,13 +275,13 @@
                       <button class="btn-absent-icon" [title]="'RECEPTIONIST.CANCEL' | translate" [disabled]="workflow.mutation.busy()" (click)="markPatientAbsent(session.id); $event.stopPropagation()"><i class="bi bi-x-circle"></i></button>
                     }
                     @if (statusStr === 'In Progress' || statusStr === 'Waiting') {
-                      <button type="button" class="btn-session-action btn-checkout"
+                      <button type="button" class="btn-session-action btn-checkout" [attr.data-checkout]="session.id"
                         [disabled]="workflow.mutation.busy() || !workflow.canTransition('Completed') || session.appointmentType === 'Session' && !session.treatmentEndedAt" (click)="checkoutSession(session.id); $event.stopPropagation()">
                         <i class="bi bi-box-arrow-right"></i>
                         <span>{{ 'RECEPTIONIST.CHECK_OUT' | translate }}</span>
                       </button>
                     } @else if (statusStr === 'Confirmed' || statusStr === 'Pending') {
-                      <button type="button" class="btn-session-action btn-checkin"
+                      <button type="button" class="btn-session-action btn-checkin" [attr.data-check-in]="session.id"
                         [disabled]="workflow.mutation.busy() || !workflow.canTransition('In Progress')" (click)="checkInSession(session.id); $event.stopPropagation()">
                         <i class="bi bi-box-arrow-in-right"></i>
                         <span>{{ 'RECEPTIONIST.CHECK_IN' | translate }}</span>

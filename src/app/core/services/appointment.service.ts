@@ -10,6 +10,7 @@ import {
   ReceptionError,
   ReceptionEvents,
   textField,
+  clinicDay,
 } from "./reception-api";
 import { pagedRecords } from "./reception-pagination";
 import { backendEnumNumber } from './reception-contracts';
@@ -107,6 +108,15 @@ export class AppointmentService {
   readonly mutation = new MutationState();
   readonly bookedPlanSessions = signal<number[]>([]);
   private generation = 0;
+  getAssessmentTasks() {
+    const generation = ++this.generation;
+    this.loading.set(true); this.error.set(null);
+    this.http.get<unknown[]>(`${environment.apiUrl}/Bookings/assessments/tasks`).pipe(
+      map(rows=>rows.map(decodeAppointment)),
+      finalize(()=>{if(generation===this.generation)this.loading.set(false);}),
+    ).subscribe({next:rows=>{if(generation===this.generation)this.appointments.set(rows);},
+      error:error=>{if(generation===this.generation){this.appointments.set([]);this.error.set(apiError(error));}}});
+  }
   getAppointments(filters: AppointmentFilters = {}) {
     const generation = ++this.generation;
     this.loading.set(true);
@@ -116,7 +126,7 @@ export class AppointmentService {
     if (filters.doctorId) params = params.set("DoctorId", filters.doctorId);
     if (filters.roomId)
       params = params.set("RoomId", numericId(filters.roomId));
-    if (filters.date) params = params.set("Date", filters.date);
+    if (filters.date) params = params.set("Date", /^\d{4}-\d{2}-\d{2}$/.test(filters.date) ? filters.date : clinicDay(filters.date));
     if (filters.status !== undefined)
       params = params.set("Status", filters.status);
     pagedRecords(this.http, `${this.apiUrl}/GetAll`, decodeAppointment, params)

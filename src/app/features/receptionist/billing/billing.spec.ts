@@ -47,9 +47,9 @@ describe('Billing component with backend invoice data',()=>{
   });
   it('accepts the offered Online method for a saved course account',async()=>{
     sessionStorage.clear();
-    component.openAccountPayment({key:'course:1',remainingAmount:100} as never);component.selectedPaymentMethod='Online';component.amountToCollect=25;
+    component.openAccountPayment({key:'course:1',remainingAmount:100} as never);component.selectedPaymentMethod='Online';component.amountToCollect=25;component.allocation.set({accountKey:'course:1',amount:25,hash:'preview-hash',remaining:100,items:[]});
     const collect=vi.spyOn(component.bookingApi,'collectAccount').mockReturnValue(of({} as BookingReceipt));
     vi.spyOn(component,'refreshAccounts').mockImplementation(()=>{});vi.spyOn(service,'getInvoices').mockImplementation(()=>{});
-    await component.confirmPayment();expect(collect).toHaveBeenCalledWith('course:1',25,'Online');expect(component.paymentError()).toBe('');
+    await component.confirmPayment();expect(collect).toHaveBeenCalledWith('course:1',25,'Online','preview-hash');expect(component.paymentError()).toBe('');
   });
 });

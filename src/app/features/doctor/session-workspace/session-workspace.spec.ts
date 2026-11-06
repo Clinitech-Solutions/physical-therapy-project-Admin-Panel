@@ -10,7 +10,7 @@ import {
   provideRouter,
 } from "@angular/router";
 import { TranslateModule } from "@ngx-translate/core";
-import { of } from "rxjs";
+import { of, BehaviorSubject } from "rxjs";
 import { SessionWorkspace } from "./session-workspace";
 import { DoctorPatientWorkspace } from "../../../core/models/doctor-workspace.model";
 import { environment } from "../../../../environments/environment";
@@ -71,7 +71,9 @@ export const workspace: DoctorPatientWorkspace = {
 };
 describe("Persisted Doctor notes and explicit finalization", () => {
   let c: SessionWorkspace, http: HttpTestingController;
+  let section: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
   beforeEach(async () => {
+    section = new BehaviorSubject(convertToParamMap({}));
     TestBed.configureTestingModule({
       imports: [TranslateModule.forRoot()],
       providers: [
@@ -82,6 +84,7 @@ describe("Persisted Doctor notes and explicit finalization", () => {
           provide: ActivatedRoute,
           useValue: {
             paramMap: of(convertToParamMap({ appointmentId: "10" })),
+            queryParamMap: section,
           },
         },
       ],
@@ -107,6 +110,15 @@ describe("Persisted Doctor notes and explicit finalization", () => {
     await loading;
     expect(c.data()).toBeNull();
     expect(c.error()).toBeTruthy();
+  });
+  it('opens the Senior Review tab on same-patient query navigation without discarding clinical text', () => {
+    c.draft.progressNotes = 'Unsaved clinical text';
+    section.next(convertToParamMap({section:'REASSESSMENT'}));
+    expect(c.tab()).toBe('REASSESSMENT');
+    expect(c.draft.progressNotes).toBe('Unsaved clinical text');
+    section.next(convertToParamMap({}));
+    expect(c.tab()).toBe('CURRENT_SESSION');
+    http.expectNone(r => r.method === 'PUT' || r.method === 'POST');
   });
   it("does not let a late autosave replace another patient's workspace", async () => {
     c.draft.progressNotes = "Old patient update";
@@ -233,5 +245,68 @@ describe("Persisted Doctor notes and explicit finalization", () => {
   it("uses the saved session number and restores the server draft on refresh", () => {
     expect(c.data()!.visit.sessionNumber).toBe(7);
     expect(c.draft.progressNotes).toBe("Saved draft");
+  });
+  it("refreshes clinical context without replacing an unsaved draft or its focus state", async () => {
+    c.draft.progressNotes = "Unsaved local clinical text";
+    c.changed();
+    const refresh = c.refreshContext();
+    const updated = structuredClone(workspace);
+    updated.plan.diagnosis = "Updated context";
+    http
+      .expectOne(environment.apiUrl + "/Doctor/appointments/10")
+      .flush(updated);
+    await refresh;
+    expect(c.draft.progressNotes).toBe("Unsaved local clinical text");
+    expect(c.dirty).toBe(true);
+    expect(c.data()!.plan.diagnosis).toBe("Updated context");
+  });
+  it("flags a concurrently finalized record during context refresh and retains local text for reconciliation", async () => {
+    c.draft.progressNotes = "Retained local text";
+    c.changed();
+    const refresh = c.refreshContext();
+    const updated = structuredClone(workspace);
+    updated.notes.version = 2;
+    updated.notes.finalizedAt = "2030-02-04T10:30:00Z";
+    http
+      .expectOne(environment.apiUrl + "/Doctor/appointments/10")
+      .flush(updated);
+    await refresh;
+    expect(c.conflict()).toBe(true);
+    expect(c.editable()).toBe(false);
+    expect(c.draft.progressNotes).toBe("Retained local text");
+  });
+  it("orders saved history newest first without deriving actual timestamps", () => {
+    const previous = {
+      sessionNumber: 1,
+      plannedAt: "2030-02-01T10:00:00Z",
+      treatmentStartedAt: null,
+      treatmentEndedAt: null,
+      authorName: null,
+      recordedAt: null,
+      progressNotes: "Saved",
+      conditionChanges: null,
+      responseToTreatment: null,
+      treatmentPerformed: null,
+    };
+    c.data.update((d) => ({
+      ...d!,
+      previousSessions: [
+        previous,
+        { ...previous, sessionNumber: 2, plannedAt: "2030-02-02T10:00:00Z" },
+      ],
+    }));
+    expect(c.history().map((p) => p.sessionNumber)).toEqual([2, 1]);
+    expect(c.clock.minutes(null)).toBeNull();
+    expect(c.history()[0].treatmentStartedAt).toBeNull();
+  });
+
+  it("ignores a queued close event from an earlier sheet after reopening", () => {
+    c.reviewDialog = { nativeElement: { open: true } } as any;
+    c.reviewOpen.set(true);
+    c.reviewClosed();
+    expect(c.reviewOpen()).toBe(true);
+    c.reviewDialog!.nativeElement.open = false;
+    c.reviewClosed();
+    expect(c.reviewOpen()).toBe(false);
   });
 });

@@ -21,13 +21,14 @@ export const routes: Routes = [
       { path: 'receptionist/schedule', providers: receptionProviders, loadComponent: () => import('./features/receptionist/schedule/schedule').then(m => m.ScheduleComponent), canActivate: [roleGuard], data: { roles: ['Receptionist', 'Ceo'] } },
       { path: 'receptionist/rooms', providers: receptionProviders, loadComponent: () => import('./features/receptionist/rooms/rooms').then(m => m.RoomsComponent), canActivate: [roleGuard], data: { roles: ['Receptionist', 'Ceo'] } },
       { path: 'receptionist/insurance', providers: receptionProviders, loadComponent: () => import('./features/receptionist/insurance/insurance').then(m => m.InsuranceComponent), canActivate: [roleGuard], data: { roles: ['Receptionist', 'Ceo'] } },
-      { path: 'receptionist/billing', providers: receptionProviders, loadComponent: () => import('./features/receptionist/billing/billing').then(m => m.BillingComponent), canActivate: [roleGuard], data: { roles: ['Receptionist', 'Ceo'] } },
+      { path: 'receptionist/billing', providers: receptionProviders, loadComponent: () => import('./features/receptionist/billing/billing').then(m => m.BillingComponent), canActivate: [roleGuard], data: { roles: ['Receptionist', 'Ceo', 'Owner'] } },
       
       // ── Senior Therapist Routes ──
       { path: 'senior/dashboard', loadComponent: () => import('./features/senior/live-dashboard/live-dashboard').then(m => m.LiveDashboard), canActivate: [roleGuard], data: { roles: ['Senior', 'Ceo'] } },
       { path: 'senior/assessment-form', loadComponent: () => import('./features/senior/assessment-form/assessment-form').then(m => m.AssessmentForm), canActivate: [roleGuard], data: { roles: ['Senior', 'Ceo'] } },
       { path: 'senior/re-assessment-form', loadComponent: () => import('./features/senior/re-assessment-form/re-assessment-form').then(m => m.ReAssessmentForm), canActivate: [roleGuard], data: { roles: ['Senior', 'Ceo'] } },
       { path: 'senior/absence-coverage', loadComponent: () => import('./features/senior/absence-coverage/absence-coverage').then(m => m.AbsenceCoverage), canActivate: [roleGuard], data: { roles: ['Senior', 'Ceo'] } },
+      { path: 'senior/session-notes/:appointmentId', loadComponent: () => import('./features/doctor/session-workspace/session-workspace').then(m => m.SessionWorkspace), canActivate: [roleGuard], canDeactivate: [(component: {canLeave:()=>boolean}) => component.canLeave()], data: { roles: ['Senior', 'Ceo'] } },
       
       // ── Doctor Routes ──
       { path: 'doctor', redirectTo: 'doctor/dashboard', pathMatch: 'full' },
@@ -39,7 +40,9 @@ export const routes: Routes = [
       // ── CEO Routes ──
       { path: 'ceo', loadComponent: () => import('./features/ceo/dashboard/dashboard').then(m => m.Dashboard), canActivate: [roleGuard], data: { roles: ['Ceo'] } },
       { path: 'ceo/staff', loadComponent: () => import('./features/ceo/staff-management/staff-list/staff-list.component').then(m => m.StaffListComponent), canActivate: [roleGuard], data: { roles: ['Ceo'] } },
-      { path: 'ceo/insurance', loadComponent: () => import('./features/ceo/insurance-management/insurance-management.component').then(m => m.InsuranceManagementComponent), canActivate: [roleGuard], data: { roles: ['Ceo'] } },
+      { path: 'ceo/insurance/companies', loadComponent: () => import('./features/ceo/insurance-management/insurance-management.component').then(m => m.InsuranceManagementComponent), canActivate: [roleGuard], data: { roles: ['Ceo', 'Owner'] } },
+      { path: 'ceo/insurance/legacy-recovery', loadComponent: () => import('./features/ceo/insurance-finance/legacy-recovery').then(m => m.LegacyInsuranceRecovery), canActivate: [roleGuard], data: { roles: ['Ceo', 'Owner'] } },
+      { path: 'ceo/insurance', loadComponent: () => import('./features/ceo/insurance-finance/insurance-finance').then(m => m.InsuranceFinanceComponent), canActivate: [roleGuard], data: { roles: ['Ceo', 'Owner'] } },
     ]
   },
   { path: '**', redirectTo: 'login' }

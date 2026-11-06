@@ -7,6 +7,8 @@
 
 @if (error()) { <p class="alert alert-warning" role="alert">{{ error() }}</p> }
 @if (loading()) { <p role="status">{{ 'RECEPTIONIST.PROCESSING' | translate }}</p> }
+@if(context()?.departedAt && !context()?.completedAt){<p class="alert alert-warning" role="status" data-departed-unsigned>{{'SENIOR.DEPARTED_UNSIGNED'|translate}}. {{'SENIOR.DEPARTURE_NOT_SIGNOFF'|translate}}</p>}
+@if(context()?.completedAt){<p class="alert alert-info" role="status">{{'SENIOR.SIGNED_READ_ONLY'|translate}}</p>}
 <div class="senior-grid gap-3 align-items-start">
 
   <!-- LEFT: Form (Diagnosis & Treatment Plan) -->
@@ -39,6 +41,9 @@
               <option value="Twice a week">{{ 'SENIOR.TWICE_A_WEEK' | translate }}</option>
               <option value="Three times a week">{{ 'SENIOR.THREE_TIMES_A_WEEK' | translate }}</option>
               <option value="Once a week">{{ 'SENIOR.ONCE_A_WEEK' | translate }}</option>
+              <option value="4">{{'SENIOR.FOUR_TIMES_A_WEEK'|translate}}</option>
+              <option value="5">{{'SENIOR.FIVE_TIMES_A_WEEK'|translate}}</option>
+              <option value="6">{{'SENIOR.SIX_TIMES_A_WEEK'|translate}}</option>
             </select>
           </div>
         </div>
@@ -66,7 +71,7 @@
         </div>
 
         <div class="mt-3">
-          <button type="submit" class="btn btn-primary w-100" [disabled]="saving() || loading() || !patient()">
+          <button type="submit" class="btn btn-primary w-100" [disabled]="saving() || loading() || !patient() || !context() || !!context()?.completedAt">
             <i class="bi bi-check-circle"></i> {{ 'SENIOR.SUBMIT_ASSESSMENT' | translate }}
           </button>
         </div>

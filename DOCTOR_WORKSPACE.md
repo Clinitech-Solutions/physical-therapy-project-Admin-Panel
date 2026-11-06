@@ -1,5 +1,7 @@
 # Doctor workspace - 2026-10-31
 
+Latest responsive implementation and verification: [Doctor responsive redesign — 1 November 2026](DOCTOR_RESPONSIVE_REDESIGN.md). The implementation history below describes earlier work; the new report records the current backend checkout mismatch and verification boundaries.
+
 ## Authorized migration applied - 2026-10-31
 
 Following the user's subsequent migration request, only `20261031164400_DoctorClinicalWorkspace` was applied to freshly confirmed `db56823.public.databaseasp.net / db56823` after exact generated/reviewed SQL comparison. History, zero pending migrations and clinical schema are verified. Existing counts and financial totals remain unchanged; current-source clinical/profile/dashboard/invoice service reads pass against SQL Server. See the sibling backend's `Database/ReviewedMigrations/20261031164400_DoctorClinicalWorkspace.APPLIED.md`. This supersedes the unapplied/approval blocker below, retained as implementation history. Application processes were preserved; no shared test records, push or deployment.

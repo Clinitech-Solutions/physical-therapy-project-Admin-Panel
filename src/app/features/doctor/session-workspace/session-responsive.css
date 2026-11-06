@@ -1,0 +1,87 @@
+.session-page {
+  padding-bottom: 20px;
+}
+.treatment-action-bar {
+  position: sticky;
+  bottom: 10px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 0;
+  box-shadow: 0 -4px 20px #001d5010;
+}
+.treatment-action-bar > div {
+  flex: 1;
+}
+.treatment-action-bar strong {
+  font-size: 13px;
+}
+.treatment-action-bar small {
+  font-size: 11px;
+  margin-top: 4px;
+}
+.end-treatment {
+  background: #007f83 !important;
+  color: white !important;
+  min-width: 140px;
+}
+@media (max-width: 1199px) {
+  .session-layout {
+    grid-template-columns: 1fr;
+  }
+  .clinical-context {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 12px;
+  }
+  .clinical-note-grid textarea {
+    min-height: 125px;
+  }
+  .patient-heading {
+    flex-wrap: wrap;
+  }
+  .patient-heading .review-trigger {
+    margin-inline-start: auto;
+  }
+  .note-preview {
+    max-width: 550px;
+  }
+}
+
+.clinical-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.clinical-tabs button {
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  padding: 10px 14px;
+  min-height: 44px;
+  border-bottom: 2px solid transparent;
+}
+.clinical-tabs button.active {
+  color: var(--clinical-teal);
+  border-color: var(--clinical-teal);
+}
+.historical-label {
+  font-size: 13px;
+  padding: 8px 0;
+}
+.clinical-empty {
+  padding: 25px;
+  text-align: center;
+}
+.mobile-progress-completed {
+  display: none !important;
+}
+.plan-counts {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  margin-bottom: 16px;
+  color: var(--text-secondary);
+}

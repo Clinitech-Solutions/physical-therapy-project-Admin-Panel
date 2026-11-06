@@ -1,5 +1,12 @@
-import { ReceptionWarnings } from '../../../core/services/reception-warnings';
-import { Component, computed, inject, OnInit, signal } from "@angular/core";
+import { ReceptionWarnings } from "../../../core/services/reception-warnings";
+import {
+  Component,
+  computed,
+  inject,
+  OnInit,
+  signal,
+  DestroyRef,
+} from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { Router, RouterLink } from "@angular/router";
@@ -15,17 +22,76 @@ import {
   DoctorVisit,
   TreatmentState,
 } from "../../../core/models/doctor-workspace.model";
+import { PatientAvatar } from "../patient-avatar";
+import { ClinicalClock } from "../clinical-clock";
+import { AuthService } from "../../../core/services/auth";
+import { ReassessmentRequest } from "../../../core/models/doctor-workspace.model";
 import { ClinicalLocale } from "../../../shared/clinical-locale";
+import { ReassessmentOutcome } from "../../../shared/components/reassessment-outcome/reassessment-outcome";
 
 @Component({
   selector: "app-doctor-dashboard",
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, TranslateModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterLink,
+    TranslateModule,
+    PatientAvatar,
+    ReassessmentOutcome,
+  ],
   templateUrl: "./dashboard.html",
-  styleUrl: "../doctor-workspace.css",
+  styleUrls: [
+    "../doctor-presentation.css",
+    "./dashboard.css",
+    "./dashboard-responsive.css",
+  ],
+  providers: [ClinicalClock],
 })
 export class Dashboard implements OnInit {
-  private warnings=inject(ReceptionWarnings,{optional:true}) ?? new ReceptionWarnings();
+  private warnings =
+    inject(ReceptionWarnings, { optional: true }) ?? new ReceptionWarnings();
+  readonly clock = inject(ClinicalClock);
+  readonly auth = inject(AuthService);
+  readonly view = signal("today");
+  readonly completedOnly = signal(false);
+  readonly reviews = signal<ReassessmentRequest[] | null>(null);
+  readonly reviewsError = signal("");
+  readonly reviewsLoading = signal(false);
+  readonly groups = computed(() => [
+    {
+      key: "TREATING_GROUP",
+      rows: this.visible().filter((a) => a.state === "Treating"),
+    },
+    {
+      key: "WAITING",
+      rows: this.visible().filter((a) => a.state === "Arrived"),
+    },
+    {
+      key: "UPCOMING",
+      rows: this.visible().filter((a) => a.state === "Scheduled"),
+    },
+    {
+      key: "COMPLETED",
+      rows: this.visible().filter((a) => this.isComplete(a)),
+    },
+    {
+      key: "OTHER_APPOINTMENTS",
+      rows: this.visible().filter((a) =>
+        ["Cancelled", "NoShow"].includes(a.state),
+      ),
+    },
+  ]);
+  readonly upNext = computed(() =>
+    (this.data()?.appointments ?? [])
+      .filter((a) => ["Arrived", "Scheduled"].includes(a.state))
+      .slice(0, 2),
+  );
+  readonly pendingReviews = computed(
+    () =>
+      this.reviews()?.filter((r) => ["Requested", "InReview"].includes(r.state))
+        .length,
+  );
   readonly api = inject(DoctorWorkspaceService);
   private router = inject(Router);
   private translate = inject(TranslateService);
@@ -39,6 +105,7 @@ export class Dashboard implements OnInit {
   search = signal("");
   filter = signal<TreatmentState | "">("");
   private generation = 0;
+  private destroy = inject(DestroyRef);
   readonly states: TreatmentState[] = [
     "Scheduled",
     "Arrived",
@@ -51,13 +118,17 @@ export class Dashboard implements OnInit {
   ];
   readonly visible = computed(
     () =>
-      this.data()?.appointments.filter(
-        (a) =>
-          (!this.filter() || a.state === this.filter()) &&
-          a.patientName
-            .toLocaleLowerCase()
-            .includes(this.search().toLocaleLowerCase().trim()),
-      ) ?? [],
+      this.data()
+        ?.appointments.slice()
+        .sort((a, b) => Date.parse(a.plannedStart) - Date.parse(b.plannedStart))
+        .filter(
+          (a) =>
+            (!this.filter() || a.state === this.filter()) &&
+            (!this.completedOnly() || this.isComplete(a)) &&
+            (a.patientName + " " + (a.phone ?? ""))
+              .toLocaleLowerCase()
+              .includes(this.search().toLocaleLowerCase().trim()),
+        ) ?? [],
   );
   readonly counts = computed(() => {
     const rows = this.data()?.appointments ?? [];
@@ -73,6 +144,11 @@ export class Dashboard implements OnInit {
   });
   ngOnInit() {
     void this.load();
+    void this.loadReviews();
+    const timer = setInterval(() => {
+      if (document.visibilityState === "visible") void this.loadReviews();
+    }, 30000);
+    this.destroy.onDestroy(() => clearInterval(timer));
   }
   async load() {
     const generation = ++this.generation;
@@ -85,7 +161,8 @@ export class Dashboard implements OnInit {
     } catch (e) {
       if (generation === this.generation) {
         this.data.set(null);
-        this.error.set(clinicalError(e, this.translate)); this.warnings.show(this.error());
+        this.error.set(clinicalError(e, this.translate));
+        this.warnings.show(this.error());
       }
     } finally {
       if (generation === this.generation) this.loading.set(false);
@@ -97,8 +174,44 @@ export class Dashboard implements OnInit {
     this.date.set(day.toISOString().slice(0, 10));
     void this.load();
   }
+  today() {
+    this.date.set(clinicDate());
+    void this.load();
+  }
+  atCapacity(visit?: DoctorVisit) {
+    return (
+      (this.data()?.activeTreatments.filter(
+        (active) => !visit || active.doctorId === visit.doctorId,
+      ).length ?? 0) >= 2
+    );
+  }
+  isComplete(a: DoctorVisit) {
+    return ["TreatmentFinished", "Departed", "LegacyCompleted"].includes(
+      a.state,
+    );
+  }
+  actionLabel(a: DoctorVisit) {
+    return a.state === "Treating"
+      ? "CONTINUE_SESSION"
+      : this.isComplete(a)
+        ? "VIEW_NOTES"
+        : "OPEN_PATIENT";
+  }
+  async loadReviews() {
+    if (this.reviewsLoading()) return;
+    this.reviewsLoading.set(true);
+    this.reviewsError.set("");
+    try {
+      this.reviews.set(await firstValueFrom(this.api.requests()));
+    } catch (e) {
+      this.reviews.set(null);
+      this.reviewsError.set(clinicalError(e, this.translate));
+    } finally {
+      this.reviewsLoading.set(false);
+    }
+  }
   async start(a: DoctorVisit) {
-    if (this.busy() !== null) return;
+    if (this.busy() !== null || this.atCapacity(a)) return;
     this.busy.set(a.appointmentId);
     this.error.set("");
     this.shortfall.set(null);
@@ -106,7 +219,8 @@ export class Dashboard implements OnInit {
       await firstValueFrom(this.api.start(a.appointmentId));
       await this.router.navigate(["/doctor/session-notes", a.appointmentId]);
     } catch (e) {
-      this.error.set(clinicalError(e, this.translate)); this.warnings.show(this.error());
+      this.error.set(clinicalError(e, this.translate));
+      this.warnings.show(this.error());
       const details = (
         e as { error?: { details?: { additionalPaymentRequired?: number } } }
       )?.error?.details;

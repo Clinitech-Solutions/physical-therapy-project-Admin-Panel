@@ -1,201 +1,315 @@
-<section class="clinical-page">
-  <header class="clinical-heading">
-    <div>
-      <h1>{{'DOCTOR.REASSESSMENT'|translate}}</h1>
-      <p>{{'DOCTOR.REVIEW_NO_FINANCE'|translate}}</p>
+<section class="senior-review-page">
+  <a
+    class="review-back"
+    [routerLink]="backOrigin() === 'queue' ? '/senior/re-assessment-form' : '/senior/dashboard'"
+    [queryParams]="backParams()"
+    ><i class="bi bi-arrow-left" aria-hidden="true"></i>{{
+    'SENIOR_REVIEW.BACK_TO_TASKS' | translate }}</a
+  >
+  @if(!id){
+  <h1>{{ 'DOCTOR.REASSESSMENT_QUEUE' | translate }}</h1>
+  <app-reassessment-queue [review]="true" origin="queue" />
+  } @if(loading()){
+  <p class="review-state" role="status">{{ 'DOCTOR.LOADING' | translate }}</p>
+  } @if(error()){
+  <div class="review-error" role="alert">
+    {{ error() }}
+    <button
+      type="button"
+      class="btn btn-outline-secondary"
+      [disabled]="busy()"
+      (click)="load()"
+    >
+      {{ 'DOCTOR.REVIEW_LATEST' | translate }}
+    </button>
+  </div>
+  } @if(!loading() && data(); as r){
+  <header class="review-header">
+    <app-patient-avatar [name]="r.patientName" />
+    <div class="review-identity">
+      <h1>{{ r.patientName }}</h1>
+      <p>
+        {{ r.requestedBy }} <span aria-hidden="true">&middot;</span>
+        <time [attr.datetime]="r.requestedAt"
+          >{{ locale.date(r.requestedAt,true) }}</time
+        >
+      </p>
     </div>
-    <a class="btn btn-outline-secondary" routerLink="/senior/dashboard"
-      >{{'DOCTOR.BACK'|translate}}</a
+    <span class="review-status" [attr.data-state]="r.state"
+      >{{ 'DOCTOR.REVIEW_STATES.'+r.state | translate }}</span
     >
   </header>
-  @if(!id){<app-reassessment-queue [review]="true" />} @if(loading()){
-  <p role="status">{{'DOCTOR.LOADING'|translate}}</p>
-  } @if(error()){
-  <p class="clinical-alert" role="alert">
-    {{error()}}
-    <button type="button" class="btn btn-outline-secondary" (click)="load()">
-      {{'DOCTOR.REVIEW_LATEST'|translate}}
-    </button>
+  <p class="internal-note">
+    <i class="bi bi-shield-check" aria-hidden="true"></i>{{
+    'SENIOR_REVIEW.INTERNAL_REVIEW' | translate }}
   </p>
-  } @if(data();as r){
-  <section class="clinical-card">
-    <div class="clinical-heading">
-      <div>
-        <h2>{{r.patientName}}</h2>
-        <p>{{r.requestedBy}} &middot; {{locale.date(r.requestedAt,true)}}</p>
-      </div>
-      <span class="clinical-badge"
-        >{{'DOCTOR.REVIEW_STATES.'+r.state|translate}}</span
-      >
-    </div>
-    <p>{{'DOCTOR.REASONS.'+r.reasonCategory|translate}}</p>
-    <p class="preserve-lines">{{r.notes}}</p>
-    <p>
-      {{'DOCTOR.RECOMMENDATIONS.'+r.recommendation|translate}} &middot;
-      {{'DOCTOR.RECOMMENDATION_ONLY'|translate}}
-    </p>
-    @if(r.state==='Requested'){<button
-      class="btn btn-primary"
-      type="button"
-      data-start-review
-      [disabled]="busy()"
-      (click)="start()"
-    >
-      {{'DOCTOR.START_REVIEW'|translate}}</button
-    >} @if(r.reviewStartedAt){
-    <p>
-      {{'DOCTOR.REVIEW_STARTED'|translate}}: {{r.seniorName}} &middot;
-      {{locale.date(r.reviewStartedAt,true)}}
-    </p>
-    } @if(r.cancellationReason){
-    <p>{{'DOCTOR.CANCELLATION_REASON'|translate}}: {{r.cancellationReason}}</p>
-    }
-  </section>
-  <section class="clinical-card">
-    <h2>{{'DOCTOR.CURRENT_PLAN'|translate}}</h2>
-    <p>{{'DOCTOR.DIAGNOSIS'|translate}}: {{r.diagnosis}}</p>
-    <p>
-      {{r.treatmentType}} &middot; {{r.completedSessions}} / {{r.prescribedSessions}}
-      {{'DOCTOR.COMPLETED'|translate}} &middot; {{r.doctorName}}
-    </p>
-    <p class="preserve-lines">
-      {{r.exercises||('DOCTOR.NOT_RECORDED'|translate)}}
-    </p>
-    <details>
-      <summary>{{'DOCTOR.PREVIOUS_SESSIONS'|translate}}</summary>
-      @for(note of r.previousSessions;track $index){
-      <article class="review-history">
-        <strong>{{'DOCTOR.SESSION'|translate}} {{note.sessionNumber}}</strong>
-        <p>
-          {{note.authorName||('DOCTOR.NOT_RECORDED'|translate)}} &middot;
-          {{locale.date(note.recordedAt,true)}}
-        </p>
-        <p class="preserve-lines">
-          {{note.progressNotes||('DOCTOR.NOT_RECORDED'|translate)}}
-        </p>
-      </article>
-      }@empty{
-      <p>{{'DOCTOR.NO_PREVIOUS_SESSIONS'|translate}}</p>
-      }
-    </details>
-  </section>
-  @if(r.state==='InReview'||r.state==='Completed'){
-  <form class="clinical-card review-form" (ngSubmit)="submit()">
-    <h2>{{'DOCTOR.CLINICAL_REVIEW'|translate}}</h2>
-    <fieldset [disabled]="busy()||r.state==='Completed'||!!completionIntent">
-      <label for="senior-review-notes"
-        >{{'DOCTOR.CLINICAL_NOTES'|translate}}<textarea
-          id="senior-review-notes"
-          name="notes"
-          rows="5"
-          maxlength="10000"
-          required
-          [(ngModel)]="notes"
-        ></textarea></label
-      ><label for="senior-review-decision"
-        >{{'DOCTOR.CLINICAL_DECISION'|translate}}<select
-          id="senior-review-decision"
-          name="decision"
-          [(ngModel)]="decision"
-          (ngModelChange)="decision==='Revise'&&loadClinicians()"
-        >
-          <option value="Continue">
-            {{'DOCTOR.DECISIONS.Continue'|translate}}
-          </option>
-          <option value="Revise">
-            {{'DOCTOR.DECISIONS.Revise'|translate}}
-          </option>
-          <option value="Discharge">
-            {{'DOCTOR.DECISIONS.Discharge'|translate}}
-          </option>
-        </select></label
-      >
-      @if(decision==='Revise'){
-      <div class="review-fields">
-        <label
-          >{{'DOCTOR.DIAGNOSIS'|translate}}<input
-            name="diagnosis"
-            required
-            [(ngModel)]="diagnosis" /></label
-        ><label
-          >{{'DOCTOR.ASSIGNED_CLINICIAN'|translate}}<select
-            name="doctor"
-            required
-            [(ngModel)]="doctorId"
+  <div class="review-layout">
+    <div class="review-main">
+      <section class="review-card request-card">
+        <div class="review-card-heading">
+          <h2>{{ 'SENIOR_REVIEW.REVIEW_REQUEST' | translate }}</h2>
+          <span class="reason-label"
+            >{{ 'DOCTOR.REASONS.'+r.reasonCategory | translate }}</span
           >
-            @for(d of clinicians();track d.id){
-            <option [value]="d.id">{{d.name}}</option>
+        </div>
+        <p class="request-notes preserve-lines">{{ r.notes }}</p>
+        <div
+          class="recommendation"
+          [class.pause]="r.recommendation === 'Pause'"
+        >
+          <i
+            class="bi"
+            [class.bi-pause-circle]="r.recommendation === 'Pause'"
+            [class.bi-arrow-right-circle]="r.recommendation !== 'Pause'"
+            aria-hidden="true"
+          ></i>
+          <div>
+            <strong
+              >{{ (r.recommendation === 'Pause' ? 'SENIOR_REVIEW.DOCTOR_PAUSE' :
+              'SENIOR_REVIEW.DOCTOR_CONTINUE') | translate }}</strong
+            >@if(r.recommendation === 'Pause'){
+            <p>{{ 'DOCTOR.RECOMMENDATION_ONLY' | translate }}</p>
             }
-          </select></label
-        ><label
-          >{{'DOCTOR.PRESCRIBED'|translate}}<input
-            type="number"
-            name="count"
-            min="1"
-            max="200"
-            required
-            [(ngModel)]="count" /></label
-        ><label
-          >{{'DOCTOR.PER_WEEK'|translate}}<input
-            type="number"
-            name="frequency"
-            min="1"
-            max="7"
-            required
-            [(ngModel)]="frequency" /></label
-        ><label
-          >{{'DOCTOR.TREATMENT_PLAN'|translate}}<input
-            name="treatment"
-            required
-            [(ngModel)]="treatmentType" /></label
-        ><label
-          >{{'DOCTOR.EXERCISES'|translate}}<textarea
-            name="exercises"
-            rows="3"
-            [(ngModel)]="exercises"
+          </div>
+        </div>
+        @if(r.state === 'Requested' && canAct()) {
+        <div class="review-actions">
+          <button
+            class="btn btn-primary"
+            type="button"
+            data-start-review
+            [disabled]="busy()"
+            (click)="start()"
+          >
+            {{ 'SENIOR_REVIEW.START_REVIEW' | translate }}
+          </button>
+        </div>
+        }
+      </section>
+      @if(r.state === 'InReview' && canAct()) {
+      <form class="review-card review-form" (ngSubmit)="submit()">
+        <h2>{{'SENIOR_REVIEW.CLINICAL_OUTCOME'|translate}}</h2>
+        <fieldset [disabled]="busy()||!!completionIntent">
+          <label for="senior-review-notes"
+            >{{'DOCTOR.CLINICAL_NOTES'|translate}}<textarea
+              id="senior-review-notes"
+              name="notes"
+              rows="5"
+              maxlength="10000"
+              required
+              [(ngModel)]="notes"
+            ></textarea></label
+          ><label for="senior-review-decision"
+            >{{'DOCTOR.CLINICAL_DECISION'|translate}}<select
+              id="senior-review-decision"
+              name="decision"
+              [(ngModel)]="decision"
+              (ngModelChange)="decision==='Revise'&&loadClinicians()"
+            >
+              <option value="Continue">
+                {{'DOCTOR.DECISIONS.Continue'|translate}}
+              </option>
+              <option value="Revise">
+                {{'DOCTOR.DECISIONS.Revise'|translate}}
+              </option>
+              <option value="Discharge">
+                {{'DOCTOR.DECISIONS.Discharge'|translate}}
+              </option>
+            </select></label
+          >
+          @if(decision==='Revise'){
+          <div class="review-fields">
+            <label
+              >{{'DOCTOR.DIAGNOSIS'|translate}}<input
+                name="diagnosis"
+                required
+                [(ngModel)]="diagnosis" /></label
+            ><label
+              >{{'DOCTOR.ASSIGNED_CLINICIAN'|translate}}<select
+                name="doctor"
+                required
+                [(ngModel)]="doctorId"
+              >
+                @for(d of clinicians();track d.id){
+                <option [value]="d.id">{{d.name}}</option>
+                }
+              </select></label
+            ><label
+              >{{'DOCTOR.PRESCRIBED'|translate}}<input
+                type="number"
+                name="count"
+                min="1"
+                max="200"
+                required
+                [(ngModel)]="count" /></label
+            ><label
+              >{{'DOCTOR.PER_WEEK'|translate}}<input
+                type="number"
+                name="frequency"
+                min="1"
+                max="7"
+                required
+                [(ngModel)]="frequency" /></label
+            ><label
+              >{{'DOCTOR.TREATMENT_PLAN'|translate}}<input
+                name="treatment"
+                required
+                [(ngModel)]="treatmentType" /></label
+            ><label
+              >{{'DOCTOR.EXERCISES'|translate}}<textarea
+                name="exercises"
+                rows="3"
+                [(ngModel)]="exercises"
+              ></textarea>
+            </label>
+          </div>
+          }
+        </fieldset>
+        @if(clinicianError()){
+        <p role="alert">
+          {{clinicianError()}}<button
+            type="button"
+            class="btn btn-outline-secondary"
+            (click)="loadClinicians()"
+          >
+            {{'DOCTOR.RETRY'|translate}}
+          </button>
+        </p>
+        } @if(decision!=='Continue'){
+        <p class="clinical-alert">
+          {{'DOCTOR.BOOKING_REVIEW_REQUIRED'|translate}}
+        </p>
+        }
+        <button
+          class="btn btn-primary"
+          type="submit"
+          data-complete-review
+          [disabled]="busy()||!notes.trim()||decision==='Revise'&&(!diagnosis.trim()||!doctorId||!treatmentType.trim()||count<1||count>200||frequency<1||frequency>7||!!clinicianError())"
+        >
+          {{(completionIntent?'DOCTOR.RETRY_COMPLETION':'SENIOR_REVIEW.COMPLETE_REVIEW')|translate}}
+        </button>
+      </form>
+      <details class="review-card cancellation">
+        <summary>{{ 'DOCTOR.CANCEL_REVIEW' | translate }}</summary>
+        <label
+          >{{ 'DOCTOR.CANCELLATION_REASON' | translate }}<textarea
+            rows="2"
+            maxlength="1000"
+            [(ngModel)]="cancelReason"
           ></textarea>
         </label>
-      </div>
+        <button
+          class="btn btn-outline-secondary"
+          type="button"
+          [disabled]="busy() || !cancelReason.trim()"
+          (click)="cancel()"
+        >
+          {{ 'DOCTOR.CANCEL_REVIEW' | translate }}
+        </button>
+      </details>
+
+      } @if(r.state === 'Completed'){
+      <section class="review-card outcome-report">
+        <app-reassessment-outcome [request]="r" />
+      </section>
+      } @if(r.state === 'Cancelled' && r.cancellationReason){
+      <section class="review-card">
+        <h2>{{ 'DOCTOR.CANCELLATION_REASON' | translate }}</h2>
+        <p class="preserve-lines">{{ r.cancellationReason }}</p>
+        @if(r.resolvedAt){
+        <p class="review-meta">
+          {{ r.resolvedBy }} &middot; {{ locale.date(r.resolvedAt,true) }}
+        </p>
+        }
+      </section>
+      } @if(r.state === 'InReview' && !canAct()){
+      <p class="review-state">
+        {{ 'DOCTOR.REVIEW_STATES.InReview' | translate }} @if(r.seniorName){
+        &middot; {{r.seniorName}} }
+      </p>
       }
-    </fieldset>
-    @if(clinicianError()){
-    <p role="alert">
-      {{clinicianError()}}<button
-        type="button"
-        class="btn btn-outline-secondary"
-        (click)="loadClinicians()"
-      >
-        {{'DOCTOR.RETRY'|translate}}
-      </button>
-    </p>
-    } @if(decision!=='Continue'){
-    <p class="clinical-alert">{{'DOCTOR.BOOKING_REVIEW_REQUIRED'|translate}}</p>
-    } @if(r.state==='InReview'){<button
-      class="btn btn-primary"
-      type="submit"
-      data-complete-review
-      [disabled]="busy()||!notes.trim()||decision==='Revise'&&(!diagnosis.trim()||!doctorId||!treatmentType.trim()||count<1||count>200||frequency<1||frequency>7||!!clinicianError())"
-    >
-      {{(completionIntent?'DOCTOR.RETRY_COMPLETION':'DOCTOR.COMPLETE_REVIEW')|translate}}</button
-    >}
-  </form>
-  } @if(r.state==='InReview'){
-  <details class="clinical-card">
-    <summary>{{'DOCTOR.CANCEL_REVIEW'|translate}}</summary>
-    <label
-      >{{'DOCTOR.CANCELLATION_REASON'|translate}}<textarea
-        rows="2"
-        maxlength="1000"
-        [(ngModel)]="cancelReason"
-      ></textarea></label
-    ><button
-      class="btn btn-outline-secondary"
-      type="button"
-      [disabled]="busy()||!cancelReason.trim()"
-      (click)="cancel()"
-    >
-      {{'DOCTOR.CANCEL_REVIEW'|translate}}
-    </button>
-  </details>
-  } }
+    </div>
+    <aside class="review-context">
+      <section class="review-card plan-card">
+        <h2>{{ 'SENIOR_REVIEW.CURRENT_PLAN' | translate }}</h2>
+        <dl class="plan-values">
+          <dt>{{ 'DOCTOR.DIAGNOSIS' | translate }}</dt>
+          <dd>{{ r.diagnosis }}</dd>
+          <dt>{{ 'DOCTOR.ASSIGNED_CLINICIAN' | translate }}</dt>
+          <dd>{{ r.doctorName }}</dd>
+          <dt>{{ 'DOCTOR.TREATMENT_PLAN' | translate }}</dt>
+          <dd>{{ r.treatmentType }}</dd>
+        </dl>
+        <div class="plan-progress">
+          <span
+            >{{ 'SENIOR_REVIEW.COMPLETION_PROGRESS' |
+            translate:{completed:r.completedSessions,total:r.prescribedSessions}
+            }}</span
+          ><progress
+            [value]="r.completedSessions"
+            [max]="r.prescribedSessions || 1"
+            [attr.aria-label]="'SENIOR_REVIEW.COMPLETION_PROGRESS' | translate:{completed:r.completedSessions,total:r.prescribedSessions}"
+          ></progress>
+        </div>
+        <h3>{{ 'DOCTOR.EXERCISES' | translate }}</h3>
+        @if(r.exercises){
+        <p class="preserve-lines instructions">{{ r.exercises }}</p>
+        }@else{
+        <p class="review-meta">
+          {{ 'SENIOR_REVIEW.NO_INSTRUCTIONS' | translate }}
+        </p>
+        }
+      </section>
+      <section class="review-card previous-sessions">
+        <h2>{{ 'DOCTOR.PREVIOUS_SESSIONS' | translate }}</h2>
+        @for(note of r.previousSessions; track $index){
+        <details class="previous-session">
+          <summary>
+            <div>
+              <strong
+                >{{ 'DOCTOR.SESSION' | translate }} {{ note.sessionNumber
+                }}</strong
+              >@if(note.plannedAt || note.recordedAt){<small
+                >{{ locale.date(note.plannedAt || note.recordedAt,true)
+                }}</small
+              >}
+            </div>
+            @if(note.treatmentEndedAt){<span
+              class="review-status"
+              data-state="Completed"
+              >{{ 'DOCTOR.REVIEW_STATES.Completed' | translate }}</span
+            >}<i class="bi bi-chevron-down" aria-hidden="true"></i>
+          </summary>
+          <div class="session-notes">
+            @if(note.authorName){
+            <p class="review-meta">{{ note.authorName }}</p>
+            }@if(note.recordedAt){
+            <p class="review-meta">
+              {{ 'SENIOR_REVIEW.NOTES_RECORDED' | translate }}: {{
+              locale.date(note.recordedAt,true) }}
+            </p>
+            } @if(note.progressNotes){
+            <h3>{{ 'DOCTOR.PROGRESS_NOTES' | translate }}</h3>
+            <p class="preserve-lines">{{ note.progressNotes }}</p>
+            } @if(note.conditionChanges){
+            <h3>{{ 'DOCTOR.CONDITION_CHANGES' | translate }}</h3>
+            <p class="preserve-lines">{{ note.conditionChanges }}</p>
+            } @if(note.responseToTreatment){
+            <h3>{{ 'DOCTOR.RESPONSE_TO_TREATMENT' | translate }}</h3>
+            <p class="preserve-lines">{{ note.responseToTreatment }}</p>
+            } @if(note.treatmentPerformed){
+            <h3>{{ 'DOCTOR.TREATMENT_PERFORMED' | translate }}</h3>
+            <p class="preserve-lines">{{ note.treatmentPerformed }}</p>
+            }
+          </div>
+        </details>
+        }@empty{
+        <p class="review-meta">
+          {{ 'DOCTOR.NO_PREVIOUS_SESSIONS' | translate }}
+        </p>
+        }
+      </section>
+    </aside>
+  </div>
+  }
 </section>

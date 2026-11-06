@@ -64,6 +64,7 @@ export interface CreatePaymentDto {
   invoiceId: number;
   amount: number;
   method: number;
+  expectedRemaining?: number;
 }
 @Injectable({ providedIn: "root" })
 export class BillingService {
@@ -78,10 +79,10 @@ export class BillingService {
   readonly pendingPaymentInvoices = signal<number[]>([]);
   private expectedPaid = new Map<number, number>();
   private readGeneration = 0;
-  private paymentIntents: Record<string,{amount:number;method:number;paidBefore:number}> = this.readPaymentIntents();
+  private paymentIntents: Record<string,{amount:number;method:number;paidBefore:number;expectedRemaining?:number}> = this.readPaymentIntents();
   private readPaymentIntents() { try { return JSON.parse(sessionStorage.getItem('ptcenter.pending-invoice-payment-details') ?? '{}'); } catch { return {}; } }
   paymentIntent(id:number) { return this.paymentIntents[id]; }
-  private savePaymentIntent(id:number,value:{amount:number;method:number;paidBefore:number}|null) {
+  private savePaymentIntent(id:number,value:{amount:number;method:number;paidBefore:number;expectedRemaining?:number}|null) {
     if(value)this.paymentIntents[id]=value;else delete this.paymentIntents[id];
     try{sessionStorage.setItem('ptcenter.pending-invoice-payment-details',JSON.stringify(this.paymentIntents));}catch{}
   }
@@ -355,7 +356,7 @@ export class BillingService {
           );
         const prior=this.paymentIntents[invoiceId];
         if(prior && (prior.amount!==data.amount || prior.method!==data.method)) throw new ReceptionError('FINANCE_ORIGINAL_RECEIPT_REQUIRED','Recover the original receipt details before making another collection.');
-        const intent=prior ?? {amount:data.amount,method:data.method,paidBefore:invoice.paidAmount ?? 0};
+        const intent=prior ?? {amount:data.amount,method:data.method,paidBefore:invoice.paidAmount ?? 0,expectedRemaining:data.expectedRemaining ?? invoice.remainingAmount};
         this.savePaymentIntent(invoiceId,intent);
         const wasUncertain = !!this.paymentKeys[invoiceId];
         const key = this.paymentKeys[invoiceId] ?? crypto.randomUUID();
@@ -364,6 +365,7 @@ export class BillingService {
           idempotencyKey: key,
           invoiceId,
           amount: data.amount,
+          expectedRemaining: intent.expectedRemaining ?? Math.max(0, invoice.patientAmount - intent.paidBefore),
           method: this.enumValue("paymentMethod", data.method),
         };
         return this.http.post<unknown>(`${this.url}/payments`, payload).pipe(

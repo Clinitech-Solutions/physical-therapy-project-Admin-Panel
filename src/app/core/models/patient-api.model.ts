@@ -25,6 +25,8 @@ export interface PatientResponse {
 
 export interface CreatePatientRequest {
   userName?: never;
+  email?: string | null;
+  idempotencyKey: string;
   fullName: string;
   gender: number;
   birthDate: string;

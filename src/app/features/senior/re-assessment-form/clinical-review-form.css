@@ -1,0 +1,125 @@
+.review-form fieldset {
+  display: grid;
+  gap: 16px;
+  border: 0;
+  padding: 0;
+  margin: 0 0 18px;
+  min-width: 0;
+}
+.review-form label,
+.cancellation label {
+  display: grid;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.review-form :is(input, select, textarea),
+.cancellation textarea {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: var(--text-primary);
+  background: var(--bg-card);
+  font-size: 14px;
+  font-weight: 400;
+  min-height: 42px;
+}
+.review-form textarea,
+.cancellation textarea {
+  resize: vertical;
+  line-height: 1.6;
+}
+.review-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.review-form button[type="submit"] {
+  display: block;
+  margin-inline-start: auto;
+}
+.cancellation summary {
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.cancellation[open] summary {
+  margin-bottom: 16px;
+}
+.cancellation button {
+  margin-top: 12px;
+}
+.outcome-report {
+  padding: 8px 14px;
+}
+.review-state,
+.review-error {
+  padding: 16px;
+  font-size: 14px;
+}
+.review-error {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  margin-block: 12px;
+}
+.review-error .btn {
+  margin-inline-start: 8px;
+}
+.review-back:focus-visible,
+summary:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--mq-teal);
+  outline-offset: 3px;
+}
+@media (max-width: 1000px) {
+  .review-layout {
+    grid-template-columns: 1fr;
+  }
+  .review-card {
+    padding: 18px;
+  }
+}
+@media (max-width: 600px) {
+  .review-header {
+    padding: 14px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .review-identity {
+    flex-basis: calc(100% - 58px);
+  }
+  .review-header > .review-status {
+    margin-inline-start: 54px;
+  }
+  .review-identity h1 {
+    font-size: 19px;
+  }
+  .review-identity p {
+    font-size: 12px;
+  }
+  .review-card {
+    padding: 16px;
+  }
+  .review-fields {
+    grid-template-columns: 1fr;
+  }
+  .review-actions .btn,
+  .review-form button[type="submit"] {
+    width: 100%;
+  }
+  .plan-values {
+    gap: 8px 12px;
+  }
+  .internal-note {
+    font-size: 11px;
+  }
+  .review-error .btn {
+    margin: 10px 0 0;
+  }
+  .senior-review-page {
+    padding-top: 0;
+  }
+}

@@ -1,10 +1,12 @@
 import { ReceptionWarnings } from '../../../core/services/reception-warnings';
+import { AbsenceRecovery } from '../../../shared/components/absence-recovery/absence-recovery';
+import { clinicDay } from '../../../core/services/reception-api';
 import { RoomService } from '../../../core/services/room.service';
 import { ClinicianService } from '../../../core/services/clinician.service';
 import { AppointmentWorkflowService } from '../../../core/services/appointment-workflow.service';
 import { apiError, ReceptionError } from '../../../core/services/reception-api';
 import { ReceptionistLocale, ReceptionistTextPipe } from '../../../shared/receptionist-locale';
-import { Component, signal, computed, inject, OnInit } from '@angular/core';
+import { Component, signal, computed, inject, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
@@ -41,7 +43,7 @@ export interface ScheduleRoomOption {
 @Component({
   selector: 'app-receptionist-schedule',
   standalone: true,
-  imports: [ReceptionistTextPipe,
+  imports: [ReceptionistTextPipe, AbsenceRecovery,
     CommonModule,
     RouterModule,
     TranslateModule,
@@ -58,6 +60,8 @@ export interface ScheduleRoomOption {
   styleUrls: ['./schedule.css', './schedule-timeline.css', './schedule-session-cards.css']
 })
 export class ScheduleComponent implements OnInit {
+  @ViewChild(AbsenceRecovery) absenceRecovery?: AbsenceRecovery;
+  readonly scheduleDay = clinicDay(new Date());
   private warnings=inject(ReceptionWarnings,{optional:true}) ?? new ReceptionWarnings();
   readonly locale = new ReceptionistLocale();
   messageService = inject(MessageService);
@@ -206,6 +210,7 @@ export class ScheduleComponent implements OnInit {
       const d = new Date(isoString);
       if (isNaN(d.getTime())) return isoString;
       return d.toLocaleTimeString(this.locale.language, {
+        timeZone: 'Africa/Cairo',
         hour: '2-digit',
         minute: '2-digit'
       });
@@ -219,11 +224,8 @@ export class ScheduleComponent implements OnInit {
     try {
       const d = new Date(isoString);
       if (isNaN(d.getTime())) return '08:00 AM';
-      d.setMinutes(0, 0, 0);
-      return d.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit'
-      });
+      const parts = new Intl.DateTimeFormat('en-US',{timeZone:'Africa/Cairo',hour:'2-digit',hour12:true}).formatToParts(d);
+      return `${parts.find(p=>p.type==='hour')!.value}:00 ${parts.find(p=>p.type==='dayPeriod')!.value}`;
     } catch {
       return '08:00 AM';
     }
@@ -260,7 +262,7 @@ export class ScheduleComponent implements OnInit {
   get completedCount(): number | null {
     if(this.todaySessions.some(s => this.getMappedStatus(s.status) === 'Unknown'))return null;
     const listCompleted = this.todaySessions.filter(
-      (s) => this.receptionistService.mapStatusToString(s.status) === 'Completed'
+      (s) => this.receptionistService.mapStatusToString(s.status) === 'Completed' && (s.appointmentType !== 'Assessment' || s.assessmentCompleted)
     ).length;
     return listCompleted;
   }

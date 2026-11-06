@@ -5,7 +5,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { MessageService } from 'primeng/api';
 import { firstValueFrom } from 'rxjs';
-import { BookingService } from '../../../core/services/booking.service';
+import { BookingService, AssessmentWorkspace } from '../../../core/services/booking.service';
 import { PatientService } from '../../../core/services/patient.service';
 import { BookingClinician } from '../../../core/models/booking.model';
 import { apiError, numericId } from '../../../core/services/reception-api';
@@ -27,6 +27,7 @@ export class AssessmentForm implements OnInit {
   patientId = signal(''); sessionId = signal('');
   readonly loading = signal(false); readonly saving = signal(false); readonly error = signal('');
   readonly eligibleDoctors = signal<BookingClinician[]>([]);
+  readonly context = signal<AssessmentWorkspace|null>(null);
   private generation = 0;
   form = this.fb.group({ diagnosis: ['', Validators.required], totalSessions: [1, [Validators.required, Validators.min(1), Validators.max(200)]],
     frequency: ['', Validators.required], assignedDoctorId: ['', Validators.required], exercises: [''] });
@@ -44,23 +45,30 @@ export class AssessmentForm implements OnInit {
     });
   }
   private async load() {
-    const generation = ++this.generation; this.loading.set(true); this.error.set('');
+    const generation = ++this.generation; this.loading.set(true); this.error.set(''); this.context.set(null);
     try {
       const id = numericId(this.patientId()); numericId(this.sessionId());
-      const [, clinicians] = await Promise.all([firstValueFrom(this.patients.getPatientById(id)), firstValueFrom(this.booking.clinicians(id, null, true))]);
-      if (generation === this.generation) this.eligibleDoctors.set(clinicians);
+      const [, clinicians, context] = await Promise.all([firstValueFrom(this.patients.getPatientById(id)), firstValueFrom(this.booking.clinicians(id, null, true)), firstValueFrom(this.booking.assessmentWorkspace(numericId(this.sessionId())))]);
+      if(context.patientId!==id)throw new Error('The patient does not match this assessment appointment.');
+      if (generation === this.generation) {
+        this.eligibleDoctors.set(clinicians); this.context.set(context);
+        this.form.reset({diagnosis:context.diagnosis,totalSessions:context.numberOfSessions,
+          frequency:({1:'Once a week',2:'Twice a week',3:'Three times a week',7:'Daily'} as Record<number,string>)[context.frequencyPerWeek] ?? String(context.frequencyPerWeek),
+          assignedDoctorId:context.doctorId ?? '',exercises:context.exercises ?? ''});
+        context.completedAt ? this.form.disable() : this.form.enable();
+      }
     } catch (error) { if (generation === this.generation) this.error.set(apiError(error)); }
     finally { if (generation === this.generation) this.loading.set(false); }
   }
   async submit() {
-    if (this.form.invalid || this.saving() || this.loading()) { this.form.markAllAsTouched(); return; }
+    if (this.form.invalid || this.saving() || this.loading() || !this.context() || this.context()?.completedAt) { this.form.markAllAsTouched(); return; }
     this.saving.set(true); this.error.set('');
     try {
       const value = this.form.getRawValue();
-      const frequency = ({ 'Daily': 7, 'Twice a week': 2, 'Three times a week': 3, 'Once a week': 1 } as Record<string, number>)[value.frequency ?? ''];
+      const frequency = ({ 'Daily': 7, 'Twice a week': 2, 'Three times a week': 3, 'Once a week': 1 } as Record<string, number>)[value.frequency ?? ''] ?? Number(value.frequency);
       await firstValueFrom(this.booking.completeAssessment({ appointmentId: numericId(this.sessionId()), diagnosis: value.diagnosis ?? '',
         numberOfSessions: Number(value.totalSessions), frequencyPerWeek: frequency, doctorId: value.assignedDoctorId ?? '',
-        treatmentType: 'PhysicalTherapy', exercises: value.exercises || null }));
+        treatmentType: this.context()!.treatmentType, exercises: value.exercises || null }));
       this.messages.add({ severity: 'success', summary: this.locale.text('SUCCESS', 'Success'), detail: this.locale.text('ASSESSMENT_SAVED', 'Assessment completed and treatment plan saved.') });
       await this.router.navigate(['/senior/dashboard']);
     } catch (error) { this.error.set(apiError(error)); }

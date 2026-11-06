@@ -60,6 +60,8 @@ export interface Patient {
 
 export interface NewPatient {
   userName?: string;
+  email?: string;
+  registrationKey?: string;
   nameEn: string;
   nameAr: string;
   phone: string;

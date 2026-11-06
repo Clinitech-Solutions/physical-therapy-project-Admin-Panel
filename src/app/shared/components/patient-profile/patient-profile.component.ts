@@ -158,7 +158,7 @@ export class PatientProfileComponent implements OnChanges, OnDestroy {
   }
   get activityGroups() {
     const groups = new Map<string, ProfileActivity[]>();
-    const events = [...(this.course?.activity ?? [])].sort(
+    const events = [...(this.course?.activity ?? []), ...(this.data()?.appointmentActivity ?? [])].sort(
       (a, b) => Date.parse(b.changedAt) - Date.parse(a.changedAt),
     );
     for (const event of events) {

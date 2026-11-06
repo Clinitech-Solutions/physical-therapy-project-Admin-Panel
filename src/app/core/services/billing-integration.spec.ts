@@ -98,7 +98,7 @@ describe('Reception billing and profile persistence',()=>{
     const req=http.expectOne(`${url}/Billing/payments`);const key=req.request.body.idempotencyKey;req.error(new ProgressEvent('error'));await first;
     const recreated=TestBed.runInInjectionContext(()=>new BillingService());
     recreated.invoices.set([recreated.normalizeInvoice({...invoiceFixture,paidAmount:90,remainingAmount:110})]);
-    expect(recreated.paymentIntent(11)).toEqual({amount:40,method:27,paidBefore:50});
+    expect(recreated.paymentIntent(11)).toEqual({amount:40,method:27,paidBefore:50,expectedRemaining:150});
     // A history read with no confirmed receipt permits only the original retry.
     const history=firstValueFrom(recreated.getPaymentsForInvoice(11));http.expectOne(`${url}/Billing/invoices/11/payments`).flush([]);await history;
     await expect(firstValueFrom(recreated.recordPayment({invoiceId:11,amount:41,method:27}))).rejects.toThrow('original receipt');

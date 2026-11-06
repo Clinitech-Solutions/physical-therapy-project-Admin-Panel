@@ -1,0 +1,219 @@
+.date-controls input {
+  width: 165px;
+}
+.schedule-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2.8fr) minmax(270px, 1fr);
+  gap: 14px;
+}
+.schedule-main {
+  padding: 12px;
+}
+.schedule-tools {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 4px 6px 16px;
+}
+.schedule-tools h2 {
+  margin: 0;
+  flex: 1;
+}
+.search-field {
+  position: relative;
+  max-width: 310px;
+  flex: 1.2;
+}
+.search-field i {
+  position: absolute;
+  inset-inline-start: 12px;
+  top: 15px;
+}
+.search-field input {
+  padding-inline-start: 35px;
+}
+.status-filter {
+  width: 165px;
+  font-size: 11px !important;
+  gap: 0 !important;
+}
+.schedule-table {
+  width: 100%;
+  table-layout: fixed;
+  font-size: 13px;
+}
+.schedule-table th {
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--bg-elevated);
+  padding: 12px 8px;
+}
+.schedule-table td {
+  padding: 16px 8px;
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: middle;
+  overflow-wrap: anywhere;
+}
+.schedule-table tr:last-child td {
+  border: 0;
+}
+.schedule-table th:nth-child(1) {
+  width: 13%;
+}
+.schedule-table th:nth-child(2) {
+  width: 28%;
+}
+.schedule-table th:nth-child(3) {
+  width: 22%;
+}
+.schedule-table th:nth-child(4) {
+  width: 19%;
+}
+.schedule-table th:nth-child(5) {
+  width: 18%;
+}
+.schedule-table .btn {
+  padding: 8px 10px;
+  width: 100%;
+  min-width: 0;
+}
+.schedule-table small {
+  margin-top: 4px;
+}
+.schedule-table app-patient-avatar {
+  flex-shrink: 0;
+}
+.active-patient {
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 12px;
+  margin-top: 10px;
+}
+.active-patient .btn {
+  width: 100%;
+  margin-top: 8px;
+}
+.up-next {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-color);
+  text-decoration: none;
+  color: var(--text-primary);
+}
+.up-next:last-child {
+  border: 0;
+}
+.review-summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: transparent;
+  border: 0;
+  color: var(--text-primary);
+  text-align: start;
+  width: 100%;
+  min-height: 52px;
+}
+.review-summary i {
+  font-size: 24px;
+  color: var(--clinical-link);
+}
+.review-summary span:nth-child(2) {
+  flex: 1;
+}
+.clinical-summary > div {
+  position: relative;
+  padding-inline-start: 56px;
+}
+.clinical-summary i {
+  position: absolute;
+  inset-inline-start: 0;
+  top: 3px;
+  background: var(--bg-elevated);
+  padding: 10px;
+  border-radius: 12px;
+  font-size: 23px;
+  color: var(--clinical-teal);
+}
+.capacity-hint {
+  padding: 8px 12px;
+  margin-bottom: 12px !important;
+  background: var(--bg-elevated);
+  border-radius: 8px;
+}
+.mobile-visits,
+.mobile-filter,
+.doctor-bottom-nav {
+  display: none;
+}
+.review-link {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  border-bottom: 1px solid var(--border-color);
+  padding: 14px 0;
+}
+.review-link > div {
+  flex: 1;
+}
+.patient-card {
+  padding: 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  margin: 10px 0 18px;
+}
+.patient-card .btn {
+  width: 100%;
+  margin-top: 10px;
+}
+.patient-card .clinical-badge {
+  margin: 10px 0 3px;
+}
+.card-time {
+  font-size: 14px;
+}
+.mobile-filter {
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.mobile-filter .selected {
+  background: var(--mq-teal);
+  color: white;
+}
+.doctor-bottom-nav button {
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  display: grid;
+  place-items: center;
+  gap: 3px;
+  padding: 8px;
+  min-height: 56px;
+  font-size: 12px;
+}
+.doctor-bottom-nav i {
+  font-size: 21px;
+}
+.doctor-bottom-nav .active {
+  color: var(--clinical-teal);
+  border-bottom: 3px solid var(--mq-teal);
+}
+.rail-heading .clinical-badge {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.schedule-main {
+  align-self: start;
+}
+.clinical-summary strong {
+  font-variant-numeric: tabular-nums;
+}
+
+.clinical-empty {
+  padding: 25px;
+  text-align: center;
+}
+
+.clinical-heading {
+  position: relative;
+}

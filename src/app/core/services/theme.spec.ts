@@ -1,3 +1,4 @@
+import '../../../testing/browser-media';
 import { TestBed } from "@angular/core/testing";
 
 import { ThemeService } from "./theme";

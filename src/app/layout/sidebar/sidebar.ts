@@ -25,7 +25,7 @@ const ROLE_MENU_MAP: Record<string, NavItem[]> = {
   senior: [
     { icon: 'bi bi-activity', labelKey: 'SIDEBAR.DASHBOARD', route: '/senior/dashboard' },
     { icon: 'bi bi-clipboard2-pulse', labelKey: 'SIDEBAR.ASSESSMENTS', route: '/senior/assessment-form' },
-    { icon: 'bi bi-arrow-repeat', labelKey: 'SIDEBAR.REASSESSMENTS', route: '/senior/re-assessment-form' },
+    { icon: 'bi bi-arrow-repeat', labelKey: 'DOCTOR.REASSESSMENT_QUEUE', route: '/senior/re-assessment-form' },
     { icon: 'bi bi-person-fill-slash', labelKey: 'SIDEBAR.ABSENCE_COVERAGE', route: '/senior/absence-coverage' },
   ],
   doctor: [
@@ -35,6 +35,7 @@ const ROLE_MENU_MAP: Record<string, NavItem[]> = {
     { icon: 'bi bi-grid-1x2', labelKey: 'SIDEBAR.OVERVIEW', route: '/ceo' },
     { icon: 'bi bi-person-badge', labelKey: 'SIDEBAR.STAFF', route: '/ceo/staff' },
     { icon: 'bi bi-shield-check', labelKey: 'SIDEBAR.INSURANCE', route: '/ceo/insurance' },
+    { icon: 'bi bi-receipt', labelKey: 'SIDEBAR.BILLING', route: '/receptionist/billing' },
     { icon: 'bi bi-graph-up', labelKey: 'SIDEBAR.REPORTS', route: '/ceo/reports' },
     { icon: 'ti ti-settings-2', labelKey: 'SIDEBAR.SYSTEM_SETTINGS', route: '/ceo/settings' },
   ]
@@ -70,7 +71,7 @@ export class Sidebar {
       ];
     }
     
-    return ROLE_MENU_MAP[normalizedRole] || [];
+    return ROLE_MENU_MAP[normalizedRole === 'owner' ? 'ceo' : normalizedRole] || [];
   });
 
   onMouseEnter() {

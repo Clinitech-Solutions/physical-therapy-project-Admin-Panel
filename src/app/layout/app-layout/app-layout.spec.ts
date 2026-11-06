@@ -1,3 +1,6 @@
+import '../../../testing/browser-media';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from "@angular/core/testing";
 
 import { AppLayoutComponent } from "./app-layout";
@@ -11,7 +14,7 @@ describe("AppLayoutComponent", () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [AppLayoutComponent, TranslateModule.forRoot()],
-      providers: [provideRouter([])]
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])]
     }).compileComponents();
 
     fixture = TestBed.createComponent(AppLayoutComponent);

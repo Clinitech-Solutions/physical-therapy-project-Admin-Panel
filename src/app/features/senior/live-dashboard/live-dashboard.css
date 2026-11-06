@@ -13,6 +13,8 @@
 
 .task-row {
   display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
   align-items: center;
   justify-content: space-between;
   padding: var(--space-3) var(--space-4);
@@ -20,6 +22,26 @@
   border-radius: var(--radius-md);
   transition: all var(--transition-fast);
   background: transparent;
+}
+
+.task-row > div {
+  min-width: 0;
+}
+.task-row > div:first-child {
+  flex: 1 1 220px;
+}
+.task-row > div:first-child > div:last-child {
+  min-width: 0;
+}
+.task-row > div:last-child {
+  flex-wrap: wrap;
+}
+.task-row .badge {
+  white-space: normal;
+  text-align: start;
+}
+.task-row button {
+  flex-shrink: 0;
 }
 
 .task-row:hover {
@@ -30,6 +52,7 @@
 }
 
 .task-patient-name {
+  overflow-wrap: anywhere;
   font-weight: var(--font-semibold);
   font-size: var(--text-sm);
   color: var(--text-primary);
@@ -37,6 +60,7 @@
 }
 
 .task-meta {
+  flex-wrap: wrap;
   font-size: var(--text-xs);
   color: var(--text-muted);
   display: flex;
@@ -56,22 +80,16 @@
 /* ── Doctor Workload Grid ──────────────────────────────────── */
 .doctor-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-3);
   margin-top: var(--space-3);
-}
-
-@media (max-width: 1280px) {
-  .doctor-grid {
-    grid-template-columns: 1fr;
-  }
 }
 
 .doctor-card {
   padding: var(--space-3);
   background: var(--bg-elevated);
   border-radius: var(--radius-md);
-  border-left: 3px solid var(--mq-teal);
+  border-inline-start: 3px solid var(--mq-teal);
   transition: all var(--transition-fast);
 }
 
@@ -84,6 +102,7 @@
   font-weight: var(--font-semibold);
   font-size: var(--text-sm);
   color: var(--text-primary);
+  overflow-wrap: anywhere;
 }
 
 .load-label {
@@ -123,9 +142,85 @@
   }
 }
 
-/* Collapse main grid-2 earlier for tablet readability */
+:host {
+  display: block;
+  min-width: 0;
+}
+.senior-summary {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+  margin-bottom: 20px;
+}
+.senior-summary .stat-card {
+  border-left-width: 1px;
+  border-left-color: var(--border-color);
+  border-inline-start: 4px solid var(--mq-teal);
+  padding: 20px;
+}
+.senior-summary .assessment-summary {
+  border-inline-start-color: var(--color-info);
+}
+.senior-summary .capacity-summary {
+  border-inline-start-color: var(--color-success);
+}
+.senior-summary .stat-value {
+  font-size: var(--text-3xl);
+}
+.panel-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: var(--space-3);
+}
+.panel-heading i {
+  color: var(--mq-teal);
+}
+
+.senior-task-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+.senior-task-grid > .card {
+  min-width: 0;
+}
+.task-tabs {
+  margin-bottom: var(--space-3);
+}
+.task-tabs .tab {
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  padding: 10px 12px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  min-height: 44px;
+}
+.task-tabs .tab.active {
+  border-bottom-color: var(--mq-teal);
+  color: var(--mq-teal);
+  font-weight: 600;
+}
+.task-tabs .tab:focus-visible {
+  outline: 2px solid var(--mq-teal);
+  outline-offset: -3px;
+}
+[role="tabpanel"][hidden] {
+  display: none;
+}
+.empty-state {
+  padding: 20px 12px;
+}
 @media (max-width: 1024px) {
-  :host ::ng-deep .grid-2 {
-    grid-template-columns: 1fr;
+  .senior-task-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 640px) {
+  .senior-summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .task-tabs .tab {
+    padding-inline: 8px;
+    font-size: 13px;
   }
 }

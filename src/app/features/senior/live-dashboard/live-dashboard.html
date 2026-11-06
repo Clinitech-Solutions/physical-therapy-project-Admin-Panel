@@ -1,5 +1,9 @@
-@if (error()) { <p class="alert alert-warning" role="alert">{{ error() }}</p> }
-@if (loading()) { <p role="status">{{ 'RECEPTIONIST.PROCESSING' | translate }}</p> }
+@if (error()) {
+<p class="alert alert-warning" role="alert">{{ error() }}</p>
+} @if (loading()) {
+<p role="status">{{ 'RECEPTIONIST.PROCESSING' | translate }}</p>
+}
+@if(appointmentsError()) { <p class="alert alert-warning" role="alert">{{locale.label(appointmentsError())}} <button type="button" class="btn btn-link" (click)="refreshAssessments()">{{'RECEPTIONIST.UI.RETRY'|translate}}</button></p> }
 <!-- ═══════════════════════════════════════════════════════════
      Senior Therapist — Live Dashboard
      Reactive view over ClinicStateService (Signals)
@@ -13,10 +17,8 @@
   </div>
 </div>
 
-<app-reassessment-queue [review]="true" (pendingCount)="reviewCount.set($event)" />
-
 <!-- ── KPI Row ─────────────────────────────────────────────── -->
-<div class="kpi-row">
+<div class="kpi-row senior-summary">
   <!-- Total Pending Tasks -->
   <div class="stat-card border-start-teal">
     <div class="stat-label">{{ 'SENIOR.PENDING_TASKS' | translate }}</div>
@@ -25,118 +27,199 @@
   </div>
 
   <!-- Assessments -->
-  <div class="stat-card" style="border-left-color: var(--color-info);">
+  <div class="stat-card assessment-summary">
     <div class="stat-label">{{ 'SENIOR.ASSESSMENTS' | translate }}</div>
-    <div class="stat-value">{{ assessmentCount() }}</div>
+    <div class="stat-value">{{loading() || appointmentsError() ? '—' : assessmentCount() }}</div>
     <div class="stat-sub">{{ 'SENIOR.ASSESSMENTS_SUB' | translate }}</div>
   </div>
 
   <!-- Available Doctors -->
-  <div class="stat-card" style="border-left-color: var(--color-success);">
+  <div class="stat-card capacity-summary">
     <div class="stat-label">{{ 'SENIOR.DOCTORS_AVAILABLE' | translate }}</div>
-    <div class="stat-value">{{ capacityLoading() || capacityError() ? '—' : availableDoctorsCount() }}</div>
-    <div class="stat-sub">{{ capacityLoading() || capacityError() ? '—' : busyDoctorsCount() }} {{ 'SENIOR.DOCTORS_BUSY' | translate }}</div>
+    <div class="stat-value">
+      {{ capacityLoading() || capacityError() ? '—' : availableDoctorsCount() }}
+    </div>
+    <div class="stat-sub">
+      {{ capacityLoading() || capacityError() ? '—' : busyDoctorsCount() }} {{
+      'SENIOR.DOCTORS_BUSY' | translate }}
+    </div>
   </div>
 </div>
 
 <!-- ── Main 2-Column Grid ──────────────────────────────────── -->
-<div class="grid-2 gap-6">
-
+<div class="grid-2 gap-6 senior-task-grid">
   <!-- ── LEFT: Today's Tasks (Tabbed) ─────────────────────── -->
-  <div class="card">
+  <div class="card senior-tasks">
     <div class="card-body">
-      <h4 style="margin-bottom: var(--space-3);">
-        <i class="bi bi-clipboard2-pulse" style="color: var(--mq-teal); margin-right: 8px;"></i>
+      <h4 class="panel-heading">
+        <i class="bi bi-clipboard2-pulse" aria-hidden="true"></i>
         {{ 'SENIOR.TODAYS_TASKS' | translate }}
       </h4>
 
       <!-- Tabs -->
-      <div class="tabs">
-        <div class="tab"
-             [class.active]="activeTab() === 'assessments'"
-             (click)="switchTab('assessments')">
-          {{ 'SENIOR.ASSESSMENTS' | translate }} ({{ assessmentCount() }})
-        </div>
+      <div
+        class="tabs task-tabs"
+        role="tablist"
+        [attr.aria-label]="'SENIOR.TODAYS_TASKS' | translate"
+      >
+        <button
+          type="button"
+          class="tab"
+          role="tab"
+          id="senior-task-tab-assessments"
+          aria-controls="senior-assessment-panel"
+          [attr.aria-selected]="activeTab() === 'assessments'"
+          [tabIndex]="activeTab() === 'assessments' ? 0 : -1"
+          [class.active]="activeTab() === 'assessments'"
+          (click)="switchTab('assessments')"
+          (keydown)="tabKey($event, 'assessments')"
+        >
+          {{ 'SENIOR.ASSESSMENTS' | translate }} ({{loading() || appointmentsError() ? '—' : assessmentCount() }})
+        </button>
+        <button
+          type="button"
+          class="tab"
+          role="tab"
+          id="senior-task-tab-reassessments"
+          aria-controls="senior-reassessment-panel"
+          [attr.aria-selected]="activeTab() === 'reassessments'"
+          [tabIndex]="activeTab() === 'reassessments' ? 0 : -1"
+          [class.active]="activeTab() === 'reassessments'"
+          (click)="switchTab('reassessments')"
+          (keydown)="tabKey($event, 'reassessments')"
+        >
+          {{ 'SENIOR_REVIEW.TAB' | translate }} ({{ reviewCount() ?? '—' }})
+        </button>
       </div>
-
-      <!-- Task List -->
-      <div class="task-list">
-        @if (activeTasks().length === 0) {
+      <div
+        id="senior-reassessment-panel"
+        role="tabpanel"
+        aria-labelledby="senior-task-tab-reassessments"
+        [hidden]="activeTab() !== 'reassessments'"
+      >
+        <app-reassessment-queue
+          [embedded]="true"
+          [review]="true"
+          origin="dashboard"
+          (pendingCount)="reviewCount.set($event)"
+        />
+      </div>
+      <div
+        id="senior-assessment-panel"
+        role="tabpanel"
+        aria-labelledby="senior-task-tab-assessments"
+        [hidden]="activeTab() !== 'assessments'"
+      >
+        <!-- Task List -->
+        <div class="task-list">
+          @if (activeTasks().length === 0 && !loading() && !appointmentsError()) {
           <div class="empty-state">
-            <i class="bi bi-check-circle" style="font-size: 32px; color: var(--mq-teal); opacity: 0.5;"></i>
-            <p style="color: var(--text-muted); margin-top: var(--space-2);">
-              {{ activeTab() === 'assessments' ? ('SENIOR.NO_ASSESSMENTS' | translate) : ('SENIOR.NO_REASSESSMENTS' | translate) }}
+            <i
+              class="bi bi-check-circle"
+              style="font-size: 32px; color: var(--mq-teal); opacity: 0.5"
+            ></i>
+            <p style="color: var(--text-muted); margin-top: var(--space-2)">
+              {{ activeTab() === 'assessments' ? ('SENIOR.NO_ASSESSMENTS' |
+              translate) : ('SENIOR.NO_REASSESSMENTS' | translate) }}
             </p>
           </div>
-        }
-
-        @for (task of activeTasks(); track task.sessionId) {
-          <div class="task-row">
+          } @for (task of activeTasks(); track task.sessionId) {
+          <div class="task-row" [attr.data-assessment-task]="task.sessionId">
             <div class="flex items-center gap-3">
               <div class="avatar avatar-sm">{{ task.avatarInitials }}</div>
               <div>
                 <div class="task-patient-name">{{ task.patientName }}</div>
                 <div class="task-meta">
-                  <i class="bi bi-clock"></i> {{ task.scheduledTime }}
+                  <i class="bi bi-clock"></i> {{ task.scheduledDate }} · {{ task.scheduledTime }}
                   <span class="task-meta-divider">·</span>
                   <span>{{ task.doctorName }}</span>
                   @if (task.type === 'Re-Assessment') {
-                    <span class="task-meta-divider">·</span>
-                    <span class="badge badge-info" style="font-size: 9px; padding: 1px 6px;">{{ task.sessionBadge }}</span>
+                  <span class="task-meta-divider">·</span>
+                  <span
+                    class="badge badge-info"
+                    style="font-size: 9px; padding: 1px 6px"
+                    >{{ task.sessionBadge }}</span
+                  >
                   }
                 </div>
               </div>
             </div>
             <div class="flex items-center gap-2">
-              <span class="badge" [ngClass]="getStatusBadgeClass(task.status)">{{ task.status | receptionistText }}</span>
-              <button class="btn btn-primary btn-sm" (click)="startTask(task)" [disabled]="busy()">
-                <i class="bi bi-play-fill"></i> {{ 'COMMON.START' | translate }}
+              <span class="badge" [ngClass]="getStatusBadgeClass(task.status)"
+                >{{ task.departed ? ('SENIOR.DEPARTED_UNSIGNED'|translate) : (task.status | receptionistText) }}</span
+              >
+              <button
+                class="btn btn-primary btn-sm"
+                (click)="startTask(task)"
+                [disabled]="busy()"
+              >
+                <i class="bi bi-play-fill"></i> {{ (task.arrived ? 'SENIOR.COMPLETE_UNSIGNED' : 'COMMON.START') | translate }}
               </button>
             </div>
           </div>
-        }
+          }
+        </div>
       </div>
+      <app-covered-treatments />
     </div>
   </div>
 
   <!-- ── RIGHT: Live View Capacity ────────────────────────── -->
-  <div class="card">
+  <div class="card senior-capacity">
     <div class="card-body">
-      <h4 style="margin-bottom: var(--space-3);">
-        <i class="bi bi-people-fill" style="color: var(--mq-teal); margin-right: 8px;"></i>
+      <h4 class="panel-heading">
+        <i class="bi bi-people-fill" aria-hidden="true"></i>
         {{ 'SENIOR.LIVE_VIEW_CAPACITY' | translate }}
       </h4>
 
-      @if(capacityLoading()){<p role="status">{{'DOCTOR.LOADING'|translate}}</p>}
-      @if(capacityError()){<p class="alert alert-warning" role="alert">{{locale.label(capacityError())}} <button class="btn btn-outline-secondary" (click)="refreshCapacity()">{{'DOCTOR.RETRY'|translate}}</button></p>}
-      @if(!capacityError()&&!capacityLoading()){
+      @if(capacityLoading()){
+      <p role="status">{{'DOCTOR.LOADING'|translate}}</p>
+      } @if(capacityError()){
+      <p class="alert alert-warning" role="alert">
+        {{locale.label(capacityError())}}
+        <button class="btn btn-outline-secondary" (click)="refreshCapacity()">
+          {{'DOCTOR.RETRY'|translate}}
+        </button>
+      </p>
+      } @if(!capacityError()&&!capacityLoading()){
       <div class="doctor-grid">
         @for (doctor of activeDoctorsWorkload(); track doctor.doctorId) {
-          <div class="doctor-card" [style.border-left-color]="doctor.borderColor">
-            <div class="flex justify-between items-center" style="margin-bottom: var(--space-2);">
-              <div class="doctor-name">{{ doctor.name }}</div>
-              <span class="load-label">{{ doctor.currentLoad }}/{{ doctor.maxLoad }}</span>
-            </div>
-            <div class="load-bar" [ngClass]="doctor.loadClass">
-              <div class="load-bar-fill"></div>
-            </div>
-            @if (doctor.roomId) {
-              <div class="doctor-room-tag">
-                <i class="bi bi-door-open"></i> {{ 'COMMON.ROOM' | translate }} {{ doctor.roomId }}
-              </div>
-            }
+        <div
+          class="doctor-card"
+          [style.border-inline-start-color]="doctor.borderColor"
+        >
+          <div
+            class="flex justify-between items-center"
+            style="margin-bottom: var(--space-2)"
+          >
+            <div class="doctor-name">{{ doctor.name }}</div>
+            <span class="load-label"
+              >{{ doctor.currentLoad }}/{{ doctor.maxLoad }}</span
+            >
           </div>
-        }
-
-        @if (activeDoctorsWorkload().length === 0) {
-          <div class="empty-state">
-            <i class="bi bi-person-x" style="font-size: 32px; color: var(--text-muted); opacity: 0.5;"></i>
-            <p style="color: var(--text-muted); margin-top: var(--space-2);">{{ 'SENIOR.NO_DOCTORS_AVAILABLE' | translate }}</p>
+          <div class="load-bar" [ngClass]="doctor.loadClass">
+            <div class="load-bar-fill"></div>
           </div>
+          @if (doctor.roomId) {
+          <div class="doctor-room-tag">
+            <i class="bi bi-door-open"></i> {{ 'COMMON.ROOM' | translate }} {{
+            doctor.roomId }}
+          </div>
+          }
+        </div>
+        } @if (activeDoctorsWorkload().length === 0) {
+        <div class="empty-state">
+          <i
+            class="bi bi-person-x"
+            style="font-size: 32px; color: var(--text-muted); opacity: 0.5"
+          ></i>
+          <p style="color: var(--text-muted); margin-top: var(--space-2)">
+            {{ 'SENIOR.NO_DOCTORS_AVAILABLE' | translate }}
+          </p>
+        </div>
         }
       </div>
       }
     </div>
   </div>
-
 </div>

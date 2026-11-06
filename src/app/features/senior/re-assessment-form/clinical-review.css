@@ -1,31 +1,114 @@
-.review-form fieldset {
-  display: grid;
-  gap: 16px;
-  margin-bottom: 16px;
+:host {
+  display: block;
+  color: var(--text-primary);
 }
-.review-fields {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
+.senior-review-page {
+  max-width: 1440px;
+  margin-inline: auto;
+  padding: 8px 0 28px;
+  min-width: 0;
 }
-.review-history {
-  padding: 10px 0;
-  border-bottom: 1px solid var(--border-color);
+.review-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 13px;
+  margin-bottom: 10px;
 }
-.preserve-lines {
-  white-space: pre-wrap;
+.review-back:hover {
+  color: var(--text-primary);
+}
+:host-context([dir="rtl"]) .review-back i {
+  transform: scaleX(-1);
+}
+.review-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 16px 18px;
+}
+.review-identity {
+  flex: 1;
+  min-width: 0;
+}
+.review-identity h1 {
+  margin: 0 0 4px;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.3;
   overflow-wrap: anywhere;
 }
-.review-form textarea {
-  resize: vertical;
+.review-identity p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.5;
 }
-details > summary {
-  cursor: pointer;
+.review-status {
+  display: inline-block;
+  font-size: 11px;
   font-weight: 600;
-  margin-bottom: 12px;
+  line-height: 1.5;
+  border-radius: 6px;
+  padding: 4px 8px;
+  color: var(--text-primary);
+  background: color-mix(in srgb, #147cff 10%, var(--bg-card));
+  white-space: nowrap;
 }
-@media (max-width: 700px) {
-  .review-fields {
-    grid-template-columns: 1fr;
-  }
+.review-status[data-state="Completed"] {
+  background: color-mix(in srgb, var(--mq-teal) 13%, var(--bg-card));
+}
+.review-status[data-state="InReview"] {
+  background: color-mix(in srgb, #e8a01e 14%, var(--bg-card));
+}
+.review-status[data-state="Cancelled"] {
+  background: var(--bg-elevated);
+}
+.internal-note {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  margin: 12px 2px 16px;
+}
+.internal-note i {
+  color: var(--mq-teal);
+}
+.review-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: 18px;
+  align-items: start;
+}
+.review-main,
+.review-context {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  align-content: start;
+}
+.review-card {
+  padding: 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  min-width: 0;
+}
+.review-card h2 {
+  font-size: 17px;
+  font-weight: 700;
+  margin: 0 0 16px;
+  line-height: 1.4;
+}
+.review-card h3 {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 16px 0 6px;
 }

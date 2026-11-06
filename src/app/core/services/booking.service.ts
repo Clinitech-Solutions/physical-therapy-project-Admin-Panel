@@ -19,11 +19,11 @@ export class BookingService {
   private readonly url = `${environment.apiUrl}/Bookings`;
   constructor() { this.events.changed.pipe(takeUntilDestroyed()).subscribe(() => this.contextCache.clear()); }
   readonly uncertainKey = signal<string | null>(pendingKey());
-  readonly pendingCollection = signal<{ accountKey: string; key: string; amount?: number; method?: BookingPaymentMethod } | null>(this.readCollection());
-  private readCollection(): { accountKey: string; key: string; amount?: number; method?: BookingPaymentMethod } | null {
+  readonly pendingCollection = signal<{ accountKey: string; key: string; amount?: number; method?: BookingPaymentMethod; expectedAllocationHash?: string } | null>(this.readCollection());
+  private readCollection(): { accountKey: string; key: string; amount?: number; method?: BookingPaymentMethod; expectedAllocationHash?: string } | null {
     try { return typeof sessionStorage === 'undefined' ? null : JSON.parse(sessionStorage.getItem('ptcenter.pending-collection-key') ?? 'null'); } catch { return null; }
   }
-  private setCollection(value: { accountKey: string; key: string; amount?: number; method?: BookingPaymentMethod } | null) {
+  private setCollection(value: { accountKey: string; key: string; amount?: number; method?: BookingPaymentMethod; expectedAllocationHash?: string } | null) {
     this.pendingCollection.set(value);
     try { if (typeof sessionStorage !== 'undefined') value ? sessionStorage.setItem('ptcenter.pending-collection-key', JSON.stringify(value)) : sessionStorage.removeItem('ptcenter.pending-collection-key'); } catch { /* The in-memory operation key is retained. */ }
   }
@@ -54,13 +54,13 @@ export class BookingService {
   }
   workload() { return this.http.get<BookingClinician[]>(`${this.url}/clinicians/workload`); }
   accounts() { return this.http.get<BookingAccount[]>(`${this.url}/accounts`); }
-  collectAccount(accountKey: string, amount: number, method: BookingPaymentMethod) {
+  collectAccount(accountKey: string, amount: number, method: BookingPaymentMethod, expectedAllocationHash?: string) {
     return defer(() => {
       const pending = this.pendingCollection();
       if (pending && pending.accountKey !== accountKey) throw new Error('Reconcile the pending collection first.');
       if (pending?.amount !== undefined && (pending.amount !== amount || pending.method !== method)) throw new ReceptionError('FINANCE_ORIGINAL_RECEIPT_REQUIRED','Recover the original receipt details before making another collection.');
-      const key = pending?.key ?? crypto.randomUUID(); this.setCollection({ accountKey, key, amount, method });
-      return this.http.post<BookingReceipt>(`${this.url}/accounts/${encodeURIComponent(accountKey)}/payments`, { idempotencyKey: key, amount, method }).pipe(
+      const key = pending?.key ?? crypto.randomUUID(); expectedAllocationHash=pending?.expectedAllocationHash ?? expectedAllocationHash; this.setCollection({ accountKey, key, amount, method, expectedAllocationHash });
+      return this.http.post<BookingReceipt>(`${this.url}/accounts/${encodeURIComponent(accountKey)}/payments`, { idempotencyKey: key, amount, method, ...(expectedAllocationHash ? {expectedAllocationHash} : {}) }).pipe(
         map(value => this.receipt(value)), tap(() => { this.setCollection(null); this.events.changed.next('billing'); }),
         catchError(error => {
           if (!pending && error instanceof HttpErrorResponse && !unknownOutcome(error) && !['Booking.ConcurrentChange', 'Booking.RetryKeyConflict'].includes(error.error?.title)) this.setCollection(null);
@@ -131,4 +131,13 @@ export class BookingService {
       return plan;
     }));
   }
+  assessmentWorkspace(id: number) {
+    return this.http.get<AssessmentWorkspace>(`${this.url}/assessments/appointments/${numericId(id)}`);
+  }
+}
+
+export interface AssessmentWorkspace {
+  appointmentId: number; patientId: number; startTime: string; arrivedAt: string|null; departedAt: string|null; completedAt: string|null;
+  diagnosis: string; notes: string|null; numberOfSessions: number; frequencyPerWeek: number; doctorId: string|null;
+  exercises: string|null; treatmentType: string;
 }

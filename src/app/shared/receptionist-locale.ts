@@ -9,6 +9,10 @@ export class ReceptionistLocale {
     return this.translate?.currentLang === 'ar' ? 'ar-EG' : 'en-US';
   }
 
+  money(amount: number): string {
+    return new Intl.NumberFormat(this.language, { style: 'currency', currency: 'EGP', maximumFractionDigits: 2 }).format(amount);
+  }
+
   text(key: string, fallback: string, params?: Record<string, unknown>): string {
     const path = `RECEPTIONIST.UI.${key}`;
     const result = this.translate?.instant(path, params);
@@ -46,6 +50,7 @@ export class ReceptionistLocale {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return '—';
     return date.toLocaleString(this.language, {
+      timeZone: 'Africa/Cairo',
       year: 'numeric', month: 'short', day: 'numeric',
       ...(withTime ? { hour: '2-digit', minute: '2-digit' } as const : {})
     });

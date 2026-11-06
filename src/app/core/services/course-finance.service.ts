@@ -91,7 +91,7 @@ export class CourseFinanceService {
       sessionStorage.removeItem(`ptcenter.finance.${scope}`);
     } catch {}
   }
-  private operation<T>(
+  operation<T>(
     scope: string,
     fallback: string,
     body: Record<string, number | string>,
@@ -129,6 +129,8 @@ export class CourseFinanceService {
       );
     });
   }
+  pendingCompanyFinance() { return this.pendingOperations().filter(value=>value.scope.startsWith('cheque-') || value.scope.startsWith('monthly-')); }
+  resolveOperation(scope:string,key:string) { if(this.pending(scope)?.key===key)this.finish(scope); }
   private verifiedGate(value: PaymentGate, id: number): PaymentGate {
     const amounts = [
       value?.patientPaid,
@@ -256,7 +258,7 @@ export class CourseFinanceService {
       unknownOutcome(error) ||
       ["Booking.ConcurrentChange", "Booking.RetryKeyConflict"].includes(
         error.error?.title,
-      )
+      ) || ['Insurance.ConcurrentChange','Insurance.RetryKeyConflict'].includes(error.error?.title)
     );
   }
 }
