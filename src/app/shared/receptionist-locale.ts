@@ -9,6 +9,10 @@ export class ReceptionistLocale {
     return this.translate?.currentLang === 'ar' ? 'ar-EG' : 'en-US';
   }
 
+  money(amount: number): string {
+    return new Intl.NumberFormat(this.language, { style: 'currency', currency: 'EGP', maximumFractionDigits: 2 }).format(amount);
+  }
+
   text(key: string, fallback: string, params?: Record<string, unknown>): string {
     const path = `RECEPTIONIST.UI.${key}`;
     const result = this.translate?.instant(path, params);

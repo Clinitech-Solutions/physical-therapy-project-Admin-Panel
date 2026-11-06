@@ -10,26 +10,25 @@
       @if (applied.dateBasis === 'Collection') { <div><dt>{{ t('Collected in period') }}</dt><dd>{{ money(data.totals.collectedInPeriod) }}</dd></div> }
       @else { <div><dt>{{ t('Agreed invoice amount') }}</dt><dd>{{ money(data.totals.agreed) }}</dd></div> }
     </dl>
-    @if (finance) { <dl class="finance-strip">@for (metric of [['Planned insurer liability',data.totals.insurerPlanned],['Earned insurer receivables',data.totals.insurerEarned],['Submitted claims',data.totals.claimsSubmitted],['Actual insurer receipts',data.totals.insurerReceipts],['Earned outstanding balance',data.totals.insurerEarnedOutstanding]]; track $index) { <div><dt>{{ t(''+metric[0]) }}</dt><dd>{{ money(+metric[1]) }}</dd></div> }</dl> }
+
   }
-  <form class="filters" [class.filters-collapsed]="!filtersOpen" (ngSubmit)="apply()">
-    <button type="button" class="mobile-filter-toggle subtle" [attr.aria-expanded]="filtersOpen" (click)="filtersOpen=!filtersOpen"><i class="bi bi-funnel" aria-hidden="true"></i> {{ t('Filters') }}</button>
-    <div class="core-filters">
+  <form class="filters" (ngSubmit)="apply()">
+    <div class="primary-toolbar">
       <label class="search">{{ t('Search name or phone') }}<input type="search" name="search" [(ngModel)]="draft.search" [placeholder]="t('Search name or phone')" maxlength="100"></label>
       <label>{{ t('Funding') }}<select name="funding" [(ngModel)]="draft.funding"><option value="">{{ t('All') }}</option>@for (value of ['SelfPay','Insurance']; track value) { <option [value]="value">{{ t(value) }}</option> }</select></label>
-      <div class="companies company-picker"><span id="company-picker-label">{{ t('Insurance companies') }}</span><details><summary [title]="selectedCompanies" aria-labelledby="company-picker-label">{{ selectedCompanies }}</summary><div class="company-options" role="group" [attr.aria-label]="t('Insurance companies')">@for (company of options().companies; track company.id) { <label><input type="checkbox" [value]="company.id" [checked]="draft.companyIds?.includes(+company.id)" (change)="setCompany(+company.id,$event)">{{ company.name }}</label> }</div></details></div>
-      <label>{{ t('Patient payment status') }}<select name="patientStatus" [(ngModel)]="draft.patientStatus"><option value="">{{ t('All') }}</option>@for (value of ['Unpaid','Partial','Settled','NonCollectible']; track value) { <option [value]="value">{{ t(value) }}</option> }</select></label>
-    </div>
-    <div class="date-filters">
-      <label>{{ t('Date basis') }}<select name="dateBasis" [(ngModel)]="draft.dateBasis">@for (value of ['Invoice','Service','Collection']; track value) { <option [value]="value">{{ t(value) }}</option> }</select></label>
-      <label>{{ t('From') }}<input type="date" name="from" [(ngModel)]="draft.from"></label><label>{{ t('To') }}<input type="date" name="to" [(ngModel)]="draft.to"></label>
-      <button type="button" class="subtle advanced-toggle" [attr.aria-expanded]="advanced" aria-controls="billing-advanced" (click)="toggleAdvanced()"><i class="bi bi-sliders2" aria-hidden="true"></i> {{ t('Advanced filters') }}</button>
-      <button type="button" class="subtle" (click)="clear()">{{ t('Clear filters') }}</button><button type="submit" class="primary">{{ t('Apply filters') }}</button>
+      <button type="button" class="advanced-toggle" [attr.aria-expanded]="advanced" aria-controls="billing-advanced" (click)="toggleAdvanced()"><i class="bi bi-funnel" aria-hidden="true"></i> {{ t('Filters') }} @if (chips.length) { <span class="filter-count">{{ chips.length }}</span> }</button>
+      <button type="submit" class="primary">{{ t('Apply filters') }}</button>
     </div>
     @if (advanced) {
       <dialog id="billing-advanced" class="advanced-panel" [attr.role]="mobile ? 'dialog' : 'region'" [attr.aria-modal]="mobile ? true : null" aria-labelledby="billing-advanced-title" (keydown)="filterKeys($event)" (cancel)="closeAdvanced()">
-        <header><strong id="billing-advanced-title">{{ t('Advanced filters') }}</strong><button type="button" class="subtle" (click)="closeAdvanced()">{{ t('Close') }}</button></header>
+        <header><strong id="billing-advanced-title">{{ t('Filters') }}</strong><button type="button" class="subtle" (click)="closeAdvanced()">{{ t('Close') }}</button></header>
         <div class="advanced-grid">
+          <div class="companies company-picker"><span id="company-picker-label">{{ t('Insurance companies') }}</span><details><summary [title]="selectedCompanies" aria-labelledby="company-picker-label">{{ selectedCompanies }}</summary><div class="company-options" role="group" [attr.aria-label]="t('Insurance companies')">@for (company of options().companies; track company.id) { <label><input type="checkbox" [value]="company.id" [checked]="draft.companyIds?.includes(+company.id)" (change)="setCompany(+company.id,$event)">{{ company.name }}</label> }</div></details></div>
+          <label>{{ t('Patient payment status') }}<select name="patientStatus" [(ngModel)]="draft.patientStatus"><option value="">{{ t('All') }}</option>@for (value of ['Unpaid','Partial','Settled','NonCollectible']; track value) { <option [value]="value">{{ t(value) }}</option> }</select></label>
+          <label>{{ t('Date basis') }}<select name="dateBasis" [(ngModel)]="draft.dateBasis">@for (value of ['Invoice','Service','Collection']; track value) { <option [value]="value">{{ t(value) }}</option> }</select></label>
+          <label>{{ t('From') }}<input type="date" name="from" [(ngModel)]="draft.from"></label>
+          <label>{{ t('To') }}<input type="date" name="to" [(ngModel)]="draft.to"></label>
+
           <label>{{ t('Invoice type') }}<select name="type" [(ngModel)]="draft.type"><option value="">{{ t('All') }}</option>@for (entry of enumOptions('invoiceType'); track entry[1]) { <option [value]="entry[1]">{{ t(entry[0]) }}</option> }</select></label>
           <label>{{ t('Pricing mode') }}<select name="pricing" [(ngModel)]="draft.pricingMode"><option value="">{{ t('All') }}</option>@for (value of ['PerSession','Package','Unknown']; track value) { <option [value]="value">{{ t(value) }}</option> }</select></label>
           <label>{{ t('Invoice status') }}<select name="status" [(ngModel)]="draft.status"><option value="">{{ t('All') }}</option>@for (entry of enumOptions('invoiceStatus'); track entry[1]) { <option [value]="entry[1]">{{ t(entry[0]) }}</option> }</select></label>
@@ -38,15 +37,15 @@
           <label>{{ t('Treatment plan') }}<select name="plan" [(ngModel)]="draft.planId"><option value="">{{ t('All') }}</option>@for (plan of options().plans; track plan.id) { <option [value]="plan.id">{{ t('Plan') }} #{{ plan.id }}</option> }</select></label>
           <label>{{ t('Actual treating clinician') }}<select name="clinician" [(ngModel)]="draft.clinicianId"><option value="">{{ t('All') }}</option>@for (clinician of options().clinicians; track clinician.id) { <option [value]="clinician.id">{{ clinician.name }}</option> }</select></label>
           <label>{{ t('Collection method') }}<select name="method" [(ngModel)]="draft.method"><option value="">{{ t('All') }}</option>@for (entry of enumOptions('paymentMethod'); track entry[1]) { <option [value]="entry[1]">{{ t(entry[0]) }}</option> }</select></label>
-          @if (finance) { <label>{{ t('Claim status') }}<select name="claim" [(ngModel)]="draft.claimStatus"><option value="">{{ t('All') }}</option>@for (value of ['Unsubmitted','Submitted','Partial','Settled']; track value) { <option [value]="value">{{ t(value==='Settled' ? 'Claim settled' : value) }}</option> }</select></label> }
-        </div><button class="primary" type="submit">{{ t('Apply filters') }}</button>
+
+        </div>
+        <footer><button type="button" (click)="clear()">{{ t('Clear filters') }}</button><button type="submit" class="primary">{{ t('Apply filters') }}</button></footer>
       </dialog>
     }
   </form>
   @if (optionsError()) { <p class="error" role="alert">{{ locale.label(optionsError()) }} <button (click)="loadOptions()">{{ t('Retry') }}</button></p> }
   <div class="chips">@for (chip of chips; track chip.key+chip.value) { <button type="button" (click)="remove(chip.key,chip.value)" [attr.aria-label]="t('Remove filter')+': '+chip.label">{{ chip.label }} <span aria-hidden="true">×</span></button> }</div>
-  <p class="scope-note"><strong>{{ t(applied.dateBasis) }}</strong> · {{ t(applied.dateBasis === 'Collection' ? 'Collection-date totals include only actual receipts in the period. Other balances are current lifetime values.' : 'Invoice and service dates select invoices; receipts are lifetime allocations to those invoices.') }} <span>Africa/Cairo</span></p>
-  @if (applied.method) { <p class="scope-note">{{ t('Collection methods select invoices with actual receipts; unpaid invoices have no method.') }}</p> }
+  <p class="scope-note"><strong>{{ t('Filtered patient totals') }}</strong> / {{ t(applied.dateBasis) }} / Africa/Cairo @if (applied.dateBasis==='Collection') { <span> / {{ t('Period receipts shown separately') }}</span> }</p>
   @if (error()) { <div class="error" role="alert">{{ locale.label(error()) }} <button type="button" (click)="refresh()">{{ t('Retry') }}</button></div> }
   @if (loading()) { <div class="empty" role="status">{{ t('Loading') }}…</div> }
   @if (result(); as data) {
@@ -69,14 +68,18 @@
               @if (expanded.loading) { <p role="status">{{ t('Loading') }}…</p> }
               @if (expanded.error) { <p class="error" role="alert">{{ locale.label(expanded.error) }} <button type="button" (click)="loadInvoices(patient.patientId)">{{ t('Retry') }}</button></p> }
               @if (expanded.data; as detail) {
-                @for (invoice of detail.items; track invoice.id) {
-                  <article class="invoice-line">
-                    <div class="invoice-reference"><strong>{{ invoice.reference }}</strong><small>{{ locale.date(invoice.createdAt) }} · {{ t(invoice.type) }}</small><small>{{ t('Plan') }} {{ invoice.planId ? '#'+invoice.planId : '—' }} · {{ t(invoice.pricingMode) }} @if (invoice.agreementId) { · {{ t('Account') }} #{{ invoice.agreementId }} }</small></div>
-                    <div><span class="funding">{{ t(invoice.funding) }}</span>@if (invoice.funding==='Insurance') { <small>{{ t(invoice.company || 'Historical company unavailable') }}</small> }<small>{{ t('Invoice status') }}: {{ t(invoice.status) }}</small><small>{{ t('Delivery') }}: {{ invoice.deliveredAt ? locale.date(invoice.deliveredAt) : t('Unavailable') }}</small><small>{{ t('Actual treating clinician') }}: {{ invoice.clinicianName || t('Unavailable') }}</small></div>
-                    <dl class="invoice-amounts"><div><dt>{{ t('Agreed') }}</dt><dd>{{ money(invoice.amounts.agreed) }}</dd></div><div><dt>{{ t('Patient share') }}</dt><dd>{{ money(invoice.patientShare) }}</dd></div><div><dt>{{ t('Insurer share') }}</dt><dd>{{ money(invoice.insurerShare) }}</dd></div><div><dt>{{ t('Patient receipts') }}</dt><dd>{{ money(invoice.amounts.patientReceipts) }}</dd></div><div><dt>{{ t('Remaining') }}</dt><dd>{{ money(invoice.amounts.patientRemaining) }}</dd></div></dl>
-                    <div class="invoice-actions"><button type="button" (click)="invoiceAction.emit({id:invoice.id,collect:false})">{{ t('View') }}</button><button type="button" class="primary" (click)="invoiceAction.emit({id:invoice.id,collect:true})" [disabled]="collectionLocked || !!invoice.collectionBlockedReason" [attr.aria-describedby]="'collect-reason-'+invoice.id">{{ t('Collect') }}</button><small [id]="'collect-reason-'+invoice.id">{{ t(collectionLocked ? 'Reconcile collection first' : invoice.collectionBlockedReason || 'Patient share only') }}</small></div>
-                  </article>
-                }
+                <table class="invoice-detail-table">
+                  <thead><tr><th>{{ t('Invoice') }}</th><th>{{ t('Patient liability') }}</th><th>{{ t('Patient receipts') }}</th><th>{{ t('Remaining') }}</th><th>{{ t('Actions') }}</th></tr></thead>
+                  <tbody>@for (invoice of detail.items; track invoice.id) {
+                    <tr class="invoice-line">
+                      <td class="invoice-reference"><strong>{{ invoice.reference }}</strong><small>{{ locale.date(invoice.createdAt) }} <span class="status">{{ t(invoice.status) }}</span></small></td>
+                      <td class="amount" [attr.data-label]="t('Patient liability')">{{ money(invoice.amounts.patientLiability) }}</td>
+                      <td class="amount" [attr.data-label]="t('Patient receipts')">{{ money(invoice.amounts.patientReceipts) }}</td>
+                      <td class="amount remaining" [attr.data-label]="t('Remaining')"><strong>{{ money(invoice.amounts.patientRemaining) }}</strong></td>
+                      <td><div class="invoice-actions"><button type="button" (click)="invoiceAction.emit({id:invoice.id,collect:false})" [attr.aria-label]="t('View details')+' '+invoice.reference">{{ t('View') }}</button><button type="button" class="primary" (click)="invoiceAction.emit({id:invoice.id,collect:true})" [disabled]="collectionLocked || !!invoice.collectionBlockedReason" [title]="t(collectionLocked ? 'Reconcile collection first' : invoice.collectionBlockedReason || 'Patient share only')" [attr.aria-describedby]="'collect-reason-'+invoice.id">{{ t('Collect') }}</button><small [id]="'collect-reason-'+invoice.id">{{ invoice.collectionBlockedReason ? t(invoice.collectionBlockedReason) : '' }}</small></div></td>
+                    </tr>
+                  }</tbody>
+                </table>
                 <nav class="pagination" [attr.aria-label]="t('Matching invoices')"><button type="button" [disabled]="detail.page<=1" (click)="loadInvoices(patient.patientId,detail.page-1)">{{ t('Previous') }}</button><span>{{ t('Page') }} {{ detail.page }} · {{ detail.matchingInvoices }} {{ t('invoices') }}</span><button type="button" [disabled]="detail.page*detail.pageSize>=detail.matchingInvoices" (click)="loadInvoices(patient.patientId,detail.page+1)">{{ t('Next') }}</button></nav>
               }
             }
@@ -86,5 +89,5 @@
     </div>
     <nav class="pagination" [attr.aria-label]="t('Patient accounts')"><button type="button" [disabled]="data.page<=1" (click)="turn(data.page-1)">{{ t('Previous') }}</button><span>{{ t('Page') }} {{ data.page }}</span><button type="button" [disabled]="data.page*data.pageSize>=data.matchingPatients" (click)="turn(data.page+1)">{{ t('Next') }}</button></nav>
   }
-  <p class="scope-note historical-note">{{ t('Historical company, pricing, delivery and clinician may be unavailable. Current insurance is never substituted.') }}</p>
+  <p class="scope-note historical-note">{{ t('Open details for saved funding, service and account information.') }}</p>
 </section>

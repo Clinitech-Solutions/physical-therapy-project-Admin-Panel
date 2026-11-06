@@ -43,6 +43,7 @@ export class GroupedBillingService {
   }
   patients(filters: BillingFilters, page = 1) { return this.http.get<BillingPage<BillingPatient>>(`${this.url}/patients`, { params: this.params(filters, page) }); }
   invoices(patientId: number, filters: BillingFilters, page = 1) { return this.http.get<BillingPage<BillingInvoice>>(`${this.url}/patients/${patientId}/invoices`, { params: this.params(filters, page, 10) }); }
+  context(id:number) { return this.http.get<BillingInvoice>(`${this.url}/invoices/${id}/context`); }
   allocation(key: string, amount: number) { return this.http.get<BillingAllocation>(`${this.url}/accounts/${encodeURIComponent(key)}/allocation`, {params:{amount}}); }
   options() { return this.http.get<BillingOptions>(`${this.url}/filter-options`); }
   export(filters: BillingFilters, kind: string) { return this.http.get(`${this.url}/export`, { params: this.params(filters).set('kind', kind), responseType: 'blob' }); }

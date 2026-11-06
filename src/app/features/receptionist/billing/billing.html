@@ -1,8 +1,8 @@
 <div class="page-content receptionist-page fade-in">
   <div class="page-header">
     <div>
-      <h2 class="font-clash">{{ 'RECEPTIONIST.BILLING_TITLE' | translate }}</h2>
-      <p>{{ 'RECEPTIONIST.BILLING_SUB' | translate }}</p>
+      <h2 class="font-clash">{{ billingText('Patient billing') }}</h2>
+      <p>{{ billingText('Patient payments and balances') }}</p>
     </div>
   </div>
 
@@ -107,6 +107,14 @@
       <div><dt>{{ billingText('Insurer share') }}</dt><dd>{{ invoice.insuranceAmount | currency:'EGP':'symbol':'1.2-2':locale.language }}</dd></div>
       <div><dt>{{ billingText('Remaining') }}</dt><dd>{{ invoice.remainingAmount | currency:'EGP':'symbol':'1.2-2':locale.language }}</dd></div>
       <div><dt>{{ billingText('Invoice status') }}</dt><dd>{{ billingText(billingService.mapStatusToString(invoice.status)) }}</dd></div>
+    </dl>
+  }
+  @if (detailContext(); as context) {
+    <dl class="billing-detail">
+      <div><dt>{{ billingText('Funding') }}</dt><dd>{{ billingText(context.funding) }} / {{ context.company || billingText('Unavailable') }}</dd></div>
+      <div><dt>{{ billingText('Plan') }} / {{ billingText('Account') }}</dt><dd>{{ context.planId || '-'  }} / {{ context.agreementId || '-'  }} / {{ billingText(context.pricingMode) }}</dd></div>
+      <div><dt>{{ billingText('Delivery') }}</dt><dd>{{ context.deliveredAt ? locale.date(context.deliveredAt,true) : billingText('Unavailable') }}</dd></div>
+      <div><dt>{{ billingText('Actual treating clinician') }}</dt><dd>{{ context.clinicianName || billingText('Unavailable') }}</dd></div>
     </dl>
   }
   <div class="modal-form-vertical py-2">

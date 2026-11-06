@@ -17,7 +17,7 @@ import { InputNumberModule } from 'primeng/inputnumber';
 import { BookingService } from '../../../core/services/booking.service';
 import { BookingAccount, BookingPaymentMethod } from '../../../core/models/booking.model';
 import { TabsModule } from 'primeng/tabs';
-import { GroupedBillingService, BillingAllocation } from '../../../core/services/grouped-billing.service';
+import { GroupedBillingService, BillingAllocation, BillingInvoice } from '../../../core/services/grouped-billing.service';
 import { GroupedBillingComponent } from './grouped-billing';
 import { PatientProfileComponent } from '../../../shared/components/patient-profile/patient-profile.component';
 import { billingArabic } from './billing-text';
@@ -109,6 +109,7 @@ export class BillingComponent implements OnInit {
   }
   get allocationReady() { return !!this.allocation() && this.allocation()?.accountKey===this.selectedAccountKey && this.allocation()?.amount===this.amountToCollect; }
   detailInvoice = signal<Invoice | null>(null);
+  detailContext = signal<BillingInvoice | null>(null);
   collectionView = true;
   profilePatientId: string | null = null;
   billingText(text: string) { return this.locale.language === 'ar-EG' ? billingArabic[text] ?? this.locale.label(text) : text; }
@@ -117,8 +118,8 @@ export class BillingComponent implements OnInit {
     if(this.invoiceDetailLoading() || this.isSubmittingPayment())return;
     this.invoiceDetailLoading.set(true);this.paymentError.set('');
     try {
-      const invoice=await firstValueFrom(this.billingService.getInvoiceById(id));
-      this.detailInvoice.set(invoice);
+      const [invoice,context]=await Promise.all([firstValueFrom(this.billingService.getInvoiceById(id)),firstValueFrom(this.groupedApi.context(id))]);
+      this.detailInvoice.set(invoice);this.detailContext.set(context);
       this.openPaymentModal(id);
       this.collectionView=collect && (invoice.remainingAmount ?? 0)>0 && !['Waived','Cancelled'].includes(this.billingService.mapStatusToString(invoice.status)) && !this.collectionLocked;
     } catch(error) { this.paymentError.set(apiError(error)); }
@@ -143,7 +144,7 @@ export class BillingComponent implements OnInit {
   }
   openAccountPayment(account: BookingAccount) {
     if (this.isSubmittingPayment()) return;
-    this.collectionView=true;this.detailInvoice.set(null);this.allocation.set(null);
+    this.collectionView=true;this.detailInvoice.set(null);this.detailContext.set(null);this.allocation.set(null);
     this.selectedAccountKey = account.key; this.selectedInvoiceId = null;
     this.amountToCollect = account.remainingAmount; this.selectedPaymentMethod = ''; this.invoicePayments.set([]);
     const original=this.bookingApi.pendingCollection();

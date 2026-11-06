@@ -36,7 +36,7 @@ export class GroupedBillingComponent implements OnInit, OnDestroy {
   filterKeys(event:KeyboardEvent) {
     if(event.key==='Escape'){event.preventDefault();this.closeAdvanced();return;}
     if(!this.mobile || event.key!=='Tab')return;
-    const controls=Array.from(this.element.nativeElement.querySelectorAll<HTMLElement>('#billing-advanced button,#billing-advanced select'));
+    const controls=Array.from(this.element.nativeElement.querySelectorAll<HTMLElement>('#billing-advanced button,#billing-advanced select,#billing-advanced input,#billing-advanced summary'));
     const first=controls[0],last=controls.at(-1);
     if(event.shiftKey && document.activeElement===first){event.preventDefault();last?.focus();}
     else if(!event.shiftKey && document.activeElement===last){event.preventDefault();first?.focus();}
@@ -45,7 +45,7 @@ export class GroupedBillingComponent implements OnInit, OnDestroy {
   companyLabel(companies:string[]) { const known=companies.filter(name=>name!=='Historical company unavailable');return known.length>1?this.t('Multiple companies'):known[0] || this.t('Historical company unavailable'); }
   get selectedCompanies() { return this.options().companies.filter(company=>this.draft.companyIds?.includes(+company.id)).map(c=>c.name).join(', ') || this.t('All'); }
   setCompany(id:number,event:Event) { const selected=(event.target as HTMLInputElement).checked;this.draft.companyIds=selected?[...(this.draft.companyIds ?? []),id]:(this.draft.companyIds ?? []).filter(value=>value!==id); }
-  money(amount: number) { return new Intl.NumberFormat(this.locale.language, { style: 'currency', currency: 'EGP', maximumFractionDigits: 2 }).format(amount); }
+  money(amount: number) { return this.locale.money(amount); }
   initials(name: string) { return name.trim().split(/\s+/).slice(0,2).map(s=>s[0]).join('').toUpperCase(); }
   enumOptions(kind: 'invoiceType'|'invoiceStatus'|'appointmentStatus'|'sessionStatus'|'paymentMethod') { return Object.entries(this.contracts.enums[kind] ?? {}).filter(([name])=>kind!=='paymentMethod'||name!=='Insurance'); }
   ngOnInit() {
@@ -58,7 +58,7 @@ export class GroupedBillingComponent implements OnInit, OnDestroy {
   }
   ngOnDestroy() { this.request?.unsubscribe();this.optionRequest?.unsubscribe();this.routeRequest?.unsubscribe();this.exportRequest?.unsubscribe();for(const request of this.requests.values()) request.unsubscribe(); }
   loadOptions() { this.optionRequest?.unsubscribe();this.optionsError.set('');this.optionRequest=this.api.options().subscribe({next:options=>this.options.set(options),error:e=>this.optionsError.set(apiError(e))}); }
-  apply() { if(this.draft.from && this.draft.to && this.draft.from>this.draft.to) {this.error.set(this.t('From')+' ≤ '+this.t('To'));return;} this.applied=structuredClone(this.draft);this.page=1;this.advanced=false;this.element.nativeElement.querySelectorAll<HTMLDetailsElement>('.company-picker details').forEach(el=>el.open=false);this.navigate(); }
+  apply() { if(this.draft.from && this.draft.to && this.draft.from>this.draft.to) {this.error.set(this.t('From')+' ≤ '+this.t('To'));return;} this.applied=structuredClone(this.draft);this.page=1;this.closeAdvanced();this.element.nativeElement.querySelectorAll<HTMLDetailsElement>('.company-picker details').forEach(el=>el.open=false);this.navigate(); }
   clear() { this.draft=this.defaults();this.apply(); }
   navigate() { if(this.router && this.route) void this.router.navigate([], {relativeTo:this.route,queryParams:{...this.applied,page:this.page},replaceUrl:true});else this.refresh(); }
   refresh() {
@@ -73,10 +73,10 @@ export class GroupedBillingComponent implements OnInit, OnDestroy {
     this.requests.get(patientId)?.unsubscribe();this.expansions.update(value=>({...value,[patientId]:{loading:true,error:''}}));
     this.requests.set(patientId,this.api.invoices(patientId,this.applied,page).subscribe({next:data=>this.expansions.update(value=>({...value,[patientId]:{loading:false,error:'',data}})),error:e=>this.expansions.update(value=>({...value,[patientId]:{loading:false,error:apiError(e)}}))}));
   }
-  get chips() { return Object.entries(this.applied).filter(([key,value])=>key!=='dateBasis' && value!=null && value!=='' && (!Array.isArray(value)||value.length)).flatMap(([key,value])=>Array.isArray(value)?value.map(id=>({key,value:id,label:this.t('Insurance companies')+': '+(this.options().companies.find(c=>Number(c.id)===id)?.name ?? id)})):[{key,value,label:this.chipLabel(key,String(value))}]); }
-  private chipLabel(key:string,value:string) { const label:Record<string,string>={search:'Search name or phone',funding:'Funding',from:'From',to:'To',patientStatus:'Patient payment status',type:'Invoice type',pricingMode:'Pricing mode',status:'Invoice status',appointmentStatus:'Appointment status',sessionStatus:'Session status',planId:'Treatment plan',clinicianId:'Actual treating clinician',method:'Collection method',claimStatus:'Claim status'};
+  get chips() { return Object.entries(this.applied).filter(([key,value])=>(key!=='dateBasis' || value!=='Invoice') && value!=null && value!=='' && (!Array.isArray(value)||value.length)).flatMap(([key,value])=>Array.isArray(value)?value.map(id=>({key,value:id,label:this.t('Insurance companies')+': '+(this.options().companies.find(c=>Number(c.id)===id)?.name ?? id)})):[{key,value,label:this.chipLabel(key,String(value))}]); }
+  private chipLabel(key:string,value:string) { const label:Record<string,string>={dateBasis:'Date basis',search:'Search name or phone',funding:'Funding',from:'From',to:'To',patientStatus:'Patient payment status',type:'Invoice type',pricingMode:'Pricing mode',status:'Invoice status',appointmentStatus:'Appointment status',sessionStatus:'Session status',planId:'Treatment plan',clinicianId:'Actual treating clinician',method:'Collection method',claimStatus:'Claim status'};
     const enums: Record<string,'invoiceType'|'invoiceStatus'|'appointmentStatus'|'sessionStatus'|'paymentMethod'>={type:'invoiceType',status:'invoiceStatus',appointmentStatus:'appointmentStatus',sessionStatus:'sessionStatus',method:'paymentMethod'};
     return this.t(label[key] ?? key)+': '+this.t(enums[key]?this.contracts.label(enums[key],value):value); }
-  remove(key:string,value:unknown) { this.draft=structuredClone(this.applied);if(key==='companyIds')this.draft.companyIds=this.draft.companyIds?.filter(id=>id!==value);else delete (this.draft as unknown as Record<string,unknown>)[key];this.apply(); }
+  remove(key:string,value:unknown) { this.draft=structuredClone(this.applied);if(key==='dateBasis')this.draft.dateBasis='Invoice';else if(key==='companyIds')this.draft.companyIds=this.draft.companyIds?.filter(id=>id!==value);else delete (this.draft as unknown as Record<string,unknown>)[key];this.apply(); }
   export() { if(this.exporting)return;this.exporting=true;this.error.set('');this.exportRequest=this.api.export(this.applied,this.exportKind).subscribe({next:blob=>{const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download=`billing-${this.exportKind}.csv`;link.click();URL.revokeObjectURL(url);this.exporting=false;},error:e=>{this.error.set(apiError(e));this.exporting=false;}}); }
 }
