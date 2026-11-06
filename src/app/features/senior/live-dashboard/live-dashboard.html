@@ -3,6 +3,7 @@
 } @if (loading()) {
 <p role="status">{{ 'RECEPTIONIST.PROCESSING' | translate }}</p>
 }
+@if(appointmentsError()) { <p class="alert alert-warning" role="alert">{{locale.label(appointmentsError())}} <button type="button" class="btn btn-link" (click)="refreshAssessments()">{{'RECEPTIONIST.UI.RETRY'|translate}}</button></p> }
 <!-- ═══════════════════════════════════════════════════════════
      Senior Therapist — Live Dashboard
      Reactive view over ClinicStateService (Signals)
@@ -28,7 +29,7 @@
   <!-- Assessments -->
   <div class="stat-card assessment-summary">
     <div class="stat-label">{{ 'SENIOR.ASSESSMENTS' | translate }}</div>
-    <div class="stat-value">{{ assessmentCount() }}</div>
+    <div class="stat-value">{{loading() || appointmentsError() ? '—' : assessmentCount() }}</div>
     <div class="stat-sub">{{ 'SENIOR.ASSESSMENTS_SUB' | translate }}</div>
   </div>
 
@@ -73,7 +74,7 @@
           (click)="switchTab('assessments')"
           (keydown)="tabKey($event, 'assessments')"
         >
-          {{ 'SENIOR.ASSESSMENTS' | translate }} ({{ assessmentCount() }})
+          {{ 'SENIOR.ASSESSMENTS' | translate }} ({{loading() || appointmentsError() ? '—' : assessmentCount() }})
         </button>
         <button
           type="button"
@@ -111,7 +112,7 @@
       >
         <!-- Task List -->
         <div class="task-list">
-          @if (activeTasks().length === 0) {
+          @if (activeTasks().length === 0 && !loading() && !appointmentsError()) {
           <div class="empty-state">
             <i
               class="bi bi-check-circle"
@@ -123,13 +124,13 @@
             </p>
           </div>
           } @for (task of activeTasks(); track task.sessionId) {
-          <div class="task-row">
+          <div class="task-row" [attr.data-assessment-task]="task.sessionId">
             <div class="flex items-center gap-3">
               <div class="avatar avatar-sm">{{ task.avatarInitials }}</div>
               <div>
                 <div class="task-patient-name">{{ task.patientName }}</div>
                 <div class="task-meta">
-                  <i class="bi bi-clock"></i> {{ task.scheduledTime }}
+                  <i class="bi bi-clock"></i> {{ task.scheduledDate }} · {{ task.scheduledTime }}
                   <span class="task-meta-divider">·</span>
                   <span>{{ task.doctorName }}</span>
                   @if (task.type === 'Re-Assessment') {
@@ -145,14 +146,14 @@
             </div>
             <div class="flex items-center gap-2">
               <span class="badge" [ngClass]="getStatusBadgeClass(task.status)"
-                >{{ task.status | receptionistText }}</span
+                >{{ task.departed ? ('SENIOR.DEPARTED_UNSIGNED'|translate) : (task.status | receptionistText) }}</span
               >
               <button
                 class="btn btn-primary btn-sm"
                 (click)="startTask(task)"
                 [disabled]="busy()"
               >
-                <i class="bi bi-play-fill"></i> {{ 'COMMON.START' | translate }}
+                <i class="bi bi-play-fill"></i> {{ (task.arrived ? 'SENIOR.COMPLETE_UNSIGNED' : 'COMMON.START') | translate }}
               </button>
             </div>
           </div>

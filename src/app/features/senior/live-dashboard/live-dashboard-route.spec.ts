@@ -54,7 +54,7 @@ describe.each(["Senior", "Admin", "SuperAdmin", "Ceo"])(
         LiveDashboard,
       );
       http
-        .expectOne((r) => r.url === `${api}/Appointments/GetAll`)
+        .expectOne((r) => r.url === `${api}/Bookings/assessments/tasks`)
         .flush({ items: [], pageNumber: 1, totalPages: 1, hasNextPage: false });
       http.expectOne(`${api}/Bookings/clinicians/workload`).flush([]);
       http.expectOne(`${api}/ReassessmentRequests`).flush([]);

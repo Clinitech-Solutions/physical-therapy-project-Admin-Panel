@@ -1,3 +1,8 @@
+import '../../../../testing/browser-media';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideRouter } from '@angular/router';
+import { TranslateModule } from '@ngx-translate/core';
 import { ComponentFixture, TestBed } from "@angular/core/testing";
 
 import { ThemeToggle } from "./theme-toggle";
@@ -8,7 +13,8 @@ describe("ThemeToggle", () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [ThemeToggle],
+      imports: [TranslateModule.forRoot(), ThemeToggle],
+      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
     }).compileComponents();
 
     fixture = TestBed.createComponent(ThemeToggle);

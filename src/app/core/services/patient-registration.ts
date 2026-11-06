@@ -18,7 +18,7 @@ export class PatientOutcomeUnknownError extends Error {
 
 export function emptyPatientRegistration(): NewPatient {
   return {
-    userName: '', nameEn: '', nameAr: '', phone: '', dob: '', gender: 'Male',
+    userName: '', email: '', registrationKey: crypto.randomUUID(), nameEn: '', nameAr: '', phone: '', dob: '', gender: 'Male',
     emergencyContact: '', paymentType: 'Cash', insuranceCompanyId: null,
     insuranceCompany: '', insuranceDetails: { company: '', status: 'Unknown' },
     docs: { medicalConsent: false, liabilityWaiver: false, idCard: false }
@@ -51,7 +51,7 @@ export function patientInsuranceDetails(details?: InsuranceDetails | null): Insu
 /** Shared UI/service validation: collect errors without sending a request. */
 export function patientRegistrationErrors(draft: NewPatient): PatientInputError[] {
   return patientUpdateErrors({
-    nameEn: draft.nameEn, phone: draft.phone, gender: draft.gender,
+    nameEn: draft.nameEn, phone: draft.phone, gender: draft.gender, email: draft.email,
     birthDate: draft.dob, emergencyContact: draft.emergencyContact, paymentType: draft.paymentType,
     insuranceCompanyId: draft.paymentType === 'Insurance' ? draft.insuranceCompanyId ?? null : undefined,
     insuranceDetails: draft.paymentType === 'Insurance' ? draft.insuranceDetails : undefined
@@ -167,7 +167,10 @@ export function createPatientRequest(draft: NewPatient): CreatePatientRequest {
   const errors = patientRegistrationErrors(draft);
   if (errors.length) throw new PatientValidationError(errors);
   const insured = draft.paymentType === 'Insurance';
+  draft.registrationKey ??= crypto.randomUUID();
   return {
+    idempotencyKey: draft.registrationKey,
+    ...(draft.email?.trim() ? { email: draft.email.trim() } : {}),
     fullName: draft.nameEn.trim(), phoneNumber: draft.phone.trim(),
     // Existing frontend mapping retained unchanged, as requested by the user.
     gender: draft.gender === 'Female' ? 1 : 0,

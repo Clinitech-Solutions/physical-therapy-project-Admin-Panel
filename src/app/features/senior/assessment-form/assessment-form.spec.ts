@@ -16,6 +16,7 @@ describe('Persisted Senior assessment form',()=>{
     http=TestBed.inject(HttpTestingController);fixture=TestBed.createComponent(AssessmentForm);fixture.detectChanges();
     http.expectOne(`${url}/Patients/GetById/1`).flush({id:1,fullName:'Patient',phoneNumber:'010',gender:'Male',paymentType:'Cash',birthDate:'2001-01-01T00:00:00Z'});
     http.expectOne(r=>r.url===`${url}/Bookings/patients/1/clinicians`&&r.params.get('treatment')==='true').flush([{id:'doctor',name:'Doctor',gender:'Male',role:'Doctor',preferred:false,currentLoad:0}]);
+    http.expectOne(`${url}/Bookings/assessments/appointments/10`).flush({appointmentId:10,patientId:1,startTime:'2026-11-01T10:00:00Z',arrivedAt:'2026-11-01T10:00:00Z',departedAt:'2026-11-01T11:00:00Z',completedAt:null,diagnosis:'Saved draft',notes:null,numberOfSessions:1,frequencyPerWeek:2,doctorId:null,exercises:null,treatmentType:'PhysicalTherapy'});
     await fixture.whenStable();
     vi.spyOn(TestBed.inject(Router),'navigate').mockResolvedValue(true);
     fixture.componentInstance.form.setValue({diagnosis:'Saved diagnosis',totalSessions:5,frequency:'Twice a week',assignedDoctorId:'doctor',exercises:'Exercises'});
@@ -28,6 +29,11 @@ describe('Persisted Senior assessment form',()=>{
     request.flush({id:5,doctorId:'doctor',plannedSessions:5});await saving;
     expect(TestBed.inject(Router).navigate).toHaveBeenCalledWith(['/senior/dashboard']);
     http.expectNone(r=>r.url.includes('/Billing/'));
+  });
+  it('shows physical departure separately from the saved unsigned assessment context',()=>{
+    fixture.detectChanges();expect(fixture.nativeElement.querySelector('[data-departed-unsigned]')).not.toBeNull();
+    expect(fixture.componentInstance.context()?.completedAt).toBeNull();expect(fixture.componentInstance.context()?.diagnosis).toBe('Saved draft');
+    expect(fixture.componentInstance.context()?.departedAt).toBe('2026-11-01T11:00:00Z');
   });
   it('keeps the form and error visible on a confirmed failure',async()=>{
     const saving=fixture.componentInstance.submit();http.expectOne(`${url}/Bookings/assessments/complete`).flush({detail:'Only the assigned Senior can complete this assessment.'},{status:403,statusText:'Forbidden'});await saving;

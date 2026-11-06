@@ -39,6 +39,13 @@ describe('Reception appointment integration',()=>{
     expect(service.appointments()[0].doctorId).toBe('doctor-guid');
     expect(TestBed.inject(ReceptionContracts).label('appointmentStatus',57)).toBe('Unknown');
   });
+  it('queries the Cairo calendar day and retains the UTC event timestamps',()=>{
+    const service=TestBed.inject(AppointmentService);service.getAppointments({date:'2030-02-04T22:30:00Z'});
+    const request=http.expectOne(r=>r.url.endsWith('/Appointments/GetAll')&&r.params.get('Date')==='2030-02-05');
+    request.flush({items:[{...appointment,startTime:'2030-02-04T22:30:00Z',endTime:'2030-02-04T23:30:00Z'}],pageNumber:1,totalPages:1,hasNextPage:false});
+    expect(service.appointments()[0].startTime).toBe('2030-02-04T22:30:00Z');
+    service.getAppointments({date:'2026-04-24'});http.expectOne(r=>r.params.get('Date')==='2026-04-24').flush({items:[],pageNumber:1,totalPages:1,hasNextPage:false});
+  });
   it('validates the complete interval before a POST',async()=>{
     const service=TestBed.inject(AppointmentService);
     await expect(firstValueFrom(service.addAppointment({...payload,endTime:payload.startTime}))).rejects.toThrow('End time');

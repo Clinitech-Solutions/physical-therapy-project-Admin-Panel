@@ -77,8 +77,15 @@ describe('Patient registration contracts and safety', () => {
 
   it('maps only supported create fields and formats the actual birth date', () => {
     const request = createPatientRequest({ ...draft(), nameAr: 'Other name', address: 'Not in DTO' });
-    expect(request).toEqual({ fullName: 'Test Patient', phoneNumber: '01012345678', gender: 1,
+    expect(request).toEqual({ idempotencyKey: expect.any(String), fullName: 'Test Patient', phoneNumber: '01012345678', gender: 1,
       birthDate: '1988-03-14T00:00:00.000Z', paymentType: 'Cash', emergencyContact: null, insuranceCompanyId: null, insuranceDetails: null });
+  });
+  it('preserves real email, never sends a username, and reuses only the same draft operation key',()=>{
+    const value={...draft(),email:'  real.patient@example.invalid  '};
+    const first=createPatientRequest(value),retry=createPatientRequest(value);
+    expect(first.email).toBe('real.patient@example.invalid');expect(first).not.toHaveProperty('userName');
+    expect(first.idempotencyKey).toMatch(/^[a-f0-9-]{36}$/);expect(retry.idempotencyKey).toBe(first.idempotencyKey);
+    expect(createPatientRequest(draft()).idempotencyKey).not.toBe(first.idempotencyKey);
   });
 
   it('registers cash patients without coverage and ignores stale insurance form values', () => {

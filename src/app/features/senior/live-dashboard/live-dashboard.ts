@@ -21,7 +21,6 @@ import { AuthService } from "../../../core/services/auth";
 import { ReceptionContracts } from "../../../core/services/reception-contracts";
 import {
   apiError,
-  localDay,
   numericId,
 } from "../../../core/services/reception-api";
 import {
@@ -55,6 +54,7 @@ export class LiveDashboard implements OnInit {
   readonly busy = signal(false);
   readonly doctors = signal<BookingClinician[]>([]);
   readonly loading = this.appointments.loading;
+  readonly appointmentsError = this.appointments.error;
   private destroy = inject(DestroyRef);
   readonly capacityLoading = signal(false);
   readonly capacityError = signal("");
@@ -70,7 +70,7 @@ export class LiveDashboard implements OnInit {
             : "assessments",
         ),
       );
-    this.appointments.getAppointments({ date: new Date().toISOString() });
+    this.refreshAssessments();
     this.refreshCapacity();
     interval(30000)
       .pipe(takeUntilDestroyed(this.destroy))
@@ -92,18 +92,18 @@ export class LiveDashboard implements OnInit {
       },
     });
   }
+  refreshAssessments() { this.appointments.getAssessmentTasks(); }
   private tasks(type: string) {
     const user = this.auth.currentUser();
-    const supervisor = user?.roles.some((r) => r === "Ceo");
+    const supervisor = user?.roles.some((r) => ['Ceo','Admin','Owner','SuperAdmin'].includes(r));
     return this.appointments
       .appointments()
       .filter(
         (a) =>
           a.appointmentType === type &&
           !a.assessmentCompleted &&
-          localDay(a.startTime) === localDay(new Date()) &&
           (supervisor || a.seniorId === user?.id) &&
-          ["Pending", "In Progress"].includes(
+          ["Pending", "In Progress", "Completed"].includes(
             this.contracts.label("appointmentStatus", a.status),
           ),
       )
@@ -118,8 +118,11 @@ export class LiveDashboard implements OnInit {
           .slice(0, 2),
         scheduledTime: new Date(a.startTime).toLocaleTimeString(
           this.locale.language,
-          { hour: "2-digit", minute: "2-digit" },
+          { timeZone:'Africa/Cairo', hour: "2-digit", minute: "2-digit" },
         ),
+        scheduledDate: new Date(a.startTime).toLocaleDateString(this.locale.language,{timeZone:'Africa/Cairo',year:'numeric',month:'short',day:'numeric'}),
+        departed: !!a.actualCheckOut,
+        arrived: !!a.actualCheckIn,
         status: this.contracts.label("appointmentStatus", a.status),
         doctorName: a.doctorName ?? "",
         sessionBadge: "",
@@ -129,7 +132,7 @@ export class LiveDashboard implements OnInit {
   todayAssessments = computed(() => this.tasks("Assessment"));
   assessmentCount = computed(() => this.todayAssessments().length);
   totalPendingTasks = computed(() =>
-    this.reviewCount() === null || this.loading() || this.error()
+    this.reviewCount() === null || this.loading() || this.error() || this.appointmentsError()
       ? null
       : this.assessmentCount() + this.reviewCount()!,
   );

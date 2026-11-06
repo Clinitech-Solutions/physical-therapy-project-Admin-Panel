@@ -5,7 +5,7 @@ import { AppointmentWorkflowService } from "../../../core/services/appointment-w
 import { ReceptionContracts } from "../../../core/services/reception-contracts";
 import {
   apiError,
-  localDay,
+  clinicDay,
   numericId,
   ReceptionError,
 } from "../../../core/services/reception-api";
@@ -663,7 +663,7 @@ export class BookingsComponent implements OnInit {
   }
   get todaySessions() {
     return this.appointments().filter(
-      (a) => localDay(a.startTime) === localDay(this.todayDate),
+      (a) => clinicDay(a.startTime) === clinicDay(this.todayDate),
     );
   }
   get filteredSchedule() {

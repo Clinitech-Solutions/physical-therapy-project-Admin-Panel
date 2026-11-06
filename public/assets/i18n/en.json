@@ -1313,6 +1313,14 @@
     }
   },
   "SENIOR": {
+    "DEPARTED_UNSIGNED": "Patient departed; assessment unsigned",
+    "DEPARTURE_NOT_SIGNOFF": "Physical departure does not complete the clinical assessment. Review the saved context and sign off below.",
+    "COMPLETE_UNSIGNED": "Complete assessment",
+    "SIGNED_READ_ONLY": "This assessment is signed and read-only. Use reassessment for a new clinical decision.",
+    "FOUR_TIMES_A_WEEK": "Four times a week",
+    "FIVE_TIMES_A_WEEK": "Five times a week",
+    "SIX_TIMES_A_WEEK": "Six times a week",
+
     "DASHBOARD_TITLE": "Senior Therapist Dashboard",
     "DASHBOARD_SUB": "Intake assessment oversight & capacity view",
     "TODAYS_TASKS": "Today's Tasks",

@@ -23,6 +23,9 @@ export interface DashboardStats {
 }
 export interface TodaySession {
   id: number;
+  assessmentCompleted?: boolean;
+  actualCheckIn?: string|null;
+  actualCheckOut?: string|null;
   appointmentId?: number;
   treatmentStartedAt?: string|null;
   treatmentEndedAt?: string|null;

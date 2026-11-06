@@ -210,6 +210,7 @@ export class ScheduleComponent implements OnInit {
       const d = new Date(isoString);
       if (isNaN(d.getTime())) return isoString;
       return d.toLocaleTimeString(this.locale.language, {
+        timeZone: 'Africa/Cairo',
         hour: '2-digit',
         minute: '2-digit'
       });
@@ -223,11 +224,8 @@ export class ScheduleComponent implements OnInit {
     try {
       const d = new Date(isoString);
       if (isNaN(d.getTime())) return '08:00 AM';
-      d.setMinutes(0, 0, 0);
-      return d.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit'
-      });
+      const parts = new Intl.DateTimeFormat('en-US',{timeZone:'Africa/Cairo',hour:'2-digit',hour12:true}).formatToParts(d);
+      return `${parts.find(p=>p.type==='hour')!.value}:00 ${parts.find(p=>p.type==='dayPeriod')!.value}`;
     } catch {
       return '08:00 AM';
     }
@@ -264,7 +262,7 @@ export class ScheduleComponent implements OnInit {
   get completedCount(): number | null {
     if(this.todaySessions.some(s => this.getMappedStatus(s.status) === 'Unknown'))return null;
     const listCompleted = this.todaySessions.filter(
-      (s) => this.receptionistService.mapStatusToString(s.status) === 'Completed'
+      (s) => this.receptionistService.mapStatusToString(s.status) === 'Completed' && (s.appointmentType !== 'Assessment' || s.assessmentCompleted)
     ).length;
     return listCompleted;
   }

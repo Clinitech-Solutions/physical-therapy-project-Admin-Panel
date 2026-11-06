@@ -46,6 +46,7 @@ export class ReceptionistLocale {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return '—';
     return date.toLocaleString(this.language, {
+      timeZone: 'Africa/Cairo',
       year: 'numeric', month: 'short', day: 'numeric',
       ...(withTime ? { hour: '2-digit', minute: '2-digit' } as const : {})
     });

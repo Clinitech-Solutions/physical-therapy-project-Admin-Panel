@@ -263,6 +263,7 @@
                     <span class="type-pill" [class.type-assessment]="(session.appointmentType || session.type) === 'Assessment'">
                       {{ (session.appointmentType || session.type || 'Session') | receptionistText }}
                     </span>
+                    @if(session.appointmentType==='Assessment' && session.actualCheckOut && !session.assessmentCompleted){<span class="badge badge-warning">{{'SENIOR.DEPARTED_UNSIGNED'|translate}}</span>}
                     <span class="session-time">
                       <i class="bi bi-clock me-1"></i>{{ formatTime(session.startTime.toString()) }}
                     </span>

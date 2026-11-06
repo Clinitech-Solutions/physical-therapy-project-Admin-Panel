@@ -131,4 +131,13 @@ export class BookingService {
       return plan;
     }));
   }
+  assessmentWorkspace(id: number) {
+    return this.http.get<AssessmentWorkspace>(`${this.url}/assessments/appointments/${numericId(id)}`);
+  }
+}
+
+export interface AssessmentWorkspace {
+  appointmentId: number; patientId: number; startTime: string; arrivedAt: string|null; departedAt: string|null; completedAt: string|null;
+  diagnosis: string; notes: string|null; numberOfSessions: number; frequencyPerWeek: number; doctorId: string|null;
+  exercises: string|null; treatmentType: string;
 }
