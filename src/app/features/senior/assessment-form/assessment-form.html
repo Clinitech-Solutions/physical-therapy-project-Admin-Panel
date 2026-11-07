@@ -17,26 +17,26 @@
       <form [formGroup]="form" (ngSubmit)="submit()">
         
         <div class="form-group mb-3">
-          <label class="form-label">{{ 'SENIOR.DIAGNOSIS' | translate }} <span class="text-danger">*</span></label>
-          <textarea class="form-control" formControlName="diagnosis" rows="3" style="resize: vertical;"></textarea>
+          <label class="form-label" for="assessment-diagnosis">{{ 'SENIOR.DIAGNOSIS' | translate }} <span class="text-danger">*</span></label>
+          <textarea id="assessment-diagnosis" class="form-control" formControlName="diagnosis" rows="3" style="resize: vertical;" [attr.aria-invalid]="form.get('diagnosis')?.invalid && form.get('diagnosis')?.touched" [attr.aria-describedby]="form.get('diagnosis')?.invalid && form.get('diagnosis')?.touched ? 'assessment-diagnosis-error' : null"></textarea>
           @if (form.get('diagnosis')?.invalid && form.get('diagnosis')?.touched) {
-            <small class="text-danger">Required</small>
+            <small id="assessment-diagnosis-error" class="text-danger">{{'SENIOR.FIELD_REQUIRED'|translate}}</small>
           }
         </div>
 
         <div class="grid-2 gap-3 mb-3">
           <div class="form-group">
-            <label class="form-label">{{ 'SENIOR.TOTAL_SESSIONS' | translate }} <span class="text-danger">*</span></label>
-            <input type="number" class="form-control" formControlName="totalSessions" min="1" />
+            <label class="form-label" for="assessment-count">{{ 'SENIOR.TOTAL_SESSIONS' | translate }} <span class="text-danger">*</span></label>
+            <input id="assessment-count" type="number" class="form-control" formControlName="totalSessions" min="1" max="200" [attr.aria-invalid]="form.get('totalSessions')?.invalid && form.get('totalSessions')?.touched" [attr.aria-describedby]="form.get('totalSessions')?.invalid && form.get('totalSessions')?.touched ? 'assessment-count-error' : null" />
             @if (form.get('totalSessions')?.invalid && form.get('totalSessions')?.touched) {
-              <small class="text-danger">Must be at least 1</small>
+              <small id="assessment-count-error" class="text-danger">{{'SENIOR.SESSION_COUNT_RANGE'|translate}}</small>
             }
           </div>
 
           <div class="form-group">
-            <label class="form-label">{{ 'SENIOR.FREQUENCY' | translate }} <span class="text-danger">*</span></label>
-            <select class="form-control" formControlName="frequency">
-              <option value="" disabled selected>-- Select --</option>
+            <label class="form-label" for="assessment-frequency">{{ 'SENIOR.FREQUENCY' | translate }} <span class="text-danger">*</span></label>
+            <select id="assessment-frequency" class="form-control" formControlName="frequency" [attr.aria-invalid]="form.get('frequency')?.invalid && form.get('frequency')?.touched" [attr.aria-describedby]="form.get('frequency')?.invalid && form.get('frequency')?.touched ? 'assessment-frequency-error' : null">
+              <option value="" disabled>{{'SENIOR.SELECT_FREQUENCY'|translate}}</option>
               <option value="Daily">{{ 'SENIOR.DAILY' | translate }}</option>
               <option value="Twice a week">{{ 'SENIOR.TWICE_A_WEEK' | translate }}</option>
               <option value="Three times a week">{{ 'SENIOR.THREE_TIMES_A_WEEK' | translate }}</option>
@@ -45,13 +45,14 @@
               <option value="5">{{'SENIOR.FIVE_TIMES_A_WEEK'|translate}}</option>
               <option value="6">{{'SENIOR.SIX_TIMES_A_WEEK'|translate}}</option>
             </select>
+            @if (form.get('frequency')?.invalid && form.get('frequency')?.touched) { <small id="assessment-frequency-error" class="text-danger">{{'SENIOR.FIELD_REQUIRED'|translate}}</small> }
           </div>
         </div>
 
         <div class="form-group mb-3">
-          <label class="form-label">{{ 'SENIOR.ASSIGN_DOCTOR' | translate }} <span class="text-danger">*</span></label>
-          <select class="form-control" formControlName="assignedDoctorId">
-            <option value="" disabled selected>-- Select Doctor --</option>
+          <label class="form-label" for="assessment-doctor">{{ 'SENIOR.ASSIGN_DOCTOR' | translate }} <span class="text-danger">*</span></label>
+          <select id="assessment-doctor" class="form-control" formControlName="assignedDoctorId" [attr.aria-invalid]="form.get('assignedDoctorId')?.invalid && form.get('assignedDoctorId')?.touched" [attr.aria-describedby]="form.get('assignedDoctorId')?.invalid && form.get('assignedDoctorId')?.touched ? 'assessment-doctor-error' : null">
+            <option value="" disabled>{{'SENIOR.SELECT_TREATING_DOCTOR'|translate}}</option>
             @for (doc of smartDoctors(); track doc.id) {
               <option [value]="doc.id">
                 {{ doc.name }} 
@@ -61,16 +62,18 @@
             }
           </select>
           @if (form.get('assignedDoctorId')?.invalid && form.get('assignedDoctorId')?.touched) {
-            <small class="text-danger">Required</small>
+            <small id="assessment-doctor-error" class="text-danger">{{'SENIOR.FIELD_REQUIRED'|translate}}</small>
           }
         </div>
 
         <div class="form-group mb-3">
-          <label class="form-label">{{ 'SENIOR.EXERCISES' | translate }}</label>
-          <textarea class="form-control" formControlName="exercises" rows="3" style="resize: vertical;"></textarea>
+          <label class="form-label" for="assessment-exercises">{{ 'SENIOR.EXERCISES' | translate }}</label>
+          <textarea id="assessment-exercises" class="form-control" formControlName="exercises" rows="3" style="resize: vertical;"></textarea>
         </div>
 
         <div class="mt-3">
+          <button type="button" class="btn btn-outline-secondary w-100 mb-2" data-save-assessment-draft (click)="saveDraft()"
+            [disabled]="saving() || loading() || !context() || !!context()?.completedAt">{{ 'SENIOR.SAVE_DRAFT' | translate }}</button>
           <button type="submit" class="btn btn-primary w-100" [disabled]="saving() || loading() || !patient() || !context() || !!context()?.completedAt">
             <i class="bi bi-check-circle"></i> {{ 'SENIOR.SUBMIT_ASSESSMENT' | translate }}
           </button>

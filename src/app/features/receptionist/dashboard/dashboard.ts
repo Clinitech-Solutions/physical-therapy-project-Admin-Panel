@@ -183,7 +183,8 @@ export class Dashboard implements OnInit {
   async checkIn(id: number) { await this.perform(() => this.workflow.transition(id,'In Progress')); }
   async checkOut(id: number) { await this.perform(() => this.workflow.transition(id,'Completed')); }
   async cancelSession(id: number) { await this.perform(() => this.workflow.cancel(id)); }
-  async markPatientAbsent(id: number) { await this.cancelSession(id); }
+  canRecordNoShow(session: TodaySession) { return ['Pending', 'Confirmed'].includes(this.receptionistService.mapStatusToString(session.status)) && !!session.endTime && !session.actualCheckIn && !session.treatmentStartedAt && new Date(session.endTime).getTime() < Date.now(); }
+  async markPatientAbsent(id: number) { await this.perform(() => this.workflow.noShow(id)); }
   refresh() {
     this.receptionistService.getDashboardStats();this.applySessionFilters();this.roomService.load();this.clinicianService.load();
   }
@@ -191,7 +192,7 @@ export class Dashboard implements OnInit {
     if(this.workflow.mutation.busy())return;
     this.actionError.set('');
     try { await firstValueFrom(request()); }
-    catch(error) {this.actionError.set(error instanceof ReceptionError?this.locale.text(error.key,error.message):apiError(error));return;}
+    catch(error) {if ((error as {name?: string})?.name === 'EmptyError') return;this.actionError.set(error instanceof ReceptionError?this.locale.text(error.key,error.message):apiError(error));return;}
     this.messageService.add({severity:'success',summary:this.locale.text('SUCCESS','Success'),detail:this.locale.text('APPOINTMENT_OPERATION_SAVED','Appointment change saved. Refreshing the schedule separately.')});
     this.receptionistService.getDashboardStats();this.applySessionFilters();
   }

@@ -209,6 +209,7 @@
       } @else if (patientService.creationOutcomeUnknown()) {
         <p class="alert alert-warning d-block mb-2" role="alert">{{ 'RECEPTIONIST.UI.PATIENT_OUTCOME_UNKNOWN' | translate }}</p>
       }
+      @if(patientService.creationOutcomeUnknown()){<a routerLink="/receptionist/patients" class="btn btn-outline-primary">{{'RECEPTIONIST.UI.RECONCILE_REGISTRATION'|translate}}</a>}
     <div class="modal-footer-actions">
     <p-button [label]="'COMMON.CANCEL' | translate" [outlined]="true" (onClick)="closeQuickAddModal()" [disabled]="registeringPatient()" />
     <p-button [label]="'COMMON.SAVE' | translate" (onClick)="saveQuickPatient()" [loading]="registeringPatient()"

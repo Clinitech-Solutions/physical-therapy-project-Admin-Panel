@@ -59,6 +59,8 @@ export interface Payment {
   status?: number | string;
   paymentDate?: string;
   createdAt?: string;
+  recordedBy?: string;
+  recordedByName?: string;
 }
 export interface CreatePaymentDto {
   invoiceId: number;
@@ -313,6 +315,8 @@ export class BillingService {
               idempotencyKey: typeof r['idempotencyKey'] === 'string' ? r['idempotencyKey'] : undefined,
               status: r['status'] == null ? 'Unknown' : backendEnumNumber('paymentStatus',r['status']) as number|string,
               paymentDate: typeof r['paymentDate'] === 'string' ? r['paymentDate'] : undefined,
+              recordedBy: typeof r['recordedBy'] === 'string' ? r['recordedBy'] : undefined,
+              recordedByName: typeof r['recordedByName'] === 'string' ? r['recordedByName'] : undefined,
               invoiceId: numericId(r["invoiceId"]),
               amount: finiteNumber(r["amount"]),
               method: finiteNumber(backendEnumNumber('paymentMethod', r["paymentMethod"] ?? r["method"])),

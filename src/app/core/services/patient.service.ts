@@ -4,8 +4,21 @@ import { EMPTY, Observable, catchError, defer, expand, finalize, map, reduce, ta
 import { environment } from '../../../environments/environment';
 import { NewPatient, Patient } from '../models/patient.model';
 import { PagedPatientsResponse, PatientResponse } from '../models/patient-api.model';
+import { CreatePatientRequest } from '../models/patient-api.model';
 import { createPatientRequest, updatePatientRequest, PatientOutcomeUnknownError, patientOutcomeIsUnknown } from './patient-registration';
 import { ReceptionEvents, apiError, numericId } from './reception-api';
+
+function registrationScope(): string | null {
+  try {
+    if(typeof localStorage==='undefined')return null;
+    const encoded=localStorage.getItem('mediqova-token')?.split('.')[1];
+    if(!encoded)return null;
+    const claims=JSON.parse(atob(encoded.replace(/-/g,'+').replace(/_/g,'/')));
+    const actor=claims.nameid ?? claims.sub;
+    return typeof actor==='string' ? `ptcenter.pending-registration.${actor}` : null;
+  } catch { return null; }
+}
+function registrationKey(scope:string|null): string|null {try{return scope && typeof sessionStorage!=='undefined' ? sessionStorage.getItem(scope) : null;}catch{return null;}}
 
 @Injectable({ providedIn: 'root' })
 export class PatientService {
@@ -16,7 +29,11 @@ export class PatientService {
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
   readonly creating = signal(false);
-  readonly creationOutcomeUnknown = signal(false);
+  private registrationScope=registrationScope();
+  private registrationKey=registrationKey(this.registrationScope);
+  private originalRegistration: CreatePatientRequest|null=null;
+  readonly creationOutcomeUnknown = signal(!!this.registrationKey);
+  readonly registrationRetryAllowed=signal(false);
   private readGeneration = 0;
 
   public mapToFrontendPatient(data: PatientResponse): Patient {
@@ -50,6 +67,7 @@ export class PatientService {
 
   /** Load every documented page so newly registered patients remain selectable after reload. */
   getPatients(): Observable<Patient[]> {
+    this.syncRegistrationIdentity();
     const generation = ++this.readGeneration;
     this.loading.set(true); this.error.set(null);
     const page = (pageNumber: number) => this.http.get<PagedPatientsResponse>(`${this.apiUrl}/GetAll`, {
@@ -78,19 +96,54 @@ export class PatientService {
 
   addPatient(draft: NewPatient): Observable<Patient> {
     return defer(() => {
+      this.syncRegistrationIdentity();
       if (this.creating()) throw new Error('Patient registration is already in progress.');
       if (this.creationOutcomeUnknown()) throw new PatientOutcomeUnknownError();
       const payload = createPatientRequest(draft);
-      this.creating.set(true);
+      this.originalRegistration=payload;
+      this.setRegistrationKey(payload.idempotencyKey!);
+      return this.sendRegistration(payload);
+    });
+  }
+
+  private syncRegistrationIdentity() {
+    const scope=registrationScope();
+    if(scope===this.registrationScope)return;
+    this.registrationScope=scope;this.registrationKey=registrationKey(scope);this.originalRegistration=null;
+    this.creationOutcomeUnknown.set(!!this.registrationKey);this.registrationRetryAllowed.set(false);this.patients.set([]);
+  }
+  private setRegistrationKey(key:string|null) {
+    this.registrationKey=key;
+    try {if(this.registrationScope && typeof sessionStorage!=='undefined')key ? sessionStorage.setItem(this.registrationScope,key) : sessionStorage.removeItem(this.registrationScope);}catch{}
+  }
+  private sendRegistration(payload:CreatePatientRequest):Observable<Patient> {
+      this.creating.set(true);const owner=this.registrationScope;
       return this.http.post<PatientResponse>(`${this.apiUrl}/Add`, payload).pipe(
         map(response => this.mapToFrontendPatient(response)),
-        tap(patient => { this.cachePatient(patient); this.events.changed.next('patients'); }),
+        tap(patient => { this.setRegistrationKey(null);this.creationOutcomeUnknown.set(false);this.registrationRetryAllowed.set(false);this.originalRegistration=null;
+          if(owner===registrationScope()){this.cachePatient(patient);this.events.changed.next('patients');}else this.syncRegistrationIdentity(); }),
         catchError(error => {
           if (patientOutcomeIsUnknown(error)) this.creationOutcomeUnknown.set(true);
+          else {this.setRegistrationKey(null);this.originalRegistration=null;this.creationOutcomeUnknown.set(false);}
           return throwError(() => error);
         }),
         finalize(() => this.creating.set(false))
       );
+  }
+
+  reconcileRegistration():Observable<Patient> {
+    return defer(()=>{
+      this.syncRegistrationIdentity();if(!this.registrationKey)throw new PatientOutcomeUnknownError();
+      return this.http.get<PatientResponse>(`${this.apiUrl}/GetByRegistrationKey/${encodeURIComponent(this.registrationKey)}`).pipe(
+        map(value=>this.mapToFrontendPatient(value)),tap(patient=>{this.setRegistrationKey(null);this.creationOutcomeUnknown.set(false);this.registrationRetryAllowed.set(false);this.originalRegistration=null;this.cachePatient(patient);this.events.changed.next('patients');}),
+        catchError(error=>{this.registrationRetryAllowed.set(error?.status===404 && !!this.originalRegistration);return throwError(()=>error);})
+      );
+    });
+  }
+  retryRegistration():Observable<Patient> {
+    return defer(()=>{
+      this.syncRegistrationIdentity();if(this.creating() || !this.registrationRetryAllowed() || !this.originalRegistration)throw new PatientOutcomeUnknownError();
+      return this.sendRegistration(this.originalRegistration);
     });
   }
 
@@ -100,6 +153,7 @@ export class PatientService {
   }
 
   getPatientById(id: number): Observable<Patient> {
+    this.syncRegistrationIdentity();
     return this.http.get<PatientResponse>(`${this.apiUrl}/GetById/${numericId(id)}`).pipe(
       map(value => this.mapToFrontendPatient(value)), tap(patient => this.cachePatient(patient))
     );

@@ -27,7 +27,7 @@ describe('Reception refresh and concurrent reads',()=>{
   });
   it('refreshes affected server records and statistics after a confirmed mutation',async()=>{
     TestBed.inject(ReceptionRefreshService);
-    const save=firstValueFrom(TestBed.inject(AppointmentWorkflowService).cancel(12));
+    const save=firstValueFrom(TestBed.inject(AppointmentWorkflowService).cancel(12,'Patient requested cancellation'));
     http.expectOne(`${url}/Receptionist/appointments/12/cancel`).flush(null);await save;
     http.expectOne(r=>r.url.endsWith('/Appointments/GetAll')).flush(emptyPage);
     http.expectOne(`${url}/Rooms`).flush([]);
@@ -37,7 +37,7 @@ describe('Reception refresh and concurrent reads',()=>{
   });
   it('does not turn a successful write into a failure when its refresh fails',async()=>{
     TestBed.inject(ReceptionRefreshService);
-    const save=firstValueFrom(TestBed.inject(AppointmentWorkflowService).cancel(12));
+    const save=firstValueFrom(TestBed.inject(AppointmentWorkflowService).cancel(12,'Patient requested cancellation'));
     http.expectOne(`${url}/Receptionist/appointments/12/cancel`).flush(null);await expect(save).resolves.toBeNull();
     http.expectOne(r=>r.url.endsWith('/Appointments/GetAll')).flush({}, {status:500,statusText:'Error'});
     http.expectOne(`${url}/Rooms`).flush([]);

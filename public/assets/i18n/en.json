@@ -66,7 +66,8 @@
     "SWITCH_TO_LIGHT": "Switch to light mode",
     "SWITCH_TO_DARK": "Switch to dark mode",
     "TOGGLE_NAVIGATION": "Toggle navigation",
-    "CLOSE_NAVIGATION": "Close navigation"
+    "CLOSE_NAVIGATION": "Close navigation",
+    "NOTIFICATIONS": "Notifications"
   },
   "RECEPTIONIST": {
     "DASHBOARD_TITLE": "Receptionist Dashboard",
@@ -443,7 +444,7 @@
       "PAYMENT_AMOUNT_INVALID": "Enter a positive payment no greater than the saved invoice balance.",
       "PAYMENT_SAVED_REFRESH_SEPARATE": "Payment saved. Verify the refreshed balance before collecting again.",
       "PAYMENT_HISTORY_PENDING": "The payment history response needs verification.",
-      "DOCUMENT_RESPONSE_PENDING": "Document details await verified patient association and file access.",
+      "DOCUMENT_RESPONSE_PENDING": "The saved upload could not be verified. Retry the original files.",
       "ROOM_VALIDATION": "Enter a room name, a positive whole capacity and its active state.",
       "INVALID_IDENTIFIER": "Select a valid saved record.",
       "OPERATION_IN_PROGRESS": "An operation is already in progress.",
@@ -957,9 +958,17 @@
       "PRESCRIBED_WEEKLY_FREQUENCY": "Prescribed sessions per Saturday–Friday clinic week",
       "FREQUENCY_CLARIFICATION": "Senior clarification required",
       "ROOM_NO_OCCUPANTS": "No patients currently checked in.",
-      "REQUEST_FAILED_SAFE": "The request could not be confirmed. Retry loading; for a payment or booking, reconcile the original action before retrying.",
+      "REQUEST_FAILED_SAFE": "The request could not be completed. Check the saved record before retrying.",
       "VALIDATION_REVIEW_REQUIRED": "Review the highlighted fields and required selections before submitting.",
-      "BUSINESS_REVIEW_REQUIRED": "The operation was blocked by updated availability or business rules. Refresh the affected section and review the details."
+      "BUSINESS_REVIEW_REQUIRED": "The operation was blocked by updated availability or business rules. Refresh the affected section and review the details.",
+      "DOCUMENT_UPLOAD_POLICY": "PDF, JPEG/JPG or PNG; maximum 10 MiB (10,485,760 bytes) per file. Empty files are not allowed.",
+      "RECONCILE_REGISTRATION": "Reconcile original registration",
+      "RETRY_REGISTRATION": "Retry original registration",
+      "REGISTRATION_NOT_FOUND": "No saved registration was found. Retry the original registration only.",
+      "REGISTRATION_RECOVERY_FAILED": "The registration could not be reconciled. Keep the original operation and try again.",
+      "DOCUMENT_ORIGINAL_RETRY": "Retry the original files before starting a different upload.",
+      "RECEIPT_RECORDED_BY": "Recorded by",
+      "ACTOR_NOT_RECORDED": "Historical employee not recorded"
     },
     "DASHBOARD": {
       "TREATMENT_PROGRESS": "Treatment Progress",
@@ -1320,7 +1329,6 @@
     "FOUR_TIMES_A_WEEK": "Four times a week",
     "FIVE_TIMES_A_WEEK": "Five times a week",
     "SIX_TIMES_A_WEEK": "Six times a week",
-
     "DASHBOARD_TITLE": "Senior Therapist Dashboard",
     "DASHBOARD_SUB": "Intake assessment oversight & capacity view",
     "TODAYS_TASKS": "Today's Tasks",
@@ -1364,7 +1372,14 @@
     "ADJUST_PLAN": "Adjust Plan",
     "DISCHARGE": "Discharge",
     "ADDITIONAL_SESSIONS": "Additional Sessions",
-    "SUBMIT_REASSESSMENT": "Submit Reassessment"
+    "SUBMIT_REASSESSMENT": "Submit Reassessment",
+    "SAVE_DRAFT": "Save unsigned draft",
+    "DRAFT_SAVED": "Unsigned assessment draft saved.",
+    "UNSAVED_DRAFT": "This assessment has unsaved changes. Leave without saving?",
+    "FIELD_REQUIRED": "Required",
+    "SESSION_COUNT_RANGE": "Enter 1 to 200 sessions.",
+    "SELECT_FREQUENCY": "Select frequency",
+    "SELECT_TREATING_DOCTOR": "Select Doctor"
   },
   "AUTH": {
     "SIGN_IN": "Sign In",

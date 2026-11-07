@@ -412,7 +412,7 @@ export class BookingsComponent implements OnInit {
       this.allPatients.update(patients => patients.map(p => p.id === String(context.patientId)
         ? { ...p, nameEn: context.patientName, nameAr: context.patientName, gender: context.gender, paymentType: context.paymentType, insuranceCompanyName: context.insuranceCompanyName } : p));
       this.sessionType = context.hasCompletedAssessment ? 'Session' : 'Assessment';
-      if (context.plans.length === 1) this.selectedPlanId = context.plans[0].id;
+      if (this.patientPlans.length === 1) this.selectedPlanId = this.patientPlans[0].id;
       this.selectedDays=[1,3,6,0,2,4,5].slice(0,this.chosenPlan?.frequencyPerWeek ?? 0);
       if (context.isInsurance && !context.hasCompletedAssessment) this.assessmentCharge = 'Free';
       this.syncAgreement();
@@ -706,9 +706,10 @@ export class BookingsComponent implements OnInit {
   async markPatientAbsent(id: number | undefined) {
     if (id === undefined) return;
     try {
-      await firstValueFrom(this.workflow.cancel(id));
+      await firstValueFrom(this.workflow.noShow(id));
       this.appointmentService.getAppointments();
     } catch (error) {
+      if ((error as {name?: string})?.name === 'EmptyError') return;
       this.bookingError.set(apiError(error));
     }
   }

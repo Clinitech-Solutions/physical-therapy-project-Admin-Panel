@@ -22,6 +22,7 @@ import { GroupedBillingComponent } from './grouped-billing';
 import { PatientProfileComponent } from '../../../shared/components/patient-profile/patient-profile.component';
 import { billingArabic } from './billing-text';
 import { CourseFinanceService } from '../../../core/services/course-finance.service';
+import { ReceptionWarnings } from '../../../core/services/reception-warnings';
 
 @Component({
   selector: "p-dropdown",
@@ -119,6 +120,14 @@ export class BillingComponent implements OnInit {
     this.invoiceDetailLoading.set(true);this.paymentError.set('');
     try {
       const [invoice,context]=await Promise.all([firstValueFrom(this.billingService.getInvoiceById(id)),firstValueFrom(this.groupedApi.context(id))]);
+      if(collect && context.pricingMode==='Package' && context.agreementId && !context.collectionBlockedReason && !this.collectionLocked) {
+        // Package receipts cover the course, including balances spread over several invoices.
+        this.bookingApi.invalidatePatient(context.patientId);
+        const patient=await firstValueFrom(this.bookingApi.context(context.patientId));
+        const financial=patient.plans.find(p=>p.id===context.planId)?.financial;
+        if(!financial || financial.agreementId!==context.agreementId)throw new Error(this.billingText('Account unavailable'));
+        this.openAccountPayment({key:`course:${financial.agreementId}`,remainingAmount:financial.remainingAmount});this.detailContext.set(context);return;
+      }
       this.detailInvoice.set(invoice);this.detailContext.set(context);
       this.openPaymentModal(id);
       this.collectionView=collect && (invoice.remainingAmount ?? 0)>0 && !['Waived','Cancelled'].includes(this.billingService.mapStatusToString(invoice.status)) && !this.collectionLocked;
@@ -131,18 +140,21 @@ export class BillingComponent implements OnInit {
   billingService = inject(BillingService, { optional: true }) ?? new BillingService();
   patientService = inject(PatientService, { optional: true });
   messageService = inject(MessageService);
+  private warnings = inject(ReceptionWarnings);
   readonly bookingApi = inject(BookingService);
   readonly finance = inject(CourseFinanceService);
   readonly accounts = signal<BookingAccount[]>([]);
   readonly accountsError = signal('');
   readonly accountsLoading = signal(false);
+  readonly accountsLoaded = signal(false);
   readonly patientLookupError = signal('');
   selectedAccountKey: string | null = null;
   refreshAccounts() {
+    if(String(this.activeTab)!=='1'){this.accountsLoaded.set(false);return;}
     this.accountsError.set(''); this.accountsLoading.set(true);
-    this.bookingApi.accounts().subscribe({ next: accounts => {this.accounts.set(accounts);this.accountsLoading.set(false);}, error: error => {this.accountsError.set(apiError(error));this.accountsLoading.set(false);} });
+    this.bookingApi.accounts().subscribe({ next: accounts => {this.accounts.set(accounts);this.accountsLoaded.set(true);this.accountsLoading.set(false);}, error: error => {this.accountsLoaded.set(false);this.accountsError.set(apiError(error));this.accountsLoading.set(false);} });
   }
-  openAccountPayment(account: BookingAccount) {
+  openAccountPayment(account: BookingAccount | Pick<BookingAccount,'key'|'remainingAmount'>) {
     if (this.isSubmittingPayment()) return;
     this.collectionView=true;this.detailInvoice.set(null);this.detailContext.set(null);this.allocation.set(null);
     this.selectedAccountKey = account.key; this.selectedInvoiceId = null;
@@ -177,9 +189,9 @@ export class BillingComponent implements OnInit {
   isSubmittingPayment = signal<boolean>(false);
 
   ngOnInit(): void {
-    this.refreshAccounts();
-
+    // The account history is loaded when its tab is opened; the cashier reads grouped invoices.
   }
+  billingTabChanged(value:string|number|undefined) { this.activeTab=value;if(String(value)==='1'&&!this.accountsLoading())this.refreshAccounts(); }
   refreshPatientLookup() {
     this.patientLookupError.set('');
     this.patientService?.getPatients().subscribe({error:e=>this.patientLookupError.set(apiError(e))});
@@ -238,7 +250,23 @@ export class BillingComponent implements OnInit {
     const id=Number(this.selectedInvoiceId), recovering=!!this.billingService.paymentIntent(id);
     this.paymentHistoryLoading.set(true);this.paymentHistoryError.set('');
     this.billingService.getPaymentsForInvoice(id).subscribe({
-      next:payments=>{if(Number(this.selectedInvoiceId)!==id)return;this.invoicePayments.set(payments);this.paymentHistoryLoading.set(false);if(recovering && !this.billingService.paymentIntent(id)){this.refreshGrouped();this.refreshAccounts();}},
+      next:payments=>{
+        if(Number(this.selectedInvoiceId)!==id)return;
+        this.invoicePayments.set(payments);
+        const reconciled=recovering && !this.billingService.paymentIntent(id);
+        if(reconciled){
+          // The original receipt is confirmed. Do not leave its amount ready as
+          // a new collection while the invoice balance is being refreshed.
+          this.collectionView=false;this.amountToCollect=0;this.selectedPaymentMethod='';
+          this.detailInvoice.set(null);this.refreshGrouped();this.refreshAccounts();
+        }
+        if(reconciled || (!this.collectionView && !this.detailInvoice())){
+          this.billingService.getInvoiceById(id).subscribe({
+            next:invoice=>{if(Number(this.selectedInvoiceId)!==id)return;this.detailInvoice.set(invoice);this.paymentHistoryLoading.set(false);},
+            error:error=>{if(Number(this.selectedInvoiceId)!==id)return;this.paymentHistoryError.set(apiError(error));this.paymentHistoryLoading.set(false);}
+          });
+        }else this.paymentHistoryLoading.set(false);
+      },
       error:error=>{if(Number(this.selectedInvoiceId)!==id)return;this.paymentHistoryError.set(apiError(error));this.paymentHistoryLoading.set(false);}
     });
   }
@@ -279,6 +307,7 @@ export class BillingComponent implements OnInit {
       await firstValueFrom(this.billingService.recordPayment({invoiceId:id,amount,method:this.billingService.mapPaymentMethodToNumber(method),expectedRemaining:this.detailInvoice()?.id===id ? this.detailInvoice()?.remainingAmount : invoice.remainingAmount}));
     } catch(error) {
       this.paymentError.set(error instanceof ReceptionError?this.locale.text(error.key,error.message):apiError(error));
+      this.warnings.show(this.paymentError());
       this.isSubmittingPayment.set(false);return;
     }
     this.isSubmittingPayment.set(false);

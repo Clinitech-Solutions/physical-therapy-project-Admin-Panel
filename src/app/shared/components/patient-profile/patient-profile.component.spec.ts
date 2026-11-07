@@ -718,11 +718,11 @@ describe("Shared profile and inline single-session reschedule (mocked HTTP)", ()
   });
   it("preserves upload functionality and scopes document load failures", async () => {
     await open();
-    c.files = [new File(["test"], "approval.pdf")];
+    c.files = [new File(["%PDF-1.7 Synthetic"], "approval.pdf")];
     const upload = c.uploadDocuments();
-    const request = http.expectOne(`${base}/InsuranceDocuments/Add`);
+    const request = await vi.waitFor(() => http.expectOne(`${base}/InsuranceDocuments/Add`));
     expect(request.request.body.get("PatientId")).toBe("1");
-    request.flush([]);
+    request.flush([{id:7,patientId:1,fileName:'approval.pdf'}]);
     await upload;
     http
       .expectOne((r) => r.url === `${base}/InsuranceDocuments`)

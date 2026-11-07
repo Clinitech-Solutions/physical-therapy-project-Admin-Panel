@@ -166,6 +166,25 @@ describe('Patient registration contracts and safety', () => {
     await expect(firstValueFrom(service.addPatient(draft()))).rejects.toBeInstanceOf(PatientOutcomeUnknownError);
   });
 
+  it('reconciles the original registration key after a lost response without another POST',async()=>{
+    const value=draft();const failed=firstValueFrom(service.addPatient(value)).catch(error=>error);
+    const first=http.expectOne(`${base}/Patients/Add`);const key=first.request.body.idempotencyKey;first.error(new ProgressEvent('error'));await failed;
+    const recovery=firstValueFrom(service.reconcileRegistration());http.expectOne(`${base}/Patients/GetByRegistrationKey/${key}`).flush(saved);
+    expect((await recovery).id).toBe('42');expect(service.creationOutcomeUnknown()).toBe(false);expect(service.patients()).toHaveLength(1);
+    http.expectNone(`${base}/Patients/Add`);
+  });
+
+  it('retries only the frozen original request after reconciliation confirms no saved registration',async()=>{
+    const value=draft();const failed=firstValueFrom(service.addPatient(value)).catch(error=>error);
+    const first=http.expectOne(`${base}/Patients/Add`),original=first.request.body;first.error(new ProgressEvent('error'));await failed;
+    value.nameEn='Changed intent';
+    await expect(firstValueFrom(service.addPatient(value))).rejects.toBeInstanceOf(PatientOutcomeUnknownError);
+    const absent=firstValueFrom(service.reconcileRegistration()).catch(error=>error);http.expectOne(`${base}/Patients/GetByRegistrationKey/${original.idempotencyKey}`).flush({},{status:404,statusText:'Not found'});await absent;
+    expect(service.registrationRetryAllowed()).toBe(true);const retry=firstValueFrom(service.retryRegistration());
+    const repeated=http.expectOne(`${base}/Patients/Add`);expect(repeated.request.body).toEqual(original);repeated.flush(saved);await retry;
+    expect(service.creationOutcomeUnknown()).toBe(false);
+  });
+
   it('shows ProblemDetails field errors and permits correction after rejection', async () => {
     const result = firstValueFrom(service.addPatient(draft())).catch(error => error);
     http.expectOne(`${base}/Patients/Add`).flush({ errors: { UserName: ['Username already exists.'], PhoneNumber: ['Invalid phone.'] } }, { status: 400, statusText: 'Bad Request' });
@@ -342,13 +361,13 @@ describe('Patient registration contracts and safety', () => {
     const component = TestBed.runInInjectionContext(() => new PatientsComponent());
     component.openDrawer();
     component.newPatient = { ...draft(), paymentType: 'Insurance', insuranceCompanyId: 7 };
-    component.selectedFiles = [new File(['document'], 'insurance.pdf', { type: 'application/pdf' })];
+    component.selectedFiles = [new File(['%PDF-1.7 document'], 'insurance.pdf', { type: 'application/pdf' })];
     const result = component.createProfile();
     await component.createProfile();
     http.expectOne(`${base}/Patients/Add`).flush(saved);
     await Promise.resolve();
     http.expectOne(r => r.url.endsWith('/Patients/GetAll')).flush(page([saved]));
-    const upload = http.expectOne(`${base}/InsuranceDocuments/Add`);
+    const upload = await vi.waitFor(() => http.expectOne(`${base}/InsuranceDocuments/Add`));
     expect(upload.request.body.get('PatientId')).toBe('42');
     upload.flush({}, { status: 400, statusText: 'Rejected' });
     await result;
@@ -360,7 +379,7 @@ describe('Patient registration contracts and safety', () => {
     await component.createProfile();
     http.expectNone(`${base}/Patients/Add`);
     const retry = component.retryDocumentUpload();
-    http.expectOne(`${base}/InsuranceDocuments/Add`).flush(null);
+    (await vi.waitFor(() => http.expectOne(`${base}/InsuranceDocuments/Add`))).flush([{id:7,patientId:42,fileName:'insurance.pdf'}]);
     await retry;
     expect(component.createdPatient()).toBeNull();
     expect(component.showDrawer()).toBe(false);
