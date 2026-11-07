@@ -87,7 +87,8 @@
     "SWITCH_TO_LIGHT": "التبديل إلى الوضع الفاتح",
     "SWITCH_TO_DARK": "التبديل إلى الوضع الداكن",
     "TOGGLE_NAVIGATION": "فتح أو إغلاق قائمة التنقل",
-    "CLOSE_NAVIGATION": "إغلاق قائمة التنقل"
+    "CLOSE_NAVIGATION": "إغلاق قائمة التنقل",
+    "NOTIFICATIONS": "الإشعارات"
   },
   "RECEPTIONIST": {
     "DASHBOARD_TITLE": "لوحة الاستقبال",
@@ -464,7 +465,7 @@
       "PAYMENT_AMOUNT_INVALID": "أدخل دفعة موجبة لا تزيد عن رصيد الفاتورة المحفوظ.",
       "PAYMENT_SAVED_REFRESH_SEPARATE": "تم حفظ الدفعة. تحقق من الرصيد بعد التحديث قبل التحصيل مرة أخرى.",
       "PAYMENT_HISTORY_PENDING": "تحتاج استجابة سجل المدفوعات إلى التحقق.",
-      "DOCUMENT_RESPONSE_PENDING": "تفاصيل المستندات بانتظار التحقق من ارتباطها بالمريض والوصول إلى الملفات.",
+      "DOCUMENT_RESPONSE_PENDING": "تعذر التحقق من حفظ المستندات. أعد محاولة الملفات الأصلية.",
       "ROOM_VALIDATION": "أدخل اسم الغرفة وسعة صحيحة موجبة وحالتها النشطة.",
       "INVALID_IDENTIFIER": "اختر سجلاً محفوظاً صحيحاً.",
       "OPERATION_IN_PROGRESS": "توجد عملية قيد التنفيذ.",
@@ -978,9 +979,17 @@
       "PRESCRIBED_WEEKLY_FREQUENCY": "الجلسات المقررة لأسبوع العيادة من السبت إلى الجمعة",
       "FREQUENCY_CLARIFICATION": "يلزم توضيح من الأخصائي الأول",
       "ROOM_NO_OCCUPANTS": "لا يوجد مرضى مسجل حضورهم حاليًا.",
-      "REQUEST_FAILED_SAFE": "تعذر تأكيد الطلب. أعد تحميل البيانات؛ وللدفع أو الحجز، تحقق من نتيجة العملية الأصلية قبل تكرارها.",
+      "REQUEST_FAILED_SAFE": "تعذر إكمال الطلب. تحقق من السجل المحفوظ قبل إعادة المحاولة.",
       "VALIDATION_REVIEW_REQUIRED": "راجع الحقول المحددة والاختيارات المطلوبة قبل الإرسال.",
-      "BUSINESS_REVIEW_REQUIRED": "تم منع العملية بسبب تغير الإتاحة أو قواعد العمل. حدّث القسم المتأثر وراجع التفاصيل."
+      "BUSINESS_REVIEW_REQUIRED": "تم منع العملية بسبب تغير الإتاحة أو قواعد العمل. حدّث القسم المتأثر وراجع التفاصيل.",
+      "DOCUMENT_UPLOAD_POLICY": "PDF أو JPEG/JPG أو PNG; الحد الأقصى 10 MiB (10,485,760 بايت) لكل ملف. لا تقبل الملفات الفارغة.",
+      "RECONCILE_REGISTRATION": "التحقق من التسجيل الأصلي",
+      "RETRY_REGISTRATION": "إعادة محاولة التسجيل الأصلي",
+      "REGISTRATION_NOT_FOUND": "لم يتم العثور على تسجيل محفوظ. أعد محاولة التسجيل الأصلي فقط.",
+      "REGISTRATION_RECOVERY_FAILED": "تعذر التحقق من التسجيل. احتفظ بالعملية الأصلية وحاول مجدداً.",
+      "DOCUMENT_ORIGINAL_RETRY": "أعد محاولة الملفات الأصلية قبل بدء رفع مختلف.",
+      "RECEIPT_RECORDED_BY": "سجله",
+      "ACTOR_NOT_RECORDED": "الموظف السابق غير مسجل"
     },
     "DASHBOARD": {
       "TREATMENT_PROGRESS": "تقدم العلاج",
@@ -1341,7 +1350,6 @@
     "FOUR_TIMES_A_WEEK": "أربع مرات أسبوعياً",
     "FIVE_TIMES_A_WEEK": "خمس مرات أسبوعياً",
     "SIX_TIMES_A_WEEK": "ست مرات أسبوعياً",
-
     "DASHBOARD_TITLE": "لوحة الأخصائي الأول",
     "DASHBOARD_SUB": "متابعة التقييمات والقدرة الاستيعابية للفريق",
     "TODAYS_TASKS": "مهام اليوم",
@@ -1385,7 +1393,14 @@
     "ADJUST_PLAN": "ع-Adjust Plan",
     "DISCHARGE": "ع-Discharge",
     "ADDITIONAL_SESSIONS": "ع-Additional Sessions",
-    "SUBMIT_REASSESSMENT": "ع-Submit Reassessment"
+    "SUBMIT_REASSESSMENT": "ع-Submit Reassessment",
+    "SAVE_DRAFT": "حفظ مسودة غير موقعة",
+    "DRAFT_SAVED": "تم حفظ مسودة التقييم دون توقيع.",
+    "UNSAVED_DRAFT": "يوجد تعديل غير محفوظ. هل تريد المغادرة دون حفظ؟",
+    "FIELD_REQUIRED": "مطلوب",
+    "SESSION_COUNT_RANGE": "أدخل من 1 إلى 200 جلسة.",
+    "SELECT_FREQUENCY": "اختر التكرار",
+    "SELECT_TREATING_DOCTOR": "اختر الطبيب"
   },
   "AUTH": {
     "SIGN_IN": "تسجيل الدخول",

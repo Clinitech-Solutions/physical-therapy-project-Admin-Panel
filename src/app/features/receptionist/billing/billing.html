@@ -35,7 +35,7 @@
   @if (!showPaymentModal && paymentError()) { <p class="alert alert-warning" role="alert">{{ paymentError() }}</p> }
   @if (savedAllocation(); as saved) { <details class="saved-allocation"><summary>{{ billingText('Saved allocation') }} ? {{ saved.accountKey }}</summary>@for (item of saved.items; track item.invoiceId) { <p>{{ item.reference }}: {{ item.amount | currency:'EGP':'symbol':'1.2-2':locale.language }}</p> }</details> }
   <div class="table-panel">
-    <p-tabs value="0" (valueChange)="activeTab = $event">
+    <p-tabs value="0" (valueChange)="billingTabChanged($event)">
       <p-tablist>
         <p-tab value="0">
           <i class="bi bi-receipt text-primary me-1"></i> {{ 'RECEPTIONIST.UI.ALL_INVOICES' | translate }}
@@ -43,7 +43,7 @@
         </p-tab>
         <p-tab value="1">
           <i class="bi bi-clock-history text-warning me-1"></i> {{ 'RECEPTIONIST.BILLING.PENDING_INSTALLMENTS' | translate }}
-          <span class="badge bg-warning text-dark rounded-pill ms-2">{{ pendingInstallments().length }}</span>
+          <span class="badge bg-warning text-dark rounded-pill ms-2">{{ accountsLoaded() ? pendingInstallments().length : '—' }}</span>
         </p-tab>
       </p-tablist>
 
@@ -150,7 +150,7 @@
         @for (pay of invoicePayments(); track pay.id || $index) {
           <div class="d-flex justify-content-between align-items-center small py-1">
             <span class="text-muted">{{ ((pay.payerType === 'Insurer' || pay.payerType === 'Insurance' || billingService.mapMethodToString(pay.method) === 'Insurance') ? 'RECEPTIONIST.UI.FINANCE_INSURANCE' : 'RECEPTIONIST.UI.PATIENT') | translate }} / {{ (pay.collectionMethod || billingService.mapMethodToString(pay.method)) | receptionistText }}<small class="d-block" style="overflow-wrap:anywhere">{{ pay.idempotencyKey }}</small><small class="d-block">{{ locale.date(pay.paymentDate, true) }} {{ pay.transactionId }} @if (pay.insuranceClaimId) { / #{{ pay.insuranceClaimId }} }</small></span>
-            <span class="fw-semibold" [class.text-success]="pay.status === 1"><small>{{ (pay.status === 1 ? 'Paid' : pay.status === 0 ? 'Pending' : 'Unknown') | receptionistText }}</small>{{ pay.amount | currency:'EGP':'symbol':'1.2-2':locale.language }}</span>
+            <span class="fw-semibold" [class.text-success]="pay.status === 1"><small>{{ (pay.status === 1 ? 'Paid' : pay.status === 0 ? 'Pending' : 'Unknown') | receptionistText }}</small>{{ pay.amount | currency:'EGP':'symbol':'1.2-2':locale.language }}<small class="d-block">{{'RECEPTIONIST.UI.RECEIPT_RECORDED_BY'|translate}}: {{pay.recordedByName || pay.recordedBy || ('RECEPTIONIST.UI.ACTOR_NOT_RECORDED'|translate)}}</small></span>
           </div>
         }
       </div>

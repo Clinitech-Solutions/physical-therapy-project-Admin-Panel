@@ -74,7 +74,7 @@ describe('ScheduleComponent API Unit Tests', () => {
         { provide: MessageService, useValue: messageService },
         { provide: RoomService, useValue: {rooms:signal([])} },
         { provide: ClinicianService, useValue: {clinicians:signal([])} },
-        { provide: AppointmentWorkflowService, useValue: {mutation:{busy:()=>false},transition:vi.fn(()=>of(null)),cancel:vi.fn(()=>of(null))} }
+        { provide: AppointmentWorkflowService, useValue: {mutation:{busy:()=>false},transition:vi.fn(()=>of(null)),noShow:vi.fn(()=>of(null)),cancel:vi.fn(()=>of(null))} }
       ]
     });
 
@@ -125,9 +125,9 @@ describe('ScheduleComponent API Unit Tests', () => {
     await component.checkoutSession(101);
     expect(component.workflow.transition).toHaveBeenCalledWith(101,'Completed');
   });
-  it('delegates cancellation without inferring an absent status', async () => {
+  it('records absence through the separate no-show workflow', async () => {
     await component.markPatientAbsent(102);
-    expect(component.workflow.cancel).toHaveBeenCalledWith(102);
+    expect(component.workflow.noShow).toHaveBeenCalledWith(102);
   });
 
   it('should reset filters cleanly', () => {
@@ -143,4 +143,23 @@ describe('ScheduleComponent API Unit Tests', () => {
     expect(component.selectedRoomFilter).toBe('');
     expect(component.selectedFilter).toBe('All');
   });
+  it('uses Cairo dates for arrival and waits for end before exposing no-show', () => {
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date('2026-11-06T22:30:00Z'));
+      const visit = {id: 700, patientId: 1, patientName: 'UAT Cairo', appointmentType: 'Session', status: 'Pending', startTime: '2026-11-07T08:00:00Z', endTime: '2026-11-07T09:00:00Z'};
+      expect(component.canArrive(visit)).toBe(true);
+      expect(component.canArrive({...visit,startTime:'2026-11-06T08:00:00Z'})).toBe(false);
+      expect(component.canArrive({...visit,startTime:'2026-11-08T08:00:00Z'})).toBe(false);
+      expect(component.canRecordNoShow(visit)).toBe(false);
+      vi.setSystemTime(new Date(visit.endTime));
+      expect(component.canRecordNoShow(visit)).toBe(false);
+      vi.setSystemTime(new Date('2026-11-07T09:01:00Z'));
+      expect(component.canRecordNoShow(visit)).toBe(true);
+      expect(component.canRecordNoShow({...visit,actualCheckIn:'2026-11-07T08:00:00Z'})).toBe(false);
+      expect(component.canRecordNoShow({...visit,treatmentStartedAt:'2026-11-07T08:00:00Z'})).toBe(false);
+      expect(component.canRecordNoShow({...visit,status:'NoShow'})).toBe(false);
+    } finally { vi.useRealTimers(); }
+  });
+
 });

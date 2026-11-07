@@ -35,6 +35,7 @@ export class PatientsComponent implements OnInit {
   readonly saving = signal(false);
   readonly createdPatient = signal<Patient | null>(null);
   readonly creationOutcomeUnknown = this.patientService.creationOutcomeUnknown;
+  readonly registrationRetryAllowed = this.patientService.registrationRetryAllowed;
   readonly registrationError = signal('');
   readonly registrationValidationErrors = signal<PatientInputError[]>([]);
   @ViewChild('registrationFields') private registrationFields?: PatientRegistrationFieldsComponent;
@@ -261,6 +262,23 @@ export class PatientsComponent implements OnInit {
     }
     this.saving.set(false);
     this.finishRegistration();
+  }
+
+  async recoverRegistration(retry=false) {
+    if(this.saving())return;
+    this.saving.set(true);this.registrationError.set('');
+    try {
+      const patient=await firstValueFrom(retry ? this.patientService.retryRegistration() : this.patientService.reconcileRegistration());
+      this.createdPatient.set(patient);this.refreshPatients(true);
+    } catch(error) {
+      const detail=(error as any)?.status===404
+        ? this.locale.text('REGISTRATION_NOT_FOUND','No saved registration was found. Retry the original registration only.')
+        : this.locale.text('REGISTRATION_RECOVERY_FAILED','The registration could not be reconciled. Keep the original operation and try again.');
+      this.registrationError.set(detail);this.messageService.add({severity:'warn',summary:this.locale.text('ERROR','Error'),detail});
+      this.saving.set(false);return;
+    }
+    this.saving.set(false);
+    if(this.selectedFiles.length)await this.retryDocumentUpload();else this.finishRegistration();
   }
 
   finishRegistration() {

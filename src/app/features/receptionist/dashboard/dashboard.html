@@ -133,12 +133,13 @@
                   'badge-success': statusStr === 'Confirmed' || statusStr === 'Completed',
                   'badge-info': statusStr === 'In Progress' || statusStr === 'Waiting',
                   'badge-warning': statusStr === 'Pending',
-                  'badge-error': statusStr === 'Cancelled'
+                  'badge-error': statusStr === 'Cancelled' || statusStr === 'NoShow'
                 }">
                 @if(statusStr === 'Confirmed') { {{ 'RECEPTIONIST.CONFIRMED' | translate }} }
                 @if(statusStr === 'In Progress') { {{ 'RECEPTIONIST.IN_PROGRESS' | translate }} }
                 @if(statusStr === 'Pending') { {{ 'RECEPTIONIST.PENDING' | translate }} }
                 @if(statusStr === 'Cancelled') { {{ 'RECEPTIONIST.CANCELLED' | translate }} }
+                @if(statusStr === 'NoShow') { {{ 'DOCTOR.STATES.NoShow' | translate }} }
                 @if(statusStr === 'Waiting') { {{ 'RECEPTIONIST.WAITING' | translate }} }
                 @if(statusStr === 'Completed') { {{ 'RECEPTIONIST.COMPLETED' | translate }} }
                 @if(statusStr === 'Unknown') { {{ 'RECEPTIONIST.UI.UNKNOWN' | translate }} }
@@ -164,7 +165,7 @@
                   pTooltip="{{ 'RECEPTIONIST.MARK_ABSENT' | translate }}"
                   tooltipPosition="top"
                   tooltipStyleClass="custom-tooltip"
-                  [disabled]="workflow.mutation.busy()" (onClick)="cancelSession(session.id)">
+                  [disabled]="workflow.mutation.busy() || !canRecordNoShow(session)" (onClick)="markPatientAbsent(session.id)">
                 </p-button>
               </div>
             </td>

@@ -62,8 +62,8 @@ describe('Reception appointment integration',()=>{
     const workflow=TestBed.inject(AppointmentWorkflowService);
     const entering=firstValueFrom(workflow.transition(10,'In Progress'));
     const checkIn=http.expectOne(`${url}/Receptionist/appointments/10/status`);expect(checkIn.request.body).toBe(4);checkIn.flush(null);await entering;
-    const cancel=firstValueFrom(workflow.cancel(10));const req=http.expectOne(`${url}/Receptionist/appointments/10/cancel`);
-    expect(req.request.method).toBe('PUT');expect(req.request.body).toBeNull();req.flush(null);await cancel;
+    const cancel=firstValueFrom(workflow.cancel(10,'Patient requested cancellation'));const req=http.expectOne(`${url}/Receptionist/appointments/10/cancel`);
+    expect(req.request.method).toBe('PUT');expect(req.request.body).toMatchObject({reason:'Patient requested cancellation'});expect(req.request.body.idempotencyKey).toBeTruthy();req.flush(null);await cancel;
   });
   it('maps only the dashboard fields observed on the running API',()=>{
     const service=TestBed.inject(ReceptionistService);

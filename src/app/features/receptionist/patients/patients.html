@@ -145,6 +145,8 @@
 </div>
 
 <!-- Add Patient Modal (Dialog) -->
+@if(creationOutcomeUnknown() && !patientDialog){<p class="alert alert-warning" role="alert">{{'RECEPTIONIST.UI.PATIENT_OUTCOME_UNKNOWN'|translate}}
+  <button type="button" class="btn btn-outline-primary" [disabled]="saving()" (click)="recoverRegistration()">{{'RECEPTIONIST.UI.RECONCILE_REGISTRATION'|translate}}</button></p>}
 <p-dialog 
   [(visible)]="patientDialog" 
   [modal]="true" 
@@ -161,13 +163,13 @@
   <fieldset [disabled]="saving() || !!createdPatient() || creationOutcomeUnknown()" class="border-0 p-0 m-0 w-100">
     <app-patient-registration-fields #registrationFields formId="patients-add" [draft]="newPatient" [validationErrors]="registrationValidationErrors()" [companies]="insuranceCompanies()"
       [insuranceLoading]="insuranceLoading()" [insuranceError]="insuranceError()" />
+  </fieldset>
     @if (newPatient.paymentType === 'Insurance') {
       <label class="form-label fw-bold small mt-3 w-100">
         {{ 'RECEPTIONIST.UI.INSURANCE_DOCUMENTS' | translate }}
-        <input class="form-control form-control-sm" type="file" multiple (change)="onFilesSelected($event)">
+        <input class="form-control form-control-sm" type="file" multiple (change)="onFilesSelected($event)" [disabled]="saving() || creationOutcomeUnknown()" accept=".pdf,.jpg,.jpeg,.png"><small class="text-muted d-block">{{ 'RECEPTIONIST.UI.DOCUMENT_UPLOAD_POLICY' | translate }}</small>
       </label>
     }
-  </fieldset>
 
   <!-- 2. FIXED FOOTER (MUST BE OUTSIDE THE FORM, DIRECT CHILD OF p-dialog) -->
   <ng-template #footer pTemplate="footer">
@@ -179,6 +181,10 @@
       }
     <div class="modal-footer-actions pt-3 pb-1 border-top">
       <p-button label="{{ 'COMMON.CANCEL' | translate }}" icon="pi pi-times" styleClass="p-button-text p-button-secondary" (onClick)="hideDialog()"></p-button>
+      @if(creationOutcomeUnknown()){
+        <button type="button" class="btn btn-outline-primary" data-reconcile-registration [disabled]="saving()" (click)="recoverRegistration()">{{'RECEPTIONIST.UI.RECONCILE_REGISTRATION'|translate}}</button>
+        @if(registrationRetryAllowed()){<button type="button" class="btn btn-primary" data-retry-registration [disabled]="saving()" (click)="recoverRegistration(true)">{{'RECEPTIONIST.UI.RETRY_REGISTRATION'|translate}}</button>}
+      }
       @if (createdPatient()) {
         <p-button [label]="'RECEPTIONIST.UI.PATIENT_RETRY_UPLOAD' | translate" (onClick)="retryDocumentUpload()" [loading]="saving()" [disabled]="saving() || !selectedFiles.length" />
         <p-button [label]="'RECEPTIONIST.UI.PATIENT_FINISH_WITHOUT_UPLOAD' | translate" (onClick)="finishRegistration()" [disabled]="saving()" />

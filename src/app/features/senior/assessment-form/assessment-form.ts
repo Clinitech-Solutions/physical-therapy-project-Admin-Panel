@@ -1,8 +1,8 @@
-import { Component, inject, computed, OnInit, signal } from '@angular/core';
+import { Component, inject, computed, OnInit, signal, HostListener, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { MessageService } from 'primeng/api';
 import { firstValueFrom } from 'rxjs';
 import { BookingService, AssessmentWorkspace } from '../../../core/services/booking.service';
@@ -23,6 +23,8 @@ export class AssessmentForm implements OnInit {
   private booking = inject(BookingService);
   private patients = inject(PatientService);
   private messages = inject(MessageService);
+  private translate = inject(TranslateService);
+  private element: ElementRef<HTMLElement> = inject(ElementRef);
   readonly locale = new ReceptionistLocale();
   patientId = signal(''); sessionId = signal('');
   readonly loading = signal(false); readonly saving = signal(false); readonly error = signal('');
@@ -46,6 +48,7 @@ export class AssessmentForm implements OnInit {
   }
   private async load() {
     const generation = ++this.generation; this.loading.set(true); this.error.set(''); this.context.set(null);
+    this.form.disable();
     try {
       const id = numericId(this.patientId()); numericId(this.sessionId());
       const [, clinicians, context] = await Promise.all([firstValueFrom(this.patients.getPatientById(id)), firstValueFrom(this.booking.clinicians(id, null, true)), firstValueFrom(this.booking.assessmentWorkspace(numericId(this.sessionId())))]);
@@ -61,7 +64,14 @@ export class AssessmentForm implements OnInit {
     finally { if (generation === this.generation) this.loading.set(false); }
   }
   async submit() {
-    if (this.form.invalid || this.saving() || this.loading() || !this.context() || this.context()?.completedAt) { this.form.markAllAsTouched(); return; }
+    if (this.saving() || this.loading() || !this.context() || this.context()?.completedAt) return;
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      this.error.set(this.locale.text('VALIDATION_REVIEW_REQUIRED','Review the highlighted fields and required selections before submitting.'));
+      this.messages.add({severity:'warn',summary:this.locale.text('WARNING','Please review'),detail:this.error()});
+      this.element.nativeElement.querySelector<HTMLElement>('[formcontrolname].ng-invalid')?.focus();
+      return;
+    }
     this.saving.set(true); this.error.set('');
     try {
       const value = this.form.getRawValue();
@@ -70,9 +80,29 @@ export class AssessmentForm implements OnInit {
         numberOfSessions: Number(value.totalSessions), frequencyPerWeek: frequency, doctorId: value.assignedDoctorId ?? '',
         treatmentType: this.context()!.treatmentType, exercises: value.exercises || null }));
       this.messages.add({ severity: 'success', summary: this.locale.text('SUCCESS', 'Success'), detail: this.locale.text('ASSESSMENT_SAVED', 'Assessment completed and treatment plan saved.') });
+      this.form.markAsPristine();
       await this.router.navigate(['/senior/dashboard']);
-    } catch (error) { this.error.set(apiError(error)); }
+    } catch (error) { this.error.set(this.locale.label(apiError(error)));this.messages.add({severity:'error',summary:this.locale.text('ERROR','Error'),detail:this.error()}); }
     finally { this.saving.set(false); }
   }
-  selectDoctorFromList(id: string) { this.form.patchValue({ assignedDoctorId: id }); }
+  selectDoctorFromList(id: string) { if(this.loading() || !this.context() || this.context()?.completedAt)return; this.form.patchValue({ assignedDoctorId: id }); this.form.markAsDirty(); }
+  async saveDraft() {
+    if (this.saving() || this.loading() || !this.context() || this.context()?.completedAt) return;
+    this.saving.set(true); this.error.set('');
+    try {
+      const value = this.form.getRawValue();
+      const frequency = ({'Daily':7,'Twice a week':2,'Three times a week':3,'Once a week':1} as Record<string,number>)[value.frequency ?? ''] ?? Number(value.frequency);
+      const saved = await firstValueFrom(this.booking.saveAssessmentDraft({appointmentId:numericId(this.sessionId()), diagnosis:value.diagnosis ?? '',
+        numberOfSessions:Number(value.totalSessions ?? 0), frequencyPerWeek:frequency, doctorId:value.assignedDoctorId ?? '', treatmentType:this.context()!.treatmentType, exercises:value.exercises || null}));
+      this.context.set(saved); this.form.markAsPristine();
+      this.messages.add({severity:'success',summary:this.locale.text('SUCCESS','Success'),detail:this.translate.instant('SENIOR.DRAFT_SAVED')});
+    } catch (error) {
+      this.error.set(this.locale.label(apiError(error)));
+      this.messages.add({severity:'error',summary:this.locale.text('ERROR','Error'),detail:this.error()});
+    } finally { this.saving.set(false); }
+  }
+  canLeave() { return !this.form.dirty || !!this.context()?.completedAt || globalThis.confirm(this.translate.instant('SENIOR.UNSAVED_DRAFT')); }
+  @HostListener('window:beforeunload', ['$event']) beforeUnload(event: BeforeUnloadEvent) {
+    if (this.form.dirty && !this.context()?.completedAt) { event.preventDefault(); event.returnValue = ''; }
+  }
 }

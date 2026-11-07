@@ -134,6 +134,9 @@ export class BookingService {
   assessmentWorkspace(id: number) {
     return this.http.get<AssessmentWorkspace>(`${this.url}/assessments/appointments/${numericId(id)}`);
   }
+  saveAssessmentDraft(request: { appointmentId: number; diagnosis: string; numberOfSessions: number; frequencyPerWeek: number; doctorId: string; treatmentType: string; exercises: string | null }) {
+    return this.http.put<AssessmentWorkspace>(`${this.url}/assessments/draft`, request);
+  }
 }
 
 export interface AssessmentWorkspace {

@@ -30,7 +30,7 @@
 
   <div class="divider" style="margin: 0; opacity: 0.5;"></div>
   
-  <a class="sidebar-item" (click)="auth.logout(); $event.preventDefault()">
+  <a class="sidebar-item" href="#/login" [attr.aria-label]="'COMMON.LOGOUT' | translate" (click)="auth.logout(); $event.preventDefault()">
     <i class="sidebar-item-icon bi bi-box-arrow-left text-danger"></i>
     <span class="label text-danger" *ngIf="isHovered() || isMobileOpen()">
       {{ 'COMMON.LOGOUT' | translate }}

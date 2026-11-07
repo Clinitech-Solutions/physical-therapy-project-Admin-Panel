@@ -245,11 +245,13 @@ export class AbsenceRecovery implements OnInit {
     this.recordError.set("");
     try {
       const id = this.editing()?.id ?? null;
-      await firstValueFrom(
+      const saved=await firstValueFrom(
         withdraw && id !== null
           ? this.api.withdraw(id, this.request())
           : this.api.save(id, this.request()),
       );
+      this.editing.set(saved);
+      this.absences.update(rows=>rows?.map(row=>row.id===saved.id?saved:row) ?? null);
       this.busy.set(false);
       this.closeRecord();
       this.success.set(this.text(withdraw ? "WITHDRAWN" : "SAVED"));

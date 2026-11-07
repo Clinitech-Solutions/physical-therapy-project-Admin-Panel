@@ -455,12 +455,18 @@ export class ScheduleComponent implements OnInit {
     if(this.pendingCheckInSessionId !== null) await this.executeCheckIn(this.pendingCheckInSessionId);
     this.showDebtModal = false;
   }
-  async markPatientAbsent(id: number | undefined) { if(id!==undefined) await this.perform(() => this.workflow.cancel(id)); }
+  canRecordNoShow(session: TodaySession) {
+    return ['Pending', 'Confirmed'].includes(this.receptionistService.mapStatusToString(session.status)) && !!session.endTime && !session.actualCheckIn && !session.treatmentStartedAt && new Date(session.endTime).getTime() < Date.now();
+  }
+  canArrive(session: TodaySession) { return clinicDay(new Date(session.startTime)) === clinicDay(new Date()); }
+  canCancelUnattended(session: TodaySession) { return this.canScheduleEdit(session) && new Date(session.startTime).getTime() > Date.now(); }
+  async cancelUnattended(id: number | undefined) { if(id!==undefined) await this.perform(() => this.workflow.cancel(id)); }
+  async markPatientAbsent(id: number | undefined) { if(id!==undefined) await this.perform(() => this.workflow.noShow(id)); }
   private async perform(request: () => import('rxjs').Observable<unknown>) {
     if(this.workflow.mutation.busy())return;
     this.actionError.set('');
     try { await firstValueFrom(request()); }
-    catch(error) { this.actionError.set(error instanceof ReceptionError ? this.locale.text(error.key,error.message) : apiError(error)); this.warnings.show(this.actionError()); return; }
+    catch(error) { if ((error as {name?: string})?.name === 'EmptyError') return; this.actionError.set(error instanceof ReceptionError ? this.locale.text(error.key,error.message) : apiError(error)); this.warnings.show(this.actionError()); return; }
     this.messageService.add({severity:'success',summary:this.locale.text('SUCCESS','Success'),detail:this.locale.text('APPOINTMENT_OPERATION_SAVED','Appointment change saved. Refreshing the schedule separately.')});
     this.onSearchOrFilterChange(); this.receptionistService.getDashboardStats();
   }

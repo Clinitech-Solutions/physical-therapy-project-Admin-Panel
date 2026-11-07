@@ -1107,7 +1107,7 @@
                 type="file"
                 multiple
                 (change)="onFilesSelected($event)"
-                [disabled]="documentService.mutation.busy()" /></label
+                [disabled]="documentService.mutation.busy()" accept=".pdf,.jpg,.jpeg,.png" /><small class="text-muted d-block">{{ 'RECEPTIONIST.UI.DOCUMENT_UPLOAD_POLICY' | translate }}</small></label
             ><button
               type="button"
               class="profile-button primary"

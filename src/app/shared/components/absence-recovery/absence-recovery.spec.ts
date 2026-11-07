@@ -113,6 +113,15 @@ describe("Reception absence recovery", () => {
       });
   });
   afterEach(() => fixture.destroy());
+  it('reopens the saved absence version while the list refresh is still pending',async()=>{
+    const previous={id:9,clinicianId:'absent',clinicianName:'Absent Doctor',role:'Doctor',start:row.start,end:row.end,note:'Original',version:1,withdrawn:false,recordedBy:'Reception',recordedAt:row.start,history:[],affected:[row]} as AbsenceView;
+    const latest={...previous,version:2,note:'Corrected'};
+    component.absences.set([previous]);component.openRecord(previous);api.save.mockReturnValue(of(latest));
+    const refresh=new Subject<AbsenceView[]>();api.list.mockReturnValue(refresh);
+    const saving=component.saveAbsence();await Promise.resolve();
+    component.openRecord(component.absences()![0]);expect(component.editing()?.version).toBe(2);
+    refresh.next([latest]);refresh.complete();await saving;
+  });
   it("defaults to the schedule date, previews authoritative impact, and reports success only after save", async () => {
     component.scheduleDate = "2030-02-04";
     component.openRecord();
