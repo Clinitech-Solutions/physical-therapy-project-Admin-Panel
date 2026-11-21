@@ -1,0 +1,78 @@
+<section class="workspace">
+  <header class="heading">
+    <h1>{{t('Settings')}}</h1>
+    <button (click)="load()" [disabled]="loading()||saving()">
+      {{t('Reload')}}
+    </button>
+  </header>
+  @if(loading()){
+  <p role="status">{{t('Loading')}}…</p>
+  }@if(error()){
+  <div class="error" role="alert">{{error()}}</div>
+  }@if(saved()){
+  <div class="success" role="status">{{t('Saved')}}</div>
+  } @if(model;as m){
+  <form class="surface" #form="ngForm" (ngSubmit)="save(form)">
+    <h2>{{t('Clinic identity')}}</h2>
+    <p class="muted">
+      {{t('Used in the application header and CEO report exports.')}}
+    </p>
+    <fieldset [disabled]="saving()||loading()">
+      <div class="form-grid">
+        <label
+          >{{t('Clinic name')}} *<input
+            name="name"
+            [(ngModel)]="m.name"
+            required
+            minlength="2"
+            maxlength="200"
+            #name="ngModel"
+            [attr.aria-invalid]="name.invalid&&name.touched"
+            aria-describedby="name-error"
+          />@if(name.invalid&&name.touched){<span class="error" id="name-error"
+            >{{t('Enter the required fields.')}}</span
+          >}</label
+        ><label
+          >{{t('Phone')}}<input
+            name="phone"
+            [(ngModel)]="m.phone"
+            maxlength="50" /></label
+        ><label
+          >{{t('Email')}}<input
+            name="email"
+            type="email"
+            email
+            [(ngModel)]="m.email"
+            maxlength="200"
+            #email="ngModel"
+          />@if(email.invalid&&email.touched){<span class="error"
+            >{{t('Enter the required fields.')}}</span
+          >}</label
+        ><label
+          >{{t('Address')}}<input
+            name="address"
+            [(ngModel)]="m.address"
+            maxlength="500"
+        /></label>
+      </div>
+    </fieldset>
+    <p class="muted">
+      {{t('Timezone')}}: Africa/Cairo · {{t('Currency')}}: EGP
+    </p>
+    <div class="actions">
+      <button class="primary" type="submit" [disabled]="saving()||loading()">
+        {{t(saving()?'Saving':'Save')}}
+      </button>
+    </div>
+    @if(m.updatedAt){
+    <p class="muted">
+      {{t('Saved')}}: {{locale.date(m.updatedAt,true)}} · {{m.updatedBy}}
+    </p>
+    }
+  </form>
+  }
+  <p class="notice">
+    {{t('No correction or refund workflow is available. Posted history is
+    protected.')}}
+  </p>
+</section>

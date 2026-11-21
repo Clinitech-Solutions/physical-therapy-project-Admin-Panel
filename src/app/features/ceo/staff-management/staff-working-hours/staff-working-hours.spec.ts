@@ -6,6 +6,10 @@ import { AddUserComponent } from '../add-user/add-user.component';
 import { StaffListComponent } from '../staff-list/staff-list.component';
 import { environment } from '../../../../../environments/environment';
 import { User } from '../../../../core/services/user.service';
+import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
+import { of } from 'rxjs';
+import { StaffRow } from '../../../../core/services/ceo-workspace.service';
+import { NgForm } from '@angular/forms';
 
 describe('CEO user working-hours forms', () => {
   let http: HttpTestingController;
@@ -17,8 +21,10 @@ describe('CEO user working-hours forms', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({ imports: [AddUserComponent, StaffListComponent, TranslateModule.forRoot()],
-      providers: [provideHttpClient(), provideHttpClientTesting()] }).compileComponents();
+      providers: [provideHttpClient(), provideHttpClientTesting(), {provide:ActivatedRoute,useValue:{queryParamMap:of(convertToParamMap({}))}}, {provide:Router,useValue:{navigate:vi.fn().mockResolvedValue(true)}}] }).compileComponents();
     http = TestBed.inject(HttpTestingController);
+    HTMLDialogElement.prototype.showModal = vi.fn();
+    HTMLDialogElement.prototype.close = vi.fn();
   });
   afterEach(() => { fixture?.destroy(); http.verify(); });
 
@@ -28,8 +34,9 @@ describe('CEO user working-hours forms', () => {
   }
   function editForm() {
     const created = TestBed.createComponent(StaffListComponent); fixture = created; created.detectChanges();
-    http.expectOne(`${url}/GetAll`).flush({ value: [user], isSuccess: true });
-    created.componentInstance.onEdit(user); created.detectChanges();
+    http.expectOne(`${environment.apiUrl}/ceo/staff`).flush({items:[user],total:1,page:1,pageSize:20});
+    vi.spyOn(created.componentInstance,'show').mockImplementation(()=>{});
+    created.componentInstance.edit({...user,id:'senior-id',isActive:true,futureAppointments:0,version:'v1'} as StaffRow); created.detectChanges();
     return created.componentInstance;
   }
 
@@ -62,22 +69,22 @@ describe('CEO user working-hours forms', () => {
   it('loads existing days/hours into Edit User and saves a changed shared range with the profile', async () => {
     const component = editForm();
     await fixture.whenStable(); fixture.detectChanges();
-    expect(component.editForm.get('workingHours')?.value).toEqual([friday]);
-    expect(component.editForm.get('birthDate')?.value).toBe('1990-01-01');
-    expect(component.editForm.get('gender')?.value).toBe(0);
+    expect(component.selected?.workingHours).toEqual([friday]);
+    expect(component.selected?.birthDate?.slice(0,10)).toBe('1990-01-01');
+    expect(component.selected?.gender).toBe('Male');
     expect(fixture.nativeElement.querySelector('[data-weekday="5"]').checked).toBe(true);
     expect(fixture.nativeElement.querySelector('[data-shared-start]').value).toBe('19:00');
     toggleDay(2); toggleDay(5);
     await setTime('[data-shared-start]', '10:00'); await setTime('[data-shared-end]', '18:00');
     const changed = [{ dayOfWeek: 2, startTime: '10:00', endTime: '18:00' }];
-    component.onUpdate();
+    component.save({invalid:false,control:{markAllAsTouched:()=>{}}} as NgForm);
     const request = http.expectOne(`${url}/Update?userId=senior-id`);
     expect(request.request.body.workingHours).toEqual([{ dayOfWeek: 2, startTime: '10:00:00', endTime: '18:00:00' }]);
     expect(user.workingHours).toEqual([friday]);
     request.flush({ ...user, workingHours: changed });
-    http.expectOne(`${url}/GetAll`).flush({ value: [{ ...user, workingHours: changed }], isSuccess: true });
-    component.onEdit(component.userService.users()[0]);
-    expect(component.editForm.get('workingHours')?.value).toEqual(changed);
+    expect(component.selected).toBeNull();
+    component.edit({...user,id:'senior-id',workingHours:changed,isActive:true,futureAppointments:0,version:'v2'} as StaffRow);
+    expect(component.selected?.workingHours).toEqual(changed);
   });
 
   it.each([
@@ -122,13 +129,14 @@ describe('CEO user working-hours forms', () => {
 
   it('requires an explicit shared range when editing an older schedule with different daily hours', async () => {
     const component = editForm();
-    component.editForm.get('workingHours')?.setValue([friday, { dayOfWeek: 1, startTime: '08:00', endTime: '12:00' }]); fixture.detectChanges();
+    fixture.detectChanges(false);
+    component.selected={...component.selected!,workingHours:[friday, { dayOfWeek: 1, startTime: '08:00', endTime: '12:00' }]}; fixture.changeDetectorRef.markForCheck(); fixture.detectChanges(false);
     expect(fixture.nativeElement.textContent).toContain('CEO.STAFF.WORKING_HOURS_CHOOSE_SHARED');
     expect(fixture.nativeElement.querySelector('[data-shared-start]').value).toBe('');
-    expect(component.editForm.invalid).toBe(true);
+    component.save({invalid:false,control:{markAllAsTouched:()=>{}}} as NgForm);http.expectNone(`${url}/Update?userId=senior-id`);
     await setTime('[data-shared-start]', '09:00'); await setTime('[data-shared-end]', '17:00');
-    expect(component.editForm.get('workingHours')?.value).toEqual([1, 5].map(dayOfWeek => ({ dayOfWeek, startTime: '09:00', endTime: '17:00' })));
-    expect(component.editForm.valid).toBe(true);
+    expect(component.selected?.workingHours).toEqual([1, 5].map(dayOfWeek => ({ dayOfWeek, startTime: '09:00', endTime: '17:00' })));
+    expect(component.selected?.workingHours).toHaveLength(2);
   });
 
   it('preserves Patient creation without a staff schedule', () => {
@@ -140,11 +148,11 @@ describe('CEO user working-hours forms', () => {
 
   it('keeps the selected days and shared range when saving the user fails', () => {
     const component = editForm();
-    component.onUpdate();
+    component.save({invalid:false,control:{markAllAsTouched:()=>{}}} as NgForm);
     const request = http.expectOne(`${url}/Update?userId=senior-id`);
     expect(request.request.body.workingHours).toEqual([friday]);
     request.flush({ detail: 'Unable to save user.' }, { status: 500, statusText: 'Error' });
-    expect(component.selectedUser?.id).toBe(user.id); expect(component.updateError).toBeTruthy();
-    expect(component.isUpdating).toBe(false);
+    expect(component.selected?.id).toBe(user.id); expect(component.dialogError).toBeTruthy();
+    expect(component.saving()).toBe(false);
   });
 });

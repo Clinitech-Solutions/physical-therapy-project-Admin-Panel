@@ -38,6 +38,8 @@ export const routes: Routes = [
       { path: 'doctor/patients', redirectTo:'doctor/dashboard', pathMatch:'full' },
       
       // ── CEO Routes ──
+      { path: 'ceo/reports', loadComponent: () => import('./features/ceo/reports/reports').then(m => m.Reports), canActivate: [roleGuard], data: { roles: ['Ceo'] } },
+      { path: 'ceo/settings', loadComponent: () => import('./features/ceo/settings/settings').then(m => m.Settings), canActivate: [roleGuard], data: { roles: ['Ceo'] } },
       { path: 'ceo', loadComponent: () => import('./features/ceo/dashboard/dashboard').then(m => m.Dashboard), canActivate: [roleGuard], data: { roles: ['Ceo'] } },
       { path: 'ceo/staff', loadComponent: () => import('./features/ceo/staff-management/staff-list/staff-list.component').then(m => m.StaffListComponent), canActivate: [roleGuard], data: { roles: ['Ceo'] } },
       { path: 'ceo/insurance/companies', loadComponent: () => import('./features/ceo/insurance-management/insurance-management.component').then(m => m.InsuranceManagementComponent), canActivate: [roleGuard], data: { roles: ['Ceo', 'Owner'] } },

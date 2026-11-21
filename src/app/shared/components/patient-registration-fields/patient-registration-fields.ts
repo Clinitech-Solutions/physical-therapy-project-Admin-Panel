@@ -41,6 +41,7 @@ export class PatientRegistrationFieldsComponent {
   }
 
   readonly paymentTypes = ['Cash', 'Insurance', 'Online', 'Card', 'InstaPay'];
+  get selectableCompanies(){return this.companies.filter(company=>company.isActive || this.mode==='edit' && company.id===this.draft.insuranceCompanyId);}
 
   companiesHaveSelectedId(): boolean {
     return this.companies.some(company => company.id === this.draft.insuranceCompanyId);

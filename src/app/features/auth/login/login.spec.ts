@@ -32,6 +32,7 @@ describe('Login routing', () => {
       providers: [
         { provide: AuthService, useValue: {
           currentUser,
+          currentRole: () => currentUser()?.roles[0] ?? null,
           login,
           hasRole: (role: string) => currentUser()?.roles.includes(role) ?? false,
         } },

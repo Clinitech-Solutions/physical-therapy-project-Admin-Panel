@@ -89,7 +89,9 @@ export class AuthService {
         }
       }
 
-      this.currentRole.set(roles.length > 0 ? roles[0] : null);
+      // A supervisor with clinical roles keeps the supervisory workspace; all actual roles stay intact.
+      const primary = ['Admin', 'SuperAdmin', 'Ceo', 'Senior', 'Doctor', 'Receptionist', 'Owner', 'Patient'].find(role => roles.includes(role));
+      this.currentRole.set(primary ?? roles[0] ?? null);
       
       this.currentUser.set({
         id: payload.nameid || payload.sub || '',

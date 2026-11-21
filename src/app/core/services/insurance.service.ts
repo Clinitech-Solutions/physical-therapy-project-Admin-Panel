@@ -5,6 +5,7 @@ import { map, finalize } from 'rxjs';
 import { apiError, numericId, record, ReceptionError, textField } from './reception-api';
 
 export interface InsuranceCompany {
+  version?: string;
   id?: number;
   name: string;
   portalUrl: string | null;

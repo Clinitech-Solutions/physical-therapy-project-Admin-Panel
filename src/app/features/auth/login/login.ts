@@ -54,8 +54,7 @@ export class Login implements OnInit {
     this.authService.login(this.loginForm.value).subscribe({
       next: () => {
         this.isSubmitting.set(false);
-        const user = this.authService.currentUser();
-        const role = user?.roles[0];
+        const role = this.authService.currentRole();
 
         this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Logged in successfully' });
 

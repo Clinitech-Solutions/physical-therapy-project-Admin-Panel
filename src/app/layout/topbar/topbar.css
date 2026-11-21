@@ -5,6 +5,7 @@
   .topbar > .ms-auto { gap: 0.75rem !important; }
 }
 @media (max-width: 575px) {
+  .clinic-identity { display:none; }
   .topbar > .ms-auto { gap: 0.5rem !important; }
   :host ::ng-deep .lang-btn { padding-inline: 0.25rem !important; gap: 0.25rem; }
 }

@@ -1,0 +1,316 @@
+<section class="workspace">
+  <header class="heading">
+    <h1>{{t('Reports')}}</h1>
+    <label
+      >{{t('Report')}}<select
+        name="kind"
+        [(ngModel)]="kind"
+        (ngModelChange)="changeKind()"
+      >
+        @for(k of kinds;track k[0]){
+        <option [value]="k[0]">{{t(k[1])}}</option>
+        }
+      </select></label
+    >
+  </header>
+  @if(statement){
+  <article class="surface">
+    <h2>{{t('Monthly insurer statements')}}</h2>
+    <a class="button primary" routerLink="/ceo/insurance"
+      >{{t('Open insurer statements')}}</a
+    >
+  </article>
+  } @else{
+  <div class="toolbar">
+    <button
+      type="button"
+      (click)="filtersOpen=!filtersOpen"
+      [attr.aria-expanded]="filtersOpen"
+      aria-controls="report-filters"
+    >
+      {{t('Filters')}} ({{chips.length}})</button
+    ><button (click)="export()" [disabled]="loading()||exporting()||!data()">
+      {{t('Export all matching CSV')}}
+    </button>
+  </div>
+  <div class="chips">
+    @for(chip of chips;track chip[0]){<button
+      (click)="remove(chip[0])"
+      [attr.aria-label]="t('Clear')+' '+label(chip[0])"
+    >
+      {{label(chip[0])}}: {{t(''+chip[1])}} ×</button
+    >}
+  </div>
+  @if(filtersOpen){
+  <form class="filters" id="report-filters" (ngSubmit)="apply()">
+    @if(optionsError()){
+    <div class="error span-all" role="alert">
+      {{optionsError()}}
+      <button type="button" (click)="loadOptions()">{{t('Retry')}}</button>
+    </div>
+    } @if(!balance){<label
+      >{{t('From')}}<input
+        type="date"
+        name="from"
+        [(ngModel)]="draft['from']" /></label
+    ><label
+      >{{t('To')}}<input
+        type="date"
+        name="to"
+        [(ngModel)]="draft['to']" /></label
+    >}
+    <label
+      >{{t('Search')}}<input
+        name="search"
+        maxlength="100"
+        [(ngModel)]="draft['search']" /></label
+    ><label
+      >{{t('Patient ID')}}<input
+        type="number"
+        min="1"
+        name="patient"
+        [(ngModel)]="draft['patientId']"
+    /></label>
+    <label
+      >{{t('Company')}}<select name="company" [(ngModel)]="draft['companyId']">
+        <option value="">{{t('All')}}</option>
+        @for(c of options().companies;track c.id){
+        <option [value]="c.id">{{c.name}}</option>
+        }
+      </select></label
+    ><label
+      >{{t('Clinician')}}<select
+        name="clinician"
+        [(ngModel)]="draft['clinicianId']"
+      >
+        <option value="">{{t('All')}}</option>
+        @for(c of options().clinicians;track c.id){
+        <option [value]="c.id">{{c.name}}</option>
+        }
+      </select></label
+    >
+    <label
+      >{{t('Funding')}}<select name="funding" [(ngModel)]="draft['funding']">
+        <option value="">{{t('All')}}</option>
+        <option value="SelfPay">{{t('SelfPay')}}</option>
+        <option value="Insurance">{{t('Insurance')}}</option>
+      </select></label
+    >
+    @if(activity){<label
+      >{{t('Status')}}<select name="status" [(ngModel)]="draft['status']">
+        <option value="">{{t('All')}}</option>
+        @for(s of
+        ['Pending','InProgress','Completed','Cancelled','NoShow'];track s){
+        <option [value]="s">{{t(s)}}</option>
+        }
+      </select></label
+    >} @if(!balance&&!activity){<label
+      >{{t('Method')}}<select name="method" [(ngModel)]="draft['method']">
+        <option value="">{{t('All')}}</option>
+        @for(s of
+        ['Cash','Visa','EWallet','BankTransfer','Online','Cheque'];track s){
+        <option [value]="s">{{t(s)}}</option>
+        }
+      </select></label
+    >}
+    <div class="actions">
+      <button type="submit" class="primary">{{t('Apply')}}</button
+      ><button type="button" (click)="clear()">{{t('Clear')}}</button
+      ><button type="button" (click)="filtersOpen=false">{{t('Close')}}</button>
+    </div>
+  </form>
+  } @if(loading()){
+  <p role="status">{{t('Loading')}}…</p>
+  }@if(error()){
+  <div class="error" role="alert">
+    {{error()}} <button (click)="retry()">{{t('Retry')}}</button>
+  </div>
+  } @if(data();as r){
+  <p class="muted">
+    {{t('Date basis')}}: {{t(r.dateBasis)}} · @if(r.from){ {{r.from}} — {{r.to}}
+    · } EGP · Africa/Cairo · {{t('Generated')}}
+    {{locale.date(r.generatedAt,true)}}
+  </p>
+  <div class="summary">
+    @if(activity){
+    <div class="metric">
+      {{t('Scheduled visits')}}<strong>{{r.totals.visitCount}}</strong>
+    </div>
+    <div class="metric">
+      {{t('Recorded clinical duration')}}<strong
+        >{{r.totals.recordedDurationSeconds}} {{t('seconds')}}</strong
+      >
+    </div>
+    <div class="metric">
+      {{t('Missing clinical timestamps')}}<strong
+        >{{r.totals.missingClinicalTimestamps}}</strong
+      >
+    </div>
+    }@else{
+    <div class="metric">
+      {{t('Amount')}}<strong>{{locale.money(r.totals.amount)}}</strong>
+    </div>
+    <div class="metric">
+      {{t('Collected')}}<strong>{{locale.money(r.totals.collected)}}</strong>
+    </div>
+    <div class="metric">
+      {{t('Remaining')}}<strong>{{locale.money(r.totals.remaining)}}</strong>
+    </div>
+    }
+  </div>
+  @if(balance){
+  <p class="muted">{{t('Balances are current at generation time.')}}</p>
+  }@else if(!activity){
+  <p class="muted">
+    {{t('Collection rows are payment allocations. A cheque is counted through
+    its allocations only.')}}
+  </p>
+  } @if(kind==='workload'){
+  <p class="muted">
+    {{t('Workload is grouped by recorded treating clinician. Unstarted or
+    unknown work is shown separately.')}}
+  </p>
+  <div class="surface table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>{{t('Clinician')}}</th>
+          <th>{{t('Scheduled visits')}}</th>
+          <th>{{t('Clinically completed')}}</th>
+          <th>{{t('Recorded clinical duration')}}</th>
+          <th>{{t('Missing clinical timestamps')}}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for(x of r.items;track x.id){
+        <tr>
+          <td [attr.data-label]="t('Clinician')">
+            {{x.clinician||t('Unavailable')}}
+          </td>
+          <td [attr.data-label]="t('Scheduled visits')">{{x.visitCount}}</td>
+          <td [attr.data-label]="t('Clinically completed')">
+            {{x.completedCount}}
+          </td>
+          <td [attr.data-label]="t('Recorded clinical duration')">
+            {{x.durationSeconds}} {{t('seconds')}}
+          </td>
+          <td [attr.data-label]="t('Missing clinical timestamps')">
+            {{x.missingClinicalTimestamps}}
+          </td>
+        </tr>
+        }@empty{
+        <tr>
+          <td colspan="5">{{t('No matching records')}}</td>
+        </tr>
+        }
+      </tbody>
+    </table>
+    <nav class="pager">
+      <button (click)="page(-1)" [disabled]="r.page<=1">
+        {{t('Previous')}}</button
+      ><span>{{r.page}} / {{pageCount}}</span
+      ><button (click)="page(1)" [disabled]="r.page>=pageCount">
+        {{t('Next')}}
+      </button>
+    </nav>
+  </div>
+  }@else{
+  <div class="surface table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>{{t('Reference')}}</th>
+          <th>{{t('Patient')}}</th>
+          <th>{{t('Date')}}</th>
+          <th>{{t(activity?'Clinician':'Company')}}</th>
+          <th>{{t(activity?'Status':'Amount')}}</th>
+          <th>{{t(activity?'Recorded clinical duration':'Remaining')}}</th>
+          <th>{{t('Details')}}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for(x of r.items;track x.id){
+        <tr>
+          <td [attr.data-label]="t('Reference')">
+            {{x.label}}<small>#{{x.id}}</small>
+          </td>
+          <td [attr.data-label]="t('Patient')">
+            {{x.patient||t('Unavailable')}}
+          </td>
+          <td [attr.data-label]="t('Date')">
+            {{x.date?locale.date(x.date,true):t('Unavailable')}}
+          </td>
+          <td [attr.data-label]="t(activity?'Clinician':'Company')">
+            {{(activity?x.clinician:x.company)||t('Unavailable')}}
+            @if(!activity&&x.companyId){ #{{x.companyId}} }
+          </td>
+          <td [attr.data-label]="t(activity?'Status':'Amount')">
+            {{activity?t(x.status||'Unavailable'):locale.money(x.amount)}}
+          </td>
+          <td
+            [attr.data-label]="t(activity?'Recorded clinical duration':'Remaining')"
+          >
+            {{activity?(x.durationSeconds===null?t('Unavailable'):x.durationSeconds+'
+            '+t('seconds')):locale.money(x.remaining)}}
+          </td>
+          <td [attr.data-label]="t('Details')">
+            <button
+              [attr.aria-expanded]="detail?.id===x.id"
+              (click)="detail=detail?.id===x.id?null:x"
+            >
+              {{t('Details')}}
+            </button>
+          </td>
+        </tr>
+        @if(detail?.id===x.id){
+        <tr>
+          <td colspan="7">
+            <dl class="detail-grid">
+              @if(activity){@for(item of [['Scheduled
+              end',x.scheduledEnd],['Arrival',x.arrivedAt],['Departure',x.departedAt],['Clinical
+              start',x.clinicalStart],['Clinical end',x.clinicalEnd]];track
+              item[0]){
+              <div>
+                <dt>{{t(item[0]||'')}}</dt>
+                <dd>{{item[1]?locale.date(item[1],true):t('Unavailable')}}</dd>
+              </div>
+              }}@else{
+              <div>
+                <dt>{{t('Collected')}}</dt>
+                <dd>{{locale.money(x.collected)}}</dd>
+              </div>
+              <div>
+                <dt>{{t('Method')}}</dt>
+                <dd>{{t(x.method||'Unavailable')}}</dd>
+              </div>
+              }
+              <div>
+                <dt>{{t('Patient ID')}}</dt>
+                <dd>{{x.patientId}}</dd>
+              </div>
+              <div>
+                <dt>{{t('Clinician ID')}}</dt>
+                <dd>{{x.clinicianId||t('Unavailable')}}</dd>
+              </div>
+            </dl>
+          </td>
+        </tr>
+        } }@empty{
+        <tr>
+          <td colspan="7">{{t('No matching records')}}</td>
+        </tr>
+        }
+      </tbody>
+    </table>
+    <nav class="pager" [attr.aria-label]="t('Page')">
+      <button (click)="page(-1)" [disabled]="r.page<=1">
+        {{t('Previous')}}</button
+      ><span
+        >{{t('Page')}} {{r.page}} {{t('of')}} {{pageCount}} · {{r.total}}</span
+      ><button (click)="page(1)" [disabled]="r.page>=pageCount">
+        {{t('Next')}}
+      </button>
+    </nav>
+  </div>
+  } } }
+</section>

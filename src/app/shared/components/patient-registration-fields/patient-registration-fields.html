@@ -230,7 +230,7 @@
         <option [ngValue]="null">
           {{ 'RECEPTIONIST.UI.PATIENT_SELECT_COMPANY' | translate }}
         </option>
-        @for (company of companies; track company.id) {
+        @for (company of selectableCompanies; track company.id) {
         <option [ngValue]="company.id">{{ company.name }}</option>
         }
         @if (draft.insuranceCompanyId && !companiesHaveSelectedId()) {

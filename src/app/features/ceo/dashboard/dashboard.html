@@ -1,72 +1,169 @@
-<div class="dashboard-header mb-4 d-flex justify-content-between align-items-center">
-  <div>
-    <h2>{{ 'CEO.DASHBOARD_TITLE' | translate }}</h2>
-    <p class="text-secondary">{{ 'CEO.DASHBOARD_SUB' | translate }}</p>
+﻿<section class="workspace">
+  <header class="heading">
+    <h1>{{t('Overview')}}</h1>
+    <form class="toolbar" (ngSubmit)="apply()">
+      <label
+        >{{t('From')}}<input
+          type="date"
+          name="from"
+          [(ngModel)]="from"
+          required /></label
+      ><label
+        >{{t('To')}}<input
+          type="date"
+          name="to"
+          [(ngModel)]="to"
+          required /></label
+      ><button class="primary" type="submit">{{t('Apply')}}</button>
+    </form>
+  </header>
+  @if(loading()){
+  <p role="status">{{t('Loading')}}…</p>
+  } @if(error()){
+  <div role="alert" class="error">
+    {{error()}} <button (click)="retry()">{{t('Retry')}}</button>
   </div>
-  <button class="btn btn-primary"><i class="bi bi-download"></i> {{ 'CEO.EXPORT_REPORT' | translate }}</button>
-</div>
-
-<div class="grid-4 mb-4">
-  <div class="stat-card">
-    <div class="stat-label">{{ 'CEO.TODAYS_REVENUE' | translate }}</div>
-    <div class="stat-value text-gradient">$12,450</div>
-    <div class="stat-sub"><span class="badge badge-success">+14%</span> {{ 'CEO.VS_YESTERDAY' | translate }}</div>
+  } @if(data();as d){
+  <p class="muted">
+    {{t('Collection period · Africa/Cairo')}} · {{d.from}} — {{d.to}}
+  </p>
+  <div class="summary">
+    <article class="metric">
+      {{t('Patient collections')}}<strong
+        >{{money(d.patientCollections)}}</strong
+      ><a
+        routerLink="/ceo/reports"
+        [queryParams]="report('patient-collections')"
+        >{{t('View report')}}</a
+      >
+    </article>
+    <article class="metric">
+      {{t('Insurer collections')}}<strong
+        >{{money(d.insurerCollections)}}</strong
+      ><a
+        routerLink="/ceo/reports"
+        [queryParams]="report('insurer-collections')"
+        >{{t('View report')}}</a
+      >
+    </article>
+    <article class="metric">
+      {{t('Patient outstanding')}}<strong
+        >{{money(d.patientOutstanding)}}</strong
+      ><a
+        routerLink="/ceo/reports"
+        [queryParams]="report('patient-outstanding',false)"
+        >{{t('Current balances')}}</a
+      >
+    </article>
+    <article class="metric">
+      {{t('Earned insurer receivables')}}<strong
+        >{{money(d.earnedInsurerOutstanding)}}</strong
+      ><a
+        routerLink="/ceo/reports"
+        [queryParams]="report('insurer-receivables',false)"
+        >{{t('Current balances')}}</a
+      >
+    </article>
   </div>
-  <div class="stat-card">
-    <div class="stat-label">{{ 'CEO.ACTIVE_PATIENTS' | translate }}</div>
-    <div class="stat-value">342</div>
-    <div class="stat-sub"><span class="badge badge-success">+5</span> {{ 'CEO.NEW_TODAY' | translate }}</div>
+  <div class="split">
+    <article class="surface">
+      <h2>{{t('Actual collections by Cairo day')}}</h2>
+      <div class="legend">
+        <span><i class="dot"></i>{{t('Patients')}}</span
+        ><span><i class="dot blue"></i>{{t('Insurers')}}</span>
+      </div>
+      <div class="chart">
+        @for(day of chart;track day.day){
+        <div class="chart-row">
+          <span>{{day.day}}</span>
+          <div class="bars">
+            <div
+              class="bar"
+              [style.width.%]="day.patient/chartMax*100"
+              [attr.title]="t('Patient collections')+': '+money(day.patient)"
+            ></div>
+            <div
+              class="bar insurer"
+              [style.width.%]="day.insurer/chartMax*100"
+              [attr.title]="t('Insurer collections')+': '+money(day.insurer)"
+            ></div>
+          </div>
+          <span
+            >{{money(day.patient)}}<small>{{money(day.insurer)}}</small></span
+          >
+        </div>
+        }@empty{
+        <p>{{t('No matching records')}}</p>
+        }
+      </div>
+    </article>
+    <aside class="surface">
+      <h2>{{t('Insurance finance')}}</h2>
+      <div class="links">
+        <a
+          class="button"
+          routerLink="/ceo/insurance"
+          [queryParams]="{claimStatus:'Unsubmitted'}"
+          >{{t('Unsubmitted services')}}
+          <strong>{{d.unsubmittedServices}}</strong></a
+        ><a
+          class="button"
+          routerLink="/ceo/insurance"
+          [queryParams]="{paymentState:'Outstanding',claimStatus:'Outstanding'}"
+          >{{t('Outstanding claims')}}
+          <strong>{{d.outstandingClaims}}</strong></a
+        ><a class="button" routerLink="/senior/absence-coverage"
+          >{{t('Absence recovery')}}
+          <strong>{{d.unresolvedAbsenceWork}}</strong></a
+        >
+      </div>
+      <p class="muted">
+        {{t('Planned insurer liability')}}: {{money(d.plannedInsurerLiability)}}
+      </p>
+    </aside>
   </div>
-  <div class="stat-card">
-    <div class="stat-label">{{ 'CEO.SESSIONS_TODAY' | translate }}</div>
-    <div class="stat-value">124</div>
-    <div class="stat-sub">98% {{ 'CEO.ATTENDANCE' | translate }}</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-label">{{ 'CEO.PENDING_PAYMENTS' | translate }}</div>
-    <div class="stat-value">$4,250</div>
-    <div class="stat-sub text-danger">{{ 'CEO.INSURANCE_DELAYS' | translate }}</div>
-  </div>
-</div>
-
-<div class="grid-3 mb-4">
-  <div class="card" style="grid-column: span 2;">
-    <h4 class="mb-4">{{ 'CEO.REVENUE_TREND' | translate }}</h4>
-    <div style="height: 300px; display: flex; align-items: flex-end; justify-content: space-between; padding-bottom: 20px; border-bottom: 1px solid var(--border-color)">
-      <!-- Mock Bar Chart -->
-      <div style="width: 8%; background: var(--mq-teal); height: 40%; border-radius: 4px 4px 0 0;"></div>
-      <div style="width: 8%; background: var(--mq-teal); height: 50%; border-radius: 4px 4px 0 0;"></div>
-      <div style="width: 8%; background: var(--mq-teal); height: 45%; border-radius: 4px 4px 0 0;"></div>
-      <div style="width: 8%; background: var(--mq-teal); height: 70%; border-radius: 4px 4px 0 0;"></div>
-      <div style="width: 8%; background: var(--mq-teal); height: 60%; border-radius: 4px 4px 0 0;"></div>
-      <div style="width: 8%; background: var(--mq-teal); height: 85%; border-radius: 4px 4px 0 0;"></div>
-      <div style="width: 8%; background: var(--mq-teal); height: 95%; border-radius: 4px 4px 0 0;"></div>
+  <article class="surface">
+    <h2>{{t('Appointment activity')}}</h2>
+    <div class="summary">
+      <div class="metric">
+        {{t('Scheduled visits')}}<strong>{{d.scheduled}}</strong>
+      </div>
+      <div class="metric">
+        {{t('Clinically completed')}}<strong>{{d.clinicallyCompleted}}</strong>
+      </div>
+      <div class="metric">
+        {{t('Cancelled')}}<strong>{{d.cancelled}}</strong>
+      </div>
+      <div class="metric">{{t('NoShow')}}<strong>{{d.noShow}}</strong></div>
     </div>
-  </div>
-  <div class="card">
-    <h4 class="mb-4">{{ 'CEO.RECENT_ACTIVITY' | translate }}</h4>
-    <div class="d-flex flex-column gap-4">
-      <div class="d-flex gap-3">
-        <div class="avatar avatar-sm">M</div>
-        <div>
-          <div class="text-sm"><strong>Mona</strong> {{ 'CEO.BOOKED_SESSION' | translate }}</div>
-          <div class="text-xs text-muted">{{ 'CEO.MINS_AGO_2' | translate }}</div>
-        </div>
-      </div>
-      <div class="d-flex gap-3">
-        <div class="avatar avatar-sm" style="background: var(--role-senior-bg); color: var(--role-senior)">S</div>
-        <div>
-          <div class="text-sm"><strong>Sarah</strong> {{ 'CEO.COMPLETED_ASSESSMENT' | translate }}</div>
-          <div class="text-xs text-muted">{{ 'CEO.MINS_AGO_15' | translate }}</div>
-        </div>
-      </div>
-      <div class="d-flex gap-3">
-        <div class="avatar avatar-sm" style="background: var(--role-doctor-bg); color: var(--role-doctor)">K</div>
-        <div>
-          <div class="text-sm"><strong>Dr. Khalid</strong> {{ 'CEO.MARKED_ABSENT' | translate }}</div>
-          <div class="text-xs text-muted">{{ 'CEO.HOUR_AGO_1' | translate }}</div>
-        </div>
-      </div>
+    <p class="muted">
+      {{t('Service counts use scheduled starts; clinical completion uses
+      recorded end timestamps.')}}
+    </p>
+    <a routerLink="/ceo/reports" [queryParams]="report('activity')"
+      >{{t('View report')}}</a
+    >
+  </article>
+  <article class="surface">
+    <h2>{{t('Clinical occupancy')}}</h2>
+    <div class="toolbar">
+      <span>{{t('Clinical occupancy')}}: <strong>{{d.occupied}}</strong></span
+      ><span
+        >{{t('Active room capacity')}}:
+        <strong>{{d.activeRoomCapacity}}</strong></span
+      ><span
+        >{{t('Available room slots')}}:
+        <strong>{{d.availableRoomSlots}}</strong></span
+      >
     </div>
-  </div>
-</div>
+    <p class="muted">
+      {{t('Room slots exclude inactive rooms; clinician eligibility is checked
+      when booking or starting treatment.')}}
+    </p>
+  </article>
+  <p class="muted">
+    {{t('Balances are current at generation time.')}} {{t('Generated')}}:
+    {{locale.date(d.generatedAt,true)}} · EGP · Africa/Cairo
+  </p>
+  }
+</section>

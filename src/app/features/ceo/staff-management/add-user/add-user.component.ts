@@ -1,3 +1,5 @@
+import { CeoLocale } from '../../workspace/ceo-locale';
+import { CeoNotifications } from '../../../../core/services/ceo-notifications';
 import { Component, inject, output } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
@@ -15,17 +17,18 @@ import { apiError } from '../../../../core/services/reception-api';
   styleUrl: './add-user.component.css'
 })
 export class AddUserComponent {
+  readonly locale=new CeoLocale();readonly notices=inject(CeoNotifications);
   private fb = inject(FormBuilder);
   private userService = inject(UserService);
 
   userAdded = output<void>();
 
-  roles = ['Admin', 'Owner', 'Doctor', 'Patient', 'Senior', 'Receptionist', 'Ceo'];
+  roles = ['Admin', 'Owner', 'Doctor', 'Senior', 'Receptionist', 'Ceo'];
 
   userForm = this.fb.nonNullable.group({
     fullName: ['', Validators.required],
     userName: ['', Validators.required],
-    password: ['', [Validators.required, Validators.minLength(6)]],
+    password: ['', [Validators.required, Validators.minLength(8)]],
     gender: [0, Validators.required],
     birthDate: ['', Validators.required],
     role: ['', Validators.required],
@@ -65,7 +68,7 @@ export class AddUserComponent {
         },
         error: (err) => {
           this.isSubmitting = false;
-          this.saveError = apiError(err);
+          this.saveError = this.locale.failure(err);this.notices.show(this.saveError);
         }
       });
     } else {
