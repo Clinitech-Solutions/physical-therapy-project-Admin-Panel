@@ -1088,7 +1088,7 @@
       "PASSWORD": "كلمة المرور",
       "FULL_NAME_REQUIRED": "الاسم الكامل مطلوب.",
       "USERNAME_REQUIRED": "اسم المستخدم مطلوب.",
-      "VALID_PASSWORD_REQUIRED": "كلمة مرور صالحة مطلوبة (على الأقل 6 أحرف).",
+      "VALID_PASSWORD_REQUIRED": "استخدم 8 أحرف على الأقل مع حرف كبير وصغير ورقم ورمز.",
       "GENDER_REQUIRED": "الجنس مطلوب.",
       "BIRTH_DATE_REQUIRED": "تاريخ الميلاد مطلوب.",
       "ROLE_REQUIRED": "الدور مطلوب.",

@@ -1,162 +1,253 @@
-<div class="page-content">
-  <div class="page-header">
-    <div>
-      <h2>{{ 'CEO.STAFF.STAFF_MANAGEMENT' | translate }}</h2>
-      <p>{{ 'CEO.STAFF.STAFF_MANAGEMENT_SUB' | translate }}</p>
+<section class="workspace">
+  <header class="heading">
+    <h1>{{ t("Staff") }}</h1>
+    <div class="actions">
+      <a class="button" routerLink="/senior/absence-coverage">{{
+        t("Manage absence coverage")
+      }}</a
+      ><button class="primary" (click)="showAddForm = !showAddForm">
+        {{ t(showAddForm ? "Close" : "Add staff") }}
+      </button>
     </div>
-    <button class="btn btn-primary" (click)="toggleAddForm()">
-      <i class="bi" [ngClass]="showAddForm() ? 'bi-x' : 'bi-plus-lg'"></i>
-      {{ showAddForm() ? ('CEO.STAFF.CLOSE_FORM' | translate) : ('CEO.STAFF.ADD_NEW_USER' | translate) }}
-    </button>
+  </header>
+  @if (showAddForm) {
+    <div class="surface"><app-add-user (userAdded)="added()" /></div>
+  }
+  @if (saved()) {
+    <p class="success" role="status">{{ t("Saved") }}</p>
+  }
+  <button
+    (click)="filtersOpen = !filtersOpen"
+    [attr.aria-expanded]="filtersOpen"
+    aria-controls="staff-filters"
+  >
+    {{ t("Filters") }} ({{ chips.length }})
+  </button>
+  <div class="chips">
+    @for (chip of chips; track chip[0]) {
+      <button (click)="remove(chip[0])">
+        {{
+          t(
+            chip[0] === "search"
+              ? "Search"
+              : chip[0] === "role"
+                ? "Role"
+                : "Status"
+          )
+        }}: {{ t("" + chip[1]) }} ×
+      </button>
+    }
   </div>
-
-  <!-- Add User Form Section -->
-  <div class="mb-4" *ngIf="showAddForm()">
-    <div class="card card-body card-glass">
-      <app-add-user (userAdded)="onUserAdded()"></app-add-user>
+  @if (filtersOpen) {
+    <form class="filters" id="staff-filters" (ngSubmit)="apply()">
+      <label
+        >{{ t("Search")
+        }}<input
+          name="search"
+          maxlength="100"
+          [(ngModel)]="draft['search']" /></label
+      ><label
+        >{{ t("Role")
+        }}<select name="role" [(ngModel)]="draft['role']">
+          <option value="">{{ t("All") }}</option>
+          @for (role of roles; track role) {
+            <option [value]="role">{{ t(role) }}</option>
+          }
+        </select></label
+      ><label
+        >{{ t("Status")
+        }}<select name="active" [(ngModel)]="draft['active']">
+          <option value="">{{ t("All") }}</option>
+          <option value="true">{{ t("Active") }}</option>
+          <option value="false">{{ t("Inactive") }}</option>
+        </select></label
+      >
+      <div class="actions">
+        <button class="primary" type="submit">{{ t("Apply") }}</button
+        ><button type="button" (click)="clear()">{{ t("Clear") }}</button>
+      </div>
+    </form>
+  }
+  @if (loading()) {
+    <p role="status">{{ t("Loading") }}…</p>
+  }
+  @if (error()) {
+    <div class="error" role="alert">
+      {{ error() }} <button (click)="refresh()">{{ t("Retry") }}</button>
     </div>
-  </div>
-
-  <!-- Staff List Table Panel -->
-  <div class="table-panel">
-    <div class="table-toolbar">
-      <h3 class="m-0">{{ 'CEO.STAFF.SYSTEM_USERS' | translate }}</h3>
-      <!-- We can add search/filter here in the future -->
-    </div>
-
-    <!-- Loading State -->
-    <div *ngIf="userService.loading()" class="p-4 text-center">
-      <p class="text-secondary">{{ 'CEO.STAFF.LOADING_USERS' | translate }}</p>
-    </div>
-
-    <!-- Error State -->
-    <div *ngIf="userService.error()" class="p-4 text-center">
-      <p class="form-error">{{ userService.error() }}</p>
-    </div>
-
-    <div class="table-scroll-area" *ngIf="!userService.loading() && !userService.error()">
-      <table class="w-full ltr:text-left rtl:text-right border-collapse">
+  }
+  @if (data(); as p) {
+    <div class="surface table-wrap">
+      <table>
         <thead>
-          <tr class="border-b border-color text-secondary text-sm">
-            <th class="py-3 px-4 font-semibold">{{ 'CEO.STAFF.NAME' | translate }}</th>
-            <th class="py-3 px-4 font-semibold">{{ 'CEO.STAFF.USERNAME' | translate }}</th>
-            <th class="py-3 px-4 font-semibold">{{ 'CEO.STAFF.ROLE' | translate }}</th>
-            <th class="py-3 px-4 font-semibold ltr:text-right rtl:text-left">{{ 'CEO.STAFF.ACTIONS' | translate }}</th>
+          <tr>
+            <th>{{ t("Name") }}</th>
+            <th>{{ t("Role") }}</th>
+            <th>{{ t("Status") }}</th>
+            <th>{{ t("Future appointments") }}</th>
+            <th>{{ t("Working hours") }}</th>
+            <th>{{ t("Edit") }}</th>
           </tr>
         </thead>
         <tbody>
-          @for (user of userService.users(); track user.id) {
-          <tr class="border-b border-color-subtle hover:bg-elevated transition-colors">
-            <!-- مسحنا كود الـ JSON من هنا -->
-            <td class="py-3 px-4 font-medium text-primary">{{ user.fullName }}</td>
-            <td class="py-3 px-4 text-secondary">{{ user.userName }}</td>
-            <td class="py-3 px-4">
-              <span class="badge" [ngClass]="{
-                      'badge-ceo': user.roles[0] === 'Ceo' || user.roles[0] === 'CEO',
-                      'badge-doctor': user.roles[0] === 'Doctor',
-                      'badge-senior': user.roles[0] === 'Senior Therapist',
-                      'badge-recep': user.roles[0] === 'Receptionist',
-                      'badge-neutral': !['CEO', 'Ceo', 'Doctor', 'Senior Therapist', 'Receptionist'].includes(user.roles[0] || '')
-                    }">
-                {{ user.roles[0] }}
-              </span>
-            </td>
-            <td class="py-3 px-4 ltr:text-right rtl:text-left">
-              <button class="btn-action" [title]="'CEO.STAFF.EDIT_USER' | translate" (click)="onEdit(user)">
-                <i class="bi bi-pencil"></i>
-              </button>
-              <button class="btn-action action-danger ms-2" [title]="'CEO.STAFF.DELETE_USER' | translate" (click)="onDelete(user)">
-                <i class="bi bi-trash"></i>
-              </button>
-            </td>
-          </tr>
+          @for (row of p.items; track row.id) {
+            <tr>
+              <td [attr.data-label]="t('Name')">
+                {{ row.fullName }}<small>{{ row.userName }}</small>
+              </td>
+              <td [attr.data-label]="t('Role')">
+                @for (r of row.roles; track r) {
+                  <span class="status">{{ t(r) }}</span>
+                }
+              </td>
+              <td [attr.data-label]="t('Status')">
+                {{ t(row.isActive ? "Active" : "Inactive") }}
+              </td>
+              <td [attr.data-label]="t('Future appointments')">
+                {{ row.futureAppointments }}
+              </td>
+              <td [attr.data-label]="t('Working hours')">
+                {{ row.workingHours?.length || 0 }}
+              </td>
+              <td [attr.data-label]="t('Edit')">
+                <div class="actions">
+                  <button (click)="edit(row)">{{ t("Edit") }}</button
+                  ><button (click)="reviewStatus(row)">
+                    {{ t(row.isActive ? "Deactivate" : "Activate") }}
+                  </button>
+                </div>
+              </td>
+            </tr>
           } @empty {
-          <tr>
-            <td colspan="4" class="py-6 text-center text-secondary">
-              {{ 'CEO.STAFF.NO_USERS_FOUND' | translate }}
-            </td>
-          </tr>
+            <tr>
+              <td colspan="6">{{ t("No matching records") }}</td>
+            </tr>
           }
         </tbody>
       </table>
+      <nav class="pager" [attr.aria-label]="t('Page')">
+        <button (click)="page(-1)" [disabled]="p.page <= 1">
+          {{ t("Previous") }}</button
+        ><span
+          >{{ t("Page") }} {{ p.page }} {{ t("of") }} {{ pageCount }} ·
+          {{ p.total }}</span
+        ><button (click)="page(1)" [disabled]="p.page >= pageCount">
+          {{ t("Next") }}
+        </button>
+      </nav>
     </div>
-  </div>
-</div>
-
-<!-- Edit User Modal -->
-<div class="custom-modal-overlay" *ngIf="selectedUser">
-  <div class="custom-modal-dialog card-glass">
-    <div class="modal-header border-0 d-flex justify-content-between align-items-center mb-3">
-      <h5 class="modal-title m-0">{{ 'CEO.STAFF.EDIT_USER' | translate }}</h5>
-      <button type="button" class="btn-close" aria-label="Close" (click)="closeEditModal()"></button>
-    </div>
-    <div class="modal-body p-0">
-      <form [formGroup]="editForm" (ngSubmit)="onUpdate()">
-        <fieldset class="border-0 p-0 m-0" [disabled]="isUpdating">
-        <div class="mb-3">
-          <label class="form-label">{{ 'CEO.STAFF.FULL_NAME' | translate }}</label>
-          <input type="text" class="form-control" formControlName="fullName" [placeholder]="'CEO.STAFF.ENTER_FULL_NAME' | translate">
-        </div>
-        
-        <div class="mb-3">
-          <label class="form-label">{{ 'CEO.STAFF.USERNAME' | translate }}</label>
-          <input type="text" class="form-control" formControlName="userName" [placeholder]="'CEO.STAFF.ENTER_USERNAME' | translate">
-        </div>
-        
-        <div class="row">
-          <div class="col-md-6 mb-3">
-            <label class="form-label">{{ 'CEO.STAFF.GENDER' | translate }}</label>
-            <select class="form-control" formControlName="gender">
-              <option [value]="0">{{ 'CEO.STAFF.MALE' | translate }}</option>
-              <option [value]="1">{{ 'CEO.STAFF.FEMALE' | translate }}</option>
-            </select>
-          </div>
-          
-          <div class="col-md-6 mb-3">
-            <label class="form-label">{{ 'CEO.STAFF.BIRTH_DATE' | translate }}</label>
-            <input type="date" class="form-control" formControlName="birthDate">
-          </div>
-        </div>
-        
-        <div class="mb-4">
-          <label class="form-label">{{ 'CEO.STAFF.ROLE' | translate }}</label>
-          <select class="form-control" formControlName="role" (change)="onEditRoleChange()">
-            <option value="">{{ 'CEO.STAFF.SELECT_ROLE' | translate }}</option>
-            @for (r of roles; track r) {
-              <option [value]="r">{{ r }}</option>
-            }
-          </select>
-        </div>
-        
-        @if (editForm.get('role')?.value !== 'Patient') {
-          <div class="mb-3"><app-staff-working-hours [hours]="editForm.get('workingHours')?.value" [disabled]="isUpdating" [showErrors]="!!editForm.get('workingHours')?.touched"
-            (hoursChange)="editForm.get('workingHours')?.setValue($event)" /></div>
-        }
-        @if (updateError) { <p class="text-danger" role="alert">{{ updateError }}</p> }
-        <div class="d-flex justify-content-end gap-2">
-          <button type="button" class="btn btn-secondary" (click)="closeEditModal()">{{ 'CEO.STAFF.CANCEL' | translate }}</button>
-          <button type="submit" class="btn btn-primary" [disabled]="editForm.invalid || isUpdating">{{ 'CEO.STAFF.UPDATE_USER' | translate }}</button>
-        </div>
-        </fieldset>
-      </form>
-    </div>
-  </div>
-</div>
-
-<!-- Delete User Modal -->
-<div class="custom-modal-overlay" *ngIf="userToDelete">
-  <div class="custom-modal-dialog card-glass" style="max-width: 400px;">
-    <div class="modal-header border-0 d-flex justify-content-between align-items-center mb-3">
-      <h5 class="modal-title m-0 text-danger">{{ 'CEO.STAFF.DELETE_USER' | translate }}</h5>
-      <button type="button" class="btn-close" aria-label="Close" (click)="closeDeleteModal()"></button>
-    </div>
-    <div class="modal-body p-0">
-      <p>{{ 'CEO.STAFF.CONFIRM_DELETE_USER' | translate }} <strong class="text-primary">{{ userToDelete.fullName }}</strong>?</p>
-      <p class="text-secondary text-sm mb-4">{{ 'CEO.STAFF.CANNOT_BE_UNDONE' | translate }}</p>
-      <div class="d-flex justify-content-end gap-2">
-        <button type="button" class="btn btn-secondary" (click)="closeDeleteModal()">{{ 'CEO.STAFF.CANCEL' | translate }}</button>
-        <button type="button" class="btn btn-danger" style="background-color: #ef4444; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.375rem; font-weight: 500; transition: all 0.2s;" (click)="confirmDelete()">{{ 'CEO.STAFF.DELETE' | translate }}</button>
-      </div>
-    </div>
-  </div>
-</div>
+  }
+  @if (selected || statusTarget) {
+    <dialog
+      class="dialog"
+      (cancel)="close($event)"
+      aria-labelledby="staff-dialog-title"
+    >
+      <header>
+        <h2 id="staff-dialog-title">
+          {{ t(selected ? "Edit" : "Review staff status") }}
+        </h2>
+        <button
+          type="button"
+          (click)="close()"
+          [disabled]="saving()"
+          [attr.aria-label]="t('Close')"
+        >
+          ×
+        </button>
+      </header>
+      @if (dialogError) {
+        <p class="error" role="alert">{{ dialogError }}</p>
+      }
+      @if (selected; as row) {
+        <form #form="ngForm" (ngSubmit)="save(form)">
+          <fieldset [disabled]="saving()">
+            <div class="form-grid">
+              <label
+                >{{ t("Name") }} *<input
+                  name="name"
+                  required
+                  maxlength="200"
+                  [(ngModel)]="row.fullName" /></label
+              ><label
+                >{{ t("Username") }} *<input
+                  name="username"
+                  required
+                  maxlength="256"
+                  [(ngModel)]="row.userName" /></label
+              ><label
+                >{{ t("Birth date") }} *<input
+                  type="date"
+                  name="birthDate"
+                  required
+                  [max]="locale.today()"
+                  [ngModel]="row.birthDate?.slice(0, 10)"
+                  (ngModelChange)="row.birthDate = $event" /></label
+              ><label
+                >{{ t("Gender")
+                }}<select name="gender" [(ngModel)]="row.gender">
+                  <option value="Male">{{ t("Male") }}</option>
+                  <option value="Female">{{ t("Female") }}</option>
+                </select></label
+              >
+              <fieldset class="span-all">
+                <legend>{{ t("Role") }}</legend>
+                <div class="toolbar">
+                  @for (role of roles; track role) {
+                    <label class="check"
+                      ><input
+                        type="checkbox"
+                        [checked]="row.roles.includes(role)"
+                        (change)="setRole(role, $event)"
+                      />{{ t(role) }}</label
+                    >
+                  }
+                </div>
+              </fieldset>
+              <div class="span-all">
+                <app-staff-working-hours
+                  [hours]="row.workingHours || []"
+                  (hoursChange)="row.workingHours = $event"
+                  [disabled]="saving()"
+                  [showErrors]="form.submitted"
+                />
+              </div>
+            </div>
+          </fieldset>
+          <p class="notice">
+            {{ t("Future appointments") }}: {{ row.futureAppointments }} ·
+            {{
+              t("Resolve future work before deactivation. History is retained.")
+            }}
+          </p>
+          <footer class="actions">
+            <button type="submit" class="primary" [disabled]="saving()">
+              {{ t(saving() ? "Saving" : "Save") }}</button
+            ><button type="button" [disabled]="saving()" (click)="close()">
+              {{ t("Cancel") }}
+            </button>
+          </footer>
+        </form>
+      }
+      @if (statusTarget; as row) {
+        <p>
+          <strong>{{ row.fullName }}</strong> ·
+          {{ t(row.isActive ? "Deactivate" : "Activate") }}
+        </p>
+        <p>{{ t("Future appointments") }}: {{ row.futureAppointments }}</p>
+        <p class="notice">
+          {{
+            t("Resolve future work before deactivation. History is retained.")
+          }}
+        </p>
+        <footer class="actions">
+          <button class="primary" [disabled]="saving()" (click)="status()">
+            {{ t(saving() ? "Saving" : "Confirm") }}</button
+          ><button (click)="close()" [disabled]="saving()">
+            {{ t("Cancel") }}
+          </button>
+        </footer>
+      }
+    </dialog>
+  }
+</section>

@@ -1,12 +1,12 @@
 .form-control, .form-select {
-  height: 40px;
+  height: 44px;
   padding: 0.5rem 1rem;
 }
 .input-group .form-control {
-  height: 40px;
+  height: 44px;
 }
 .input-group .btn {
-  height: 40px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -14,5 +14,5 @@
 }
 input[type="date"].form-control {
   appearance: none;
-  min-height: 40px; 
+  min-height: 44px;
 }

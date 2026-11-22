@@ -1,113 +1,176 @@
-import { Component, OnInit, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { InsuranceService, InsuranceCompany } from '../../../core/services/insurance.service';
-
+import { CeoNotifications } from "../../../core/services/ceo-notifications";
+import { Component, ElementRef, inject, signal } from "@angular/core";
+import { HttpClient } from "@angular/common/http";
+import { FormsModule, NgForm } from "@angular/forms";
+import { ActivatedRoute, Router, RouterLink } from "@angular/router";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { catchError, of, switchMap, tap } from "rxjs";
+import {
+  CeoWorkspaceService,
+  Filters,
+} from "../../../core/services/ceo-workspace.service";
+import {
+  InsuranceService,
+  InsuranceCompany,
+} from "../../../core/services/insurance.service";
+import { environment } from "../../../../environments/environment";
+import { CeoLocale } from "../workspace/ceo-locale";
+interface CompanyRow extends InsuranceCompany {
+  id: number;
+  linkedPatients: number;
+}
+interface CompanyPage {
+  items: CompanyRow[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
 @Component({
-  selector: 'app-insurance-management',
+  selector: "app-insurance-management",
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, TranslateModule],
-  templateUrl: './insurance-management.component.html',
-  styleUrls: ['./insurance-management.component.css']
+  imports: [FormsModule, RouterLink],
+  templateUrl: "./insurance-management.component.html",
+  styleUrl: "../workspace/workspace.css",
 })
-export class InsuranceManagementComponent implements OnInit {
-  private insuranceService = inject(InsuranceService);
-  private fb = inject(FormBuilder);
-  private translate = inject(TranslateService);
-
-  companies = this.insuranceService.companies;
-  loading = this.insuranceService.loading;
-  error = this.insuranceService.error;
-
-  companyForm: FormGroup;
-  showModal = false;
-  editingCompany: InsuranceCompany | null = null;
-  isSubmitting = false;
-
+export class InsuranceManagementComponent {
+  readonly locale = new CeoLocale();
+  readonly notices = inject(CeoNotifications);
+  readonly api = inject(CeoWorkspaceService);
+  private readonly companies = inject(InsuranceService);
+  private readonly http = inject(HttpClient);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly element: ElementRef<HTMLElement> = inject(ElementRef);
+  readonly data = signal<CompanyPage | null>(null);
+  readonly loading = signal(false);
+  readonly saving = signal(false);
+  readonly saved = signal(false);
+  readonly error = signal("");
+  applied: Filters = {};
+  draft: Filters = {};
+  filtersOpen = false;
+  model: InsuranceCompany | null = null;
+  dialogError = "";
+  private focusBefore: HTMLElement | null = null;
   constructor() {
-    this.companyForm = this.fb.group({
-      name: ['', Validators.required],
-      portalUrl: [''],
-      hotline: [''],
-      isActive: [true]
+    this.route.queryParamMap
+      .pipe(
+        tap((p) => {
+          this.applied = {};
+          for (const k of ["search", "active", "page"])
+            if (p.get(k) != null) this.applied[k] = p.get(k);
+          this.draft = { ...this.applied };
+          this.loading.set(true);
+          this.error.set("");
+          this.data.set(null);
+        }),
+        switchMap(() =>
+          this.http
+            .get<CompanyPage>(
+              environment.apiUrl + "/InsuranceCompanies/Search",
+              { params: this.api.params(this.applied) },
+            )
+            .pipe(
+              catchError((e) => {
+                this.error.set(
+                  this.locale.failure(e, "Could not load data. Retry."),
+                );
+                return of(null);
+              }),
+            ),
+        ),
+        takeUntilDestroyed(),
+      )
+      .subscribe((x) => {
+        this.data.set(x);
+        this.loading.set(false);
+      });
+  }
+  t(s: string) {
+    return this.locale.t(s);
+  }
+  get chips() {
+    return Object.entries(this.applied).filter(
+      ([k, v]) => k !== "page" && v !== "" && v != null,
+    );
+  }
+  get pageCount() {
+    return Math.max(
+      1,
+      Math.ceil((this.data()?.total ?? 0) / (this.data()?.pageSize ?? 20)),
+    );
+  }
+  navigate(extra: Filters = {}) {
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { ...this.applied, ...extra },
     });
   }
-
-  ngOnInit(): void {
-    this.insuranceService.getCompanies();
+  apply() {
+    this.applied = { ...this.draft, page: 1 };
+    this.filtersOpen = false;
+    this.navigate();
   }
-
-  openModal(company?: InsuranceCompany): void {
-    if (company) {
-      this.editingCompany = company;
-      this.companyForm.patchValue({
-        name: company.name,
-        portalUrl: company.portalUrl,
-        hotline: (company as any).hotline || '',
-        isActive: company.isActive
-      });
-    } else {
-      this.editingCompany = null;
-      this.companyForm.reset({ isActive: true });
-    }
-    this.showModal = true;
+  clear() {
+    this.applied = {};
+    this.navigate();
   }
-
-  closeModal(): void {
-    this.showModal = false;
-    this.editingCompany = null;
-    this.companyForm.reset({ isActive: true });
+  remove(k: string) {
+    delete this.applied[k];
+    this.navigate({ page: 1 });
   }
-
-  onSubmit(): void {
-    if (this.companyForm.invalid) {
-      this.companyForm.markAllAsTouched();
+  refresh() {
+    this.navigate({ refresh: Date.now() });
+  }
+  page(step: number) {
+    this.navigate({ page: (this.data()?.page ?? 1) + step });
+  }
+  open(row?: InsuranceCompany) {
+    this.focusBefore = document.activeElement as HTMLElement;
+    this.dialogError = "";
+    this.model = row
+      ? structuredClone(row)
+      : { name: "", portalUrl: null, hotline: "", isActive: true };
+    setTimeout(() =>
+      this.element.nativeElement
+        .querySelector<HTMLDialogElement>("dialog")
+        ?.showModal(),
+    );
+  }
+  close(event?: Event) {
+    event?.preventDefault();
+    if (this.saving()) return;
+    this.element.nativeElement
+      .querySelector<HTMLDialogElement>("dialog")
+      ?.close();
+    this.model = null;
+    this.focusBefore?.focus();
+  }
+  save(form: NgForm) {
+    if (this.saving() || !this.model) return;
+    if (form.invalid || !this.model.name.trim()) {
+      form.control.markAllAsTouched();
+      this.dialogError = this.t("Enter the required fields.");
       return;
     }
-
-    this.isSubmitting = true;
-    const payload = this.companyForm.value;
-
-    if (this.editingCompany?.id) {
-      this.insuranceService.updateCompany(this.editingCompany.id, payload).subscribe({
-        next: () => {
-          this.insuranceService.getCompanies();
-          this.closeModal();
-          this.isSubmitting = false;
-        },
-        error: (err) => {
-          console.error('Error updating company', err);
-          this.isSubmitting = false;
-        }
-      });
-    } else {
-      this.insuranceService.addCompany(payload).subscribe({
-        next: () => {
-          this.insuranceService.getCompanies();
-          this.closeModal();
-          this.isSubmitting = false;
-        },
-        error: (err) => {
-          console.error('Error adding company', err);
-          this.isSubmitting = false;
-        }
-      });
-    }
-  }
-
-  onDelete(id: number | undefined): void {
-    if (!id) return;
-    const confirmMsg = this.translate.instant('CEO.INSURANCE_MANAGEMENT.CONFIRM_DELETE');
-    if (confirm(confirmMsg)) {
-      this.insuranceService.deleteCompany(id).subscribe({
-        next: () => {
-          this.insuranceService.getCompanies();
-        },
-        error: (err) => {
-          console.error('Error deleting company', err);
-        }
-      });
-    }
+    this.saving.set(true);
+    this.dialogError = "";
+    const m = this.model;
+    const request = m.id
+      ? this.companies.updateCompany(m.id, m)
+      : this.companies.addCompany(m);
+    request.subscribe({
+      next: () => {
+        this.saving.set(false);
+        this.close();
+        this.saved.set(true);
+        this.refresh();
+      },
+      error: (e) => {
+        this.saving.set(false);
+        this.dialogError = this.locale.failure(e);
+        this.notices.show(this.dialogError);
+      },
+    });
   }
 }

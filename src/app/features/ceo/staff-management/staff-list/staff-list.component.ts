@@ -1,126 +1,225 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { UserService, User } from '../../../../core/services/user.service';
-import { AddUserComponent } from '../add-user/add-user.component';
-import { TranslateModule } from '@ngx-translate/core';
-import { StaffWorkingHoursComponent } from '../staff-working-hours/staff-working-hours';
-import { StaffWorkingHours, validStaffWorkingHours, serializeStaffWorkingHours } from '../../../../core/models/staff-working-hours.model';
-import { apiError } from '../../../../core/services/reception-api';
+import { CeoNotifications } from "../../../../core/services/ceo-notifications";
+import { Component, ElementRef, inject, signal } from "@angular/core";
+import { FormsModule, NgForm } from "@angular/forms";
+import { ActivatedRoute, Router, RouterLink } from "@angular/router";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { catchError, of, switchMap, tap } from "rxjs";
+import {
+  CeoWorkspaceService,
+  StaffRow,
+  StaffPage,
+  Filters,
+} from "../../../../core/services/ceo-workspace.service";
+import { UserService } from "../../../../core/services/user.service";
+import { AddUserComponent } from "../add-user/add-user.component";
+import { StaffWorkingHoursComponent } from "../staff-working-hours/staff-working-hours";
+import {
+  validStaffWorkingHours,
+  serializeStaffWorkingHours,
+} from "../../../../core/models/staff-working-hours.model";
+import { CeoLocale } from "../../workspace/ceo-locale";
 
 @Component({
-  selector: 'app-staff-list',
+  selector: "app-staff-list",
   standalone: true,
-  imports: [CommonModule, AddUserComponent, ReactiveFormsModule, TranslateModule, StaffWorkingHoursComponent],
-  templateUrl: './staff-list.component.html',
-  styleUrl: './staff-list.component.css'
+  imports: [
+    FormsModule,
+    RouterLink,
+    AddUserComponent,
+    StaffWorkingHoursComponent,
+  ],
+  templateUrl: "./staff-list.component.html",
+  styleUrl: "../../workspace/workspace.css",
 })
-export class StaffListComponent implements OnInit {
-  userService = inject(UserService);
-  fb = inject(FormBuilder);
-
-  showAddForm = signal(false);
-
-  selectedUser: User | null = null;
-  userToDelete: User | null = null;
-  editForm!: FormGroup;
-  isUpdating = false;
-  updateError = '';
-
-  roles = ['Admin', 'Owner', 'Doctor', 'Patient', 'Senior', 'Receptionist', 'Ceo'];
-
-  ngOnInit() {
-    this.loadUsers();
-    this.editForm = this.fb.group({
-      fullName: ['', Validators.required],
-      userName: ['', Validators.required],
-      gender: [0, Validators.required],
-      birthDate: ['', Validators.required],
-      role: ['', Validators.required],
-      workingHours: this.fb.nonNullable.control<StaffWorkingHours[]>([])
-    }, { validators: form => form.get('role')?.value === 'Patient' || validStaffWorkingHours(form.get('workingHours')?.value ?? []) ? null : { workingHours: true } });
+export class StaffListComponent {
+  readonly api = inject(CeoWorkspaceService);
+  readonly users = inject(UserService);
+  readonly locale = new CeoLocale();
+  readonly notices = inject(CeoNotifications);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly element: ElementRef<HTMLElement> = inject(ElementRef);
+  readonly data = signal<StaffPage | null>(null);
+  readonly loading = signal(false);
+  readonly error = signal("");
+  readonly saving = signal(false);
+  readonly saved = signal(false);
+  readonly roles = [
+    "Admin",
+    "Owner",
+    "Doctor",
+    "Senior",
+    "Receptionist",
+    "Ceo",
+  ];
+  draft: Filters = {};
+  applied: Filters = {};
+  filtersOpen = false;
+  showAddForm = false;
+  selected: StaffRow | null = null;
+  statusTarget: StaffRow | null = null;
+  dialogError = "";
+  private focusBefore: HTMLElement | null = null;
+  constructor() {
+    this.route.queryParamMap
+      .pipe(
+        tap((p) => {
+          this.applied = {};
+          for (const k of ["search", "role", "active", "page"])
+            if (p.get(k) != null) this.applied[k] = p.get(k);
+          this.draft = { ...this.applied };
+          this.loading.set(true);
+          this.error.set("");
+          this.data.set(null);
+        }),
+        switchMap(() =>
+          this.api.staff(this.applied).pipe(
+            catchError((e) => {
+              this.error.set(
+                this.locale.failure(e, "Could not load data. Retry."),
+              );
+              return of(null);
+            }),
+          ),
+        ),
+        takeUntilDestroyed(),
+      )
+      .subscribe((x) => {
+        this.data.set(x);
+        this.loading.set(false);
+      });
   }
-
-  loadUsers() {
-    this.userService.getAllUsers();
+  t(s: string) {
+    return this.locale.t(s);
   }
-
-  toggleAddForm() {
-    this.showAddForm.update(v => !v);
+  get chips() {
+    return Object.entries(this.applied).filter(
+      ([k, v]) => k !== "page" && v !== null && v !== undefined && v !== "",
+    );
   }
-
-  onUserAdded() {
-    this.showAddForm.set(false);
-    this.loadUsers();
+  get pageCount() {
+    return Math.max(
+      1,
+      Math.ceil((this.data()?.total ?? 0) / (this.data()?.pageSize ?? 20)),
+    );
   }
-
-  onEdit(user: User) {
-    if (this.isUpdating) return;
-    this.selectedUser = user;
-    this.updateError = '';
-    this.editForm.patchValue({
-      fullName: user.fullName || '',
-      userName: user.userName || '',
-      gender: user.gender === 'Male' ? 0 : user.gender === 'Female' ? 1 : Number(user.gender ?? 0),
-      birthDate: user.birthDate?.slice(0, 10) || '',
-      role: user.roles[0] || '',
-      workingHours: (user.workingHours ?? []).map(window => ({ ...window }))
+  navigate(extra: Filters = {}) {
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { ...this.applied, ...extra },
     });
   }
-
-  onDelete(user: User) {
-    this.userToDelete = user;
+  apply() {
+    this.applied = { ...this.draft, page: 1 };
+    this.filtersOpen = false;
+    this.navigate();
   }
-
-  confirmDelete() {
-    if (this.userToDelete?.id) {
-      this.userService.deleteUser(this.userToDelete.id).subscribe({
-        next: () => {
-          this.loadUsers();
-          this.userToDelete = null;
-        },
-        error: (err) => {
-          console.error('Delete error', err);
-          this.userToDelete = null;
-        }
-      });
+  clear() {
+    this.applied = {};
+    this.navigate();
+  }
+  remove(k: string) {
+    delete this.applied[k];
+    this.navigate({ page: 1 });
+  }
+  refresh() {
+    this.navigate({ refresh: Date.now() });
+  }
+  page(step: number) {
+    this.navigate({ page: (this.data()?.page ?? 1) + step });
+  }
+  added() {
+    this.showAddForm = false;
+    this.saved.set(true);
+    this.refresh();
+  }
+  show() {
+    this.focusBefore = document.activeElement as HTMLElement;
+    this.dialogError = "";
+    setTimeout(() =>
+      this.element.nativeElement
+        .querySelector<HTMLDialogElement>("dialog")
+        ?.showModal(),
+    );
+  }
+  edit(row: StaffRow) {
+    this.selected = structuredClone(row);
+    this.show();
+  }
+  reviewStatus(row: StaffRow) {
+    this.statusTarget = row;
+    this.show();
+  }
+  close(event?: Event) {
+    event?.preventDefault();
+    if (this.saving()) return;
+    this.element.nativeElement
+      .querySelector<HTMLDialogElement>("dialog")
+      ?.close();
+    this.selected = null;
+    this.statusTarget = null;
+    this.focusBefore?.focus();
+  }
+  setRole(role: string, event: Event) {
+    if (!this.selected) return;
+    this.selected.roles = (event.target as HTMLInputElement).checked
+      ? [...this.selected.roles, role]
+      : this.selected.roles.filter((r) => r !== role);
+  }
+  save(form: NgForm) {
+    if (this.saving() || !this.selected) return;
+    const row = this.selected;
+    if (
+      form.invalid ||
+      !row.roles.length ||
+      !row.fullName.trim() ||
+      !row.userName.trim() ||
+      !validStaffWorkingHours(row.workingHours ?? [])
+    ) {
+      form.control.markAllAsTouched();
+      this.dialogError = this.t("Enter the required fields.");
+      return;
     }
-  }
-
-  closeDeleteModal() {
-    this.userToDelete = null;
-  }
-
-  onUpdate() {
-    if (this.isUpdating) return;
-    if (this.editForm.valid && this.selectedUser?.id) {
-      this.isUpdating = true; this.updateError = '';
-      const formValues = this.editForm.getRawValue();
-      const payload = {
-        userId: this.selectedUser.id,
-        fullName: formValues.fullName,
-        userName: formValues.userName,
-        gender: Number(formValues.gender),
-        birthDate: formValues.birthDate,
-        roles: [formValues.role],
-        workingHours: serializeStaffWorkingHours(formValues.workingHours)
-      };
-
-      this.userService.updateUser(payload).subscribe({
-        next: () => {
-          this.isUpdating = false;
-          this.loadUsers();
-          this.selectedUser = null;
+    this.saving.set(true);
+    this.dialogError = "";
+    this.users
+      .updateUser({
+        ...row,
+        userId: row.id,
+        gender:
+          row.gender === "Male"
+            ? 0
+            : row.gender === "Female"
+              ? 1
+              : Number(row.gender),
+        workingHours: serializeStaffWorkingHours(row.workingHours ?? []),
+      })
+      .subscribe({
+        next: () => this.finished(),
+        error: (e) => {
+          this.saving.set(false);
+          this.dialogError = this.locale.failure(e);
+          this.notices.show(this.dialogError);
         },
-        error: (err) => { this.isUpdating = false; this.updateError = apiError(err); }
       });
-    } else {
-      this.editForm.markAllAsTouched();
-    }
   }
-
-  closeEditModal() {
-    if (!this.isUpdating) this.selectedUser = null;
+  status() {
+    if (this.saving() || !this.statusTarget) return;
+    this.saving.set(true);
+    this.dialogError = "";
+    this.api.status(this.statusTarget, !this.statusTarget.isActive).subscribe({
+      next: () => this.finished(),
+      error: (e) => {
+        this.saving.set(false);
+        this.dialogError = this.locale.failure(e);
+        this.notices.show(this.dialogError);
+      },
+    });
   }
-  onEditRoleChange() { if (this.editForm.get('role')?.value === 'Patient') this.editForm.get('workingHours')?.setValue([]); }
+  private finished() {
+    this.saving.set(false);
+    this.close();
+    this.saved.set(true);
+    this.refresh();
+  }
 }

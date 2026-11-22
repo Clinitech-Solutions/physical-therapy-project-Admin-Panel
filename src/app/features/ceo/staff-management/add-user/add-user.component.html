@@ -6,8 +6,8 @@
       
       <!-- Full Name -->
       <div class="col-md-6 form-group">
-        <label class="form-label">{{ 'CEO.STAFF.FULL_NAME' | translate }}</label>
-        <input type="text" formControlName="fullName" class="form-control" [ngClass]="{'is-invalid': userForm.controls.fullName.invalid && userForm.controls.fullName.touched}">
+        <label class="form-label" for="create-staff-fullName">{{ 'CEO.STAFF.FULL_NAME' | translate }}</label>
+        <input type="text" id="create-staff-fullName" formControlName="fullName" class="form-control" [ngClass]="{'is-invalid': userForm.controls.fullName.invalid && userForm.controls.fullName.touched}">
         <div class="invalid-feedback">
           {{ 'CEO.STAFF.FULL_NAME_REQUIRED' | translate }}
         </div>
@@ -15,8 +15,8 @@
 
       <!-- Username -->
       <div class="col-md-6 form-group">
-        <label class="form-label">{{ 'CEO.STAFF.USERNAME' | translate }}</label>
-        <input type="text" formControlName="userName" class="form-control" [ngClass]="{'is-invalid': userForm.controls.userName.invalid && userForm.controls.userName.touched}" autocomplete="new-password">
+        <label class="form-label" for="create-staff-userName">{{ 'CEO.STAFF.USERNAME' | translate }}</label>
+        <input type="text" id="create-staff-userName" formControlName="userName" class="form-control" [ngClass]="{'is-invalid': userForm.controls.userName.invalid && userForm.controls.userName.touched}" autocomplete="new-password">
         <div class="invalid-feedback">
           {{ 'CEO.STAFF.USERNAME_REQUIRED' | translate }}
         </div>
@@ -24,10 +24,10 @@
 
       <!-- Password -->
       <div class="col-md-6 form-group">
-        <label class="form-label">{{ 'CEO.STAFF.PASSWORD' | translate }}</label>
+        <label class="form-label" for="create-staff-password">{{ 'CEO.STAFF.PASSWORD' | translate }}</label>
         <div class="input-group">
-          <input [type]="showPassword ? 'text' : 'password'" formControlName="password" class="form-control" [ngClass]="{'is-invalid': userForm.controls.password.invalid && userForm.controls.password.touched}" autocomplete="new-password">
-          <button class="btn btn-outline-secondary" type="button" (click)="togglePasswordVisibility()">
+          <input [type]="showPassword ? 'text' : 'password'" id="create-staff-password" formControlName="password" class="form-control" [ngClass]="{'is-invalid': userForm.controls.password.invalid && userForm.controls.password.touched}" autocomplete="new-password">
+          <button class="btn btn-outline-secondary" type="button" (click)="togglePasswordVisibility()" [attr.aria-label]="locale.t(showPassword ? 'Hide password' : 'Show password')">
             <i class="bi" [ngClass]="showPassword ? 'bi-eye-slash' : 'bi-eye'"></i>
           </button>
           <div class="invalid-feedback">
@@ -38,8 +38,8 @@
 
       <!-- Gender -->
       <div class="col-md-6 form-group">
-        <label class="form-label">{{ 'CEO.STAFF.GENDER' | translate }}</label>
-        <select formControlName="gender" class="form-select" [ngClass]="{'is-invalid': userForm.controls.gender.invalid && userForm.controls.gender.touched}">
+        <label class="form-label" for="create-staff-gender">{{ 'CEO.STAFF.GENDER' | translate }}</label>
+        <select id="create-staff-gender" formControlName="gender" class="form-select" [ngClass]="{'is-invalid': userForm.controls.gender.invalid && userForm.controls.gender.touched}">
           <option value="0">{{ 'CEO.STAFF.MALE' | translate }}</option>
           <option value="1">{{ 'CEO.STAFF.FEMALE' | translate }}</option>
         </select>
@@ -50,8 +50,8 @@
 
       <!-- Birth Date -->
       <div class="col-md-6 form-group">
-        <label class="form-label">{{ 'CEO.STAFF.BIRTH_DATE' | translate }}</label>
-        <input type="date" formControlName="birthDate" class="form-control" [ngClass]="{'is-invalid': userForm.controls.birthDate.invalid && userForm.controls.birthDate.touched}">
+        <label class="form-label" for="create-staff-birthDate">{{ 'CEO.STAFF.BIRTH_DATE' | translate }}</label>
+        <input type="date" id="create-staff-birthDate" formControlName="birthDate" class="form-control" [ngClass]="{'is-invalid': userForm.controls.birthDate.invalid && userForm.controls.birthDate.touched}">
         <div class="invalid-feedback">
           {{ 'CEO.STAFF.BIRTH_DATE_REQUIRED' | translate }}
         </div>
@@ -59,10 +59,10 @@
 
       <!-- Role -->
       <div class="col-md-6 form-group">
-        <label class="form-label">{{ 'CEO.STAFF.ROLE' | translate }}</label>
-        <select formControlName="role" (change)="onRoleChange()" class="form-select" [ngClass]="{'is-invalid': userForm.controls.role.invalid && userForm.controls.role.touched}">
+        <label class="form-label" for="create-staff-role">{{ 'CEO.STAFF.ROLE' | translate }}</label>
+        <select id="create-staff-role" formControlName="role" (change)="onRoleChange()" class="form-select" [ngClass]="{'is-invalid': userForm.controls.role.invalid && userForm.controls.role.touched}">
           <option value="" disabled selected>{{ 'CEO.STAFF.SELECT_ROLE' | translate }}</option>
-          <option *ngFor="let role of roles" [value]="role">{{ role }}</option>
+          <option *ngFor="let role of roles" [value]="role">{{ locale.t(role) }}</option>
         </select>
         <div class="invalid-feedback">
           {{ 'CEO.STAFF.ROLE_REQUIRED' | translate }}

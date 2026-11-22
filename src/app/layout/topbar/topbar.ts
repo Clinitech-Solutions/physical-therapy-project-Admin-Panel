@@ -6,6 +6,7 @@ import { AuthService } from '../../core/services/auth';
 import { ThemeToggle } from '../../shared/components/theme-toggle/theme-toggle';
 import { LanguageSelector } from '../../shared/components/language-selector/language-selector';
 import { TranslateModule } from '@ngx-translate/core';
+import { CeoWorkspaceService } from '../../core/services/ceo-workspace.service';
 
 @Component({
   selector: 'app-topbar',
@@ -15,6 +16,8 @@ import { TranslateModule } from '@ngx-translate/core';
   styleUrl: './topbar.css',
 })
 export class Topbar {
+  readonly clinic = inject(CeoWorkspaceService);
+  constructor(){ this.clinic.loadIdentity(); }
   @Input() menuOpen = false;
   @Output() menuToggle = new EventEmitter<void>();
   themeService = inject(ThemeService);

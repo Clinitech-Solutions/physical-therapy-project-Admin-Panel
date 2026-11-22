@@ -1067,7 +1067,7 @@
       "PASSWORD": "Password",
       "FULL_NAME_REQUIRED": "Full Name is required.",
       "USERNAME_REQUIRED": "Username is required.",
-      "VALID_PASSWORD_REQUIRED": "Valid password is required (min 6 characters).",
+      "VALID_PASSWORD_REQUIRED": "Use at least 8 characters with uppercase, lowercase, a number and a symbol.",
       "GENDER_REQUIRED": "Gender is required.",
       "BIRTH_DATE_REQUIRED": "Birth Date is required.",
       "ROLE_REQUIRED": "Role is required.",
