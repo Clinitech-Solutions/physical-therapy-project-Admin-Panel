@@ -31,7 +31,7 @@
       {{t('Filters')}} ({{chips.length}})</button
     ><button (click)="export()" [disabled]="loading()||exporting()||!data()">
       {{t('Export all matching CSV')}}
-    </button>
+    </button><app-print-button [prepare]="preparePrint" [disabled]="loading()||!data()" />
   </div>
   <div class="chips">
     @for(chip of chips;track chip[0]){<button

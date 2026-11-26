@@ -1,6 +1,6 @@
 ﻿<section class="workspace">
   <header class="heading">
-    <h1>{{t('Overview')}}</h1>
+    <h1>{{t('Overview')}}</h1><app-print-button [prepare]="preparePrint" [disabled]="loading()||!data()" />
     <form class="toolbar" (ngSubmit)="apply()">
       <label
         >{{t('From')}}<input

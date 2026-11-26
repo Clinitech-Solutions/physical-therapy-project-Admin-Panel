@@ -65,6 +65,7 @@
           </div>
         </div>
         <div class="profile-header-actions">
+          <button type="button" class="profile-icon" (click)="printOptionsOpen=true" [disabled]="loading() || patientLoading() || !data() || printer.busy()">{{printer.t('Print')}}</button>
           <div class="primary-clinician">
             <div>
               <small>{{ t("PRIMARY_DOCTOR", "Primary clinician") }}</small
@@ -1170,3 +1171,7 @@
     }
   </div>
 </p-dialog>
+
+@if(visible && printOptionsOpen){
+  <app-profile-print-options [(visible)]="printOptionsOpen" [patientId]="printPatientId" [courseId]="selectedCourseId" />
+}

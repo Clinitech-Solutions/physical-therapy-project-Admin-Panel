@@ -1,6 +1,6 @@
 <section class="billing-workspace" [attr.dir]="locale.language === 'ar-EG' ? 'rtl' : 'ltr'" aria-labelledby="patient-billing-title">
   <header class="billing-heading"><div><span class="eyebrow">{{ t('Patient accounts') }}</span><h3 id="patient-billing-title">{{ t('One patient. One clear balance.') }}</h3></div>
-    <div class="export"><label class="sr-only" for="billing-export">{{ t('Export') }}</label><select id="billing-export" [(ngModel)]="exportKind"><option value="patients">{{ t('Patient summaries') }}</option><option value="invoices">{{ t('Invoice detail') }}</option></select><button type="button" (click)="export()" [disabled]="exporting || loading()">{{ t('Export') }} <i class="bi bi-download" aria-hidden="true"></i></button></div>
+    <div class="export"><label class="sr-only" for="billing-export">{{ t('Export') }}</label><select id="billing-export" [(ngModel)]="exportKind"><option value="patients">{{ t('Patient summaries') }}</option><option value="invoices">{{ t('Invoice detail') }}</option></select><button type="button" (click)="export()" [disabled]="exporting || loading()">{{ t('Export') }} <i class="bi bi-download" aria-hidden="true"></i></button><app-print-button [prepare]="preparePrint" [disabled]="loading()||!result()" /></div>
   </header>
   @if (result(); as data) {
     <dl class="summary-strip">

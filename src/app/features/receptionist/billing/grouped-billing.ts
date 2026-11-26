@@ -1,3 +1,6 @@
+import { PrintService } from '../../../shared/printing/print.service';
+import { PrintButtonComponent } from '../../../shared/printing/print-button.component';
+import { firstValueFrom as printValue } from 'rxjs';
 import { Component, OnDestroy, OnInit, Output, EventEmitter, Input, inject, signal, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -10,8 +13,15 @@ import { AuthService } from '../../../core/services/auth';
 import { apiError } from '../../../core/services/reception-api';
 import { billingArabic } from './billing-text';
 
-@Component({ selector: 'app-grouped-billing', standalone: true, imports: [CommonModule, FormsModule], templateUrl: './grouped-billing.html', styleUrls: ['./grouped-billing.css', './grouped-billing-filters.css', './grouped-billing-table.css', './grouped-billing-responsive.css'] })
+@Component({ selector: 'app-grouped-billing', standalone: true, imports: [CommonModule, FormsModule, PrintButtonComponent], templateUrl: './grouped-billing.html', styleUrls: ['./grouped-billing.css', './grouped-billing-filters.css', './grouped-billing-table.css', './grouped-billing-responsive.css'] })
 export class GroupedBillingComponent implements OnInit, OnDestroy {
+  readonly printer = inject(PrintService);
+  readonly preparePrint = async () => {
+    const filters=structuredClone(this.applied), kind=this.exportKind;
+    this.printer.limit(kind==='patients'?(this.result()?.matchingPatients??0):(this.result()?.matchingInvoices??0));
+    const scope=[this.t('Date basis')+': '+this.t(filters.dateBasis),...this.chips.map(c=>c.key==='clinicianId'?this.t('Actual treating clinician')+': '+(this.options().clinicians.find(x=>x.id===c.value)?.name ?? this.t('Unavailable')):c.label)];
+    return this.printer.csv(await printValue(this.api.export(filters,kind)),this.t(kind==='patients'?'Patient summaries':'Invoice detail'),scope);
+  };
   readonly api = inject(GroupedBillingService); readonly locale = new ReceptionistLocale();
   readonly contracts = inject(ReceptionContracts); private readonly auth = inject(AuthService, { optional: true });
   private readonly element: ElementRef<HTMLElement> = inject(ElementRef);

@@ -1,3 +1,6 @@
+import { PrintService } from '../../../shared/printing/print.service';
+import { PrintButtonComponent } from '../../../shared/printing/print-button.component';
+import { firstValueFrom as printValue } from 'rxjs';
 import { Component, inject, signal } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { ActivatedRoute, Router, RouterLink } from "@angular/router";
@@ -12,11 +15,24 @@ import { CeoLocale } from "../workspace/ceo-locale";
 @Component({
   selector: "app-ceo-dashboard",
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, PrintButtonComponent],
   templateUrl: "./dashboard.html",
   styleUrl: "../workspace/workspace.css",
 })
 export class Dashboard {
+  readonly printer = inject(PrintService);
+  readonly preparePrint = async () => {
+    const saved=this.data();
+    if(!saved)throw new Error('Overview unavailable');
+    const d=await printValue(this.api.overview({from:saved.from,to:saved.to}));
+    return {title:this.t('Overview'),scope:[this.t('Collection period · Africa/Cairo')+': '+d.from+' — '+d.to],sections:[
+      {title:this.t('Actual collections by Cairo day'),fields:[[this.t('Patient collections'),this.money(d.patientCollections)],[this.t('Insurer collections'),this.money(d.insurerCollections)]] as [string,string][]},
+      {title:this.t('Current balances'),fields:[[this.t('Patient outstanding'),this.money(d.patientOutstanding)],[this.t('Earned insurer receivables'),this.money(d.earnedInsurerOutstanding)],[this.t('Planned insurer liability'),this.money(d.plannedInsurerLiability)]] as [string,string][]},
+      {title:this.printer.t('Scheduled service period')+': '+d.from+' — '+d.to,fields:[[this.t('Scheduled visits'),d.scheduled],[this.t('Clinically completed'),d.clinicallyCompleted],[this.t('Cancelled'),d.cancelled],[this.t('NoShow'),d.noShow]] as [string,number][]},
+      {title:this.t('Clinical occupancy'),fields:[[this.t('Clinical occupancy'),d.occupied],[this.t('Active room capacity'),d.activeRoomCapacity],[this.t('Available room slots'),d.availableRoomSlots],[this.t('Unsubmitted services'),d.unsubmittedServices],[this.t('Outstanding claims'),d.outstandingClaims],[this.t('Absence recovery'),d.unresolvedAbsenceWork]] as [string,number][]},
+      {title:this.t('Actual collections by Cairo day'),columns:[this.t('Date'),this.t('Patient collections'),this.t('Insurer collections')],rows:d.collections.map(row=>[row.day,this.money(row.patient),this.money(row.insurer)])}
+    ]};
+  };
   readonly api = inject(CeoWorkspaceService);
   readonly locale = new CeoLocale();
   readonly route = inject(ActivatedRoute);

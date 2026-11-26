@@ -1,3 +1,5 @@
+import { ProfilePrintOptionsComponent } from '../../printing/profile-print-options.component';
+import { PrintService } from '../../printing/print.service';
 import {
   ChangeDetectorRef,
   Component,
@@ -58,6 +60,7 @@ interface PendingChange {
     FormsModule,
     TranslateModule,
     DialogModule,
+    ProfilePrintOptionsComponent,
     ReceptionistTextPipe,
   ],
   templateUrl: "./patient-profile.component.html",
@@ -71,6 +74,9 @@ export class PatientProfileComponent implements OnChanges, OnDestroy {
       .subscribe(() => changeDetector?.markForCheck());
   }
   readonly locale = new ReceptionistLocale();
+  readonly printer = inject(PrintService);
+  printOptionsOpen = false;
+  get printPatientId(){return Number(this.patientId ?? this.patient?.id);}
   readonly patientService = inject(PatientService);
   readonly api = inject(PatientProfileService);
   readonly documentService = inject(InsuranceDocumentService);
@@ -217,6 +223,7 @@ export class PatientProfileComponent implements OnChanges, OnDestroy {
     return email && !/@example\.(com|invalid)$/i.test(email) ? email : "";
   }
   ngOnChanges() {
+    if(!this.visible)this.printOptionsOpen=false;
     if (this.visible) this.refreshProfile();
     else this.cancelReads();
   }
@@ -237,6 +244,7 @@ export class PatientProfileComponent implements OnChanges, OnDestroy {
     if (id !== this.loadedId) {
       this.cancelReads();
       this.loadedId = id;
+      this.printOptionsOpen = false;
       this.data.set(null);
       this.selectedCourseId = null;
       this.page = 0;
