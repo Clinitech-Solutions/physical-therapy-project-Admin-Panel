@@ -100,8 +100,9 @@ html:not(.light) .receptionist-modal {
   .receptionist-page.insurance-page .portal-brand-avatar { width: 44px; height: 44px; }
 }
 
-.receptionist-page :is(button, a, input, select):focus-visible,
-.receptionist-modal :is(button, a, input, select):focus-visible {
+/* Patient identities provide their own keyboard underline in action-ui.css. */
+.receptionist-page :is(button, a, input, select):where(:not([data-action-appearance="identity"])):focus-visible,
+.receptionist-modal :is(button, a, input, select):where(:not([data-action-appearance="identity"])):focus-visible {
   outline: 2px solid var(--color-info) !important;
   outline-offset: 3px;
 }
@@ -181,7 +182,6 @@ html[dir='rtl'] .receptionist-page .border-start { border-left: 0 !important; bo
 }
 
 .receptionist-page.schedule-page .session-card.status-in-progress:hover {
-  transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(27, 79, 255, 0.2) !important;
 }
 
@@ -225,7 +225,6 @@ html[dir='rtl'] .receptionist-page .border-start { border-left: 0 !important; bo
 
 .receptionist-page.schedule-page .session-card.status-confirmed:hover,
 .receptionist-page.schedule-page .session-card.status-pending:hover {
-  transform: translateY(-2px);
   border-color: var(--border-brand);
   box-shadow: var(--shadow-elevated);
 }

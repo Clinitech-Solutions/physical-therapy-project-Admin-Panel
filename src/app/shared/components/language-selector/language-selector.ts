@@ -1,3 +1,4 @@
+import { ActionButtonDirective } from '../../action-ui/action-button';
 import { Component, inject, signal, HostListener, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LanguageService } from '../../../core/services/language';
@@ -7,20 +8,20 @@ import { TranslateModule } from '@ngx-translate/core';
 @Component({
   selector: 'app-language-selector',
   standalone: true,
-  imports: [CommonModule, TranslateModule],
+  imports: [ActionButtonDirective, CommonModule, TranslateModule],
   template: `
     <div class="lang-selector-container">
-      <button class="btn btn-ghost lang-btn" (click)="toggleDropdown()">
+      <button appButton="secondary" type="button" actionAppearance="utility" class="btn btn-ghost lang-btn" (click)="toggleDropdown()" [attr.aria-expanded]="isOpen()" aria-controls="language-options" [attr.aria-label]="((langService.currentLang() === 'ar' ? 'COMMON.ARABIC' : 'COMMON.ENGLISH') | translate) || 'Language'">
         <i class="bi bi-globe2"></i>
         <span>{{ (langService.currentLang() === 'ar' ? 'COMMON.ARABIC' : 'COMMON.ENGLISH') | translate }}</span>
         <i class="bi bi-chevron-down" style="font-size: 10px; margin-inline-start: 4px;"></i>
       </button>
 
-      <div class="lang-dropdown" *ngIf="isOpen()">
-        <button class="dropdown-item" [class.active]="langService.currentLang() === 'en'" (click)="setLang('en')">
+      <div id="language-options" class="lang-dropdown" *ngIf="isOpen()">
+        <button appButton="secondary" type="button" actionAppearance="utility" class="dropdown-item" [class.active]="langService.currentLang() === 'en'" (click)="setLang('en')">
           English
         </button>
-        <button class="dropdown-item" [class.active]="langService.currentLang() === 'ar'" (click)="setLang('ar')">
+        <button appButton="secondary" type="button" actionAppearance="utility" class="dropdown-item" [class.active]="langService.currentLang() === 'ar'" (click)="setLang('ar')">
           عربي
         </button>
       </div>

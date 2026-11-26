@@ -1,3 +1,6 @@
+import { TableLoadingComponent } from '../../../shared/table-ui/table-ui';
+import { TableEmptyComponent } from '../../../shared/table-ui/table-ui';
+import { ActionButtonDirective } from '../../../shared/action-ui/action-button';
 import { ReassessmentQueue } from "../../../shared/components/reassessment-queue/reassessment-queue";
 import { CoveredTreatments } from "../../../shared/components/covered-treatments/covered-treatments";
 import {
@@ -31,7 +34,7 @@ import {
 @Component({
   selector: "app-live-dashboard",
   standalone: true,
-  imports: [
+  imports: [TableLoadingComponent, TableEmptyComponent, ActionButtonDirective,
     ReassessmentQueue,
     CoveredTreatments,
     CommonModule,

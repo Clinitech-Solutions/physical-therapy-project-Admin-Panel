@@ -1,3 +1,4 @@
+import { ActionButtonDirective } from '../../shared/action-ui/action-button';
 import { Component, inject, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ThemeService } from '../../core/services/theme';
@@ -11,7 +12,7 @@ import { CeoWorkspaceService } from '../../core/services/ceo-workspace.service';
 @Component({
   selector: 'app-topbar',
   standalone: true,
-  imports: [CommonModule, ThemeToggle, LanguageSelector, TranslateModule],
+  imports: [ActionButtonDirective, CommonModule, ThemeToggle, LanguageSelector, TranslateModule],
   templateUrl: './topbar.html',
   styleUrl: './topbar.css',
 })

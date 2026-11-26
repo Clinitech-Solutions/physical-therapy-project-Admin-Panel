@@ -1,3 +1,8 @@
+import { TableRegionDirective } from '../../../shared/table-ui/table-ui';
+import { TablePresentationDirective } from '../../../shared/table-ui/table-ui';
+import { TableEmptyComponent } from '../../../shared/table-ui/table-ui';
+import { TableLoadingComponent } from '../../../shared/table-ui/table-ui';
+import { ActionButtonDirective } from '../../../shared/action-ui/action-button';
 import { apiError, localDay, ReceptionError } from '../../../core/services/reception-api';
 import { ReceptionistLocale, ReceptionistTextPipe } from '../../../shared/receptionist-locale';
 import { Component, OnInit, computed, inject, signal, Input, forwardRef, ViewChild } from "@angular/core";
@@ -27,7 +32,7 @@ import { ReceptionWarnings } from '../../../core/services/reception-warnings';
 @Component({
   selector: "p-dropdown",
   standalone: true,
-  imports: [ReceptionistTextPipe, CommonModule, FormsModule, SelectModule],
+  imports: [ ReceptionistTextPipe, CommonModule, FormsModule, SelectModule],
   template: `
     <p-select 
       [options]="options" [disabled]="disabled"
@@ -78,7 +83,7 @@ export class DropdownComponent implements ControlValueAccessor {
 @Component({
   selector: "app-receptionist-billing",
   standalone: true,
-  imports: [ReceptionistTextPipe,
+  imports: [TableRegionDirective, TablePresentationDirective, TableEmptyComponent, TableLoadingComponent, ActionButtonDirective, ReceptionistTextPipe,
     CommonModule, 
     TranslateModule, 
     FormsModule, 

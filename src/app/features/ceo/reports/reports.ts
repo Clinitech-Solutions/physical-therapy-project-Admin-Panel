@@ -1,3 +1,9 @@
+import { TableLoadingComponent } from '../../../shared/table-ui/table-ui';
+import { ActionButtonDirective } from '../../../shared/action-ui/action-button';
+import { TableEmptyComponent, TablePagerComponent, TablePresentationDirective, TableRegionDirective } from '../../../shared/table-ui/table-ui';
+import { PrintService } from '../../../shared/printing/print.service';
+import { PrintButtonComponent } from '../../../shared/printing/print-button.component';
+import { firstValueFrom as printValue } from 'rxjs';
 import { Component, inject, signal } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { ActivatedRoute, Router, RouterLink } from "@angular/router";
@@ -14,11 +20,18 @@ import { CeoLocale } from "../workspace/ceo-locale";
 @Component({
   selector: "app-ceo-reports",
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [TableLoadingComponent, ActionButtonDirective, TableEmptyComponent, TablePagerComponent, TablePresentationDirective, TableRegionDirective, FormsModule, RouterLink, PrintButtonComponent],
   templateUrl: "./reports.html",
   styleUrl: "../workspace/workspace.css",
 })
 export class Reports {
+  readonly printer = inject(PrintService);
+  readonly preparePrint = async () => {
+    const kind=this.kind, filters={...this.applied}, data=this.data();
+    this.printer.limit(data?.total ?? 0);
+    const scope=[this.printer.t(data?.dateBasis ?? ''),this.printer.t(data?.scope ?? ''),...this.chips.map(([k,v])=>this.label(k)+': '+(k==='clinicianId'?(this.options().clinicians.find(c=>c.id===v)?.name ?? this.t('Unavailable')):k==='companyId'?(this.options().companies.find(c=>c.id===Number(v))?.name ?? String(v)):this.t(String(v))))];
+    return this.printer.csv(await printValue(this.api.export(kind,filters)),this.t(this.kinds.find(k=>k[0]===kind)?.[1] ?? 'Reports'),scope,kind);
+  };
   readonly api = inject(CeoWorkspaceService);
   readonly locale = new CeoLocale();
   private readonly route = inject(ActivatedRoute);

@@ -1,3 +1,4 @@
+import { ActionButtonDirective } from '../../../../shared/action-ui/action-button';
 import { CeoLocale } from '../../workspace/ceo-locale';
 import { CeoNotifications } from '../../../../core/services/ceo-notifications';
 import { Component, inject, output } from '@angular/core';
@@ -12,7 +13,7 @@ import { apiError } from '../../../../core/services/reception-api';
 @Component({
   selector: 'app-add-user',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, TranslateModule, StaffWorkingHoursComponent],
+  imports: [ActionButtonDirective, CommonModule, ReactiveFormsModule, TranslateModule, StaffWorkingHoursComponent],
   templateUrl: './add-user.component.html',
   styleUrl: './add-user.component.css'
 })

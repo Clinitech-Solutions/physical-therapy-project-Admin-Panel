@@ -1,8 +1,8 @@
 <div class="app-layout">
-  @if(notices.message()){<div class="ceo-toast" role="alert"><span>{{notices.message()}}</span><button type="button" (click)="notices.message.set('')" [attr.aria-label]="language.currentLang()==='ar'?'إغلاق':'Close'">×</button></div>}
+  @if(notices.message()){<div class="ceo-toast" role="alert"><span>{{notices.message()}}</span><button appButton="dismiss" type="button" (click)="notices.message.set('')" [attr.aria-label]="language.currentLang()==='ar'?'إغلاق':'Close'">×</button></div>}
   <app-sidebar #sidebar></app-sidebar>
   @if (sidebar.isMobileOpen()) {
-    <button class="navigation-backdrop" (click)="sidebar.isMobileOpen.set(false)"
+    <button type="button" class="navigation-backdrop" (click)="sidebar.isMobileOpen.set(false)"
       [attr.aria-label]="'COMMON.CLOSE_NAVIGATION' | translate"></button>
   }
   <div class="main-content">

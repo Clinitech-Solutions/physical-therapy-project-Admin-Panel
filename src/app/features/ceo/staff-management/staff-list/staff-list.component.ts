@@ -1,3 +1,6 @@
+import { TableLoadingComponent } from '../../../../shared/table-ui/table-ui';
+import { ActionButtonDirective } from '../../../../shared/action-ui/action-button';
+import { TableEmptyComponent, TablePagerComponent, TablePresentationDirective, TableRegionDirective } from '../../../../shared/table-ui/table-ui';
 import { CeoNotifications } from "../../../../core/services/ceo-notifications";
 import { Component, ElementRef, inject, signal } from "@angular/core";
 import { FormsModule, NgForm } from "@angular/forms";
@@ -22,7 +25,7 @@ import { CeoLocale } from "../../workspace/ceo-locale";
 @Component({
   selector: "app-staff-list",
   standalone: true,
-  imports: [
+  imports: [TableLoadingComponent, ActionButtonDirective, TableEmptyComponent, TablePagerComponent, TablePresentationDirective, TableRegionDirective,
     FormsModule,
     RouterLink,
     AddUserComponent,

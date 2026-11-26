@@ -1,3 +1,9 @@
+import { TableLoadingComponent } from '../../../shared/table-ui/table-ui';
+import { ActionButtonDirective } from '../../../shared/action-ui/action-button';
+import { TableEmptyComponent, TablePagerComponent, TablePresentationDirective } from '../../../shared/table-ui/table-ui';
+import { PrintService } from '../../../shared/printing/print.service';
+import { PrintButtonComponent } from '../../../shared/printing/print-button.component';
+import { firstValueFrom as printValue } from 'rxjs';
 import { Component, OnDestroy, OnInit, Output, EventEmitter, Input, inject, signal, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -10,8 +16,15 @@ import { AuthService } from '../../../core/services/auth';
 import { apiError } from '../../../core/services/reception-api';
 import { billingArabic } from './billing-text';
 
-@Component({ selector: 'app-grouped-billing', standalone: true, imports: [CommonModule, FormsModule], templateUrl: './grouped-billing.html', styleUrls: ['./grouped-billing.css', './grouped-billing-filters.css', './grouped-billing-table.css', './grouped-billing-responsive.css'] })
+@Component({ selector: 'app-grouped-billing', standalone: true, imports: [TableLoadingComponent, ActionButtonDirective, TableEmptyComponent, TablePagerComponent, TablePresentationDirective, CommonModule, FormsModule, PrintButtonComponent], templateUrl: './grouped-billing.html', styleUrls: ['./grouped-billing.css', './grouped-billing-filters.css', './grouped-billing-table.css', './grouped-billing-responsive.css'] })
 export class GroupedBillingComponent implements OnInit, OnDestroy {
+  readonly printer = inject(PrintService);
+  readonly preparePrint = async () => {
+    const filters=structuredClone(this.applied), kind=this.exportKind;
+    this.printer.limit(kind==='patients'?(this.result()?.matchingPatients??0):(this.result()?.matchingInvoices??0));
+    const scope=[this.t('Date basis')+': '+this.t(filters.dateBasis),...this.chips.map(c=>c.key==='clinicianId'?this.t('Actual treating clinician')+': '+(this.options().clinicians.find(x=>x.id===c.value)?.name ?? this.t('Unavailable')):c.label)];
+    return this.printer.csv(await printValue(this.api.export(filters,kind)),this.t(kind==='patients'?'Patient summaries':'Invoice detail'),scope);
+  };
   readonly api = inject(GroupedBillingService); readonly locale = new ReceptionistLocale();
   readonly contracts = inject(ReceptionContracts); private readonly auth = inject(AuthService, { optional: true });
   private readonly element: ElementRef<HTMLElement> = inject(ElementRef);
@@ -41,7 +54,7 @@ export class GroupedBillingComponent implements OnInit, OnDestroy {
     if(event.shiftKey && document.activeElement===first){event.preventDefault();last?.focus();}
     else if(!event.shiftKey && document.activeElement===last){event.preventDefault();first?.focus();}
   }
-  t(text: string): string { const english: Record<string,string>={SelfPay:'Self-pay',PerSession:'Per session',Settled:'Patient settled',NonCollectible:'Non-collectible',Invoice:'Invoice date',Service:'Service delivery date',Collection:'Collection date'};return this.locale.language === 'ar-EG' ? billingArabic[text] ?? this.locale.label(text) : english[text] ?? text; }
+  t(text: string): string { const english: Record<string,string>={SelfPay:'Self-pay',PerSession:'Per session',Unpaid:'Outstanding',Partial:'Partially paid',Settled:'Patient share settled',NonCollectible:'Non-collectible',Invoice:'Invoice date',Service:'Service delivery date',Collection:'Collection date'};return this.locale.language === 'ar-EG' ? billingArabic[text] ?? this.locale.label(text) : english[text] ?? text; }
   companyLabel(companies:string[]) { const known=companies.filter(name=>name!=='Historical company unavailable');return known.length>1?this.t('Multiple companies'):known[0] || this.t('Historical company unavailable'); }
   get selectedCompanies() { return this.options().companies.filter(company=>this.draft.companyIds?.includes(+company.id)).map(c=>c.name).join(', ') || this.t('All'); }
   setCompany(id:number,event:Event) { const selected=(event.target as HTMLInputElement).checked;this.draft.companyIds=selected?[...(this.draft.companyIds ?? []),id]:(this.draft.companyIds ?? []).filter(value=>value!==id); }

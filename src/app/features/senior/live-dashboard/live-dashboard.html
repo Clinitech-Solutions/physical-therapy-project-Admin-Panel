@@ -1,9 +1,9 @@
 @if (error()) {
 <p class="alert alert-warning" role="alert">{{ error() }}</p>
 } @if (loading()) {
-<p role="status">{{ 'RECEPTIONIST.PROCESSING' | translate }}</p>
+<app-table-loading />
 }
-@if(appointmentsError()) { <p class="alert alert-warning" role="alert">{{locale.label(appointmentsError())}} <button type="button" class="btn btn-link" (click)="refreshAssessments()">{{'RECEPTIONIST.UI.RETRY'|translate}}</button></p> }
+@if(appointmentsError()) { <p class="alert alert-warning" role="alert">{{locale.label(appointmentsError())}} <button appButton="secondary" type="button" class="btn btn-link" (click)="refreshAssessments()">{{'RECEPTIONIST.UI.RETRY'|translate}}</button></p> }
 <!-- ═══════════════════════════════════════════════════════════
      Senior Therapist — Live Dashboard
      Reactive view over ClinicStateService (Signals)
@@ -113,16 +113,7 @@
         <!-- Task List -->
         <div class="task-list">
           @if (activeTasks().length === 0 && !loading() && !appointmentsError()) {
-          <div class="empty-state">
-            <i
-              class="bi bi-check-circle"
-              style="font-size: 32px; color: var(--mq-teal); opacity: 0.5"
-            ></i>
-            <p style="color: var(--text-muted); margin-top: var(--space-2)">
-              {{ activeTab() === 'assessments' ? ('SENIOR.NO_ASSESSMENTS' |
-              translate) : ('SENIOR.NO_REASSESSMENTS' | translate) }}
-            </p>
-          </div>
+          <app-table-empty [hint]="(activeTab() === 'assessments' ? 'SENIOR.NO_ASSESSMENTS' : 'SENIOR.NO_REASSESSMENTS') | translate" />
           } @for (task of activeTasks(); track task.sessionId) {
           <div class="task-row" [attr.data-assessment-task]="task.sessionId">
             <div class="flex items-center gap-3">
@@ -148,7 +139,7 @@
               <span class="badge" [ngClass]="getStatusBadgeClass(task.status)"
                 >{{ task.departed ? ('SENIOR.DEPARTED_UNSIGNED'|translate) : (task.status | receptionistText) }}</span
               >
-              <button
+              <button appButton="primary" actionSize="compact" type="button"
                 class="btn btn-primary btn-sm"
                 (click)="startTask(task)"
                 [disabled]="busy()"
@@ -173,11 +164,11 @@
       </h4>
 
       @if(capacityLoading()){
-      <p role="status">{{'DOCTOR.LOADING'|translate}}</p>
+      <app-table-loading />
       } @if(capacityError()){
       <p class="alert alert-warning" role="alert">
         {{locale.label(capacityError())}}
-        <button class="btn btn-outline-secondary" (click)="refreshCapacity()">
+        <button appButton="secondary" type="button" class="btn btn-outline-secondary" (click)="refreshCapacity()">
           {{'DOCTOR.RETRY'|translate}}
         </button>
       </p>
@@ -208,15 +199,7 @@
           }
         </div>
         } @if (activeDoctorsWorkload().length === 0) {
-        <div class="empty-state">
-          <i
-            class="bi bi-person-x"
-            style="font-size: 32px; color: var(--text-muted); opacity: 0.5"
-          ></i>
-          <p style="color: var(--text-muted); margin-top: var(--space-2)">
-            {{ 'SENIOR.NO_DOCTORS_AVAILABLE' | translate }}
-          </p>
-        </div>
+        <app-table-empty [compact]="true" [hint]="'SENIOR.NO_DOCTORS_AVAILABLE' | translate" />
         }
       </div>
       }

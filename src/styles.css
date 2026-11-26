@@ -1,3 +1,5 @@
+@import './app/shared/action-ui/action-ui.css';
+@import './app/shared/table-ui/table-ui.css';
 @import './app/shared/components/patient-profile/patient-profile-dialog.css';
 /* ============================================================
    MediQova — Global CSS Design System
@@ -846,7 +848,7 @@ html[dir="rtl"] thead th:last-child {
 }
 
 tbody tr {
-  transition: all var(--transition-fast);
+  transition: none;
 }
 
 tbody tr td {
@@ -862,10 +864,6 @@ tbody tr:last-child td {
 
 tbody tr:hover {
   background: var(--mq-gradient-subtle);
-  transform: scale(1.002);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  position: relative;
-  z-index: 10;
 }
 
 /* ── SIDEBAR ──────────────────────────────────────────────── */

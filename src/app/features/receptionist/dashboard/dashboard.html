@@ -1,4 +1,4 @@
-<div class="page-content receptionist-page fade-in">
+<div class="page-content receptionist-page">
   <div class="page-header">
     <div>
       <h2 class="font-clash">{{ 'RECEPTIONIST.DASHBOARD_TITLE' | translate }}</h2>
@@ -8,35 +8,35 @@
 
   <app-reassessment-queue />
 
-  @if (loading()) { <p role="status">{{ 'RECEPTIONIST.PROCESSING' | translate }}</p> }
+  @if (loading()) { <app-table-loading /> }
   @if (actionError()) {
     <div class="alert alert-warning" role="alert">{{ locale.label(actionError()) }}
-      <button class="btn btn-outline-secondary btn-sm" (click)="refresh()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button>
+      <button appButton="secondary" actionSize="compact" type="button" class="btn btn-outline-secondary btn-sm" (click)="refresh()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button>
     </div>
   }
   @if (receptionistService.statsError()) {
     <div class="alert alert-warning" role="alert">{{ 'RECEPTIONIST.UI.STATS_LOAD' | translate }}: {{ locale.label(receptionistService.statsError()) }}
-      <button class="btn btn-outline-secondary btn-sm" (click)="receptionistService.getDashboardStats()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button>
+      <button appButton="secondary" actionSize="compact" type="button" class="btn btn-outline-secondary btn-sm" (click)="receptionistService.getDashboardStats()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button>
     </div>
   }
   @if (receptionistService.sessionsError()) {
     <div class="alert alert-warning" role="alert">{{ 'RECEPTIONIST.UI.SESSIONS_LOAD' | translate }}: {{ locale.label(receptionistService.sessionsError()) }}
-      <button class="btn btn-outline-secondary btn-sm" (click)="receptionistService.refreshTodaySessions()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button>
+      <button appButton="secondary" actionSize="compact" type="button" class="btn btn-outline-secondary btn-sm" (click)="receptionistService.refreshTodaySessions()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button>
     </div>
   }
   @if (roomService.error()) {
     <div class="alert alert-warning" role="alert">{{ 'RECEPTIONIST.UI.ROOMS_LOAD' | translate }}: {{ locale.label(roomService.error()) }}
-      <button class="btn btn-outline-secondary btn-sm" (click)="roomService.load()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button>
+      <button appButton="secondary" actionSize="compact" type="button" class="btn btn-outline-secondary btn-sm" (click)="roomService.load()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button>
     </div>
   }
   @if (clinicianService.error()) {
     <div class="alert alert-warning" role="alert">{{ 'RECEPTIONIST.UI.CLINICIANS_LOAD' | translate }}: {{ locale.label(clinicianService.error()) }}
-      <button class="btn btn-outline-secondary btn-sm" (click)="clinicianService.load()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button>
+      <button appButton="secondary" actionSize="compact" type="button" class="btn btn-outline-secondary btn-sm" (click)="clinicianService.load()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button>
     </div>
   }
   @if (patientLookupError()) {
     <p class="alert alert-warning" role="alert">{{ 'RECEPTIONIST.UI.PATIENTS_LOAD' | translate }}: {{ locale.label(patientLookupError()) }}
-      <button class="btn btn-outline-secondary btn-sm" (click)="refreshPatientLookup()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button></p>
+      <button appButton="secondary" actionSize="compact" type="button" class="btn btn-outline-secondary btn-sm" (click)="refreshPatientLookup()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button></p>
   }
   @if (receptionistService.mapStatusToString(0) === 'Unknown' || receptionistService.mapStatusToString(4) === 'Unknown') {
     <p class="text-muted small">{{ 'RECEPTIONIST.UI.STATUS_CONFIGURATION_NOTICE' | translate }}</p>
@@ -97,7 +97,7 @@
     </div>
 
     <div class="table-scroll-area">
-      <table>
+      <div appTableRegion><table appTable="cards" cardSize="medium">
         <thead>
           <tr>
             <th>{{ 'COMMON.TIME' | translate }}</th>
@@ -116,13 +116,13 @@
             <td>
               <div class="d-flex align-items-center gap-2">
                 <div class="avatar avatar-sm">{{ getPatientAvatar(session.patientId, session.patientName) }}</div>
-                <span class="fw-semibold text-primary-hover" role="button" (click)="openPatientProfile(session.patientId)" style="cursor: pointer;">
+                <button actionAppearance="identity" type="button" appButton="secondary" class="fw-semibold text-primary-hover inline-control" (click)="openPatientProfile(session.patientId)" style="cursor: pointer;">
                   {{ getPatientName(session.patientId, session.patientName) }}
-                </span>
+                </button>
                 @if(getSessionBadge(session)) {
-                <span class="badge badge-warning" role="button" (click)="openPatientProfile(session.patientId)" style="cursor: pointer;" [title]="'RECEPTIONIST.DASHBOARD.TREATMENT_PROGRESS' | translate">
+                <button type="button" appButton="secondary" class="badge badge-warning inline-control" (click)="openPatientProfile(session.patientId)" style="cursor: pointer;" [title]="'RECEPTIONIST.DASHBOARD.TREATMENT_PROGRESS' | translate" >
                   <i class="bi bi-clock-history"></i> {{ getSessionBadge(session) }}
-                </span>
+                </button>
                 }
               </div>
             </td>
@@ -148,24 +148,24 @@
             <td style="text-align:end">
               <div class="d-flex gap-1 justify-content-end align-items-center">
                 @if(statusStr === 'Confirmed' || statusStr === 'Pending') {
-                <button class="btn-action action-primary" [attr.data-tip]="'RECEPTIONIST.CHECK_IN' | translate"
-                  [disabled]="workflow.mutation.busy() || !workflow.canTransition('In Progress')" (click)="onCheckInClick(session)">
+                <button appButton="primary" actionSize="compact" type="button" class="btn-action action-primary" [attr.data-tip]="'RECEPTIONIST.CHECK_IN' | translate"
+                  [disabled]="workflow.mutation.busy() || !workflow.canTransition('In Progress')" (click)="onCheckInClick(session)" [attr.aria-label]="'RECEPTIONIST.CHECK_IN' | translate">
                   <i class="bi bi-box-arrow-in-right"></i>
                 </button>
                 }
                 @if(statusStr === 'In Progress' || statusStr === 'Waiting') {
-                <button class="btn-action action-success" [attr.data-tip]="'RECEPTIONIST.CHECK_OUT' | translate"
-                  [disabled]="workflow.mutation.busy() || !workflow.canTransition('Completed') || session.appointmentType === 'Session' && !session.treatmentEndedAt" (click)="checkOut(session.id)">
+                <button appButton="secondary" actionSize="compact" type="button" class="btn-action action-success" [attr.data-tip]="'RECEPTIONIST.CHECK_OUT' | translate"
+                  [disabled]="workflow.mutation.busy() || !workflow.canTransition('Completed') || session.appointmentType === 'Session' && !session.treatmentEndedAt" (click)="checkOut(session.id)" [attr.aria-label]="'RECEPTIONIST.CHECK_OUT' | translate">
                   <i class="bi bi-box-arrow-right"></i>
                 </button>
                 }
-                <p-button
+                <p-button appButton="danger"
                   *ngIf="statusStr !== 'Completed' && statusStr !== 'Cancelled'"
                   icon="bi bi-person-x" styleClass="btn-tinted-danger"
                   pTooltip="{{ 'RECEPTIONIST.MARK_ABSENT' | translate }}"
                   tooltipPosition="top"
                   tooltipStyleClass="custom-tooltip"
-                  [disabled]="workflow.mutation.busy() || !canRecordNoShow(session)" (onClick)="markPatientAbsent(session.id)">
+                  [disabled]="workflow.mutation.busy() || !canRecordNoShow(session)" (onClick)="markPatientAbsent(session.id)" [ariaLabel]="'RECEPTIONIST.MARK_ABSENT' | translate">
                 </p-button>
               </div>
             </td>
@@ -174,12 +174,12 @@
           @if (filteredTodaySessions().length === 0 && !receptionistService.sessionsLoading() && !receptionistService.sessionsError()) {
           <tr>
             <td colspan="6" class="text-center py-4 text-muted">
-              {{ 'RECEPTIONIST.DASHBOARD.NO_SESSIONS_MATCHING' | translate }}
+              <app-table-empty [hint]="'RECEPTIONIST.DASHBOARD.NO_SESSIONS_MATCHING' | translate" />
             </td>
           </tr>
           }
         </tbody>
-      </table>
+      </table></div>
     </div>
   </div>
 </div>

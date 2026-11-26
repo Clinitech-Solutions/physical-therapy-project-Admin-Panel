@@ -1,3 +1,4 @@
+import { ActionButtonDirective } from '../../shared/action-ui/action-button';
 import { Component, inject } from '@angular/core';
 import { CeoNotifications } from '../../core/services/ceo-notifications';
 import { LanguageService } from '../../core/services/language';
@@ -9,7 +10,7 @@ import { TranslateModule } from '@ngx-translate/core';
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [RouterOutlet, Sidebar, Topbar, TranslateModule],
+  imports: [ActionButtonDirective, RouterOutlet, Sidebar, Topbar, TranslateModule],
   templateUrl: './app-layout.html',
   styleUrl: './app-layout.css',
 })

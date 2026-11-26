@@ -1,3 +1,7 @@
+import { TableLoadingComponent } from '../../../shared/table-ui/table-ui';
+import { TableEmptyComponent } from '../../../shared/table-ui/table-ui';
+import { ActionButtonDirective } from '../../../shared/action-ui/action-button';
+import { TablePresentationDirective, TableRegionDirective } from '../../../shared/table-ui/table-ui';
 import { ReceptionWarnings } from "../../../core/services/reception-warnings";
 import {
   Component,
@@ -32,7 +36,7 @@ import { ReassessmentOutcome } from "../../../shared/components/reassessment-out
 @Component({
   selector: "app-doctor-dashboard",
   standalone: true,
-  imports: [
+  imports: [TableLoadingComponent, TableEmptyComponent, ActionButtonDirective, TablePresentationDirective, TableRegionDirective,
     CommonModule,
     FormsModule,
     RouterLink,

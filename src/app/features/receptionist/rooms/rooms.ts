@@ -1,3 +1,6 @@
+import { TableLoadingComponent } from '../../../shared/table-ui/table-ui';
+import { TableEmptyComponent } from '../../../shared/table-ui/table-ui';
+import { ActionButtonDirective } from '../../../shared/action-ui/action-button';
 import { Component, OnInit, inject, signal, DestroyRef } from "@angular/core";
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { interval } from 'rxjs';
@@ -19,7 +22,7 @@ import { apiError } from "../../../core/services/reception-api";
 @Component({
   selector: "app-receptionist-rooms",
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule, DialogModule],
+  imports: [TableLoadingComponent, TableEmptyComponent, ActionButtonDirective, CommonModule, FormsModule, TranslateModule, DialogModule],
   templateUrl: "./rooms.html",
   styleUrl: "./rooms.css",
 })

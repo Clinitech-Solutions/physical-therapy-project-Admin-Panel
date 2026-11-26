@@ -1,3 +1,6 @@
+import { TableLoadingComponent } from '../../../shared/table-ui/table-ui';
+import { ActionButtonDirective } from '../../../shared/action-ui/action-button';
+import { TablePresentationDirective, TableRegionDirective } from '../../../shared/table-ui/table-ui';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -9,7 +12,7 @@ import { apiError } from '../../../core/services/reception-api';
 import { ReceptionistLocale } from '../../../shared/receptionist-locale';
 import { ReceptionWarnings } from '../../../core/services/reception-warnings';
 
-@Component({selector: 'app-insurer-accounts', standalone: true, imports: [CommonModule, FormsModule, TranslateModule],
+@Component({selector: 'app-insurer-accounts', standalone: true, imports: [TableLoadingComponent, ActionButtonDirective, TablePresentationDirective, TableRegionDirective, CommonModule, FormsModule, TranslateModule],
   templateUrl: './insurer-accounts.html', styles: [`:host{display:block}.insurer-totals{display:flex;gap:1.5rem;flex-wrap:wrap;margin:1rem 0}.insurer-totals div{min-width:110px}.insurer-totals dt{font-size:.8rem;color:var(--text-secondary);font-weight:400}.insurer-totals dd{font-weight:600}.claim-fields{display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}td,th{white-space:nowrap}details{margin-bottom:1rem}summary{cursor:pointer}small{display:block;overflow-wrap:anywhere}`]})
 export class InsurerAccountsComponent implements OnInit {
   private warnings=inject(ReceptionWarnings,{optional:true}) ?? new ReceptionWarnings();

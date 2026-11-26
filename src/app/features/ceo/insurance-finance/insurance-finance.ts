@@ -1,3 +1,9 @@
+import { TableLoadingComponent } from '../../../shared/table-ui/table-ui';
+import { ActionButtonDirective } from '../../../shared/action-ui/action-button';
+import { TableEmptyComponent, TablePagerComponent, TablePresentationDirective, TableRegionDirective } from '../../../shared/table-ui/table-ui';
+import { PrintService } from '../../../shared/printing/print.service';
+import { PrintButtonComponent } from '../../../shared/printing/print-button.component';
+import { firstValueFrom as printValue } from 'rxjs';
 import { ChangeDetectorRef, Component, ElementRef, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -12,8 +18,32 @@ import { ReceptionistLocale } from '../../../shared/receptionist-locale';
 import { billingArabic } from '../../receptionist/billing/billing-text';
 import { insuranceArabic } from './insurance-text';
 
-@Component({selector:'app-insurance-finance',standalone:true,imports:[CommonModule,FormsModule,RouterLink],templateUrl:'./insurance-finance.html',styleUrls:['./insurance-finance.css','./insurance-finance-tables.css','./insurance-finance-dialogs.css','./insurance-finance-responsive.css','./insurance-finance-mobile.css']})
+@Component({selector:'app-insurance-finance',standalone:true,imports:[TableLoadingComponent, ActionButtonDirective, TableEmptyComponent, TablePagerComponent, TablePresentationDirective, TableRegionDirective, CommonModule,FormsModule,RouterLink,PrintButtonComponent],templateUrl:'./insurance-finance.html',styleUrls:['./insurance-finance.css','./insurance-finance-tables.css','./insurance-finance-dialogs.css','./insurance-finance-responsive.css','./insurance-finance-mobile.css']})
 export class InsuranceFinanceComponent implements OnInit,OnDestroy {
+  readonly printer=inject(PrintService);
+  readonly prepareInvoicePrint=async()=>{
+    const selected=this.details;if(!selected)throw new Error('Invoice unavailable');
+    const invoice=await printValue(this.grouped.context(selected.id));
+    if(invoice.id!==selected.id||invoice.patientId!==selected.patientId)throw new Error('Invoice changed');
+    const a=invoice.amounts;
+    return {title:this.t('Invoice details'),subtitle:invoice.reference+' · '+invoice.patientName,scope:[this.printer.t('Service period')+': '+this.date(invoice.deliveredAt,true),'EGP · Africa/Cairo'],sections:[
+      {title:this.t('Invoice details'),fields:[[this.t('Company'),invoice.company],[this.t('Actual treating clinician'),invoice.clinicianName],[this.t('Pricing mode'),this.t(invoice.pricingMode)],[this.t('Invoice status'),this.contracts.label('invoiceStatus',invoice.status)]] as [string,string|null][]},
+      {title:this.printer.t('Patient financial summary'),fields:[[this.printer.t('Patient amount'),this.money(a.patientLiability)],[this.printer.t('Patient paid'),this.money(a.patientReceipts)],[this.printer.t('Patient balance'),this.money(a.patientRemaining)]] as [string,string][]},
+      {title:this.t('Insurer share'),fields:[[this.t('Planned insurer liability'),this.money(a.insurerPlanned)],[this.t('Earned insurer liability'),this.money(a.insurerEarned)],[this.t('Actual insurer receipts'),this.money(a.insurerReceipts)],[this.t('Remaining insurer balance'),this.money(a.insurerEarnedOutstanding)]] as [string,string][]}
+    ]};
+  };
+  readonly prepareStatementPrint=async()=>{
+    const account=this.account();if(!account)throw new Error('Account unavailable');
+    this.printer.limit(account.matchingInvoices);
+    const scope={...this.applied,serviceMonth:account.serviceMonth};
+    const [rows,fresh]=await Promise.all([printValue(this.api.statementData(account.companyId,scope)),printValue(this.api.account(account.companyId,scope))]);
+    this.printer.limit(rows.length);
+    const sum=(pick:(row:InsurerSession)=>number)=>rows.reduce((n,r)=>n+pick(r),0);
+    if(rows.length!==fresh.matchingInvoices || Math.abs(sum(r=>r.invoice.amounts.insurerEarned)-fresh.totals.earned)>.01 || Math.abs(sum(r=>r.invoice.amounts.insurerReceipts)-fresh.totals.receipts)>.01 || Math.abs(sum(r=>r.invoice.amounts.insurerEarnedOutstanding)-fresh.totals.remaining)>.01)throw new Error('Statement changed; retry');
+    return {title:this.t('Monthly statement'),subtitle:account.company,scope:[this.printer.t('Service period')+': '+account.serviceMonth,this.printer.t('Lifetime insurer receipts against the selected services. Receipt-date filters apply only to receipt history.'),...this.chips.map(c=>c.key==='clinicianId'?this.t('Actual treating clinician')+': '+(this.options().clinicians.find(x=>x.id===this.applied.clinicianId)?.name ?? this.t('Unavailable')):c.label),'EGP · Africa/Cairo'],landscape:true,sections:[
+      {title:this.t('Delivered sessions'),columns:['Patient','Service date','Invoice','Claim reference','Insurer share','Actual insurer receipts','Remaining insurer balance'].map(s=>this.t(s)),rows:rows.map(r=>[r.invoice.patientName,this.date(r.invoice.deliveredAt),r.invoice.reference,r.claimReference ?? this.t('Unsubmitted'),this.money(r.invoice.amounts.insurerEarned),this.money(r.invoice.amounts.insurerReceipts),this.money(r.invoice.amounts.insurerEarnedOutstanding)]),totals:[[this.t('Earned insurer liability'),this.money(fresh.totals.earned)],[this.t('Actual insurer receipts'),this.money(fresh.totals.receipts)],[this.t('Remaining insurer balance'),this.money(fresh.totals.remaining)]] as [string,string][]}
+    ]};
+  };
   readonly MathCeil=(value:number)=>Math.max(1,Math.ceil(value));
   chipsText(){return this.chips.map(chip=>chip.label).join(' / ');}
   private readonly cdr=inject(ChangeDetectorRef);readonly api=inject(InsuranceFinanceService);private readonly grouped=inject(GroupedBillingService);readonly contracts=inject(ReceptionContracts);
@@ -92,5 +122,5 @@ export class InsuranceFinanceComponent implements OnInit,OnDestroy {
   viewDetails(row:InsurerSession){this.claimDetails=row;this.details=row.invoice;this.show('details');}
   openStatement(){this.show('statement');this.dialogLoading=true;this.statementRows=[];const generation=++this.selectionGeneration;this.selectionRequest?.unsubscribe();this.selectionRequest=this.api.statementData(this.companyId!,{...this.applied,serviceMonth:this.account()!.serviceMonth}).subscribe({next:rows=>{if(generation!==this.selectionGeneration)return;this.statementRows=rows;this.statementTime=new Date().toISOString();this.dialogLoading=false;this.cdr.markForCheck();},error:e=>{if(generation!==this.selectionGeneration)return;this.dialogError=this.message(e);this.dialogLoading=false;this.cdr.markForCheck();}});}
   async export(){this.dialogError='';try{const blob=await firstValueFrom(this.api.statement(this.companyId!,{...this.applied,serviceMonth:this.account()!.serviceMonth}));const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=`insurance-${this.companyId}-${this.account()!.serviceMonth}.csv`;link.click();URL.revokeObjectURL(url);}catch(e){this.dialogError=this.message(e);}}
-  print(){const frame=document.createElement('iframe');frame.title=this.t('Monthly statement');frame.style.cssText='position:fixed;width:0;height:0;border:0';document.body.appendChild(frame);const doc=frame.contentDocument!;const style=doc.createElement('style');style.textContent='body{font:12px Arial;color:#123}table{border-collapse:collapse;width:100%}td,th{padding:7px;border-bottom:1px solid #ccc;text-align:start}h1{font-size:22px}@page{margin:15mm}';doc.head.appendChild(style);doc.documentElement.dir=this.locale.language==='ar-EG'?'rtl':'ltr';const heading=doc.createElement('h1');heading.textContent=this.account()!.company+' / '+this.month(this.account()!.serviceMonth);doc.body.appendChild(heading);const metadata=doc.createElement('p');metadata.textContent='EGP | Africa/Cairo | '+this.statementTime+' | '+this.chips.map(chip=>chip.label).join(', ');doc.body.appendChild(metadata);const totals=doc.createElement('p');totals.textContent=this.t('Earned insurer liability')+': '+this.money(this.account()!.totals.earned)+' | '+this.t('Actual insurer receipts')+': '+this.money(this.account()!.totals.receipts)+' | '+this.t('Remaining insurer balance')+': '+this.money(this.account()!.totals.remaining);doc.body.appendChild(totals);const table=doc.createElement('table');const append=(values:string[],header=false)=>{const tr=doc.createElement('tr');for(const value of values){const cell=doc.createElement(header?'th':'td');cell.textContent=value;tr.appendChild(cell);}table.appendChild(tr);};append(['Patient','Service date','Invoice','Claim reference','Insurer share','Actual receipts','Remaining'].map(label=>this.t(label)),true);for(const row of this.statementRows)append([row.invoice.patientName,this.date(row.invoice.deliveredAt),row.invoice.reference,row.claimReference ?? this.t('Unsubmitted'),this.money(row.invoice.amounts.insurerEarned),this.money(row.invoice.amounts.insurerReceipts),this.money(row.invoice.amounts.insurerEarnedOutstanding)]);doc.body.appendChild(table);setTimeout(()=>{frame.contentWindow?.focus();frame.contentWindow?.print();setTimeout(()=>frame.remove(),1000);},100);}
+
 }

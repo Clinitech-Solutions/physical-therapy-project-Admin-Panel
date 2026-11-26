@@ -1,3 +1,6 @@
+import { TableLoadingComponent } from '../../../shared/table-ui/table-ui';
+import { ActionButtonDirective } from '../../../shared/action-ui/action-button';
+import { TablePresentationDirective, TableRegionDirective } from '../../../shared/table-ui/table-ui';
 import { BookingService } from '../../../core/services/booking.service';
 import { BookingContext, BookingPreview, BookingReceipt, BookingRequest, BookingPaymentMethod } from '../../../core/models/booking.model';
 import { ClinicalRecordsService } from "../../../core/services/clinical-records.service";
@@ -61,7 +64,7 @@ import { BillingService } from "../../../core/services/billing.service";
 @Component({
   selector: "app-receptionist-bookings",
   standalone: true,
-  imports: [
+  imports: [TableLoadingComponent, ActionButtonDirective, TablePresentationDirective, TableRegionDirective,
     PatientRegistrationFieldsComponent,
     ReceptionistTextPipe,
     CommonModule,

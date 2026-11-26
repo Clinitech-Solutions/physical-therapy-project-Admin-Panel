@@ -1,3 +1,4 @@
+import { ActionButtonDirective } from '../../../shared/action-ui/action-button';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
@@ -13,7 +14,7 @@ import { TranslateModule } from '@ngx-translate/core';
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, ThemeToggle, LanguageSelector, TranslateModule, ReactiveFormsModule],
+  imports: [ActionButtonDirective, CommonModule, ThemeToggle, LanguageSelector, TranslateModule, ReactiveFormsModule],
   templateUrl: './login.html',
   styleUrl: './login.css',
 })

@@ -1,9 +1,9 @@
 <div class="topbar w-full">
   @if(clinic.identity();as identity){<span class="clinic-identity text-sm fw-bold text-truncate" style="max-width:32vw" [title]="identity.name">{{identity.name}}</span>}
   <!-- Mobile toggle -->
-  <button class="btn btn-ghost btn-icon mobile-menu-toggle" (click)="menuToggle.emit()"
+  <button appButton="secondary" actionAppearance="utility" actionSize="compact" type="button" class="btn btn-ghost btn-icon mobile-menu-toggle" (click)="menuToggle.emit()"
     aria-controls="main-navigation" [attr.aria-expanded]="menuOpen"
-    [attr.aria-label]="'COMMON.TOGGLE_NAVIGATION' | translate">
+    [attr.aria-label]="('COMMON.TOGGLE_NAVIGATION' | translate) || 'Toggle navigation'">
     <i class="bi bi-list"></i>
   </button>
 
@@ -13,7 +13,7 @@
     <app-theme-toggle></app-theme-toggle>
 
     <!-- Notification Bell -->
-    <button class="btn btn-ghost btn-icon" [attr.aria-label]="'COMMON.NOTIFICATIONS' | translate">
+    <button appButton="secondary" actionAppearance="utility" actionSize="compact" type="button" class="btn btn-ghost btn-icon" [attr.aria-label]="('COMMON.NOTIFICATIONS' | translate) || 'Notifications'">
       <i class="bi bi-bell"></i>
     </button>
 

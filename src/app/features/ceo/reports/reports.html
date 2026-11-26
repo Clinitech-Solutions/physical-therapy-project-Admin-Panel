@@ -22,19 +22,19 @@
   </article>
   } @else{
   <div class="toolbar">
-    <button
+    <button appButton="secondary"
       type="button"
       (click)="filtersOpen=!filtersOpen"
       [attr.aria-expanded]="filtersOpen"
       aria-controls="report-filters"
     >
       {{t('Filters')}} ({{chips.length}})</button
-    ><button (click)="export()" [disabled]="loading()||exporting()||!data()">
+    ><button appButton="secondary" type="button" (click)="export()" [disabled]="loading()||exporting()||!data()">
       {{t('Export all matching CSV')}}
-    </button>
+    </button><app-print-button [prepare]="preparePrint" [disabled]="loading()||!data()" />
   </div>
   <div class="chips">
-    @for(chip of chips;track chip[0]){<button
+    @for(chip of chips;track chip[0]){<button appButton="secondary" type="button"
       (click)="remove(chip[0])"
       [attr.aria-label]="t('Clear')+' '+label(chip[0])"
     >
@@ -46,7 +46,7 @@
     @if(optionsError()){
     <div class="error span-all" role="alert">
       {{optionsError()}}
-      <button type="button" (click)="loadOptions()">{{t('Retry')}}</button>
+      <button appButton="secondary" type="button" (click)="loadOptions()">{{t('Retry')}}</button>
     </div>
     } @if(!balance){<label
       >{{t('From')}}<input
@@ -113,17 +113,17 @@
         }
       </select></label
     >}
-    <div class="actions">
-      <button type="submit" class="primary">{{t('Apply')}}</button
-      ><button type="button" (click)="clear()">{{t('Clear')}}</button
-      ><button type="button" (click)="filtersOpen=false">{{t('Close')}}</button>
+    <div class="actions app-action-group">
+      <button appButton="dismiss" type="submit" class="primary">{{t('Apply')}}</button
+      ><button appButton="dismiss" type="button" (click)="clear()">{{t('Clear')}}</button
+      ><button appButton="dismiss" type="button" (click)="filtersOpen=false">{{t('Close')}}</button>
     </div>
   </form>
   } @if(loading()){
-  <p role="status">{{t('Loading')}}…</p>
+  <app-table-loading />
   }@if(error()){
   <div class="error" role="alert">
-    {{error()}} <button (click)="retry()">{{t('Retry')}}</button>
+    {{error()}} <button appButton="secondary" type="button" (click)="retry()">{{t('Retry')}}</button>
   </div>
   } @if(data();as r){
   <p class="muted">
@@ -171,7 +171,7 @@
     unknown work is shown separately.')}}
   </p>
   <div class="surface table-wrap">
-    <table>
+    <div appTableRegion><table appTable="scroll" cardSize="medium">
       <thead>
         <tr>
           <th>{{t('Clinician')}}</th>
@@ -200,23 +200,16 @@
         </tr>
         }@empty{
         <tr>
-          <td colspan="5">{{t('No matching records')}}</td>
+          <td colspan="5"><app-table-empty /></td>
         </tr>
         }
       </tbody>
-    </table>
-    <nav class="pager">
-      <button (click)="page(-1)" [disabled]="r.page<=1">
-        {{t('Previous')}}</button
-      ><span>{{r.page}} / {{pageCount}}</span
-      ><button (click)="page(1)" [disabled]="r.page>=pageCount">
-        {{t('Next')}}
-      </button>
-    </nav>
+    </table></div>
+    <app-table-pager [total]="r.total" [page]="r.page" [pageSize]="r.pageSize" [label]="t('Records')" (pageChange)="page($event-r.page)" />
   </div>
   }@else{
   <div class="surface table-wrap">
-    <table>
+    <div appTableRegion><table appTable="scroll" cardSize="medium">
       <thead>
         <tr>
           <th>{{t('Reference')}}</th>
@@ -254,7 +247,7 @@
             '+t('seconds')):locale.money(x.remaining)}}
           </td>
           <td [attr.data-label]="t('Details')">
-            <button
+            <button appButton="secondary" type="button"
               [attr.aria-expanded]="detail?.id===x.id"
               (click)="detail=detail?.id===x.id?null:x"
             >
@@ -297,20 +290,12 @@
         </tr>
         } }@empty{
         <tr>
-          <td colspan="7">{{t('No matching records')}}</td>
+          <td colspan="7"><app-table-empty /></td>
         </tr>
         }
       </tbody>
-    </table>
-    <nav class="pager" [attr.aria-label]="t('Page')">
-      <button (click)="page(-1)" [disabled]="r.page<=1">
-        {{t('Previous')}}</button
-      ><span
-        >{{t('Page')}} {{r.page}} {{t('of')}} {{pageCount}} · {{r.total}}</span
-      ><button (click)="page(1)" [disabled]="r.page>=pageCount">
-        {{t('Next')}}
-      </button>
-    </nav>
+    </table></div>
+    <app-table-pager [total]="r.total" [page]="r.page" [pageSize]="r.pageSize" [label]="t('Records')" (pageChange)="page($event-r.page)" />
   </div>
   } } }
 </section>

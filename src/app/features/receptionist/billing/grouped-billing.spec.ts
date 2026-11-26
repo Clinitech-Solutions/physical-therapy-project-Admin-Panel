@@ -17,8 +17,23 @@ describe('Patient grouped billing report',()=>{
     http.expectOne(r=>r.url.endsWith('/Billing/patients')).flush(page);fixture.changeDetectorRef.markForCheck();fixture.detectChanges();
     return {fixture,c:fixture.componentInstance,http};
   }
-  it('renders backend patient counts and balances with separate patient and insurer settlement meaning',()=>{
-    const {fixture,http}=setup();expect(fixture.nativeElement.querySelectorAll('.patient-row')).toHaveLength(1);expect(fixture.nativeElement.textContent).toContain('Insurer balance remains');expect(fixture.nativeElement.textContent).toContain('2 invoices');expect(fixture.nativeElement.querySelector('.actions button').disabled).toBe(true);fixture.destroy();http.verify();
+  it('shows one patient balance status without inferring an insurer balance from patient settlement',()=>{
+    const {fixture,http}=setup();expect(fixture.nativeElement.querySelectorAll('.patient-row')).toHaveLength(1);expect(fixture.nativeElement.textContent).not.toContain('Insurer balance remains');expect(fixture.nativeElement.textContent).toContain('2 invoices');expect(fixture.nativeElement.querySelectorAll('.patient-row .status')).toHaveLength(1);expect(fixture.nativeElement.querySelector('.actions .collect').disabled).toBe(true);expect(fixture.nativeElement.querySelector('.actions .expand').disabled).toBe(false);fixture.destroy();http.verify();
+  });
+  it('keeps invoice expansion in Actions usable while collection is locked, and reopens cached patient detail',()=>{
+    const {fixture,c,http}=setup();c.collectionLocked=true;fixture.changeDetectorRef.markForCheck();fixture.detectChanges();
+    const row=fixture.nativeElement.querySelector('.patient-row'),expand=row.querySelector('.actions .expand') as HTMLButtonElement,collect=row.querySelector('.collect') as HTMLButtonElement;
+    expect(row.querySelector('.identity .expand')).toBeNull();expect(expand.type).toBe('button');expect(collect.disabled).toBe(true);
+    expect(fixture.nativeElement.querySelector('#'+collect.getAttribute('aria-describedby')).textContent).toContain('Reconcile collection first');
+    expand.click();const request=http.expectOne(r=>r.url.endsWith('/patients/1/invoices'));request.flush({...page,items:[]});fixture.changeDetectorRef.markForCheck();fixture.detectChanges();
+    expect(expand.getAttribute('aria-expanded')).toBe('true');expect(fixture.nativeElement.querySelector('#'+expand.getAttribute('aria-controls'))).toBeTruthy();expect(expand.textContent).toContain('Hide invoices');
+    expand.click();fixture.changeDetectorRef.markForCheck();fixture.detectChanges();expect(expand.getAttribute('aria-expanded')).toBe('false');
+    expand.click();fixture.changeDetectorRef.markForCheck();fixture.detectChanges();http.expectNone(r=>r.url.endsWith('/patients/1/invoices'));expect(expand.getAttribute('aria-expanded')).toBe('true');fixture.destroy();http.verify();
+  });
+  it('preserves profile emission and positive-balance Collect expansion without changing the balance',()=>{
+    const {fixture,c,http}=setup(),positive={...amounts,patientRemaining:25,patientReceipts:15};c.result.set({...page,items:[{...page.items[0],amounts:positive,patientStatus:'Partial'}]});fixture.changeDetectorRef.markForCheck();fixture.detectChanges();
+    const profile=vi.spyOn(c.profile,'emit');fixture.nativeElement.querySelector('.patient-name').click();expect(profile).toHaveBeenCalledWith(1);
+    const collect=fixture.nativeElement.querySelector('.patient-row .collect') as HTMLButtonElement;expect(collect.disabled).toBe(false);collect.click();http.expectOne(r=>r.url.endsWith('/patients/1/invoices')).flush({...page,items:[]});expect(c.expanded.has(1)).toBe(true);expect(c.result()?.items[0].amounts).toEqual(positive);fixture.destroy();http.verify();
   });
   it('keeps details accessible and collection disabled when the patient share is paid',()=>{
     const {fixture,c,http}=setup();c.toggle(1);http.expectOne(r=>r.url.endsWith('/patients/1/invoices')).flush({...page,items:[{id:11,reference:'I-11',type:'Session',status:'Pending',patientShare:40,insurerShare:160,createdAt:'2026-11-05T22:00:00Z',funding:'Insurance',company:'Saved insurer',amounts,collectionBlockedReason:'Patient share fully paid'}]});fixture.changeDetectorRef.markForCheck();fixture.detectChanges();

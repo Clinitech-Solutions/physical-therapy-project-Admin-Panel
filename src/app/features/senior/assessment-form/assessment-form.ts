@@ -1,3 +1,5 @@
+import { TableLoadingComponent } from '../../../shared/table-ui/table-ui';
+import { ActionButtonDirective } from '../../../shared/action-ui/action-button';
 import { Component, inject, computed, OnInit, signal, HostListener, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -13,7 +15,7 @@ import { ReceptionistLocale } from '../../../shared/receptionist-locale';
 
 @Component({
   selector: 'app-assessment-form', standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, TranslateModule],
+  imports: [TableLoadingComponent, ActionButtonDirective, CommonModule, ReactiveFormsModule, TranslateModule],
   templateUrl: './assessment-form.html', styleUrl: './assessment-form.css',
 })
 export class AssessmentForm implements OnInit {

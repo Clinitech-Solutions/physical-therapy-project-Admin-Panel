@@ -2,7 +2,7 @@
   <div class="workspace-breadcrumb">
     <a [routerLink]="scheduleRoute" class="back-link"
       >&larr; {{ "DOCTOR.BACK_TO_SCHEDULE" | translate }}</a
-    ><button
+    ><button appButton="secondary" type="button"
       class="btn"
       (click)="refreshContext()"
       [disabled]="contextLoading() || loading()"
@@ -11,7 +11,7 @@
     </button>
   </div>
   @if (loading()) {
-  <p role="status">{{ "DOCTOR.LOADING" | translate }}</p>
+  <app-table-loading />
   } @if (error()) {
   <div class="clinical-alert" role="alert">
     {{ error() }} @if (shortfall() !== null) {
@@ -20,12 +20,12 @@
       "code" : "1.2-2" : locale.language }}</strong
     >
     }
-    <button class="btn" (click)="reviewLatest()">
+    <button appButton="secondary" type="button" class="btn" (click)="reviewLatest()">
       {{ "DOCTOR.REVIEW_LATEST" | translate }}
     </button>
   </div>
   } @if (!data() && !loading()) {
-  <button class="btn btn-outline-secondary" (click)="load()">
+  <button appButton="secondary" type="button" class="btn btn-outline-secondary" (click)="load()">
     {{ "DOCTOR.RETRY" | translate }}
   </button>
   } @if (data(); as w) { @if (w.visit.needsAttention) {
@@ -49,7 +49,7 @@
     </div>
     <span class="clinical-badge" [attr.data-state]="w.visit.state"
       >{{ "DOCTOR.STATES." + w.visit.state | translate }}</span
-    >@if (scheduleRoute === '/doctor/dashboard') {<button
+    >@if (scheduleRoute === '/doctor/dashboard') {<button appButton="secondary" type="button"
       class="btn btn-outline-secondary review-trigger"
       (click)="openReview()"
     >
@@ -85,7 +85,7 @@
   <aside class="safety-note">
     <i class="bi bi-exclamation-circle" aria-hidden="true"></i
     ><span>{{ "DOCTOR.PRECAUTIONS_UNKNOWN" | translate }}</span
-    ><button
+    ><button appButton="secondary" type="button"
       (click)="tab.set('TREATMENT_PLAN')"
       [attr.aria-label]="'DOCTOR.SENIOR_ASSESSMENT' | translate"
     >
@@ -224,7 +224,7 @@
           }
         </div>
         @if (saveState() === "Failed" || saveState() === "Unsaved") {
-        <button
+        <button appButton="primary" type="button"
           class="btn btn-outline-secondary"
           [disabled]="finalizing() || conflict()"
           (click)="saveDraft()"
@@ -257,7 +257,7 @@
         <section class="clinical-card">
           <div class="rail-heading">
             <h2>{{ "DOCTOR.LAST_SESSION" | translate }}</h2>
-            <button class="text-link" (click)="tab.set('PREVIOUS_SESSIONS')">
+            <button appButton="secondary" type="button" class="text-link" (click)="tab.set('PREVIOUS_SESSIONS')">
               {{ "DOCTOR.VIEW_ALL" | translate }}
             </button>
           </div>
@@ -265,7 +265,7 @@
         </section>
       </aside>
     </div>
-    <button
+    <button appButton="secondary" type="button"
       class="btn btn-outline-secondary mobile-review-trigger"
       (click)="openReview()"
     >
@@ -298,7 +298,7 @@
         {{ latest.notes.authorName }} · {{ locale.date(latest.notes.savedAt,
         true) }}
       </p>
-      <button
+      <button appButton="secondary"
         class="btn btn-outline-secondary"
         type="button"
         (click)="useLatest()"
@@ -389,7 +389,7 @@
   <p role="status">{{ "DOCTOR.CHECKING_CAPACITY" | translate }}</p>
   } @if (capacityError()) {
   <div class="clinical-alert" role="alert">
-    {{ capacityError() }}<button class="btn" (click)="loadCapacity()">
+    {{ capacityError() }}<button appButton="secondary" type="button" class="btn" (click)="loadCapacity()">
       {{ "DOCTOR.RETRY" | translate }}
     </button>
   </div>
@@ -400,7 +400,7 @@
   } @if (requestError() && tab() !== "REASSESSMENT" && !reviewOpen()) {
   <p role="alert">{{ requestError() }}</p>
   }
-  <footer class="clinical-card treatment-action-bar">
+  <footer class="clinical-card treatment-action-bar app-action-group">
     <div>
       <strong
         >{{ "DOCTOR.STATES." + w.visit.state | translate }} @if (w.visit.state
@@ -415,7 +415,7 @@
       >{{ "DOCTOR.BACK_TO_SCHEDULE" | translate }}</a
     >
     @if (w.visit.state === "Treating") {
-    <button
+    <button appButton="secondary" type="button"
       class="btn end-treatment"
       data-end-treatment
       [disabled]="finalizing() || conflict() || !draft.progressNotes.trim()"
@@ -424,7 +424,7 @@
       {{ "DOCTOR.END_SESSION" | translate }}
     </button>
     } @if (w.visit.state === "Arrived") {
-    <button
+    <button appButton="primary" type="button"
       class="btn btn-primary"
       data-start-treatment
       [disabled]="busy() || startBlocked()"
@@ -482,7 +482,7 @@
   <section class="clinical-card">
     <h2>{{ "DOCTOR.DOCUMENTS" | translate }}</h2>
     @for (document of w.documents; track document.id) {
-    <button
+    <button appButton="secondary"
       class="btn btn-outline-secondary"
       type="button"
       (click)="download(document)"
@@ -490,7 +490,7 @@
       {{ document.fileName }}
     </button>
     } @empty {
-    <p>{{ "DOCTOR.NO_DOCUMENTS" | translate }}</p>
+    <app-table-empty [compact]="true" [hint]="'DOCTOR.NO_DOCUMENTS' | translate" />
     }
   </section>
 </ng-template>
@@ -513,7 +513,7 @@
         {{ (w.reassessments.length ? 'DOCTOR.REASSESSMENT' :
         'DOCTOR.REQUEST_REASSESSMENT') | translate }}
       </h2>
-      <button class="btn" (click)="refreshReviews()">
+      <button appButton="secondary" type="button" class="btn" (click)="refreshReviews()">
         {{ "DOCTOR.REFRESH" | translate }}
       </button>
     </div>
@@ -559,7 +559,7 @@
         }
       </article>
       } @if (!w.reassessments.length) {
-      <p>{{ "DOCTOR.NO_REVIEWS" | translate }}</p>
+      <app-table-empty [compact]="true" [hint]="'DOCTOR.NO_REVIEWS' | translate" />
       }
     </div>
     @if (!hasActiveReview) {
@@ -606,7 +606,7 @@
         ></textarea>
       </label>
       <p>{{ "DOCTOR.RECOMMENDATION_ONLY" | translate }}</p>
-      <button
+      <button appButton="primary"
         type="submit"
         data-review-request
         class="btn btn-primary"
@@ -632,7 +632,7 @@
 >
   <div class="sheet-heading">
     <h2 id="review-dialog-title">{{ "DOCTOR.REASSESSMENT" | translate }}</h2>
-    <button
+    <button appButton="dismiss" type="button"
       class="btn"
       (click)="closeReview()"
       [attr.aria-label]="'DOCTOR.CLOSE' | translate"

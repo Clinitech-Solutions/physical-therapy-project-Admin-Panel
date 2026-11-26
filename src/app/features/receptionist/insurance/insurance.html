@@ -6,8 +6,8 @@
     </div>
   </div>
 
-  @if (insuranceService.loading()) { <p role="status">{{ 'RECEPTIONIST.PROCESSING' | translate }}</p> }
-  @if (insuranceService.error()) { <p class="alert alert-warning" role="alert">{{ locale.label(insuranceService.error()) }} <button class="btn btn-outline-secondary btn-sm" (click)="insuranceService.getCompanies()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button></p> }
+  @if (insuranceService.loading()) { <app-table-loading /> }
+  @if (insuranceService.error()) { <p class="alert alert-warning" role="alert">{{ locale.label(insuranceService.error()) }} <button appButton="secondary" actionSize="compact" type="button" class="btn btn-outline-secondary btn-sm" (click)="insuranceService.getCompanies()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button></p> }
   <!-- Business Rule Highlight: Insurance Workflow Gate -->
   <div class="card card-bg border mb-4 p-3 rounded d-flex flex-row align-items-center gap-3">
     <div class="avatar avatar-md bg-info-subtle text-info d-flex align-items-center justify-content-center" style="min-width: 44px; height: 44px; font-size: 1.3rem;">
@@ -56,14 +56,14 @@
         </div>
 
         <div class="portal-card-footer">
-          <button class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2" [disabled]="!provider.isActive || !provider.portalUrl" (click)="openPortal(provider.portalUrl)">
+          <button appButton="primary" type="button" class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2" [disabled]="!provider.isActive || !provider.portalUrl" (click)="openPortal(provider.portalUrl)">
             <i class="bi bi-box-arrow-up-right"></i>
             <span>{{ 'RECEPTIONIST.OPEN_PORTAL' | translate }}</span>
           </button>
         </div>
       </div>
     } @empty {
-      @if (!insuranceService.loading() && !insuranceService.error()) { <p class="text-muted py-4">{{ 'RECEPTIONIST.UI.NO_PROVIDERS_FOUND_' | translate }}</p> }
+      @if (!insuranceService.loading() && !insuranceService.error()) { <app-table-empty [compact]="true" [hint]="'RECEPTIONIST.UI.NO_PROVIDERS_FOUND_' | translate" /> }
     }
   </div>
 </div>

@@ -1,32 +1,32 @@
 <div class="page-content receptionist-page fade-in schedule-page">
   @if (actionError()) {
     <div class="alert alert-warning" role="alert">{{ locale.label(actionError()) }}
-      <button class="btn btn-outline-secondary btn-sm" (click)="onSearchOrFilterChange()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button>
+      <button appButton="secondary" actionSize="compact" type="button" class="btn btn-outline-secondary btn-sm" (click)="onSearchOrFilterChange()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button>
     </div>
   }
   @if (receptionistService.statsError()) {
     <div class="alert alert-warning" role="alert">{{ 'RECEPTIONIST.UI.STATS_LOAD' | translate }}: {{ locale.label(receptionistService.statsError()) }}
-      <button class="btn btn-outline-secondary btn-sm" (click)="receptionistService.getDashboardStats()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button>
+      <button appButton="secondary" actionSize="compact" type="button" class="btn btn-outline-secondary btn-sm" (click)="receptionistService.getDashboardStats()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button>
     </div>
   }
   @if (receptionistService.sessionsError()) {
     <div class="alert alert-warning" role="alert">{{ 'RECEPTIONIST.UI.SESSIONS_LOAD' | translate }}: {{ locale.label(receptionistService.sessionsError()) }}
-      <button class="btn btn-outline-secondary btn-sm" (click)="receptionistService.refreshTodaySessions()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button>
+      <button appButton="secondary" actionSize="compact" type="button" class="btn btn-outline-secondary btn-sm" (click)="receptionistService.refreshTodaySessions()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button>
     </div>
   }
   @if (roomService.error()) {
     <div class="alert alert-warning" role="alert">{{ 'RECEPTIONIST.UI.ROOMS_LOAD' | translate }}: {{ locale.label(roomService.error()) }}
-      <button class="btn btn-outline-secondary btn-sm" (click)="roomService.load()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button>
+      <button appButton="secondary" actionSize="compact" type="button" class="btn btn-outline-secondary btn-sm" (click)="roomService.load()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button>
     </div>
   }
   @if (clinicianService.error()) {
     <div class="alert alert-warning" role="alert">{{ 'RECEPTIONIST.UI.CLINICIANS_LOAD' | translate }}: {{ locale.label(clinicianService.error()) }}
-      <button class="btn btn-outline-secondary btn-sm" (click)="clinicianService.load()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button>
+      <button appButton="secondary" actionSize="compact" type="button" class="btn btn-outline-secondary btn-sm" (click)="clinicianService.load()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button>
     </div>
   }
   @if (patientLookupError()) {
     <p class="alert alert-warning" role="alert">{{ 'RECEPTIONIST.UI.PATIENTS_LOAD' | translate }}: {{ locale.label(patientLookupError()) }}
-      <button class="btn btn-outline-secondary btn-sm" (click)="refreshPatientLookup()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button></p>
+      <button appButton="secondary" actionSize="compact" type="button" class="btn btn-outline-secondary btn-sm" (click)="refreshPatientLookup()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button></p>
   }
   @if (receptionistService.mapStatusToString(0) === 'Unknown' || receptionistService.mapStatusToString(4) === 'Unknown') {
     <p class="text-muted small">{{ 'RECEPTIONIST.UI.STATUS_CONFIGURATION_NOTICE' | translate }}</p>
@@ -51,8 +51,8 @@
         </div>
       </div>
 
-      <div class="schedule-header-actions d-flex align-items-center gap-2 flex-wrap">
-        <button type="button" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-2 px-3 py-2"
+      <div class="schedule-header-actions d-flex align-items-center gap-2 flex-wrap app-action-group">
+        <button appButton="secondary" actionSize="compact" type="button" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-2 px-3 py-2"
           (click)="onSearchOrFilterChange()" [disabled]="isLoading()">
           <i class="bi bi-arrow-clockwise" [class.spin]="isLoading()"></i>
           <span>{{ 'RECEPTIONIST.UI.REFRESH' | translate }}</span>
@@ -69,7 +69,7 @@
 
   <!-- Interactive Summary KPI Strip (Bound to ReceptionistService API) -->
   <div class="schedule-kpi-grid">
-    <div class="schedule-kpi-card" [class.active-kpi]="selectedFilter === 'All'" (click)="selectedFilter = 'All'">
+    <button type="button" appButton="secondary" class="schedule-kpi-card action-choice" [class.active-kpi]="selectedFilter === 'All'" (click)="selectedFilter = 'All'">
       <div class="kpi-icon-wrap kpi-teal">
         <i class="bi bi-calendar2-week"></i>
       </div>
@@ -77,9 +77,9 @@
         <span class="kpi-label">{{ 'RECEPTIONIST.TODAYS_SESSIONS' | translate }}</span>
         <span class="kpi-value">{{ totalTodayCount }}</span>
       </div>
-    </div>
+    </button>
 
-    <div class="schedule-kpi-card" [class.active-kpi]="selectedFilter === 'Upcoming'" (click)="selectedFilter = 'Upcoming'">
+    <button type="button" appButton="secondary" class="schedule-kpi-card action-choice" [class.active-kpi]="selectedFilter === 'Upcoming'" (click)="selectedFilter = 'Upcoming'">
       <div class="kpi-icon-wrap kpi-amber">
         <i class="bi bi-hourglass-split"></i>
       </div>
@@ -87,9 +87,9 @@
         <span class="kpi-label">{{ 'RECEPTIONIST.UI.UPCOMING' | translate }}</span>
         <span class="kpi-value text-amber">{{ upcomingCount ?? '?' }}</span>
       </div>
-    </div>
+    </button>
 
-    <div class="schedule-kpi-card" [class.active-kpi]="selectedFilter === 'In Progress'" (click)="selectedFilter = 'In Progress'">
+    <button type="button" appButton="secondary" class="schedule-kpi-card action-choice" [class.active-kpi]="selectedFilter === 'In Progress'" (click)="selectedFilter = 'In Progress'">
       <div class="kpi-icon-wrap kpi-blue">
         <i class="bi bi-activity"></i>
       </div>
@@ -99,9 +99,9 @@
         </span>
         <span class="kpi-value text-blue">{{ inProgressCount ?? '?' }}</span>
       </div>
-    </div>
+    </button>
 
-    <div class="schedule-kpi-card" [class.active-kpi]="selectedFilter === 'Completed'" (click)="selectedFilter = 'Completed'">
+    <button type="button" appButton="secondary" class="schedule-kpi-card action-choice" [class.active-kpi]="selectedFilter === 'Completed'" (click)="selectedFilter = 'Completed'">
       <div class="kpi-icon-wrap kpi-green">
         <i class="bi bi-check2-circle"></i>
       </div>
@@ -109,7 +109,7 @@
         <span class="kpi-label">{{ 'RECEPTIONIST.COMPLETED_SESSIONS' | translate }}</span>
         <span class="kpi-value text-teal">{{ completedCount ?? '?' }}</span>
       </div>
-    </div>
+    </button>
   </div>
 
   <!-- Main Schedule Panel -->
@@ -120,7 +120,7 @@
         <!-- Segmented Status Pills -->
         <div class="status-pill-group">
           @for (opt of filterOptions; track opt.value) {
-            <button type="button" class="status-pill-btn"
+            <button appButton="secondary" type="button" class="status-pill-btn"
               [class.active]="selectedFilter === opt.value"
               [attr.aria-pressed]="selectedFilter === opt.value"
               (click)="selectedFilter = $any(opt.value)">
@@ -141,7 +141,7 @@
               [attr.aria-label]="'RECEPTIONIST.SEARCH_PLACEHOLDER' | translate"
               [title]="'RECEPTIONIST.SEARCH_PLACEHOLDER' | translate" />
             @if (searchQuery) {
-              <button type="button" class="btn-clear-search" (click)="searchQuery = ''; onSearchOrFilterChange()" [title]="'RECEPTIONIST.UI.CLEAR_SEARCH' | translate">
+              <button appButton="secondary" type="button" class="btn-clear-search" (click)="searchQuery = ''; onSearchOrFilterChange()" [title]="'RECEPTIONIST.UI.CLEAR_SEARCH' | translate" [attr.aria-label]="'RECEPTIONIST.UI.CLEAR_SEARCH' | translate">
                 <i class="bi bi-x-lg"></i>
               </button>
             }
@@ -168,7 +168,7 @@
 
         <div class="schedule-view-controls">
           @if (searchQuery || selectedDoctorFilter || selectedRoomFilter || selectedFilter !== 'All') {
-            <button type="button" class="btn btn-outline-secondary btn-sm px-2 py-1" (click)="resetFilters()"
+            <button appButton="secondary" actionSize="compact" type="button" class="btn btn-outline-secondary btn-sm px-2 py-1" (click)="resetFilters()"
               [attr.aria-label]="'RECEPTIONIST.UI.RESET_FILTERS' | translate" [title]="'RECEPTIONIST.UI.RESET_FILTERS' | translate">
               <i class="bi bi-arrow-counterclockwise"></i>
             </button>
@@ -176,10 +176,10 @@
 
           <!-- View Mode Toggle -->
           <div class="view-mode-toggle">
-            <button type="button" class="view-btn" [class.active]="viewMode() === 'Day'" [attr.aria-pressed]="viewMode() === 'Day'" (click)="viewMode.set('Day')">
+            <button appButton="secondary" type="button" class="view-btn" [class.active]="viewMode() === 'Day'" [attr.aria-pressed]="viewMode() === 'Day'" (click)="viewMode.set('Day')">
               {{ 'RECEPTIONIST.DAY' | translate }}
             </button>
-            <button type="button" class="view-btn" [class.active]="viewMode() === 'Week'" [attr.aria-pressed]="viewMode() === 'Week'" (click)="viewMode.set('Week')">
+            <button appButton="secondary" type="button" class="view-btn" [class.active]="viewMode() === 'Week'" [attr.aria-pressed]="viewMode() === 'Week'" (click)="viewMode.set('Week')">
               {{ 'RECEPTIONIST.WEEK' | translate }}
             </button>
           </div>
@@ -207,32 +207,32 @@
                 <!-- Card Top: Patient Info & Status -->
                 <div class="session-card-top">
                   <div class="d-flex align-items-center gap-2 min-w-0">
-                    <div class="patient-avatar-circle" role="button"
+                    <button actionAppearance="avatar" type="button" appButton="secondary" class="patient-avatar-circle inline-control" [attr.aria-label]="('RECEPTIONIST.VIEW_PROFILE' | translate) + ' ' + getPatientName(session)"
                       (click)="openPatientProfile(session.patientId); $event.stopPropagation()">
                       {{ getPatientInitials(session) }}
-                    </div>
+                    </button>
                     <div class="min-w-0">
                       <div class="d-flex align-items-center gap-1">
                         @if (statusStr === 'In Progress' || statusStr === 'Waiting') {
                           <span class="live-indicator"></span>
                         }
-                        <span class="patient-name text-truncate" role="button"
-                          (click)="openPatientProfile(session.patientId); $event.stopPropagation()">
+                        <button actionAppearance="identity" type="button" appButton="secondary" class="patient-name inline-control"
+                          (click)="openPatientProfile(session.patientId); $event.stopPropagation()" [attr.aria-label]="('RECEPTIONIST.VIEW_PROFILE' | translate) + ' ' + getPatientName(session)">
                           {{ getPatientName(session) }}
-                        </span>
+                        </button>
                       </div>
                       @if (getSessionBadge(session)) {
-                        <span class="progress-mini-badge" role="button"
+                        <button type="button" appButton="secondary" class="progress-mini-badge inline-control"
                           (click)="openPatientProfile(session.patientId); $event.stopPropagation()"
-                          [title]="'RECEPTIONIST.UI.TREATMENT_PROGRESS' | translate">
+                          [title]="'RECEPTIONIST.UI.TREATMENT_PROGRESS' | translate" >
                           <i class="bi bi-layers-half me-1"></i>{{ getSessionBadge(session) }}
-                        </span>
+                        </button>
                       }
                     </div>
                   </div>
 
                   @if (absenceRecovery?.needsAttention(session.id)) {
-                    <button type="button" class="badge badge-warning" style="min-height:44px;border:0" (click)="absenceRecovery?.resolveAppointment(session.id)">{{'ABSENCE.NEEDS_ATTENTION'|translate}}</button>
+                    <button appButton="secondary" type="button" class="badge badge-warning" style="min-height:44px;border:0" (click)="absenceRecovery?.resolveAppointment(session.id)">{{'ABSENCE.NEEDS_ATTENTION'|translate}}</button>
                   }
                   <span class="badge session-status-badge" [ngClass]="{
                     'badge-warning': statusStr === 'Confirmed',
@@ -269,27 +269,27 @@
                     </span>
                   </div>
 
-                  <div class="session-actions">
-                    @if(canScheduleEdit(session)){<button class="btn-absent-icon" [title]="'RECEPTIONIST.UI.EDIT_APPOINTMENT' | translate" [disabled]="editingLoading() || workflow.mutation.busy() || !!appointmentService?.mutation?.busy()" (click)="openEditAppointment(session); $event.stopPropagation()"><i class="bi bi-pencil"></i></button>}
+                  <div class="session-actions app-action-group">
+                    @if(canScheduleEdit(session)){<button appButton="secondary" type="button" class="btn-absent-icon" [title]="'RECEPTIONIST.UI.EDIT_APPOINTMENT' | translate" [disabled]="editingLoading() || workflow.mutation.busy() || !!appointmentService?.mutation?.busy()" (click)="openEditAppointment(session); $event.stopPropagation()" [attr.aria-label]="'RECEPTIONIST.UI.EDIT_APPOINTMENT' | translate"><i class="bi bi-pencil"></i></button>}
                     @if (canCancelUnattended(session)) {
-                      <button type="button" class="btn-absent-icon" [attr.data-cancel-appointment]="session.id" [title]="'RECEPTIONIST.CANCEL' | translate" [disabled]="workflow.mutation.busy()" (click)="cancelUnattended(session.id); $event.stopPropagation()"><i class="bi bi-x-circle"></i></button>
+                      <button appButton="danger" type="button" class="btn-absent-icon" [attr.data-cancel-appointment]="session.id" [title]="'RECEPTIONIST.CANCEL' | translate" [disabled]="workflow.mutation.busy()" (click)="cancelUnattended(session.id); $event.stopPropagation()" [attr.aria-label]="'RECEPTIONIST.CANCEL' | translate"><i class="bi bi-x-circle"></i></button>
                     }
                     @if (statusStr === 'In Progress' || statusStr === 'Waiting') {
-                      <button type="button" class="btn-session-action btn-checkout" [attr.data-checkout]="session.id"
+                      <button appButton="secondary" type="button" class="btn-session-action btn-checkout" [attr.data-checkout]="session.id"
                         [disabled]="workflow.mutation.busy() || !workflow.canTransition('Completed') || session.appointmentType === 'Session' && !session.treatmentEndedAt" (click)="checkoutSession(session.id); $event.stopPropagation()">
                         <i class="bi bi-box-arrow-right"></i>
                         <span>{{ 'RECEPTIONIST.CHECK_OUT' | translate }}</span>
                       </button>
                     } @else if (statusStr === 'Confirmed' || statusStr === 'Pending') {
-                      <button type="button" class="btn-session-action btn-checkin" [attr.data-check-in]="session.id"
+                      <button appButton="primary" type="button" class="btn-session-action btn-checkin" [attr.data-check-in]="session.id"
                         [disabled]="workflow.mutation.busy() || !workflow.canTransition('In Progress') || !canArrive(session)" (click)="checkInSession(session.id); $event.stopPropagation()">
                         <i class="bi bi-box-arrow-in-right"></i>
                         <span>{{ 'RECEPTIONIST.CHECK_IN' | translate }}</span>
                       </button>
-                      <button type="button" class="btn-absent-icon"
+                      <button appButton="secondary" type="button" class="btn-absent-icon"
                         [attr.data-no-show]="session.id"
                         [title]="'RECEPTIONIST.MARK_ABSENT' | translate"
-                        [disabled]="workflow.mutation.busy() || !canRecordNoShow(session)" (click)="markPatientAbsent(session.id); $event.stopPropagation()">
+                        [disabled]="workflow.mutation.busy() || !canRecordNoShow(session)" (click)="markPatientAbsent(session.id); $event.stopPropagation()" [attr.aria-label]="'RECEPTIONIST.MARK_ABSENT' | translate">
                         <i class="bi bi-person-x"></i>
                       </button>
                     }
@@ -339,5 +339,5 @@
     <label class="form-label w-100">{{ 'RECEPTIONIST.UI.END_TIME' | translate }}<output class="form-control">{{ locale.date(editEnd, true) }}</output></label>
     <p class="small text-muted">{{ 'RECEPTIONIST.UI.PLANNED_HOUR_NOTICE' | translate }}</p>
   </fieldset>
-  <ng-template pTemplate="footer"><button class="btn btn-primary" (click)="saveAppointmentEdit()" [disabled]="!!appointmentService?.mutation?.busy() || !!appointmentService?.mutation?.uncertain()">{{ 'COMMON.SAVE' | translate }}</button></ng-template>
+  <ng-template pTemplate="footer"><button appButton="primary" type="button" class="btn btn-primary" (click)="saveAppointmentEdit()" [disabled]="!!appointmentService?.mutation?.busy() || !!appointmentService?.mutation?.uncertain()">{{ 'COMMON.SAVE' | translate }}</button></ng-template>
 </p-dialog>

@@ -1,3 +1,4 @@
+import { ActionButtonDirective } from '../../action-ui/action-button';
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ThemeService } from '../../../core/services/theme';
@@ -6,9 +7,9 @@ import { TranslateModule } from '@ngx-translate/core';
 @Component({
   selector: 'app-theme-toggle',
   standalone: true,
-  imports: [CommonModule, TranslateModule],
+  imports: [ActionButtonDirective, CommonModule, TranslateModule],
   template: `
-    <button class="theme-switch" (click)="theme.toggleTheme()" [attr.aria-label]="(theme.isDarkMode() ? 'COMMON.SWITCH_TO_LIGHT' : 'COMMON.SWITCH_TO_DARK') | translate">
+    <button appButton="secondary" type="button" actionAppearance="utility" class="theme-switch" (click)="theme.toggleTheme()" [attr.aria-pressed]="theme.isDarkMode()" [attr.aria-label]="((theme.isDarkMode() ? 'COMMON.SWITCH_TO_LIGHT' : 'COMMON.SWITCH_TO_DARK') | translate) || 'Change theme'">
       <div class="switch-track" [class.is-dark]="theme.isDarkMode()">
         <div class="switch-thumb">
           <i class="bi" [class.bi-moon-fill]="theme.isDarkMode()" [class.bi-sun-fill]="!theme.isDarkMode()"></i>

@@ -2,7 +2,7 @@
   <header class="clinical-heading">
     <div>
       @if (view() !== "today") {
-      <button class="btn" (click)="view.set('today')">
+      <button appButton="secondary" type="button" class="btn" (click)="view.set('today')">
         &larr; {{ "DOCTOR.BACK_TO_SCHEDULE" | translate }}
       </button>
       }
@@ -10,7 +10,7 @@
       <p>{{ locale.date(date() + "T12:00:00Z") }}</p>
     </div>
     <div class="clinical-controls date-controls">
-      <button
+      <button appButton="secondary" type="button"
         class="btn btn-outline-secondary"
         (click)="day(-1)"
         [attr.aria-label]="'DOCTOR.PREVIOUS_DAY' | translate"
@@ -23,17 +23,17 @@
         (ngModelChange)="date.set($event); load()"
         [attr.aria-label]="'DOCTOR.DATE' | translate"
       />
-      <button
+      <button appButton="secondary" type="button"
         class="btn btn-outline-secondary"
         (click)="day(1)"
         [attr.aria-label]="'DOCTOR.NEXT_DAY' | translate"
       >
         &rsaquo;
       </button>
-      <button class="btn btn-outline-secondary" (click)="today()">
+      <button appButton="secondary" type="button" class="btn btn-outline-secondary" (click)="today()">
         {{ "DOCTOR.TODAY" | translate }}
       </button>
-      <button
+      <button appButton="secondary" type="button"
         class="btn btn-outline-secondary refresh"
         (click)="load(); loadReviews()"
         [disabled]="loading() || reviewsLoading()"
@@ -44,7 +44,7 @@
     </div>
   </header>
   @if (loading()) {
-  <p role="status">{{ "DOCTOR.LOADING" | translate }}</p>
+  <app-table-loading />
   } @if (error()) {
   <div class="clinical-alert" role="alert">
     {{ error() }} @if (shortfall() !== null) {
@@ -53,7 +53,7 @@
       "code" : "1.2-2" : locale.language }}</strong
     >
     }
-    <button class="btn" (click)="load()">
+    <button appButton="secondary" type="button" class="btn" (click)="load()">
       {{ "DOCTOR.RETRY" | translate }}
     </button>
   </div>
@@ -65,7 +65,7 @@
       {{ ("ROLES." + (auth.currentRole() || "Doctor").toUpperCase()) | translate
       }}
     </p>
-    <button class="btn btn-outline-secondary" (click)="auth.logout()">
+    <button appButton="secondary" type="button" class="btn btn-outline-secondary" (click)="auth.logout()">
       {{ "DOCTOR.SIGN_OUT" | translate }}
     </button>
   </section>
@@ -73,12 +73,12 @@
   <section class="clinical-card">
     <div class="rail-heading">
       <h2>{{ "DOCTOR.REASSESSMENT" | translate }}</h2>
-      <button class="btn" (click)="loadReviews()">
+      <button appButton="secondary" type="button" class="btn" (click)="loadReviews()">
         {{ "DOCTOR.REFRESH" | translate }}
       </button>
     </div>
     @if (reviewsLoading()) {
-    <p role="status">{{ "DOCTOR.LOADING" | translate }}</p>
+    <app-table-loading />
     } @if (reviewsError()) {
     <p role="alert">{{ reviewsError() }}</p>
     } @for (r of reviews(); track r.id) {
@@ -101,8 +101,8 @@
       >
       }
     </article>
-    } @empty { @if (reviews() && !reviewsLoading()) {
-    <p class="clinical-empty">{{ "DOCTOR.NO_REVIEWS" | translate }}</p>
+    } @empty { @if (reviews() && !reviewsLoading() && !reviewsError()) {
+    <app-table-empty [compact]="true" [hint]="'DOCTOR.NO_REVIEWS' | translate" />
     } }
   </section>
   } @else if (data(); as schedule) {
@@ -159,13 +159,13 @@
         >
       </div>
       <div class="mobile-filter">
-        <button
+        <button appButton="secondary" type="button"
           class="btn"
           [class.selected]="!completedOnly()"
           (click)="completedOnly.set(false)"
         >
           {{ "DOCTOR.TODAY" | translate }}</button
-        ><button
+        ><button appButton="secondary" type="button"
           class="btn"
           [class.selected]="completedOnly()"
           (click)="completedOnly.set(true)"
@@ -173,7 +173,7 @@
           {{ "DOCTOR.COMPLETED_SHORT" | translate }}
         </button>
       </div>
-      <table class="schedule-table">
+      <div appTableRegion><table appTable="cards" cardSize="medium" class="schedule-table">
         <thead>
           <tr>
             <th>{{ "DOCTOR.PLANNED" | translate }}</th>
@@ -223,7 +223,7 @@
           </tr>
           }
         </tbody>
-      </table>
+      </table></div>
       <div class="mobile-visits">
         @for (group of groups(); track group.key) { @if (group.rows.length) {
         <h2>
@@ -255,7 +255,7 @@
         } } }
       </div>
       @if (!visible().length) {
-      <p class="clinical-empty">{{ "DOCTOR.NO_APPOINTMENTS" | translate }}</p>
+      <app-table-empty [compact]="true" [hint]="'DOCTOR.NO_APPOINTMENTS' | translate" />
       }
     </section>
     <aside class="schedule-rail">
@@ -289,7 +289,7 @@
           >
         </article>
         } @empty {
-        <p>{{ "DOCTOR.NO_ACTIVE" | translate }}</p>
+        <app-table-empty [compact]="true" [hint]="'DOCTOR.NO_ACTIVE' | translate" />
         }
       </section>
       <section class="clinical-card">
@@ -310,11 +310,11 @@
           </div></a
         >
         } @empty {
-        <p>{{ "DOCTOR.NO_APPOINTMENTS" | translate }}</p>
+        <app-table-empty [compact]="true" [hint]="'DOCTOR.NO_APPOINTMENTS' | translate" />
         }
       </section>
       <section class="clinical-card">
-        <button class="review-summary" (click)="view.set('reviews')">
+        <button appButton="secondary" type="button" class="review-summary" (click)="view.set('reviews')">
           <i class="bi bi-file-earmark-medical" aria-hidden="true"></i
           ><span
             ><strong>{{ "DOCTOR.REASSESSMENT" | translate }}</strong
@@ -337,7 +337,7 @@
     @for ( item of [ { key: "today", label: "TODAY", icon: "calendar2-week" }, {
     key: "reviews", label: "REVIEWS_NAV", icon: "file-earmark-text" }, { key:
     "account", label: "ACCOUNT", icon: "person" }, ]; track item.key ) {
-    <button
+    <button appButton="secondary" type="button"
       [class.active]="view() === item.key"
       [attr.aria-current]="view() === item.key ? 'page' : null"
       (click)="view.set(item.key)"
@@ -363,7 +363,7 @@
 </ng-template>
 <ng-template #action let-a>
   @if (a.state === "Arrived") {
-  <button
+  <button appButton="primary" type="button"
     class="btn btn-primary"
     data-start-treatment
     [disabled]="busy() !== null || atCapacity(a)"

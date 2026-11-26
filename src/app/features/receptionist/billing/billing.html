@@ -1,4 +1,4 @@
-<div class="page-content receptionist-page fade-in">
+<div class="page-content receptionist-page">
   <div class="page-header">
     <div>
       <h2 class="font-clash">{{ billingText('Patient billing') }}</h2>
@@ -6,30 +6,30 @@
     </div>
   </div>
 
-  @if (billingService.loading()) { <p role="status">{{ 'RECEPTIONIST.PROCESSING' | translate }}</p> }
+  @if (billingService.loading()) { <app-table-loading /> }
   @if (billingService.error()) {
     <div class="alert alert-warning" role="alert">{{ locale.label(billingService.error()) }}
-      <button class="btn btn-outline-secondary btn-sm" (click)="billingService.getInvoices()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button>
+      <button appButton="secondary" actionSize="compact" type="button" class="btn btn-outline-secondary btn-sm" (click)="billingService.getInvoices()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button>
     </div>
   }
   @if (patientLookupError()) {
     <p class="alert alert-warning" role="alert">{{ 'RECEPTIONIST.UI.PATIENTS_LOAD' | translate }}: {{ locale.label(patientLookupError()) }}
-      <button class="btn btn-outline-secondary btn-sm" (click)="refreshPatientLookup()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button></p>
+      <button appButton="secondary" actionSize="compact" type="button" class="btn btn-outline-secondary btn-sm" (click)="refreshPatientLookup()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button></p>
   }
   @if (billingService.mutation.uncertain()) { <p class="alert alert-warning" role="alert">{{ 'RECEPTIONIST.UI.OPERATION_OUTCOME_UNKNOWN' | translate }}</p> }
   @for (operation of finance.pendingPatients(); track operation.scope) {
     <div class="alert alert-warning" role="status">
       {{ 'RECEPTIONIST.UI.FINANCE_ORIGINAL_RECEIPT' | translate }}: {{ operation.body['amount'] | currency:'EGP':'symbol':'1.2-2':locale.language }} / {{ operation.body['method'] | receptionistText }}
-      <button type="button" class="btn btn-outline-secondary btn-sm" [disabled]="isSubmittingPayment()" (click)="finance.blockedAppointment.set(+operation.scope.slice(8))">{{ 'RECEPTIONIST.UI.RECONCILE_COLLECTION' | translate }} #{{ operation.scope.slice(8) }}</button>
+      <button appButton="secondary" actionSize="compact" type="button" class="btn btn-outline-secondary btn-sm" [disabled]="isSubmittingPayment()" (click)="finance.blockedAppointment.set(+operation.scope.slice(8))">{{ 'RECEPTIONIST.UI.RECONCILE_COLLECTION' | translate }} #{{ operation.scope.slice(8) }}</button>
     </div>
   }
   @if (bookingApi.pendingCollection()) {
     <p class="alert alert-warning" role="alert">{{ 'RECEPTIONIST.UI.COLLECTION_OUTCOME_UNKNOWN' | translate }}
-      <button class="btn btn-outline-secondary btn-sm" (click)="reconcileCollection()" [disabled]="isSubmittingPayment()">{{ 'RECEPTIONIST.UI.RECONCILE_COLLECTION' | translate }}</button>
+      <button appButton="secondary" actionSize="compact" type="button" class="btn btn-outline-secondary btn-sm" (click)="reconcileCollection()" [disabled]="isSubmittingPayment()">{{ 'RECEPTIONIST.UI.RECONCILE_COLLECTION' | translate }}</button>
     </p>
   }
   @for (invoiceId of billingService.unresolvedInvoicePaymentIds; track invoiceId) {
-    <button class="btn btn-outline-secondary btn-sm mb-2" (click)="openPaymentModal(invoiceId)" [disabled]="isSubmittingPayment()">{{ 'RECEPTIONIST.UI.RECONCILE_COLLECTION' | translate }} #{{ invoiceId }}</button>
+    <button appButton="secondary" actionSize="compact" type="button" class="btn btn-outline-secondary btn-sm mb-2" (click)="openPaymentModal(invoiceId)" [disabled]="isSubmittingPayment()">{{ 'RECEPTIONIST.UI.RECONCILE_COLLECTION' | translate }} #{{ invoiceId }}</button>
   }
   @if (invoiceDetailLoading()) { <p role="status">{{ billingText('Loading') }}?</p> }
   @if (!showPaymentModal && paymentError()) { <p class="alert alert-warning" role="alert">{{ paymentError() }}</p> }
@@ -55,22 +55,23 @@
 
         <!-- TAB 1: Pending Installments -->
         <p-tabpanel value="1">
-          @if (accountsError()) { <p class="alert alert-warning" role="alert">{{ accountsError() }} <button class="btn btn-outline-secondary btn-sm" (click)="refreshAccounts()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button></p> }
+          @if (accountsError()) { <p class="alert alert-warning" role="alert">{{ accountsError() }} <button appButton="secondary" actionSize="compact" type="button" class="btn btn-outline-secondary btn-sm" (click)="refreshAccounts()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button></p> }
           <div class="table-scroll-area mt-2">
-            <p-table [value]="pendingInstallments()" [responsiveLayout]="'scroll'" styleClass="p-datatable-striped">
-              <ng-template pTemplate="header"><tr>
+            <div appTableRegion><table appTable="scroll">
+              <thead><tr>
                 <th>{{ 'COMMON.PATIENT' | translate }}</th><th>{{ 'RECEPTIONIST.UI.QUOTED_TOTAL' | translate }}</th>
                 <th>{{ 'RECEPTIONIST.UI.ACTUAL_AMOUNT_PAID' | translate }}</th><th>{{ 'RECEPTIONIST.UI.PATIENT_BALANCE' | translate }}</th>
                 <th>{{ 'RECEPTIONIST.UI.INSTALLMENT_ARRANGEMENT' | translate }}</th><th>{{ 'COMMON.ACTION' | translate }}</th>
-              </tr></ng-template>
-              <ng-template pTemplate="body" let-account><tr>
+              </tr></thead>
+              <tbody>@for(account of pendingInstallments();track account.key){<tr>
                 <td>{{ account.patientName }}</td><td>{{ account.totalAmount | currency:'EGP':'symbol':'1.2-2':locale.language }}</td>
                 <td>{{ account.paidAmount | currency:'EGP':'symbol':'1.2-2':locale.language }}</td><td>{{ account.remainingAmount | currency:'EGP':'symbol':'1.2-2':locale.language }}</td>
                 <td>@for (installment of account.installments; track $index) { <div>{{ locale.date(installment.dueDate) }}: {{ installment.amount | currency:'EGP':'symbol':'1.2-2':locale.language }}</div> }</td>
-                <td><button class="btn btn-outline-primary btn-sm" (click)="openAccountPayment(account)">{{ 'RECEPTIONIST.PROCESS_PAYMENT' | translate }}</button></td>
-              </tr></ng-template>
-              <ng-template pTemplate="emptymessage"><tr><td colspan="6" class="text-center py-4 text-muted">@if (accountsLoading()) { {{ 'RECEPTIONIST.PROCESSING' | translate }} } @else if (!accountsError()) { {{ 'RECEPTIONIST.UI.NO_PENDING_INSTALLMENTS' | translate }} }</td></tr></ng-template>
-            </p-table>
+                <td><button appButton="primary" actionSize="compact" type="button" class="btn btn-outline-primary btn-sm" (click)="openAccountPayment(account)">{{ 'RECEPTIONIST.PROCESS_PAYMENT' | translate }}</button></td>
+              </tr>}
+              @if(accountsLoading()){<tr><td colspan="6"><app-table-loading /></td></tr>}@else if(!accountsError() && !pendingInstallments().length){<tr><td colspan="6"><app-table-empty /></td></tr>}
+
+            </tbody></table></div>
           </div>
         </p-tabpanel>
 
@@ -95,9 +96,9 @@
 
   @if (!paymentMethods.length) { <p class="alert alert-warning">{{ 'RECEPTIONIST.UI.PAYMENT_METHOD_DEFINITION_PENDING' | translate }}</p> }
   @if (paymentError()) { <p class="alert alert-warning" role="alert">{{ locale.label(paymentError()) }}</p> }
-  @if (bookingApi.pendingCollection()) { <p class="alert alert-warning" role="alert">{{ 'RECEPTIONIST.UI.COLLECTION_OUTCOME_UNKNOWN' | translate }} <button type="button" class="btn btn-outline-secondary btn-sm" (click)="reconcileCollection()" [disabled]="isSubmittingPayment()">{{ 'RECEPTIONIST.UI.RECONCILE_COLLECTION' | translate }}</button></p> }
-  @if (paymentHistoryLoading()) { <p role="status">{{ 'RECEPTIONIST.PROCESSING' | translate }}</p> }
-  @if (paymentHistoryError()) { <p class="alert alert-warning" role="alert">{{ locale.label(paymentHistoryError()) }} <button class="btn btn-outline-secondary btn-sm" (click)="loadPaymentHistory()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button></p> }
+  @if (bookingApi.pendingCollection()) { <p class="alert alert-warning" role="alert">{{ 'RECEPTIONIST.UI.COLLECTION_OUTCOME_UNKNOWN' | translate }} <button appButton="secondary" actionSize="compact" type="button" class="btn btn-outline-secondary btn-sm" (click)="reconcileCollection()" [disabled]="isSubmittingPayment()">{{ 'RECEPTIONIST.UI.RECONCILE_COLLECTION' | translate }}</button></p> }
+  @if (paymentHistoryLoading()) { <app-table-loading /> }
+  @if (paymentHistoryError()) { <p class="alert alert-warning" role="alert">{{ locale.label(paymentHistoryError()) }} <button appButton="secondary" actionSize="compact" type="button" class="btn btn-outline-secondary btn-sm" (click)="loadPaymentHistory()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button></p> }
   @if (detailInvoice(); as invoice) {
     <dl class="billing-detail">
       <div><dt>{{ billingText('Invoice') }}</dt><dd>{{ invoice.invoiceNumber }} ? {{ locale.date(invoice.createdAt) }}</dd></div>
@@ -141,7 +142,7 @@
     }
     @if (selectedAccountKey && collectionView) {
       <p>{{ billingText('Account') }}: {{ selectedAccountKey }}</p>
-      <button type="button" class="btn btn-outline-primary" (click)="reviewAllocation()" [disabled]="allocationLoading() || collectionDetailsLocked">{{ billingText('Review allocation') }}</button>
+      <button appButton="primary" type="button" class="btn btn-outline-primary" (click)="reviewAllocation()" [disabled]="allocationLoading() || collectionDetailsLocked">{{ billingText('Review allocation') }}</button>
       @if (allocationReady) { <dl class="allocation-preview">@for (item of allocation()!.items; track item.invoiceId) { <div><dt>{{ item.reference }}</dt><dd>{{ item.amount | currency:'EGP':'symbol':'1.2-2':locale.language }}</dd></div> }</dl> }
     }
     @if (invoicePayments().length > 0) {
@@ -158,23 +159,19 @@
   </div>
 
   <ng-template pTemplate="footer">
-    <div class="d-flex justify-content-end gap-2 modal-footer-actions">
-      <button
+    <div class="d-flex justify-content-end gap-2 modal-footer-actions app-action-group">
+      <button appButton="dismiss"
         type="button"
         class="btn btn-outline-secondary btn-cancel"
         (click)="showPaymentModal = false" [disabled]="isSubmittingPayment()">
         {{ 'COMMON.CANCEL' | translate }}
       </button>
-      @if (collectionView) { <button
+      @if (collectionView) { <button appButton="primary"
         type="button"
         class="btn btn-primary"
         (click)="confirmPayment()"
-        [disabled]="isProcessingPayment() || (selectedAccountKey && !allocationReady && !bookingApi.pendingCollection()) || !selectedPaymentMethod || !paymentMethods.length || (!selectedAccountKey && (billingService.mutation.uncertain() || billingService.pendingPaymentInvoices().includes(+selectedInvoiceId!)))">
-        @if (isProcessingPayment()) {
-          <span class="spinner-border spinner-border-sm me-1"></span> {{ 'RECEPTIONIST.PROCESSING' | translate }}
-        } @else {
-          {{ 'RECEPTIONIST.PROCESS_PAYMENT' | translate }}
-        }
+        [disabled]="isProcessingPayment() || (selectedAccountKey && !allocationReady && !bookingApi.pendingCollection()) || !selectedPaymentMethod || !paymentMethods.length || (!selectedAccountKey && (billingService.mutation.uncertain() || billingService.pendingPaymentInvoices().includes(+selectedInvoiceId!)))" [actionPending]="isProcessingPayment()">
+        {{ 'RECEPTIONIST.PROCESS_PAYMENT' | translate }}
       </button> }
     </div>
   </ng-template>

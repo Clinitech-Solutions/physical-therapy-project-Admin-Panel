@@ -1,5 +1,6 @@
 // Labels shared by the patient report and invoice detail; API enum values remain unchanged.
 export const billingArabic: Record<string, string> = {
+  'View invoices':'عرض الفواتير', 'Hide invoices':'إخفاء الفواتير',
   'Patient billing':'مدفوعات المرضى', 'Patient payments and balances':'تحصيل حصة المريض ومتابعة الرصيد',
   'Filtered patient totals':'إجماليات المرضى حسب الفلاتر', 'Period receipts shown separately':'تحصيلات الفترة معروضة بشكل مستقل',
   'View details':'عرض التفاصيل', 'Open details for saved funding, service and account information.':'افتح التفاصيل لعرض بيانات التمويل والخدمة والحساب المحفوظة.',

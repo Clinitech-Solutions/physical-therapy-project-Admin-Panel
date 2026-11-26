@@ -1,4 +1,8 @@
 export interface ProfileSession {
+  receptionCheckIn?: string | null;
+  receptionCheckOut?: string | null;
+  clinicalStart?: string | null;
+  clinicalEnd?: string | null;
   id: number;
   sessionNumber: number;
   appointmentId: number | null;
