@@ -1,11 +1,11 @@
 <section class="workspace">
   <header class="heading">
     <h1>{{ t("Insurance companies") }}</h1>
-    <div class="actions">
+    <div class="actions app-action-group">
       <a class="button" routerLink="/ceo/insurance">{{
         t("Insurance finance")
       }}</a
-      ><button class="primary" (click)="open()">{{ t("Add company") }}</button>
+      ><button appButton="primary" type="button" class="primary" (click)="open()">{{ t("Add company") }}</button>
     </div>
   </header>
   <p class="muted">
@@ -18,7 +18,7 @@
   @if (saved()) {
     <div class="success" role="status">{{ t("Saved") }}</div>
   }
-  <button
+  <button appButton="secondary" type="button"
     (click)="filtersOpen = !filtersOpen"
     [attr.aria-expanded]="filtersOpen"
     aria-controls="company-filters"
@@ -27,7 +27,7 @@
   </button>
   <div class="chips">
     @for (chip of chips; track chip[0]) {
-      <button (click)="remove(chip[0])">
+      <button appButton="secondary" type="button" (click)="remove(chip[0])">
         {{ t(chip[0] === "search" ? "Search" : "Status") }}:
         {{ t("" + chip[1]) }} ×
       </button>
@@ -49,23 +49,23 @@
           <option value="false">{{ t("Inactive") }}</option>
         </select></label
       >
-      <div class="actions">
-        <button class="primary" type="submit">{{ t("Apply") }}</button
-        ><button type="button" (click)="clear()">{{ t("Clear") }}</button>
+      <div class="actions app-action-group">
+        <button appButton="primary" class="primary" type="submit">{{ t("Apply") }}</button
+        ><button appButton="secondary" type="button" (click)="clear()">{{ t("Clear") }}</button>
       </div>
     </form>
   }
   @if (loading()) {
-    <p role="status">{{ t("Loading") }}…</p>
+    <app-table-loading />
   }
   @if (error()) {
     <div class="error" role="alert">
-      {{ error() }} <button (click)="refresh()">{{ t("Retry") }}</button>
+      {{ error() }} <button appButton="secondary" type="button" (click)="refresh()">{{ t("Retry") }}</button>
     </div>
   }
   @if (data(); as p) {
     <div class="surface table-wrap">
-      <table>
+      <div appTableRegion><table appTable="cards" cardSize="narrow">
         <thead>
           <tr>
             <th>{{ t("Company name") }}</th>
@@ -89,8 +89,8 @@
                 {{ row.linkedPatients }}
               </td>
               <td [attr.data-label]="t('Edit')">
-                <div class="actions">
-                  <button (click)="open(row)">{{ t("Edit") }}</button
+                <div class="actions app-action-group">
+                  <button appButton="dismiss" type="button" (click)="open(row)">{{ t("Edit") }}</button
                   ><a
                     class="button"
                     routerLink="/ceo/insurance"
@@ -102,21 +102,12 @@
             </tr>
           } @empty {
             <tr>
-              <td colspan="5">{{ t("No matching records") }}</td>
+              <td colspan="5"><app-table-empty /></td>
             </tr>
           }
         </tbody>
-      </table>
-      <nav class="pager" [attr.aria-label]="t('Page')">
-        <button (click)="page(-1)" [disabled]="p.page <= 1">
-          {{ t("Previous") }}</button
-        ><span
-          >{{ t("Page") }} {{ p.page }} {{ t("of") }} {{ pageCount }} ·
-          {{ p.total }}</span
-        ><button (click)="page(1)" [disabled]="p.page >= pageCount">
-          {{ t("Next") }}
-        </button>
-      </nav>
+      </table></div>
+      <app-table-pager [total]="p.total" [page]="p.page" [pageSize]="p.pageSize" [label]="t('Records')" (pageChange)="page($event-p.page)" />
     </div>
   }
   @if (model; as m) {
@@ -129,7 +120,7 @@
         <h2 id="company-dialog-title">
           {{ t(m.id ? "Edit" : "Add company") }}
         </h2>
-        <button
+        <button appButton="dismiss" type="button"
           (click)="close()"
           [disabled]="saving()"
           [attr.aria-label]="t('Close')"
@@ -185,10 +176,10 @@
             )
           }}
         </p>
-        <footer class="actions">
-          <button class="primary" type="submit" [disabled]="saving()">
-            {{ t(saving() ? "Saving" : "Save") }}</button
-          ><button type="button" (click)="close()" [disabled]="saving()">
+        <footer class="actions app-action-group">
+          <button appButton="dismiss" class="primary" type="submit" [disabled]="saving()" [actionPending]="saving()">
+            {{ t("Save") }}</button
+          ><button appButton="dismiss" type="button" (click)="close()" [disabled]="saving()">
             {{ t("Cancel") }}
           </button>
         </footer>

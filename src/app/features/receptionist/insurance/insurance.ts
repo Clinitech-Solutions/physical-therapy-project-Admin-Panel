@@ -1,3 +1,6 @@
+import { TableLoadingComponent } from '../../../shared/table-ui/table-ui';
+import { TableEmptyComponent } from '../../../shared/table-ui/table-ui';
+import { ActionButtonDirective } from '../../../shared/action-ui/action-button';
 import { ReceptionistLocale } from '../../../shared/receptionist-locale';
 import { Component, inject, OnInit, computed } from "@angular/core";
 import { CommonModule } from "@angular/common";
@@ -26,7 +29,7 @@ export interface InsuranceProvider {
 @Component({
   selector: "app-receptionist-insurance",
   standalone: true,
-  imports: [CommonModule, TranslateModule, FormsModule, CardModule, ButtonModule],
+  imports: [TableLoadingComponent, TableEmptyComponent, ActionButtonDirective, CommonModule, TranslateModule, FormsModule, CardModule, ButtonModule],
   templateUrl: "./insurance.html"
 })
 export class InsuranceComponent implements OnInit {

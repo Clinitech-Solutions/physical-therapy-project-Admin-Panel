@@ -1,3 +1,6 @@
+import { TableLoadingComponent } from '../../../shared/table-ui/table-ui';
+import { ActionButtonDirective } from '../../../shared/action-ui/action-button';
+import { TableEmptyComponent, TablePagerComponent, TablePresentationDirective, TableRegionDirective } from '../../../shared/table-ui/table-ui';
 import { PrintService } from '../../../shared/printing/print.service';
 import { PrintButtonComponent } from '../../../shared/printing/print-button.component';
 import { firstValueFrom as printValue } from 'rxjs';
@@ -15,7 +18,7 @@ import { ReceptionistLocale } from '../../../shared/receptionist-locale';
 import { billingArabic } from '../../receptionist/billing/billing-text';
 import { insuranceArabic } from './insurance-text';
 
-@Component({selector:'app-insurance-finance',standalone:true,imports:[CommonModule,FormsModule,RouterLink,PrintButtonComponent],templateUrl:'./insurance-finance.html',styleUrls:['./insurance-finance.css','./insurance-finance-tables.css','./insurance-finance-dialogs.css','./insurance-finance-responsive.css','./insurance-finance-mobile.css']})
+@Component({selector:'app-insurance-finance',standalone:true,imports:[TableLoadingComponent, ActionButtonDirective, TableEmptyComponent, TablePagerComponent, TablePresentationDirective, TableRegionDirective, CommonModule,FormsModule,RouterLink,PrintButtonComponent],templateUrl:'./insurance-finance.html',styleUrls:['./insurance-finance.css','./insurance-finance-tables.css','./insurance-finance-dialogs.css','./insurance-finance-responsive.css','./insurance-finance-mobile.css']})
 export class InsuranceFinanceComponent implements OnInit,OnDestroy {
   readonly printer=inject(PrintService);
   readonly prepareInvoicePrint=async()=>{

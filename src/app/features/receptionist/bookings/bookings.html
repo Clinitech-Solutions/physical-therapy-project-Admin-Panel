@@ -7,12 +7,12 @@
     <a routerLink="/receptionist/schedule" class="btn btn-outline-primary"><i class="bi bi-calendar-event" aria-hidden="true"></i>{{ 'SIDEBAR.TODAYS_SCHEDULE' | translate }}</a>
   </header>
   @if (bookingError()) { <p class="alert alert-warning booking-alert" role="alert">{{ locale.label(bookingError()) }}
-    @if (selectedPatientId && !context && !contextLoading()) { <button type="button" class="btn btn-link" (click)="onPatientChange(selectedPatientId)">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button> }
+    @if (selectedPatientId && !context && !contextLoading()) { <button appButton="secondary" type="button" class="btn btn-link" (click)="onPatientChange(selectedPatientId)">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button> }
   </p> }
   @if (bookingApi.uncertainKey()) {
     <div class="alert alert-warning" data-booking-reconciliation role="alert"><p>{{ 'RECEPTIONIST.UI.BOOKING_RECONCILE_REQUIRED' | translate }}</p>
-      <button type="button" class="btn btn-primary" (click)="reconcileBooking()" [disabled]="bookingBusy()">{{ 'RECEPTIONIST.UI.RECONCILE_BOOKING' | translate }}</button>
-      @if (canRetryPending) { <button type="button" class="btn btn-outline-secondary" (click)="retryPendingBooking()">{{ 'RECEPTIONIST.UI.RETRY_ORIGINAL_BOOKING' | translate }}</button> }
+      <button appButton="primary" type="button" class="btn btn-primary" (click)="reconcileBooking()" [disabled]="bookingBusy()">{{ 'RECEPTIONIST.UI.RECONCILE_BOOKING' | translate }}</button>
+      @if (canRetryPending) { <button appButton="secondary" type="button" class="btn btn-outline-secondary" (click)="retryPendingBooking()">{{ 'RECEPTIONIST.UI.RETRY_ORIGINAL_BOOKING' | translate }}</button> }
     </div>
   }
   @if (lastReceipt(); as receipt) { <div class="alert alert-success" role="status" data-booking-receipt>
@@ -23,7 +23,7 @@
     <main class="booking-sections" [attr.aria-busy]="bookingBusy() || contextLoading()">
       <section class="booking-card" aria-labelledby="patient-section-title" data-booking-section="patient">
         <div class="booking-section-heading"><h3 id="patient-section-title"><span class="section-number">1</span>{{ 'RECEPTIONIST.UI.BOOKING_PATIENT_PLAN' | translate }}</h3>
-          <button type="button" class="register-patient" (click)="openQuickAddModal()" [disabled]="bookingBusy() || hasUnresolvedBooking"><i class="bi bi-plus" aria-hidden="true"></i>{{ 'RECEPTIONIST.UI.FINANCE_REGISTER_PATIENT' | translate }}</button>
+          <button appButton="secondary" type="button" class="register-patient" (click)="openQuickAddModal()" [disabled]="bookingBusy() || hasUnresolvedBooking"><i class="bi bi-plus" aria-hidden="true"></i>{{ 'RECEPTIONIST.UI.FINANCE_REGISTER_PATIENT' | translate }}</button>
         </div>
         <div class="patient-plan-grid">
           <div class="patient-picker"><label for="booking-patient">{{ 'RECEPTIONIST.UI.PATIENT' | translate }} <span aria-hidden="true">*</span></label>
@@ -31,12 +31,12 @@
               <ng-template pTemplate="item" let-patient>{{ locale.patientName(patient) }} <small>{{patient.phone}}</small></ng-template>
               <ng-template pTemplate="selectedItem" let-patient><span class="selected-control-value"><i class="bi bi-person" aria-hidden="true"></i>{{ locale.patientName(patient) }}</span></ng-template>
             </p-select>
-            @if (directoryError()) { <p class="booking-inline-error" role="alert">{{ 'RECEPTIONIST.UI.PATIENTS_LOAD' | translate }}: {{ locale.label(directoryError()) }} <button type="button" class="btn btn-link" (click)="refreshPatients()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button></p> }
+            @if (directoryError()) { <p class="booking-inline-error" role="alert">{{ 'RECEPTIONIST.UI.PATIENTS_LOAD' | translate }}: {{ locale.label(directoryError()) }} <button appButton="secondary" type="button" class="btn btn-link" (click)="refreshPatients()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button></p> }
             @if (context) { <div class="patient-tags"><span class="patient-tag"><i class="bi bi-person-fill" aria-hidden="true"></i>{{ (context.isInsurance ? 'RECEPTIONIST.UI.FINANCE_INSURANCE' : 'RECEPTIONIST.UI.FINANCE_SELF_PAY') | translate }}</span><span class="patient-tag" [class.assessment-complete]="context.hasCompletedAssessment"><i [class]="context.hasCompletedAssessment ? 'bi bi-check-circle-fill' : 'bi bi-clipboard-pulse'" aria-hidden="true"></i>{{ (context.hasCompletedAssessment ? 'RECEPTIONIST.UI.BOOKING_ASSESSMENT_COMPLETE' : 'RECEPTIONIST.UI.BOOKING_INITIAL_ASSESSMENT') | translate }}</span></div> }
           </div>
           <dl class="plan-stats" data-plan-counts><div><dt>{{ 'RECEPTIONIST.UI.PLANNED_SESSIONS' | translate }}</dt><dd>{{ chosenPlan?.plannedSessions ?? '—' }}</dd></div><div><dt>{{ 'RECEPTIONIST.UI.BOOKED_SESSIONS' | translate }}</dt><dd>{{ chosenPlan?.bookedSessions ?? '—' }}</dd></div><div><dt>{{ 'RECEPTIONIST.COMPLETED_SESSIONS' | translate }}</dt><dd>{{ chosenPlan?.completedSessions ?? '—' }}</dd></div></dl>
         </div>
-        @if (contextLoading()) { <p class="booking-hint" role="status">{{ 'RECEPTIONIST.PROCESSING' | translate }}</p> }
+        @if (contextLoading()) { <app-table-loading /> }
         @if (context?.hasCompletedAssessment) {
           <p class="booking-hint">{{'RECEPTIONIST.UI.PRESCRIBED_WEEKLY_FREQUENCY'|translate}}: {{chosenPlan?.frequencyPerWeek ?? ('RECEPTIONIST.UI.FREQUENCY_CLARIFICATION'|translate)}}</p>
           @if (chosenPlan?.staffReviewRequired) { <p class="alert alert-info" role="status">{{ 'DOCTOR.BOOKING_REVIEW_REQUIRED' | translate }}</p> }
@@ -51,7 +51,7 @@
 
       <section class="booking-card" aria-labelledby="appointments-section-title" data-booking-section="appointments">
         <div class="booking-section-heading"><h3 id="appointments-section-title"><span class="section-number">2</span>{{ 'RECEPTIONIST.UI.BOOKING_APPOINTMENT_DETAILS' | translate }}</h3>
-          @if (context?.hasCompletedAssessment) { <div class="booking-segment" role="group" [attr.aria-label]="'RECEPTIONIST.UI.FINANCE_BOOKING_MODE' | translate"><button type="button" [class.selected]="bookingMode === 'single'" [attr.aria-pressed]="bookingMode === 'single'" (click)="setBookingMode('single')" [disabled]="bookingBusy() || hasUnresolvedBooking" data-booking-mode="single">{{ 'RECEPTIONIST.UI.BOOKING_SINGLE_SESSION' | translate }}</button><button type="button" [class.selected]="bookingMode === 'plan'" [attr.aria-pressed]="bookingMode === 'plan'" (click)="setBookingMode('plan')" [disabled]="bookingBusy() || hasUnresolvedBooking" data-booking-mode="plan">{{ 'RECEPTIONIST.UI.BOOKING_BULK' | translate }}</button></div> }
+          @if (context?.hasCompletedAssessment) { <div class="booking-segment" role="group" [attr.aria-label]="'RECEPTIONIST.UI.FINANCE_BOOKING_MODE' | translate"><button appButton="secondary" type="button" [class.selected]="bookingMode === 'single'" [attr.aria-pressed]="bookingMode === 'single'" (click)="setBookingMode('single')" [disabled]="bookingBusy() || hasUnresolvedBooking" data-booking-mode="single">{{ 'RECEPTIONIST.UI.BOOKING_SINGLE_SESSION' | translate }}</button><button appButton="secondary" type="button" [class.selected]="bookingMode === 'plan'" [attr.aria-pressed]="bookingMode === 'plan'" (click)="setBookingMode('plan')" [disabled]="bookingBusy() || hasUnresolvedBooking" data-booking-mode="plan">{{ 'RECEPTIONIST.UI.BOOKING_BULK' | translate }}</button></div> }
         </div>
         <fieldset class="booking-fields" [disabled]="!context || contextLoading() || bookingBusy() || hasUnresolvedBooking || !!context.hasCompletedAssessment && !chosenPlan">
           <div class="booking-grid">
@@ -65,23 +65,23 @@
           <div class="booking-schedule-footer">
             @if (bookingMode === 'plan') { <div class="booking-weekdays"><span class="field-caption">{{ 'RECEPTIONIST.UI.BOOKING_REPEAT_DAYS' | translate }}</span><div class="weekday-buttons">@for (day of bookingWeekDays; track day.value) { <label class="weekday-pill" [class.selected]="selectedDays.includes(day.value)"><input type="checkbox" [checked]="selectedDays.includes(day.value)" (change)="toggleBookingDay(day.value)" [attr.aria-label]="day.label" /><span>{{ day.label }}</span></label> }</div></div> }
             @else { <p class="booking-hint">{{ 'RECEPTIONIST.UI.END_TIME' | translate }}: <output data-calculated-end>{{ locale.date(scheduledEndDate, true) }}</output></p> }
-            <button type="button" class="btn btn-outline-primary booking-preview" (click)="previewBooking()" [disabled]="!canPreview" data-booking-preview><i class="bi bi-calendar-check" aria-hidden="true"></i>{{ 'RECEPTIONIST.UI.BOOKING_PREVIEW_APPOINTMENTS' | translate }}</button>
+            <button appButton="primary" type="button" class="btn btn-outline-primary booking-preview" (click)="previewBooking()" [disabled]="!canPreview" data-booking-preview><i class="bi bi-calendar-check" aria-hidden="true"></i>{{ 'RECEPTIONIST.UI.BOOKING_PREVIEW_APPOINTMENTS' | translate }}</button>
           </div>
         </fieldset>
-        @if (roomAvailabilityError()) { <p class="booking-inline-error" role="alert">{{ 'RECEPTIONIST.UI.ROOMS_LOAD' | translate }}: {{ locale.label(roomAvailabilityError()) }} <button type="button" class="btn btn-link" (click)="refreshRoomAvailability()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button></p> }
-        @if (clinicianService.error()) { <p class="booking-inline-error" role="alert">{{ 'RECEPTIONIST.UI.CLINICIANS_LOAD' | translate }}: {{ locale.label(clinicianService.error()) }} <button type="button" class="btn btn-link" (click)="loadEligibleClinicians()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button></p> }
+        @if (roomAvailabilityError()) { <p class="booking-inline-error" role="alert">{{ 'RECEPTIONIST.UI.ROOMS_LOAD' | translate }}: {{ locale.label(roomAvailabilityError()) }} <button appButton="secondary" type="button" class="btn btn-link" (click)="refreshRoomAvailability()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button></p> }
+        @if (clinicianService.error()) { <p class="booking-inline-error" role="alert">{{ 'RECEPTIONIST.UI.CLINICIANS_LOAD' | translate }}: {{ locale.label(clinicianService.error()) }} <button appButton="secondary" type="button" class="btn btn-link" (click)="loadEligibleClinicians()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button></p> }
         @if (context && bookingDates.length) {
           <div class="appointment-preview" data-appointment-preview><div class="preview-caption">{{ 'RECEPTIONIST.UI.BOOKING_GENERATED_APPOINTMENTS' | translate }} ({{ appointmentRows.length }})</div>
-            <div class="appointment-table-scroll" tabindex="0" role="region" [attr.aria-label]="'RECEPTIONIST.UI.BOOKING_GENERATED_APPOINTMENTS' | translate"><table class="appointment-table"><thead><tr><th>#</th><th>{{ 'COMMON.DATE' | translate }}</th><th>{{ 'RECEPTIONIST.UI.BOOKING_DAY' | translate }}</th><th>{{ 'COMMON.TIME' | translate }}</th><th>{{ 'RECEPTIONIST.UI.BOOKING_DURATION' | translate }}</th><th>{{ 'COMMON.DOCTOR' | translate }}</th><th>{{ 'COMMON.ROOM' | translate }}</th><th>{{ 'COMMON.STATUS' | translate }}</th></tr></thead><tbody>
+            <div class="appointment-table-scroll" tabindex="0" role="region" [attr.aria-label]="'RECEPTIONIST.UI.BOOKING_GENERATED_APPOINTMENTS' | translate"><div appTableRegion><table appTable="cards" cardSize="medium" class="appointment-table"><thead><tr><th>#</th><th>{{ 'COMMON.DATE' | translate }}</th><th>{{ 'RECEPTIONIST.UI.BOOKING_DAY' | translate }}</th><th>{{ 'COMMON.TIME' | translate }}</th><th>{{ 'RECEPTIONIST.UI.BOOKING_DURATION' | translate }}</th><th>{{ 'COMMON.DOCTOR' | translate }}</th><th>{{ 'COMMON.ROOM' | translate }}</th><th>{{ 'COMMON.STATUS' | translate }}</th></tr></thead><tbody>
               @for (slot of appointmentRows; track $index) { <tr><td>{{ $index + 1 }}</td><td>{{ locale.date(slot.startTime) }}</td><td>{{ formatWeekday(slot.startTime) }}</td><td class="appointment-time">{{ formatTime(slot.startTime) }} – {{ formatTime(slot.endTime) }}</td><td>{{ 'RECEPTIONIST.UI.BOOKING_60_MINUTES' | translate }}</td><td>{{ selectedDoctorName || '—' }}</td><td>{{ selectedRoomName || '—' }}</td><td><span class="slot-status" [class.available]="quote?.canSave" [class.conflict]="quote && !quote.canSave">{{ (quote ? quote.canSave ? 'RECEPTIONIST.UI.BOOKING_SLOT_AVAILABLE' : 'RECEPTIONIST.UI.BOOKING_REVIEW_REQUIRED' : 'RECEPTIONIST.UI.BOOKING_PENDING_PREVIEW') | translate }}</span>@for (conflict of slot.conflicts ?? []; track conflict) { <small class="booking-inline-error">{{ bookingRuleLabel(conflict) }}</small> }</td></tr> }
-            </tbody></table></div>
+            </tbody></table></div></div>
           </div>
         }
       </section>
 
       <section class="booking-card" aria-labelledby="pricing-section-title" data-booking-section="pricing">
         <div class="booking-section-heading"><h3 id="pricing-section-title"><span class="section-number">3</span>{{ 'RECEPTIONIST.UI.FINANCE_PRICING_PAYMENT' | translate }}</h3>
-          @if (context?.hasCompletedAssessment) { <div class="booking-segment" role="group" [attr.aria-label]="'RECEPTIONIST.UI.PRICING_MODE' | translate"><button type="button" [class.selected]="pricingMode === 'PerSession'" [attr.aria-pressed]="pricingMode === 'PerSession'" (click)="setPricingMode('PerSession')" [disabled]="!!agreement || !!context?.isInsurance || bookingBusy() || hasUnresolvedBooking" data-pricing-mode="PerSession">{{ 'RECEPTIONIST.UI.BOOKING_PER_SESSION' | translate }}</button><button type="button" [class.selected]="pricingMode === 'Package'" [attr.aria-pressed]="pricingMode === 'Package'" (click)="setPricingMode('Package')" [disabled]="!!agreement || !!context?.isInsurance || bookingBusy() || hasUnresolvedBooking" data-pricing-mode="Package">{{ 'RECEPTIONIST.UI.BOOKING_PACKAGE' | translate }}</button></div> }
+          @if (context?.hasCompletedAssessment) { <div class="booking-segment" role="group" [attr.aria-label]="'RECEPTIONIST.UI.PRICING_MODE' | translate"><button appButton="secondary" type="button" [class.selected]="pricingMode === 'PerSession'" [attr.aria-pressed]="pricingMode === 'PerSession'" (click)="setPricingMode('PerSession')" [disabled]="!!agreement || !!context?.isInsurance || bookingBusy() || hasUnresolvedBooking" data-pricing-mode="PerSession">{{ 'RECEPTIONIST.UI.BOOKING_PER_SESSION' | translate }}</button><button appButton="secondary" type="button" [class.selected]="pricingMode === 'Package'" [attr.aria-pressed]="pricingMode === 'Package'" (click)="setPricingMode('Package')" [disabled]="!!agreement || !!context?.isInsurance || bookingBusy() || hasUnresolvedBooking" data-pricing-mode="Package">{{ 'RECEPTIONIST.UI.BOOKING_PACKAGE' | translate }}</button></div> }
         </div>
         <fieldset class="booking-fields" [disabled]="!context || contextLoading() || bookingBusy() || hasUnresolvedBooking">
           @if (isNewPatient && !context?.isInsurance) { <label class="booking-field assessment-choice">{{ 'RECEPTIONIST.UI.ASSESSMENT_CHARGE' | translate }} *<select name="assessmentCharge" class="form-select" [(ngModel)]="assessmentCharge" (ngModelChange)="onAssessmentChargeChange()"><option [ngValue]="null">{{ 'RECEPTIONIST.UI.SELECT_ASSESSMENT_CHARGE' | translate }}</option><option value="Free">{{ 'RECEPTIONIST.UI.FREE' | translate }}</option><option value="Paid">{{ 'RECEPTIONIST.UI.PAID' | translate }}</option></select></label> }
@@ -101,7 +101,7 @@
             </div>
             @if (discountType === 'Percent' && (discountValue < 0 || discountValue > 100)) { <p class="booking-inline-error" role="alert">{{ 'RECEPTIONIST.UI.FINANCE_INVALID_DISCOUNT' | translate }}</p> }
             @if (agreement) { <p class="booking-hint">{{ 'RECEPTIONIST.UI.FINANCE_EXISTING_AGREEMENT' | translate }}</p> }
-            @if (!agreement) { <details class="booking-installments"><summary>{{ 'RECEPTIONIST.UI.INSTALLMENT_ARRANGEMENT' | translate }}</summary>@for (item of installments; track $index) { <div class="booking-grid installment-row"><label class="booking-field">{{ 'RECEPTIONIST.UI.DUE_DATE' | translate }}<input type="date" class="form-control" [(ngModel)]="item.dueDate" /></label><label class="booking-field">{{ 'RECEPTIONIST.UI.AMOUNT' | translate }}<input type="number" class="form-control" [(ngModel)]="item.amount" min="0.01" step="0.01" /></label><button type="button" class="btn btn-link" (click)="installments.splice($index, 1)">{{ 'COMMON.DELETE' | translate }}</button></div> }<button type="button" class="btn btn-link" (click)="installments.push({dueDate: '', amount: null})">{{ 'RECEPTIONIST.UI.ADD_INSTALLMENT' | translate }}</button></details> }
+            @if (!agreement) { <details class="booking-installments"><summary>{{ 'RECEPTIONIST.UI.INSTALLMENT_ARRANGEMENT' | translate }}</summary>@for (item of installments; track $index) { <div class="booking-grid installment-row"><label class="booking-field">{{ 'RECEPTIONIST.UI.DUE_DATE' | translate }}<input type="date" class="form-control" [(ngModel)]="item.dueDate" /></label><label class="booking-field">{{ 'RECEPTIONIST.UI.AMOUNT' | translate }}<input type="number" class="form-control" [(ngModel)]="item.amount" min="0.01" step="0.01" /></label><button appButton="secondary" type="button" class="btn btn-link" (click)="installments.splice($index, 1)">{{ 'COMMON.DELETE' | translate }}</button></div> }<button appButton="secondary" type="button" class="btn btn-link" (click)="installments.push({dueDate: '', amount: null})">{{ 'RECEPTIONIST.UI.ADD_INSTALLMENT' | translate }}</button></details> }
           }
         </fieldset>
       </section>
@@ -116,8 +116,8 @@
       <dl class="financial-lines financial-payment">@if (finance && finance.paidAmount > 0) { <div><dt>{{ 'RECEPTIONIST.UI.ACTUAL_AMOUNT_PAID' | translate }}</dt><dd>EGP {{ finance.paidAmount | number:'1.2-2' }}</dd></div> }<div class="paying-now"><dt>{{ 'RECEPTIONIST.UI.BOOKING_PAYING_NOW_SHORT' | translate }}</dt><dd>EGP {{ (isWaivedAssessment ? 0 : deposit) | number:'1.2-2' }}</dd></div><div><dt>{{ 'RECEPTIONIST.UI.BOOKING_REMAINING' | translate }}</dt><dd>{{ quote || finance ? 'EGP ' + ((quote?.remainingAmount ?? finance?.remainingAmount ?? 0) | number:'1.2-2') : '—' }}</dd></div></dl>
       @if (quote) { @for (error of quote.errors; track error) { <p class="booking-inline-error" role="alert">{{ bookingRuleLabel(error) }}</p> } }
       <div class="summary-notice" role="status"><i class="bi bi-info-circle" aria-hidden="true"></i><p>{{ (quote ? 'RECEPTIONIST.UI.BOOKING_PAYMENT_COVERAGE_NOTE' : 'RECEPTIONIST.UI.BOOKING_PREVIEW_NOTICE') | translate }}</p></div>
-      <button type="button" class="btn btn-primary booking-confirm" (click)="submitBooking()" [disabled]="!canConfirm" data-booking-confirm><i class="bi bi-check-circle-fill" aria-hidden="true"></i>{{ (bookingBusy() ? 'RECEPTIONIST.PROCESSING' : 'RECEPTIONIST.UI.BOOKING_CONFIRM') | translate }}</button>
-      <button type="button" class="booking-cancel" (click)="resetBookingForm()" [disabled]="bookingBusy() || !!bookingApi.uncertainKey()">{{ 'COMMON.CANCEL' | translate }}</button>
+      <button appButton="primary" type="button" class="btn btn-primary booking-confirm" (click)="submitBooking()" [disabled]="!canConfirm" data-booking-confirm><i class="bi bi-check-circle-fill" aria-hidden="true"></i>{{ (bookingBusy() ? 'RECEPTIONIST.PROCESSING' : 'RECEPTIONIST.UI.BOOKING_CONFIRM') | translate }}</button>
+      <button appButton="dismiss" type="button" class="booking-cancel" (click)="resetBookingForm()" [disabled]="bookingBusy() || !!bookingApi.uncertainKey()">{{ 'COMMON.CANCEL' | translate }}</button>
       <p class="summary-terms"><i class="bi bi-info-circle" aria-hidden="true"></i>{{ (isWaivedAssessment ? 'RECEPTIONIST.UI.BOOKING_FREE_ASSESSMENT_NOTE' : pricingMode === 'Package' && !isNewPatient ? 'RECEPTIONIST.UI.BOOKING_FULL_COURSE_NOTE' : 'RECEPTIONIST.UI.FINANCE_PER_SESSION_NOTICE') | translate }}</p>
     </aside>
   </div>
@@ -176,14 +176,12 @@
   </div>
 
   <ng-template pTemplate="footer">
-    <div class="modal-footer-actions">
-      <p-button [label]="'COMMON.CANCEL' | translate" [outlined]="true" severity="secondary"
-        (onClick)="closeAbsenceModal()">
-      </p-button>
-      <p-button [label]="'RECEPTIONIST.CONFIRM_COVERAGE' | translate" severity="danger" (onClick)="confirmAbsence()"
+    <div class="modal-footer-actions app-action-group"><p-button appButton="danger" [label]="'RECEPTIONIST.CONFIRM_COVERAGE' | translate" severity="danger" (onClick)="confirmAbsence()"
         [disabled]="!absentDoctorId || !coveringSeniorId">
       </p-button>
-    </div>
+<p-button appButton="dismiss" [label]="'COMMON.CANCEL' | translate" [outlined]="true" severity="secondary"
+        (onClick)="closeAbsenceModal()">
+      </p-button></div>
   </ng-template>
 </p-dialog>
 
@@ -210,11 +208,9 @@
         <p class="alert alert-warning d-block mb-2" role="alert">{{ 'RECEPTIONIST.UI.PATIENT_OUTCOME_UNKNOWN' | translate }}</p>
       }
       @if(patientService.creationOutcomeUnknown()){<a routerLink="/receptionist/patients" class="btn btn-outline-primary">{{'RECEPTIONIST.UI.RECONCILE_REGISTRATION'|translate}}</a>}
-    <div class="modal-footer-actions">
-    <p-button [label]="'COMMON.CANCEL' | translate" [outlined]="true" (onClick)="closeQuickAddModal()" [disabled]="registeringPatient()" />
-    <p-button [label]="'COMMON.SAVE' | translate" (onClick)="saveQuickPatient()" [loading]="registeringPatient()"
-      [disabled]="registeringPatient() || patientService.creationOutcomeUnknown()" />
-    </div>
+    <div class="modal-footer-actions app-action-group"><p-button appButton="primary" [label]="'COMMON.SAVE' | translate" (onClick)="saveQuickPatient()" [loading]="registeringPatient()"
+      [disabled]="registeringPatient() || patientService.creationOutcomeUnknown()"  [actionPending]="registeringPatient()" />
+<p-button appButton="dismiss" [label]="'COMMON.CANCEL' | translate" [outlined]="true" (onClick)="closeQuickAddModal()" [disabled]="registeringPatient()" /></div>
     </div>
   </ng-template>
 </p-dialog>

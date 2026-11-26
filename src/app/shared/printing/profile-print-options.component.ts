@@ -1,10 +1,11 @@
+import { ActionButtonDirective } from '../action-ui/action-button';
 import { Component, EventEmitter, Input, OnChanges, Output, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DialogModule } from 'primeng/dialog';
 import { PrintButtonComponent } from './print-button.component';
 import { PatientProfilePrintService, ProfilePrintOptions } from './patient-profile-print.service';
 
-@Component({selector:'app-profile-print-options',standalone:true,imports:[FormsModule,DialogModule,PrintButtonComponent],template:`
+@Component({selector:'app-profile-print-options',standalone:true,imports:[ActionButtonDirective, FormsModule,DialogModule,PrintButtonComponent],template:`
 <p-dialog [visible]="visible" (visibleChange)="visibleChange.emit($event)" [header]="printer.t('Print options')" [modal]="true" appendTo="body" [draggable]="false" [resizable]="false" [style]="{width:'440px',maxWidth:'calc(100vw - 24px)'}">
   <div class="print-options" [attr.dir]="printer.locale.language.startsWith('ar')?'rtl':'ltr'">
     <label><input type="checkbox" [(ngModel)]="options.allCourses">{{printer.t('All courses')}}</label>
@@ -17,7 +18,7 @@ import { PatientProfilePrintService, ProfilePrintOptions } from './patient-profi
       <label><input type="checkbox" [(ngModel)]="options.financial">{{printer.t('Patient financial summary')}}</label>
     }
     <label><input type="checkbox" [(ngModel)]="options.activity">{{printer.t('Activity history')}}</label>
-    <footer><button type="button" (click)="visibleChange.emit(false)">{{printer.t('Cancel')}}</button><app-print-button [prepare]="prepare" [disabled]="!hasSections" /></footer>
+    <footer class="app-action-group"><app-print-button [prepare]="prepare" [disabled]="!hasSections" /><button appButton="dismiss" type="button" (click)="visibleChange.emit(false)">{{printer.t('Cancel')}}</button></footer>
   </div>
 </p-dialog>`,styles:[`.print-options{color:var(--text-color,inherit)}label{display:flex;align-items:center;gap:10px;padding:8px 0;font-weight:normal}input{width:17px;height:17px;accent-color:#157e87}p{font-size:.9rem;margin:0 0 8px}footer{display:flex;gap:10px;align-items:start;justify-content:flex-end;margin-top:16px}button{font:inherit;color:inherit;background:transparent;border:1px solid #668b95;border-radius:6px;padding:7px 12px}`]})
 export class ProfilePrintOptionsComponent implements OnChanges {

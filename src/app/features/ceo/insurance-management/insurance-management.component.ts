@@ -1,3 +1,6 @@
+import { TableLoadingComponent } from '../../../shared/table-ui/table-ui';
+import { ActionButtonDirective } from '../../../shared/action-ui/action-button';
+import { TableEmptyComponent, TablePagerComponent, TablePresentationDirective, TableRegionDirective } from '../../../shared/table-ui/table-ui';
 import { CeoNotifications } from "../../../core/services/ceo-notifications";
 import { Component, ElementRef, inject, signal } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
@@ -28,7 +31,7 @@ interface CompanyPage {
 @Component({
   selector: "app-insurance-management",
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [TableLoadingComponent, ActionButtonDirective, TableEmptyComponent, TablePagerComponent, TablePresentationDirective, TableRegionDirective, FormsModule, RouterLink],
   templateUrl: "./insurance-management.component.html",
   styleUrl: "../workspace/workspace.css",
 })

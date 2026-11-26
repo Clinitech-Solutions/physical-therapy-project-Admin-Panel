@@ -10,11 +10,11 @@
   <h1>{{ 'DOCTOR.REASSESSMENT_QUEUE' | translate }}</h1>
   <app-reassessment-queue [review]="true" origin="queue" />
   } @if(loading()){
-  <p class="review-state" role="status">{{ 'DOCTOR.LOADING' | translate }}</p>
+  <app-table-loading />
   } @if(error()){
   <div class="review-error" role="alert">
     {{ error() }}
-    <button
+    <button appButton="secondary"
       type="button"
       class="btn btn-outline-secondary"
       [disabled]="busy()"
@@ -73,8 +73,8 @@
           </div>
         </div>
         @if(r.state === 'Requested' && canAct()) {
-        <div class="review-actions">
-          <button
+        <div class="review-actions app-action-group">
+          <button appButton="primary"
             class="btn btn-primary"
             type="button"
             data-start-review
@@ -167,7 +167,7 @@
         </fieldset>
         @if(clinicianError()){
         <p role="alert">
-          {{clinicianError()}}<button
+          {{clinicianError()}}<button appButton="secondary"
             type="button"
             class="btn btn-outline-secondary"
             (click)="loadClinicians()"
@@ -180,7 +180,7 @@
           {{'DOCTOR.BOOKING_REVIEW_REQUIRED'|translate}}
         </p>
         }
-        <button
+        <button appButton="primary"
           class="btn btn-primary"
           type="submit"
           data-complete-review
@@ -198,7 +198,7 @@
             [(ngModel)]="cancelReason"
           ></textarea>
         </label>
-        <button
+        <button appButton="secondary"
           class="btn btn-outline-secondary"
           type="button"
           [disabled]="busy() || !cancelReason.trim()"

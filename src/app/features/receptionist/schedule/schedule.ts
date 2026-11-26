@@ -1,3 +1,4 @@
+import { ActionButtonDirective } from '../../../shared/action-ui/action-button';
 import { ReceptionWarnings } from '../../../core/services/reception-warnings';
 import { AbsenceRecovery } from '../../../shared/components/absence-recovery/absence-recovery';
 import { clinicDay } from '../../../core/services/reception-api';
@@ -43,7 +44,7 @@ export interface ScheduleRoomOption {
 @Component({
   selector: 'app-receptionist-schedule',
   standalone: true,
-  imports: [ReceptionistTextPipe, AbsenceRecovery,
+  imports: [ActionButtonDirective, ReceptionistTextPipe, AbsenceRecovery,
     CommonModule,
     RouterModule,
     TranslateModule,

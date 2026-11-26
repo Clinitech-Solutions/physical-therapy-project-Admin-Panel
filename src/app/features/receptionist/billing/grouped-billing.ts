@@ -1,3 +1,6 @@
+import { TableLoadingComponent } from '../../../shared/table-ui/table-ui';
+import { ActionButtonDirective } from '../../../shared/action-ui/action-button';
+import { TableEmptyComponent, TablePagerComponent, TablePresentationDirective } from '../../../shared/table-ui/table-ui';
 import { PrintService } from '../../../shared/printing/print.service';
 import { PrintButtonComponent } from '../../../shared/printing/print-button.component';
 import { firstValueFrom as printValue } from 'rxjs';
@@ -13,7 +16,7 @@ import { AuthService } from '../../../core/services/auth';
 import { apiError } from '../../../core/services/reception-api';
 import { billingArabic } from './billing-text';
 
-@Component({ selector: 'app-grouped-billing', standalone: true, imports: [CommonModule, FormsModule, PrintButtonComponent], templateUrl: './grouped-billing.html', styleUrls: ['./grouped-billing.css', './grouped-billing-filters.css', './grouped-billing-table.css', './grouped-billing-responsive.css'] })
+@Component({ selector: 'app-grouped-billing', standalone: true, imports: [TableLoadingComponent, ActionButtonDirective, TableEmptyComponent, TablePagerComponent, TablePresentationDirective, CommonModule, FormsModule, PrintButtonComponent], templateUrl: './grouped-billing.html', styleUrls: ['./grouped-billing.css', './grouped-billing-filters.css', './grouped-billing-table.css', './grouped-billing-responsive.css'] })
 export class GroupedBillingComponent implements OnInit, OnDestroy {
   readonly printer = inject(PrintService);
   readonly preparePrint = async () => {

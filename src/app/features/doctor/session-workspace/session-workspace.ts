@@ -1,3 +1,6 @@
+import { TableEmptyComponent } from '../../../shared/table-ui/table-ui';
+import { TableLoadingComponent } from '../../../shared/table-ui/table-ui';
+import { ActionButtonDirective } from '../../../shared/action-ui/action-button';
 import { ClinicalAutosize } from "../clinical-autosize";
 import { ReceptionWarnings } from "../../../core/services/reception-warnings";
 import {
@@ -36,7 +39,7 @@ import { ReassessmentOutcome } from "../../../shared/components/reassessment-out
 @Component({
   selector: "app-doctor-session",
   standalone: true,
-  imports: [
+  imports: [TableEmptyComponent, TableLoadingComponent, ActionButtonDirective,
     CommonModule,
     FormsModule,
     RouterLink,

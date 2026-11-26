@@ -1,3 +1,5 @@
+import { TableLoadingComponent } from '../../../shared/table-ui/table-ui';
+import { ActionButtonDirective } from '../../../shared/action-ui/action-button';
 import { ReceptionWarnings } from "../../../core/services/reception-warnings";
 import {
   Component,
@@ -32,7 +34,7 @@ import { AuthService } from "../../../core/services/auth";
 @Component({
   selector: "app-re-assessment-form",
   standalone: true,
-  imports: [
+  imports: [TableLoadingComponent, ActionButtonDirective,
     CommonModule,
     FormsModule,
     RouterLink,

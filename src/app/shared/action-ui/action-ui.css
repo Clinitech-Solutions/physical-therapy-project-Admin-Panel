@@ -1,0 +1,235 @@
+/* Opt-in screen controls; isolated A4 documents do not import these rules. */
+@media screen {
+  :is(
+    button.app-button.app-button[data-action-variant],
+    p-button.app-button.app-button[data-action-variant] > button.p-button
+  ) {
+    --action-bg: var(--bg-card);
+    --action-fg: var(--text-primary);
+    --action-border: var(--border-color-strong);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 40px;
+    height: auto;
+    min-width: 40px;
+    width: auto;
+    max-width: 100%;
+    padding: 8px 14px;
+    margin: 0;
+    border: 1px solid var(--action-border);
+    border-radius: var(--radius-sm, 6px);
+    background: var(--action-bg);
+    color: var(--action-fg);
+    font: 600 13px/1.35 var(--font-body);
+    text-decoration: none;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    vertical-align: middle;
+    cursor: pointer;
+    box-shadow: none;
+    transition:
+      background var(--transition-fast),
+      box-shadow var(--transition-fast),
+      filter var(--transition-fast);
+  }
+  :is(
+    button.app-button.app-button[data-action-variant="primary"],
+    p-button.app-button.app-button[data-action-variant="primary"]
+      > button.p-button
+  ) {
+    --action-bg: var(--mq-teal);
+    --action-fg: #0a1628;
+    --action-border: var(--mq-teal);
+  }
+  :is(
+    button.app-button.app-button[data-action-variant="dismiss"],
+    p-button.app-button.app-button[data-action-variant="dismiss"]
+      > button.p-button
+  ) {
+    --action-bg: transparent;
+    --action-fg: var(--text-secondary);
+    --action-border: var(--border-color-strong);
+  }
+  :is(
+    button.app-button.app-button[data-action-variant="danger"],
+    p-button.app-button.app-button[data-action-variant="danger"]
+      > button.p-button
+  ) {
+    --action-bg: var(--color-danger-bg);
+    --action-fg: var(--color-danger);
+    --action-border: var(--color-danger);
+  }
+  :is(
+    button.app-button.app-button[data-action-size="compact"],
+    p-button.app-button.app-button[data-action-size="compact"] > button.p-button
+  ),
+  .ui-actions
+    :is(
+      button.app-button.app-button[data-action-variant],
+      p-button.app-button.app-button[data-action-variant] > button.p-button
+    ) {
+    min-height: 34px;
+    min-width: 34px;
+    padding: 6px 10px;
+  }
+  :is(
+      button.app-button.app-button[data-action-variant],
+      p-button.app-button.app-button[data-action-variant] > button.p-button
+    ):where(:not([data-action-appearance="identity"])):hover:not(:disabled) {
+    filter: brightness(1.08);
+    box-shadow: 0 0 0 2px var(--border-color);
+  }
+  :is(
+      button.app-button.app-button[data-action-variant],
+      p-button.app-button.app-button[data-action-variant] > button.p-button
+    ):where(:not([data-action-appearance="identity"])):active:not(:disabled) {
+    filter: brightness(0.92);
+  }
+  :is(
+    button.app-button.app-button[data-action-variant],
+    p-button.app-button.app-button[data-action-variant] > button.p-button
+  ):where(:not([data-action-appearance="identity"])):focus-visible {
+    outline: 3px solid var(--mq-teal);
+    outline-offset: 3px;
+  }
+  :is(
+    button.app-button.app-button[data-action-variant],
+    p-button.app-button.app-button[data-action-variant] > button.p-button
+  ):disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: none;
+    box-shadow: none;
+  }
+  :is(
+      button.app-button.app-button[data-action-variant],
+      p-button.app-button.app-button[data-action-variant] > button.p-button
+    )
+    :is(i, svg) {
+    flex-shrink: 0;
+    font-size: 16px;
+    line-height: 1;
+  }
+  .app-action-group.app-action-group {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 10px;
+    min-width: 0;
+  }
+  .app-action-group
+    > :is(
+      :is(
+        button.app-button.app-button,
+        p-button.app-button.app-button > button.p-button
+      ),
+      app-print-button
+    ) {
+    flex: 0 1 auto;
+    width: auto;
+    max-width: 100%;
+    margin: 0;
+  }
+  .app-action-group app-print-button {
+    display: inline-flex;
+  }
+  .app-action-group
+    :is(
+      button.app-button.app-button,
+      p-button.app-button.app-button > button.p-button
+    ) {
+    min-height: 40px;
+  }
+  .action-choice.action-choice {
+    height: auto;
+    white-space: normal;
+    text-align: start;
+    justify-content: flex-start;
+  }
+  .inline-control.inline-control {
+    background: transparent;
+    border-color: transparent;
+    text-align: start;
+    justify-content: flex-start;
+    padding-inline: 4px;
+    font-weight: 600;
+  }
+  @media (max-width: 600px) {
+    :is(
+      button.app-button.app-button[data-action-variant],
+      p-button.app-button.app-button[data-action-variant] > button.p-button
+    ),
+    :is(
+      button.app-button.app-button[data-action-size="compact"],
+      p-button.app-button.app-button[data-action-size="compact"]
+        > button.p-button
+    ),
+    .ui-actions
+      :is(
+        button.app-button.app-button[data-action-variant],
+        p-button.app-button.app-button[data-action-variant] > button.p-button
+      ),
+    .app-action-group
+      :is(
+        button.app-button.app-button,
+        p-button.app-button.app-button > button.p-button
+      ) {
+      min-height: 44px;
+      min-width: 44px;
+      padding: 9px 12px;
+    }
+  }
+}
+
+@media screen {
+  :is(button.app-button[data-action-loader],p-button.app-button[data-action-loader] > button.p-button)::before {
+    content:""; width:12px; height:12px; flex:0 0 12px; border:2px solid transparent; border-radius:50%;
+  }
+  :is(button.app-button[data-action-loader][aria-busy=true],p-button.app-button[data-action-loader][aria-busy=true] > button.p-button)::before {
+    border-color:currentColor; border-inline-end-color:transparent; animation:action-spin .8s linear infinite;
+  }
+  p-button.app-button[data-action-loader] > button.p-button .p-button-loading-icon {display:none}
+  @keyframes action-spin {to{transform:rotate(360deg)}}
+  @media(prefers-reduced-motion:reduce){:is(button.app-button,p-button.app-button > button.p-button)::before{animation:none}}
+}
+
+/* Utilities and clickable identities retain their lighter presentation. */
+@media screen {
+  button.app-button.app-button[data-action-variant][data-action-size][data-action-appearance="utility"],
+  button.app-button.app-button[data-action-variant][data-action-size][data-action-appearance="identity"],
+  button.app-button.app-button[data-action-variant][data-action-size][data-action-appearance="avatar"] {
+    border:0; background:transparent; box-shadow:none; transform:none; filter:none;
+  }
+  button.app-button.app-button[data-action-variant][data-action-size][data-action-appearance="utility"] {padding:4px 6px}
+  button.app-button.app-button[data-action-variant][data-action-size][data-action-appearance="utility"]:hover:not(:disabled) {background:var(--mq-teal-dim)}
+  button.app-button.app-button[data-action-variant][data-action-size][data-action-appearance="identity"] {
+    padding:0; min-width:0; min-height:32px; text-align:start; justify-content:flex-start; border-radius:0;
+    color:var(--text-primary); outline:none; text-decoration:none;
+    transition:color var(--transition-fast);
+  }
+  /* Identities open profiles without inheriting boxed action hover/focus effects. */
+  button.app-button.app-button[data-action-variant][data-action-size][data-action-appearance="identity"]:hover:not(:disabled) {
+    color:var(--mq-teal);
+  }
+  button.app-button.app-button[data-action-variant][data-action-size][data-action-appearance="identity"]:focus-visible {
+    text-decoration:underline;
+    text-decoration-thickness:2px;
+    text-underline-offset:3px;
+  }
+  button.app-button[data-action-appearance="identity"]::before,
+  button.app-button[data-action-appearance="identity"]::after {
+    content:none;
+  }
+  button.app-button.app-button[data-action-variant][data-action-size][data-action-appearance="avatar"] {padding:0;border-radius:50%;background:var(--mq-teal-dim)}
+  .topbar button.app-button.app-button.mobile-menu-toggle[data-action-appearance="utility"] {display:none}
+  @media(max-width:768px){.topbar button.app-button.app-button.mobile-menu-toggle[data-action-appearance="utility"] {display:inline-flex}}
+  @media(max-width:600px){button.app-button.app-button[data-action-variant][data-action-size][data-action-appearance="identity"] {min-height:44px}}
+}
+
+@media screen {
+  .lang-dropdown button.app-button.app-button[data-action-variant][data-action-size][data-action-appearance="utility"] {width:100%;justify-content:flex-start;border-radius:0;padding:10px 16px}
+  .lang-dropdown button.app-button.app-button[data-action-variant][data-action-size][data-action-appearance="utility"].active {background:var(--mq-teal-dim);color:var(--text-primary)}
+}

@@ -1,0 +1,324 @@
+/* Opt-in screen presentation. Print documents have their own isolated stylesheet. */
+@media screen {
+  .ui-table-scroll {
+    min-width: 0;
+    max-width: 100%;
+    overflow: auto;
+    overscroll-behavior-inline: contain;
+    scrollbar-gutter: stable;
+    border-radius: 10px;
+    background: var(--bg-card);
+  }
+  .ui-table-scroll:focus-visible {
+    outline: 2px solid var(--mq-teal);
+    outline-offset: 2px;
+  }
+  table.ui-data-table[data-ui-table] {
+    display: table;
+    width: 100%;
+    min-width: var(--table-min-width, 720px);
+    border-collapse: collapse;
+    table-layout: auto;
+    color: var(--text-primary);
+    font-size: 13px;
+    line-height: 1.45;
+    text-align: start;
+  }
+  table.ui-data-table[data-ui-table] > thead {
+    display: table-header-group;
+  }
+  table.ui-data-table[data-ui-table] > tbody {
+    display: table-row-group;
+  }
+  table.ui-data-table[data-ui-table] > thead > tr,
+  table.ui-data-table[data-ui-table] > tbody > tr {
+    display: table-row;
+    grid-template-columns: none;
+    height: auto;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    border-radius: 0;
+    border: 0;
+    background: transparent;
+  }
+  table.ui-data-table[data-ui-table] > thead > tr > th,
+  table.ui-data-table[data-ui-table] > tbody > tr > td {
+    display: table-cell;
+    text-align: start;
+    vertical-align: middle;
+    padding: 11px 12px;
+    border: 0;
+    border-bottom: 1px solid var(--border-color);
+    height: auto;
+    max-width: none;
+    min-width: 0;
+    overflow: visible;
+    text-overflow: clip;
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+  table.ui-data-table[data-ui-table] > thead > tr > th {
+    font-size: 12px;
+    font-weight: 600;
+    background: var(--bg-elevated);
+    color: var(--text-secondary);
+    overflow-wrap: normal;
+  }
+  table.ui-data-table[data-ui-table] > tbody > tr > td::before {
+    content: none;
+  }
+  table.ui-data-table[data-ui-table] .ui-money {
+    text-align: end;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    min-width: 110px;
+  }
+  table.ui-data-table[data-ui-table] > thead > tr > th.ui-money {
+    white-space: normal;
+  }
+  table.ui-data-table[data-ui-table] .ui-money small,
+  table.ui-data-table[data-ui-table] .ui-money .status {
+    white-space: normal;
+  }
+  table.ui-data-table[data-ui-table] .ui-actions {
+    text-align: start;
+    min-width: 120px;
+  }
+  table.ui-data-table[data-ui-table] .ui-actions button {
+    white-space: normal;
+    min-height: 36px;
+  }
+  table.ui-data-table[data-ui-table] .ui-identity {
+    min-width: 190px;
+    max-width: 320px;
+  }
+  table.ui-data-table[data-ui-table] small,
+  table.ui-data-table[data-ui-table] strong {
+    overflow-wrap: anywhere;
+  }
+  table.ui-data-table[data-ui-table] .identity {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  table.ui-data-table[data-ui-table] .identity > div {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  table.ui-data-table[data-ui-table] > tbody > tr > td[colspan] {
+    padding: 0;
+  }
+  table.ui-data-table[data-ui-table] > tbody > tr.ui-expanded > td {
+    background: var(--bg-elevated);
+    padding: 12px 16px;
+    border-inline-start: 3px solid var(--border-color-strong);
+  }
+  table.ui-data-table[data-ui-table] .invoice-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: flex-start;
+    min-width: 130px;
+  }
+  table.ui-data-table[data-ui-table] .invoice-actions small {
+    flex-basis: 100%;
+    text-align: start;
+  }
+  .ui-row-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+  }
+  .ui-list-items {
+    min-width: 0;
+  }
+  .ui-list-items > * {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+}
+@media screen and (max-width: 1100px) {
+  table.ui-data-table[data-ui-table="cards"][data-card-size="wide"] {
+    --table-card: 1;
+  }
+}
+@media screen and (max-width: 900px) {
+  table.ui-data-table[data-ui-table="cards"][data-card-size="medium"] {
+    --table-card: 1;
+  }
+}
+@media screen and (max-width: 700px) {
+  table.ui-data-table[data-ui-table="cards"][data-card-size="narrow"] {
+    --table-card: 1;
+  }
+}
+/* Explicit per-content thresholds, keeping nested financial tables scrollable. */
+@media screen and (max-width: 1100px) {
+  table.ui-data-table[data-ui-table="cards"][data-card-size="wide"],
+  table.ui-data-table[data-ui-table="cards"][data-card-size="wide"] > tbody {
+    display: block;
+    min-width: 0;
+  }
+  table.ui-data-table[data-ui-table="cards"][data-card-size="wide"] > thead {
+    display: none;
+  }
+  table.ui-data-table[data-ui-table="cards"][data-card-size="wide"]
+    > tbody
+    > tr {
+    display: block;
+    padding: 10px;
+    border-bottom: 1px solid var(--border-color);
+  }
+  table.ui-data-table[data-ui-table="cards"][data-card-size="wide"]
+    > tbody
+    > tr
+    > td {
+    display: grid;
+    grid-template-columns: minmax(100px, 34%) minmax(0, 1fr);
+    align-items: start;
+    gap: 10px;
+    padding: 7px 2px;
+    border: 0;
+    max-width: none;
+    min-width: 0;
+    text-align: start;
+  }
+  table.ui-data-table[data-ui-table="cards"][data-card-size="wide"]
+    > tbody
+    > tr
+    > td::before {
+    content: attr(data-label);
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 400;
+    white-space: normal;
+  }
+}
+@media screen and (max-width: 900px) {
+  table.ui-data-table[data-ui-table="cards"][data-card-size="medium"],
+  table.ui-data-table[data-ui-table="cards"][data-card-size="medium"] > tbody {
+    display: block;
+    min-width: 0;
+  }
+  table.ui-data-table[data-ui-table="cards"][data-card-size="medium"] > thead {
+    display: none;
+  }
+  table.ui-data-table[data-ui-table="cards"][data-card-size="medium"]
+    > tbody
+    > tr {
+    display: block;
+    padding: 10px;
+    border-bottom: 1px solid var(--border-color);
+  }
+  table.ui-data-table[data-ui-table="cards"][data-card-size="medium"]
+    > tbody
+    > tr
+    > td {
+    display: grid;
+    grid-template-columns: minmax(100px, 34%) minmax(0, 1fr);
+    gap: 10px;
+    padding: 7px 2px;
+    border: 0;
+    min-width: 0;
+    text-align: start;
+  }
+  table.ui-data-table[data-ui-table="cards"][data-card-size="medium"]
+    > tbody
+    > tr
+    > td::before {
+    content: attr(data-label);
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 400;
+    white-space: normal;
+  }
+}
+@media screen and (max-width: 700px) {
+  table.ui-data-table[data-ui-table="cards"][data-card-size="narrow"],
+  table.ui-data-table[data-ui-table="cards"][data-card-size="narrow"] > tbody {
+    display: block;
+    min-width: 0;
+  }
+  table.ui-data-table[data-ui-table="cards"][data-card-size="narrow"] > thead {
+    display: none;
+  }
+  table.ui-data-table[data-ui-table="cards"][data-card-size="narrow"]
+    > tbody
+    > tr {
+    display: block;
+    padding: 10px;
+    border-bottom: 1px solid var(--border-color);
+  }
+  table.ui-data-table[data-ui-table="cards"][data-card-size="narrow"]
+    > tbody
+    > tr
+    > td {
+    display: grid;
+    grid-template-columns: minmax(100px, 34%) minmax(0, 1fr);
+    gap: 10px;
+    padding: 7px 2px;
+    border: 0;
+    min-width: 0;
+    text-align: start;
+  }
+  table.ui-data-table[data-ui-table="cards"][data-card-size="narrow"]
+    > tbody
+    > tr
+    > td::before {
+    content: attr(data-label);
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 400;
+    white-space: normal;
+  }
+}
+@media screen and (max-width: 1100px) {
+  table.ui-data-table[data-ui-table="cards"] > tbody > tr > td[colspan] {
+    display: block !important;
+    padding: 0;
+    min-width: 0;
+  }
+  table.ui-data-table[data-ui-table="cards"]
+    > tbody
+    > tr
+    > td[colspan]::before {
+    content: none;
+  }
+  table.ui-data-table[data-ui-table="cards"] > tbody > tr.ui-expanded {
+    padding: 0;
+  }
+  table.ui-data-table[data-ui-table="cards"] .ui-actions button {
+    min-height: 44px;
+  }
+}
+
+/* A complete large amount gets its own line when a phone card cannot hold label + value. */
+@media screen and (max-width: 420px) {
+  table.ui-data-table[data-ui-table="cards"] > tbody > tr > td.ui-money {
+    display: block;
+    text-align: end;
+    white-space: nowrap;
+  }
+  table.ui-data-table[data-ui-table="cards"]
+    > tbody
+    > tr
+    > td.ui-money::before {
+    display: block;
+    text-align: start;
+    margin-bottom: 4px;
+  }
+}
+
+@media screen {
+  table.ui-data-table[data-ui-table] > :is(thead,tbody) > tr,
+  table.ui-data-table[data-ui-table] > :is(thead,tbody) > tr > :is(th,td) {
+    transform:none; animation:none; transition:none;
+  }
+}
+
+@media screen {
+  table.ui-data-table[data-ui-table] .ui-reference {min-width:180px;max-width:300px;white-space:normal;overflow-wrap:anywhere}
+}

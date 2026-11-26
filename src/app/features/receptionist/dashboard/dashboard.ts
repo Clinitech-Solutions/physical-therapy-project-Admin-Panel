@@ -1,3 +1,7 @@
+import { TableLoadingComponent } from '../../../shared/table-ui/table-ui';
+import { TableEmptyComponent } from '../../../shared/table-ui/table-ui';
+import { ActionButtonDirective } from '../../../shared/action-ui/action-button';
+import { TablePresentationDirective, TableRegionDirective } from '../../../shared/table-ui/table-ui';
 import {ReassessmentQueue} from '../../../shared/components/reassessment-queue/reassessment-queue';
 import { RoomService } from '../../../core/services/room.service';
 import { ClinicianService } from '../../../core/services/clinician.service';
@@ -24,7 +28,7 @@ import { PatientProfileComponent } from '../../../shared/components/patient-prof
 @Component({
   selector: "app-receptionist-dashboard",
   standalone: true,
-  imports: [ReassessmentQueue,CommonModule, TranslateModule, FormsModule, ButtonModule, TooltipModule, DialogModule, InputNumberModule, PatientProfileComponent],
+  imports: [TableLoadingComponent, TableEmptyComponent, ActionButtonDirective, TablePresentationDirective, TableRegionDirective, ReassessmentQueue,CommonModule, TranslateModule, FormsModule, ButtonModule, TooltipModule, DialogModule, InputNumberModule, PatientProfileComponent],
   templateUrl: "./dashboard.html",
   styleUrl: "./dashboard.css",
 })

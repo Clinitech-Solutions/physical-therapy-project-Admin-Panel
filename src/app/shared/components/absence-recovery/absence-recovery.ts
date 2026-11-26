@@ -1,3 +1,6 @@
+import { TableLoadingComponent } from '../../table-ui/table-ui';
+import { TableEmptyComponent } from '../../table-ui/table-ui';
+import { ActionButtonDirective } from '../../action-ui/action-button';
 import {
   Component,
   DestroyRef,
@@ -32,7 +35,7 @@ import { PatientAvatar } from "../../../features/doctor/patient-avatar";
 @Component({
   selector: "app-absence-recovery",
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule, PatientAvatar],
+  imports: [TableLoadingComponent, TableEmptyComponent, ActionButtonDirective, CommonModule, FormsModule, TranslateModule, PatientAvatar],
   templateUrl: "./absence-recovery.html",
   styleUrls: ["./absence-recovery.css", "./absence-recovery-dialog.css"],
 })

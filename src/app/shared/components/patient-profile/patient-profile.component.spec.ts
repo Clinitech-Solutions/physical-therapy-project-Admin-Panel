@@ -667,15 +667,15 @@ describe("Shared profile and inline single-session reschedule (mocked HTTP)", ()
     await open();
     c.setTab("activity");
     await render();
-    expect(document.querySelector(".activity-empty")).toBeTruthy();
+    expect(document.querySelector("#profile-panel-activity app-table-empty")).toBeTruthy();
     c.loading.set(true);
     await render();
-    expect(document.querySelector(".activity-empty")).toBeNull();
-    expect(document.querySelector(".profile-state[role=status]")).toBeTruthy();
+    expect(document.querySelector("#profile-panel-activity app-table-empty")).toBeNull();
+    expect(document.querySelector("app-table-loading [role=status]")).toBeTruthy();
     c.loading.set(false);
     c.profileError.set("Failed request");
     await render();
-    expect(document.querySelector(".activity-empty")).toBeNull();
+    expect(document.querySelector("#profile-panel-activity app-table-empty")).toBeNull();
     expect(
       document.querySelector(".profile-alert[role=alert]")?.textContent,
     ).toContain("Failed request");

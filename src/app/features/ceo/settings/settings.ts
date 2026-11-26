@@ -1,3 +1,5 @@
+import { TableLoadingComponent } from '../../../shared/table-ui/table-ui';
+import { ActionButtonDirective } from '../../../shared/action-ui/action-button';
 import { CeoNotifications } from "../../../core/services/ceo-notifications";
 import { Component, inject, signal } from "@angular/core";
 import { FormsModule, NgForm } from "@angular/forms";
@@ -10,7 +12,7 @@ import { CeoLocale } from "../workspace/ceo-locale";
 @Component({
   selector: "app-ceo-settings",
   standalone: true,
-  imports: [FormsModule],
+  imports: [TableLoadingComponent, ActionButtonDirective, FormsModule],
   templateUrl: "./settings.html",
   styleUrl: "../workspace/workspace.css",
 })

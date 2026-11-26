@@ -1,3 +1,5 @@
+import { TableLoadingComponent } from '../../../shared/table-ui/table-ui';
+import { ActionButtonDirective } from '../../../shared/action-ui/action-button';
 import { PrintService } from '../../../shared/printing/print.service';
 import { PrintButtonComponent } from '../../../shared/printing/print-button.component';
 import { firstValueFrom as printValue } from 'rxjs';
@@ -15,7 +17,7 @@ import { CeoLocale } from "../workspace/ceo-locale";
 @Component({
   selector: "app-ceo-dashboard",
   standalone: true,
-  imports: [FormsModule, RouterLink, PrintButtonComponent],
+  imports: [TableLoadingComponent, ActionButtonDirective, FormsModule, RouterLink, PrintButtonComponent],
   templateUrl: "./dashboard.html",
   styleUrl: "../workspace/workspace.css",
 })

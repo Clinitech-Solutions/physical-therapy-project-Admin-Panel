@@ -6,7 +6,7 @@
 </div>
 
 @if (error()) { <p class="alert alert-warning" role="alert">{{ error() }}</p> }
-@if (loading()) { <p role="status">{{ 'RECEPTIONIST.PROCESSING' | translate }}</p> }
+@if (loading()) { <app-table-loading /> }
 @if(context()?.departedAt && !context()?.completedAt){<p class="alert alert-warning" role="status" data-departed-unsigned>{{'SENIOR.DEPARTED_UNSIGNED'|translate}}. {{'SENIOR.DEPARTURE_NOT_SIGNOFF'|translate}}</p>}
 @if(context()?.completedAt){<p class="alert alert-info" role="status">{{'SENIOR.SIGNED_READ_ONLY'|translate}}</p>}
 <div class="senior-grid gap-3 align-items-start">
@@ -71,10 +71,10 @@
           <textarea id="assessment-exercises" class="form-control" formControlName="exercises" rows="3" style="resize: vertical;"></textarea>
         </div>
 
-        <div class="mt-3">
-          <button type="button" class="btn btn-outline-secondary w-100 mb-2" data-save-assessment-draft (click)="saveDraft()"
+        <div class="mt-3 app-action-group">
+          <button appButton="primary" type="button" class="btn btn-outline-secondary" data-save-assessment-draft (click)="saveDraft()"
             [disabled]="saving() || loading() || !context() || !!context()?.completedAt">{{ 'SENIOR.SAVE_DRAFT' | translate }}</button>
-          <button type="submit" class="btn btn-primary w-100" [disabled]="saving() || loading() || !patient() || !context() || !!context()?.completedAt">
+          <button appButton="primary" type="submit" class="btn btn-primary" [disabled]="saving() || loading() || !patient() || !context() || !!context()?.completedAt">
             <i class="bi bi-check-circle"></i> {{ 'SENIOR.SUBMIT_ASSESSMENT' | translate }}
           </button>
         </div>
@@ -129,7 +129,7 @@
         
         <div class="d-flex flex-column">
           @for (doc of smartDoctors(); track doc.id) {
-            <div class="p-2 mb-2 d-flex flex-column gap-2" 
+            <button type="button" appButton="secondary" class="p-2 mb-2 d-flex flex-column gap-2 action-choice"
                  (click)="selectDoctorFromList(doc.id)"
                  style="border-radius: var(--radius-md); border: 1px solid var(--border-color); cursor: pointer; transition: all 0.2s;"
                  [style.background]="form.get('assignedDoctorId')?.value === doc.id ? 'var(--mq-teal-dim)' : 'transparent'"
@@ -152,7 +152,7 @@
                   <span class="badge badge-warning">★ {{ 'SENIOR.RECOMMENDED' | translate }}</span>
                 }
               </div>
-            </div>
+            </button>
           }
         </div>
       </div>

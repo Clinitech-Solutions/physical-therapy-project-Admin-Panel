@@ -66,7 +66,7 @@
             </a>
           </div>
 
-          <button type="submit" class="btn btn-primary w-100 mt-4" [disabled]="loginForm.invalid || isSubmitting()">
+          <button appButton="primary" type="submit" class="btn btn-primary w-100 mt-4" [disabled]="loginForm.invalid || isSubmitting()">
             <span *ngIf="isSubmitting()" class="spinner-border spinner-border-sm me-2"></span>
             {{ 'AUTH.SIGN_IN' | translate }}
           </button>
@@ -79,10 +79,10 @@
         </div>
 
         <div class="grid-2 gap-3 mb-4">
-          <button class="btn btn-ghost" style="border: 1px solid var(--border-color); background: var(--bg-elevated)">
+          <button appButton="secondary" type="button" class="btn btn-ghost" style="border: 1px solid var(--border-color); background: var(--bg-elevated)">
             <i class="bi bi-google"></i> Google
           </button>
-          <button class="btn btn-ghost" style="border: 1px solid var(--border-color); background: var(--bg-elevated)">
+          <button appButton="secondary" type="button" class="btn btn-ghost" style="border: 1px solid var(--border-color); background: var(--bg-elevated)">
             <i class="bi bi-apple"></i> Apple
           </button>
         </div>

@@ -27,7 +27,7 @@
         <label class="form-label" for="create-staff-password">{{ 'CEO.STAFF.PASSWORD' | translate }}</label>
         <div class="input-group">
           <input [type]="showPassword ? 'text' : 'password'" id="create-staff-password" formControlName="password" class="form-control" [ngClass]="{'is-invalid': userForm.controls.password.invalid && userForm.controls.password.touched}" autocomplete="new-password">
-          <button class="btn btn-outline-secondary" type="button" (click)="togglePasswordVisibility()" [attr.aria-label]="locale.t(showPassword ? 'Hide password' : 'Show password')">
+          <button appButton="secondary" class="btn btn-outline-secondary" type="button" (click)="togglePasswordVisibility()" [attr.aria-label]="locale.t(showPassword ? 'Hide password' : 'Show password')">
             <i class="bi" [ngClass]="showPassword ? 'bi-eye-slash' : 'bi-eye'"></i>
           </button>
           <div class="invalid-feedback">
@@ -77,7 +77,7 @@
     }
     @if (saveError) { <p class="text-danger mt-3" role="alert">{{ saveError }}</p> }
     <div class="mt-4 text-end">
-      <button type="submit" class="btn btn-primary" [disabled]="userForm.invalid || isSubmitting">
+      <button appButton="primary" type="submit" class="btn btn-primary" [disabled]="userForm.invalid || isSubmitting">
         <i class="bi bi-check-circle me-2"></i> {{ 'CEO.STAFF.SAVE_USER' | translate }}
       </button>
     </div>

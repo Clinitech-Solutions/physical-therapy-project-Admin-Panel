@@ -5,7 +5,7 @@
         {{ 'SIDEBAR.ROOMS' | translate }}
       </h4>
     </div>
-    <button
+    <button appButton="primary" actionSize="compact" type="button"
       class="btn btn-primary btn-sm d-flex align-items-center gap-2"
       (click)="openAddRoomModal()"
       [disabled]="isSubmitting()"
@@ -15,11 +15,11 @@
     </button>
   </div>
   @if (loading()) {
-  <p role="status">{{ 'RECEPTIONIST.PROCESSING' | translate }}</p>
+  <app-table-loading />
   } @if (error()) {
   <div class="alert alert-warning" role="alert">
     {{ locale.label(error()) }}
-    <button
+    <button appButton="secondary" actionSize="compact" type="button"
       class="btn btn-outline-secondary btn-sm"
       (click)="retry()"
       [disabled]="loading()"
@@ -65,8 +65,8 @@
             </h3>
           </div>
         </div>
-        <div class="room-actions">
-          <button
+        <div class="room-actions app-action-group">
+          <button appButton="secondary" actionSize="compact" type="button"
             class="btn-action action-primary"
             (click)="edit(room)"
             [disabled]="isSubmitting()"
@@ -75,7 +75,7 @@
           >
             <i class="bi bi-pencil" aria-hidden="true"></i>
           </button>
-          <button
+          <button appButton="danger" actionSize="compact" type="button"
             class="btn-action action-danger"
             (click)="delete(room)"
             [disabled]="isSubmitting() || roomService.mutation.uncertain()"
@@ -115,7 +115,7 @@
           @if(room.occupants===undefined){<p>{{'RECEPTIONIST.UI.ROOM_ASSIGNMENTS_UNAVAILABLE'|translate}}</p>} @else {
           @for(occupant of room.occupants;track occupant.appointmentId){
             <p><strong>{{occupant.patientName}}</strong> · {{occupant.clinicianName || ('DOCTOR.NOT_RECORDED'|translate)}} <small class="d-block">{{'DOCTOR.STATES.'+occupant.state|translate}}</small></p>
-          } @empty { <p>{{'RECEPTIONIST.UI.ROOM_NO_OCCUPANTS'|translate}}</p> }
+          } @empty { <app-table-empty [compact]="true" [hint]="'RECEPTIONIST.UI.ROOM_NO_OCCUPANTS'|translate" /> }
           }
         </div>
       </section>
@@ -140,7 +140,7 @@
               'RECEPTIONIST.UI.ROOM_MAINTENANCE_REQUESTED_OFF') | translate }} }
             </span>
           </div>
-          <button
+          <button appButton="secondary"
             type="button"
             class="maintenance-switch"
             role="checkbox"
@@ -244,15 +244,15 @@
     </div>
   </fieldset>
   <ng-template pTemplate="footer">
-    <div class="modal-footer-actions">
-      <button
+    <div class="modal-footer-actions app-action-group">
+      <button appButton="dismiss" type="button"
         class="btn btn-outline-secondary"
         (click)="closeAddRoomModal()"
         [disabled]="isSubmitting()"
       >
         {{ 'COMMON.CANCEL' | translate }}
       </button>
-      <button
+      <button appButton="primary" type="button"
         class="btn btn-primary"
         (click)="saveNewRoom()"
         [disabled]="isSubmitting() || roomService.mutation.uncertain() || !newRoom.name.trim()"

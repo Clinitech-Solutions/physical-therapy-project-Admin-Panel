@@ -1,3 +1,6 @@
+import { TableEmptyComponent } from '../../table-ui/table-ui';
+import { TableLoadingComponent } from '../../table-ui/table-ui';
+import { ActionButtonDirective } from '../../action-ui/action-button';
 import {
   Component,
   inject,
@@ -25,7 +28,7 @@ import { PatientAvatar } from "../../../features/doctor/patient-avatar";
 @Component({
   selector: "app-reassessment-queue",
   standalone: true,
-  imports: [CommonModule, RouterLink, TranslateModule, PatientAvatar],
+  imports: [TableEmptyComponent, TableLoadingComponent, ActionButtonDirective, CommonModule, RouterLink, TranslateModule, PatientAvatar],
   template: `@if (!review()) {
       <section class="review-queue legacy-queue">
         <header>
@@ -38,7 +41,7 @@ import { PatientAvatar } from "../../../features/doctor/patient-avatar";
               >
             }
           </h2>
-          <button
+          <button appButton="secondary"
             type="button"
             class="btn btn-outline-secondary"
             [disabled]="loading()"
@@ -57,12 +60,12 @@ import { PatientAvatar } from "../../../features/doctor/patient-avatar";
           {{ "DOCTOR.INCLUDE_REVIEW_HISTORY" | translate }}</label
         >
         @if (loading()) {
-          <p role="status">{{ "DOCTOR.LOADING" | translate }}</p>
+          <app-table-loading />
         }
         @if (error()) {
           <p role="alert">
             {{ error() }}
-            <button
+            <button appButton="secondary"
               type="button"
               class="btn btn-outline-secondary"
               (click)="load()"
@@ -106,14 +109,7 @@ import { PatientAvatar } from "../../../features/doctor/patient-avatar";
               }
             </article>
           } @empty {
-            <p>
-              {{
-                (includeHistory()
-                  ? "DOCTOR.NO_REVIEWS"
-                  : "DOCTOR.NO_PENDING_REVIEWS"
-                ) | translate
-              }}
-            </p>
+            <app-table-empty [compact]="true" [hint]="(includeHistory() ? 'DOCTOR.NO_REVIEWS' : 'DOCTOR.NO_PENDING_REVIEWS' ) | translate" />
           }
         }
       </section>
@@ -133,7 +129,7 @@ import { PatientAvatar } from "../../../features/doctor/patient-avatar";
             [attr.aria-label]="'SENIOR_REVIEW.FILTER_LABEL' | translate"
           >
             @for (value of ["open", "history"]; track value) {
-              <button
+              <button appButton="secondary"
                 type="button"
                 [class.selected]="filter() === value"
                 [attr.aria-pressed]="filter() === value"
@@ -148,7 +144,7 @@ import { PatientAvatar } from "../../../features/doctor/patient-avatar";
               </button>
             }
           </div>
-          <button
+          <button appButton="secondary"
             type="button"
             class="btn btn-outline-secondary queue-refresh"
             [disabled]="loading()"
@@ -216,19 +212,7 @@ import { PatientAvatar } from "../../../features/doctor/patient-avatar";
               }
             </article>
           } @empty {
-            <p class="queue-state" [class.queue-empty]="embedded()">
-              @if (embedded()) {
-                <i class="bi bi-clipboard2-check" aria-hidden="true"></i>
-              }
-              <span>
-                {{
-                  (filter() === "history"
-                    ? "SENIOR_REVIEW.NO_HISTORY"
-                    : "DOCTOR.NO_PENDING_REVIEWS"
-                  ) | translate
-                }}
-              </span>
-            </p>
+            <app-table-empty [compact]="embedded()" [hint]="(filter() === 'history' ? 'SENIOR_REVIEW.NO_HISTORY' : 'DOCTOR.NO_PENDING_REVIEWS') | translate" />
           }
         }
       </section>

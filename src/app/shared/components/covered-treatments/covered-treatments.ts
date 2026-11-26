@@ -1,3 +1,4 @@
+import { ActionButtonDirective } from '../../action-ui/action-button';
 import { Component, DestroyRef, inject, OnInit, signal } from "@angular/core";
 import { RouterLink } from "@angular/router";
 import { TranslateModule, TranslateService } from "@ngx-translate/core";
@@ -13,11 +14,11 @@ import { PatientAvatar } from "../../../features/doctor/patient-avatar";
 @Component({
   selector: "app-covered-treatments",
   standalone: true,
-  imports: [RouterLink, TranslateModule, PatientAvatar],
+  imports: [ActionButtonDirective, RouterLink, TranslateModule, PatientAvatar],
   template: `<section class="covered-treatments">
     <header>
       <h4>{{ "ABSENCE.COVERED_TREATMENTS" | translate }}</h4>
-      <button
+      <button appButton="secondary"
         type="button"
         class="btn btn-outline-secondary"
         [disabled]="loading()"

@@ -1,3 +1,7 @@
+import { TableLoadingComponent } from '../../../shared/table-ui/table-ui';
+import { TableEmptyComponent } from '../../../shared/table-ui/table-ui';
+import { ActionButtonDirective } from '../../../shared/action-ui/action-button';
+import { TablePresentationDirective, TableRegionDirective } from '../../../shared/table-ui/table-ui';
 import { PatientRegistrationFieldsComponent } from '../../../shared/components/patient-registration-fields/patient-registration-fields';
 import { ReceptionistLocale, ReceptionistTextPipe } from '../../../shared/receptionist-locale';
 import { Component, signal, computed, inject, OnInit, ViewChild } from "@angular/core";
@@ -21,7 +25,7 @@ import { PatientProfileComponent } from '../../../shared/components/patient-prof
 @Component({
   selector: "app-receptionist-patients",
   standalone: true,
-  imports: [PatientRegistrationFieldsComponent, ReceptionistTextPipe, CommonModule, TranslateModule, FormsModule, DialogModule, ButtonModule, SharedModule, PatientProfileComponent],
+  imports: [TableLoadingComponent, TableEmptyComponent, ActionButtonDirective, TablePresentationDirective, TableRegionDirective, PatientRegistrationFieldsComponent, ReceptionistTextPipe, CommonModule, TranslateModule, FormsModule, DialogModule, ButtonModule, SharedModule, PatientProfileComponent],
   templateUrl: "./patients.html",
   styleUrl: "./patients.css",
 })

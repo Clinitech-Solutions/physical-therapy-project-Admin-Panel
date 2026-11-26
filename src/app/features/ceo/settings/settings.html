@@ -1,12 +1,12 @@
 <section class="workspace">
   <header class="heading">
     <h1>{{t('Settings')}}</h1>
-    <button (click)="load()" [disabled]="loading()||saving()">
+    <button appButton="secondary" type="button" (click)="load()" [disabled]="loading()||saving()">
       {{t('Reload')}}
     </button>
   </header>
   @if(loading()){
-  <p role="status">{{t('Loading')}}…</p>
+  <app-table-loading />
   }@if(error()){
   <div class="error" role="alert">{{error()}}</div>
   }@if(saved()){
@@ -59,9 +59,9 @@
     <p class="muted">
       {{t('Timezone')}}: Africa/Cairo · {{t('Currency')}}: EGP
     </p>
-    <div class="actions">
-      <button class="primary" type="submit" [disabled]="saving()||loading()">
-        {{t(saving()?'Saving':'Save')}}
+    <div class="actions app-action-group">
+      <button appButton="primary" class="primary" type="submit" [disabled]="saving()||loading()" [actionPending]="saving()">
+        {{t('Save')}}
       </button>
     </div>
     @if(m.updatedAt){

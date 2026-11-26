@@ -1,3 +1,6 @@
+import { TableLoadingComponent } from '../../../shared/table-ui/table-ui';
+import { ActionButtonDirective } from '../../../shared/action-ui/action-button';
+import { TableEmptyComponent, TablePagerComponent, TablePresentationDirective, TableRegionDirective } from '../../../shared/table-ui/table-ui';
 import { PrintService } from '../../../shared/printing/print.service';
 import { PrintButtonComponent } from '../../../shared/printing/print-button.component';
 import { firstValueFrom as printValue } from 'rxjs';
@@ -17,7 +20,7 @@ import { CeoLocale } from "../workspace/ceo-locale";
 @Component({
   selector: "app-ceo-reports",
   standalone: true,
-  imports: [FormsModule, RouterLink, PrintButtonComponent],
+  imports: [TableLoadingComponent, ActionButtonDirective, TableEmptyComponent, TablePagerComponent, TablePresentationDirective, TableRegionDirective, FormsModule, RouterLink, PrintButtonComponent],
   templateUrl: "./reports.html",
   styleUrl: "../workspace/workspace.css",
 })

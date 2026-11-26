@@ -1,4 +1,4 @@
-﻿<section class="workspace">
+<section class="workspace">
   <header class="heading">
     <h1>{{t('Overview')}}</h1><app-print-button [prepare]="preparePrint" [disabled]="loading()||!data()" />
     <form class="toolbar" (ngSubmit)="apply()">
@@ -14,14 +14,14 @@
           name="to"
           [(ngModel)]="to"
           required /></label
-      ><button class="primary" type="submit">{{t('Apply')}}</button>
+      ><button appButton="primary" class="primary" type="submit">{{t('Apply')}}</button>
     </form>
   </header>
   @if(loading()){
-  <p role="status">{{t('Loading')}}…</p>
+  <app-table-loading />
   } @if(error()){
   <div role="alert" class="error">
-    {{error()}} <button (click)="retry()">{{t('Retry')}}</button>
+    {{error()}} <button appButton="secondary" type="button" (click)="retry()">{{t('Retry')}}</button>
   </div>
   } @if(data();as d){
   <p class="muted">

@@ -1,12 +1,13 @@
+import { ActionButtonDirective } from '../action-ui/action-button';
 import { Component, Input, inject } from '@angular/core';
 import { PrintService } from './print.service';
 import { PrintDocument } from './print-document';
 
-@Component({selector:'app-print-button',standalone:true,template:`
-  <button type="button" (click)="printer.run(prepare)" [disabled]="disabled || printer.busy()" [attr.aria-busy]="printer.busy()">{{ printer.t(printer.busy()?'Preparing':'Print') }}</button>
-  @if(printer.busy()){<span role="status">{{printer.t('Preparing')}}…</span>}
+@Component({imports:[ActionButtonDirective],selector:'app-print-button',standalone:true,template:`
+  <button [actionPending]="printer.busy()" [actionLoader]="false" appButton="secondary" type="button" (click)="printer.run(prepare)" [disabled]="disabled || printer.busy()" [attr.aria-busy]="printer.busy()"><i class="bi" [class.bi-printer]="!printer.busy()" [class.bi-hourglass-split]="printer.busy()" aria-hidden="true"></i>{{ printer.t('Print') }}</button>
+  @if(printer.busy()){<span class="print-status" role="status">{{printer.t('Preparing')}}…</span>}
   @if(printer.error()){<p role="alert">{{printer.error()}}</p>}
-`,styles:[`:host{display:inline-block}button{font:inherit;color:inherit;background:transparent;border:1px solid #668b95;border-radius:6px;padding:7px 12px;cursor:pointer}button:disabled{opacity:.6;cursor:wait}p{color:#be3248;margin:4px 0}span{margin-inline:6px}`]})
+`,styles:[`:host{display:inline-block}p{color:#be3248;margin:4px 0}.print-status{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}`]})
 export class PrintButtonComponent {
   readonly printer=inject(PrintService);
   @Input({required:true}) prepare!:()=>Promise<PrintDocument>;

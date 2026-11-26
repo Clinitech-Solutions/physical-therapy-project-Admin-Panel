@@ -1,10 +1,10 @@
-<div class="page-content receptionist-page fade-in">
+<div class="page-content receptionist-page">
   <div class="page-header">
     <div>
       <h2 class="font-clash">{{ 'RECEPTIONIST.PATIENTS_TITLE' | translate }}</h2>
       <p>{{ 'RECEPTIONIST.PATIENTS_SUB' | translate }}</p>
     </div>
-    <button class="btn btn-primary" (click)="openDrawer()">
+    <button appButton="primary" type="button" class="btn btn-primary" (click)="openDrawer()">
       <i class="bi bi-person-plus"></i> {{ 'RECEPTIONIST.ADD_PATIENT' | translate }}
     </button>
   </div>
@@ -44,16 +44,16 @@
 
     @if (insuranceError()) {
       <p class="alert alert-warning" role="alert">{{ 'RECEPTIONIST.UI.INSURANCE_LOAD' | translate }}: {{ locale.label(insuranceError()) }}
-        <button class="btn btn-outline-secondary btn-sm" (click)="retryInsuranceLookup()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button></p>
+        <button appButton="secondary" actionSize="compact" type="button" class="btn btn-outline-secondary btn-sm" (click)="retryInsuranceLookup()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button></p>
     }
     @if (patientsError()) {
       <p class="alert alert-warning" role="alert">{{ 'RECEPTIONIST.UI.PATIENTS_LOAD' | translate }}: {{ locale.label(patientsError()) }}
-        <button class="btn btn-outline-secondary btn-sm" (click)="refreshPatients()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button></p>
+        <button appButton="secondary" actionSize="compact" type="button" class="btn btn-outline-secondary btn-sm" (click)="refreshPatients()">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button></p>
     }
-    @if (isLoading()) { <p role="status">{{ 'RECEPTIONIST.PROCESSING' | translate }}</p> }
+    @if (isLoading()) { <app-table-loading /> }
     <!-- Patients Table -->
     <div class="table-scroll-area">
-      <table>
+      <div appTableRegion><table appTable="cards" cardSize="narrow">
         <thead>
           <tr>
             <th>{{ 'COMMON.PATIENT' | translate }}</th>
@@ -72,13 +72,13 @@
                   <div class="avatar avatar-sm">{{ patient.avatar }}</div>
                   <div>
                     <div class="d-flex align-items-center gap-2">
-                      <span class="fw-semibold text-primary-hover" role="button" (click)="viewPatient(patient)" style="cursor: pointer;">
+                      <button actionAppearance="identity" type="button" appButton="secondary" class="fw-semibold text-primary-hover inline-control" (click)="viewPatient(patient)" style="cursor: pointer;">
                         {{ locale.patientName(patient) }}
-                      </span>
+                      </button>
                       @if(patient.treatmentPlan) {
-                        <span class="badge badge-warning" role="button" (click)="viewPatient(patient)" style="cursor: pointer; font-size: 0.65rem;" [title]="'RECEPTIONIST.UI.TREATMENT_PLAN' | translate">
+                        <button type="button" appButton="secondary" class="badge badge-warning inline-control" (click)="viewPatient(patient)" style="cursor: pointer; font-size: 0.65rem;" [title]="'RECEPTIONIST.UI.TREATMENT_PLAN' | translate" >
                           <i class="bi bi-clock-history"></i> {{ patient.treatmentPlan.totalSessions }} {{ 'RECEPTIONIST.UI.SESSIONS' | translate }}
-                        </span>
+                        </button>
                       }
                     </div>
                     <div class="d-flex gap-2 mt-1 align-items-center">
@@ -118,13 +118,13 @@
               <td class="text-muted">{{ locale.date(patient.createdAt) }}</td>
               <td style="text-align:end" dir="ltr">
                 <div class="d-flex gap-1 justify-content-end align-items-center">
-                  <button class="btn-action action-primary" [attr.data-tip]="'RECEPTIONIST.VIEW_PROFILE' | translate" (click)="viewPatient(patient)">
+                  <button appButton="secondary" actionSize="compact" type="button" class="btn-action action-primary" [attr.data-tip]="'RECEPTIONIST.VIEW_PROFILE' | translate" (click)="viewPatient(patient)" [attr.aria-label]="'RECEPTIONIST.VIEW_PROFILE' | translate">
                     <i class="bi bi-eye"></i>
                   </button>
-                  <button class="btn-action action-primary" [attr.data-tip]="'RECEPTIONIST.EDIT_PROFILE' | translate" (click)="editPatient(patient)">
+                  <button appButton="secondary" actionSize="compact" type="button" class="btn-action action-primary" [attr.data-tip]="'RECEPTIONIST.EDIT_PROFILE' | translate" (click)="editPatient(patient)" [attr.aria-label]="'RECEPTIONIST.EDIT_PROFILE' | translate">
                     <i class="bi bi-pencil"></i>
                   </button>
-                  <button class="btn-action action-danger" [attr.data-tip]="'COMMON.DELETE' | translate" (click)="deletePatient(patient.id)">
+                  <button appButton="danger" actionSize="compact" type="button" class="btn-action action-danger" [attr.data-tip]="'COMMON.DELETE' | translate" (click)="deletePatient(patient.id)" [attr.aria-label]="'COMMON.DELETE' | translate">
                     <i class="bi bi-trash"></i>
                   </button>
                 </div>
@@ -133,20 +133,18 @@
           }
           @if(filteredPatients().length === 0 && !isLoading() && !patientsError()) {
             <tr>
-              <td colspan="6" class="text-center py-5 text-muted">
-                {{ 'RECEPTIONIST.UI.NO_PATIENTS_FOUND_MATCHING_YOUR_SEARCH_' | translate }}
-              </td>
+              <td colspan="6" class="text-center py-5 text-muted"><app-table-empty [hint]="'RECEPTIONIST.UI.NO_PATIENTS_FOUND_MATCHING_YOUR_SEARCH_' | translate" /></td>
             </tr>
           }
         </tbody>
-      </table>
+      </table></div>
     </div>
   </div>
 </div>
 
 <!-- Add Patient Modal (Dialog) -->
 @if(creationOutcomeUnknown() && !patientDialog){<p class="alert alert-warning" role="alert">{{'RECEPTIONIST.UI.PATIENT_OUTCOME_UNKNOWN'|translate}}
-  <button type="button" class="btn btn-outline-primary" [disabled]="saving()" (click)="recoverRegistration()">{{'RECEPTIONIST.UI.RECONCILE_REGISTRATION'|translate}}</button></p>}
+  <button appButton="primary" type="button" class="btn btn-outline-primary" [disabled]="saving()" (click)="recoverRegistration()">{{'RECEPTIONIST.UI.RECONCILE_REGISTRATION'|translate}}</button></p>}
 <p-dialog 
   [(visible)]="patientDialog" 
   [modal]="true" 
@@ -179,17 +177,17 @@
       } @else if (creationOutcomeUnknown()) {
         <p class="alert alert-warning d-block mb-2" role="alert">{{ 'RECEPTIONIST.UI.PATIENT_OUTCOME_UNKNOWN' | translate }}</p>
       }
-    <div class="modal-footer-actions pt-3 pb-1 border-top">
-      <p-button label="{{ 'COMMON.CANCEL' | translate }}" icon="pi pi-times" styleClass="p-button-text p-button-secondary" (onClick)="hideDialog()"></p-button>
+    <div class="modal-footer-actions pt-3 pb-1 border-top app-action-group">
+      <p-button appButton="dismiss" label="{{ 'COMMON.CANCEL' | translate }}" icon="pi pi-times" styleClass="p-button-text p-button-secondary" (onClick)="hideDialog()"></p-button>
       @if(creationOutcomeUnknown()){
-        <button type="button" class="btn btn-outline-primary" data-reconcile-registration [disabled]="saving()" (click)="recoverRegistration()">{{'RECEPTIONIST.UI.RECONCILE_REGISTRATION'|translate}}</button>
-        @if(registrationRetryAllowed()){<button type="button" class="btn btn-primary" data-retry-registration [disabled]="saving()" (click)="recoverRegistration(true)">{{'RECEPTIONIST.UI.RETRY_REGISTRATION'|translate}}</button>}
+        <button appButton="primary" type="button" class="btn btn-outline-primary" data-reconcile-registration [disabled]="saving()" (click)="recoverRegistration()">{{'RECEPTIONIST.UI.RECONCILE_REGISTRATION'|translate}}</button>
+        @if(registrationRetryAllowed()){<button appButton="primary" type="button" class="btn btn-primary" data-retry-registration [disabled]="saving()" (click)="recoverRegistration(true)">{{'RECEPTIONIST.UI.RETRY_REGISTRATION'|translate}}</button>}
       }
       @if (createdPatient()) {
-        <p-button [label]="'RECEPTIONIST.UI.PATIENT_RETRY_UPLOAD' | translate" (onClick)="retryDocumentUpload()" [loading]="saving()" [disabled]="saving() || !selectedFiles.length" />
-        <p-button [label]="'RECEPTIONIST.UI.PATIENT_FINISH_WITHOUT_UPLOAD' | translate" (onClick)="finishRegistration()" [disabled]="saving()" />
+        <p-button appButton="secondary" [label]="'RECEPTIONIST.UI.PATIENT_RETRY_UPLOAD' | translate" (onClick)="retryDocumentUpload()" [loading]="saving()" [disabled]="saving() || !selectedFiles.length"  [actionPending]="saving()" />
+        <p-button appButton="secondary" [label]="'RECEPTIONIST.UI.PATIENT_FINISH_WITHOUT_UPLOAD' | translate" (onClick)="finishRegistration()" [disabled]="saving()" />
       } @else {
-        <p-button label="{{ 'COMMON.SAVE' | translate }}" icon="pi pi-check" (onClick)="savePatient()" [loading]="saving()" [disabled]="saving() || creationOutcomeUnknown()" />
+        <p-button appButton="primary" label="{{ 'COMMON.SAVE' | translate }}" icon="pi pi-check" (onClick)="savePatient()" [loading]="saving()" [disabled]="saving() || creationOutcomeUnknown()"  [actionPending]="saving()" />
       }
     </div>
     </div>
@@ -218,7 +216,7 @@
   [header]="'RECEPTIONIST.EDIT_PROFILE' | translate">
 
   @if (editLoading()) {
-    <p role="status">{{ 'RECEPTIONIST.PROCESSING' | translate }}</p>
+    <app-table-loading />
   }
   @if (loadedEditPatient(); as patient) {
     <dl class="row small text-muted mb-3">
@@ -242,15 +240,13 @@
       @if (editError()) {
         <p class="alert alert-warning mb-2" role="alert" data-edit-feedback style="white-space: pre-line; text-align: start">{{ editError() }}</p>
         @if (!loadedEditPatient() && !editLoading() && selectedPatient(); as patient) {
-          <button class="btn btn-outline-secondary btn-sm mb-2" (click)="editPatient(patient)">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button>
+          <button appButton="secondary" actionSize="compact" type="button" class="btn btn-outline-secondary btn-sm mb-2" (click)="editPatient(patient)">{{ 'RECEPTIONIST.UI.RETRY' | translate }}</button>
         }
       }
-      <div class="modal-footer-actions pt-3 pb-1 border-top">
-        <p-button label="{{ 'COMMON.CANCEL' | translate }}" icon="pi pi-times" styleClass="p-button-text p-button-secondary"
-          (onClick)="closeEditDrawer()" [disabled]="updating()" />
-        <p-button label="{{ 'RECEPTIONIST.SAVE_CHANGES' | translate }}" icon="pi pi-check" (onClick)="updateProfile()"
-          [loading]="updating()" [disabled]="editLoading() || updating() || !loadedEditPatient()" />
-      </div>
+      <div class="modal-footer-actions pt-3 pb-1 border-top app-action-group"><p-button appButton="primary" label="{{ 'RECEPTIONIST.SAVE_CHANGES' | translate }}" icon="pi pi-check" (onClick)="updateProfile()"
+          [loading]="updating()" [disabled]="editLoading() || updating() || !loadedEditPatient()"  [actionPending]="updating()" />
+<p-button appButton="dismiss" label="{{ 'COMMON.CANCEL' | translate }}" icon="pi pi-times" styleClass="p-button-text p-button-secondary"
+          (onClick)="closeEditDrawer()" [disabled]="updating()" /></div>
     </div>
   </ng-template>
 </p-dialog>

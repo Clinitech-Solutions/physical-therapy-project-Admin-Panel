@@ -1,3 +1,6 @@
+import { TableLoadingComponent } from '../../table-ui/table-ui';
+import { ActionButtonDirective } from '../../action-ui/action-button';
+import { TableEmptyComponent, TablePagerComponent, TablePresentationDirective, TableRegionDirective } from '../../table-ui/table-ui';
 import { ProfilePrintOptionsComponent } from '../../printing/profile-print-options.component';
 import { PrintService } from '../../printing/print.service';
 import {
@@ -55,7 +58,7 @@ interface PendingChange {
 @Component({
   selector: "app-patient-profile",
   standalone: true,
-  imports: [
+  imports: [TableLoadingComponent, ActionButtonDirective, TableEmptyComponent, TablePagerComponent, TablePresentationDirective, TableRegionDirective,
     CommonModule,
     FormsModule,
     TranslateModule,
