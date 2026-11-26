@@ -54,7 +54,7 @@ export class GroupedBillingComponent implements OnInit, OnDestroy {
     if(event.shiftKey && document.activeElement===first){event.preventDefault();last?.focus();}
     else if(!event.shiftKey && document.activeElement===last){event.preventDefault();first?.focus();}
   }
-  t(text: string): string { const english: Record<string,string>={SelfPay:'Self-pay',PerSession:'Per session',Settled:'Patient settled',NonCollectible:'Non-collectible',Invoice:'Invoice date',Service:'Service delivery date',Collection:'Collection date'};return this.locale.language === 'ar-EG' ? billingArabic[text] ?? this.locale.label(text) : english[text] ?? text; }
+  t(text: string): string { const english: Record<string,string>={SelfPay:'Self-pay',PerSession:'Per session',Unpaid:'Outstanding',Partial:'Partially paid',Settled:'Patient share settled',NonCollectible:'Non-collectible',Invoice:'Invoice date',Service:'Service delivery date',Collection:'Collection date'};return this.locale.language === 'ar-EG' ? billingArabic[text] ?? this.locale.label(text) : english[text] ?? text; }
   companyLabel(companies:string[]) { const known=companies.filter(name=>name!=='Historical company unavailable');return known.length>1?this.t('Multiple companies'):known[0] || this.t('Historical company unavailable'); }
   get selectedCompanies() { return this.options().companies.filter(company=>this.draft.companyIds?.includes(+company.id)).map(c=>c.name).join(', ') || this.t('All'); }
   setCompany(id:number,event:Event) { const selected=(event.target as HTMLInputElement).checked;this.draft.companyIds=selected?[...(this.draft.companyIds ?? []),id]:(this.draft.companyIds ?? []).filter(value=>value!==id); }
