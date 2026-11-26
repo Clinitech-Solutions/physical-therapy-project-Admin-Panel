@@ -204,6 +204,7 @@ td {
 th {
   font-weight: 600;
   color: var(--text-secondary, #526770);
+  overflow-wrap: normal;
 }
 td .actions {
   gap: 6px;
@@ -211,6 +212,7 @@ td .actions {
 td button {
   font-size: 13px;
   padding: 6px 10px;
+  white-space: nowrap;
 }
 td:first-child {
   font-weight: 600;
@@ -334,35 +336,11 @@ td:first-child {
   .metric strong {
     font-size: 20px;
   }
+  .summary .metric:last-child:nth-child(odd) {
+    grid-column: 1/-1;
+  }
 }
-@media (max-width: 600px) {
-  h1 {
-    font-size: 22px;
-  }
-  .surface,
-  .filters {
-    padding: 14px;
-  }
-  .heading .toolbar {
-    width: 100%;
-  }
-  .toolbar label {
-    flex: 1;
-    min-width: 120px;
-  }
-  .filters,
-  .form-grid {
-    grid-template-columns: 1fr;
-  }
-  .summary {
-    grid-template-columns: 1fr 1fr;
-  }
-  .metric {
-    padding: 13px;
-  }
-  .metric strong {
-    font-size: 18px;
-  }
+@media (max-width: 1024px) {
   .table-wrap {
     overflow: visible;
   }
@@ -399,6 +377,35 @@ td:first-child {
   }
   td[colspan] {
     display: block;
+  }
+}
+@media (max-width: 600px) {
+  h1 {
+    font-size: 22px;
+  }
+  .surface,
+  .filters {
+    padding: 14px;
+  }
+  .heading .toolbar {
+    width: 100%;
+  }
+  .toolbar label {
+    flex: 1;
+    min-width: 120px;
+  }
+  .filters,
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  .summary {
+    grid-template-columns: 1fr 1fr;
+  }
+  .metric {
+    padding: 13px;
+  }
+  .metric strong {
+    font-size: 18px;
   }
   .chart-row {
     grid-template-columns: 75px minmax(40px, 1fr) 80px;
