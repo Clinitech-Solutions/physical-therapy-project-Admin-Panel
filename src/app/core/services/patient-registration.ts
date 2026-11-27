@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { InsuranceDetails, NewPatient, Patient, PatientEditDraft } from '../models/patient.model';
-import { CreatePatientRequest, InsuranceDetailsResponse, UpdatePatientRequest } from '../models/patient-api.model';
+import { CreatePatientRequest, InsuranceDetailsResponse, UpdatePatientRequest, PATIENT_INSURANCE_STATUSES } from '../models/patient-api.model';
 
 export class PatientInputError extends Error {
   constructor(public readonly key: string, message: string, public readonly field?: string) { super(message); }
@@ -36,14 +36,17 @@ export function patientBirthDate(value: string): string {
 
 export function patientInsuranceDetails(details?: InsuranceDetails | null): InsuranceDetailsResponse | null {
   if (!details) return null;
-  const copay = details.copayPercentage;
-  const sessions = details.approvedSessions;
   const errors = patientUpdateErrors({ insuranceDetails: details });
   if (errors.length) throw new PatientValidationError(errors);
-  // OpenAPI declares InsuranceStatus as integer without labels. Never guess approval.
+  return insuranceDetailsValues(details);
+}
+
+/** Compare saved details without validating or resubmitting unchanged historical values. */
+function insuranceDetailsValues(details?: InsuranceDetails | null): InsuranceDetailsResponse | null {
+  if (!details) return null;
   return {
     status: details.apiStatus ?? null,
-    copayPercentage: copay ?? null, approvedSessions: sessions ?? null,
+    copayPercentage: details.copayPercentage ?? null, approvedSessions: details.approvedSessions ?? null,
     memberId: details.memberId?.trim() || null, employer: details.employer?.trim() || null
   };
 }
@@ -103,8 +106,8 @@ export function patientUpdateErrors(patient: Partial<Patient>): PatientInputErro
     if (details.approvedSessions != null && (!Number.isInteger(details.approvedSessions) || details.approvedSessions < 0 || details.approvedSessions > 2147483647)) {
       errors.push(new PatientInputError('PATIENT_INSURANCE_NUMBERS_INVALID', 'Copay must be between 0 and 100; approved sessions must be a non-negative whole number.', 'approvedSessions'));
     }
-    if (details.apiStatus != null && (!Number.isInteger(details.apiStatus) || details.apiStatus < -2147483648 || details.apiStatus > 2147483647)) {
-      errors.push(new PatientInputError('PATIENT_INSURANCE_STATUS_INVALID', 'Insurance status must be a whole number.', 'apiStatus'));
+    if (details.apiStatus != null && !PATIENT_INSURANCE_STATUSES.some(option => option.value === details.apiStatus)) {
+      errors.push(new PatientInputError('PATIENT_INSURANCE_STATUS_INVALID', 'Select a valid insurance status or leave it unspecified.', 'apiStatus'));
     }
   }
   return errors;
@@ -154,8 +157,8 @@ export function patientEditChanges(original: Patient, draft: PatientEditDraft): 
   } else if (draft.paymentType === 'Insurance' || draft.paymentType == null) {
     if (draft.insuranceCompanyId !== (original.insuranceCompanyId ?? null) ||
         (draft.paymentType === 'Insurance' && original.paymentType !== 'Insurance')) changes.insuranceCompanyId = draft.insuranceCompanyId;
-    const details = patientInsuranceDetails(draft.insuranceDetails);
-    const before = patientInsuranceDetails(original.insuranceDetails);
+    const details = insuranceDetailsValues(draft.insuranceDetails);
+    const before = insuranceDetailsValues(original.insuranceDetails);
     // Empty form controls do not turn a saved null insuranceDetails into an object.
     const empty = details && Object.values(details).every(value => value === null);
     if (!(empty && before === null) && JSON.stringify(details) !== JSON.stringify(before)) changes.insuranceDetails = draft.insuranceDetails;

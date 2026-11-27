@@ -13,6 +13,7 @@ import { TranslateModule } from "@ngx-translate/core";
 import { NewPatient } from "../../../core/models/patient.model";
 import { InsuranceCompany } from "../../../core/services/insurance.service";
 import { PatientInputError } from "../../../core/services/patient-registration";
+import { PATIENT_INSURANCE_STATUSES } from "../../../core/models/patient-api.model";
 
 /** Shared patient fields for registration and edits. */
 @Component({
@@ -41,6 +42,11 @@ export class PatientRegistrationFieldsComponent {
   }
 
   readonly paymentTypes = ['Cash', 'Insurance', 'Online', 'Card', 'InstaPay'];
+  readonly insuranceStatuses = PATIENT_INSURANCE_STATUSES;
+  hasUnknownInsuranceStatus() {
+    const status = this.draft.insuranceDetails?.apiStatus;
+    return status != null && !this.insuranceStatuses.some(option => option.value === status);
+  }
   get selectableCompanies(){return this.companies.filter(company=>company.isActive || this.mode==='edit' && company.id===this.draft.insuranceCompanyId);}
 
   companiesHaveSelectedId(): boolean {

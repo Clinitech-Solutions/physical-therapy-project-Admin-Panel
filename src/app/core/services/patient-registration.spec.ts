@@ -129,6 +129,37 @@ describe('Patient registration contracts and safety', () => {
     expect(() => createPatientRequest({ ...draft(), paymentType: 'Insurance' })).toThrow('insurance company');
   });
 
+  it.each([0, 1, 2, 3, null])('registers insurance status %s using the backend enum without changing its meaning', async status => {
+    const result = firstValueFrom(service.addPatient({ ...draft(), paymentType: 'Insurance', insuranceCompanyId: 7,
+      insuranceDetails: { company: '', status: 'Unknown', apiStatus: status } }));
+    const request = http.expectOne(`${base}/Patients/Add`);
+    expect(request.request.body.insuranceDetails.status).toBe(status);
+    request.flush({ ...saved, insuranceDetails: { ...saved.insuranceDetails!, status } });
+    await result;
+  });
+
+  it.each([-1, 4, 73, 1.5, NaN, Infinity])('blocks unsupported insurance status %s before registration HTTP', async status => {
+    await expect(firstValueFrom(service.addPatient({ ...draft(), paymentType: 'Insurance', insuranceCompanyId: 7,
+      insuranceDetails: { company: '', status: 'Unknown', apiStatus: status } }))).rejects.toThrow('valid insurance status');
+    http.expectNone(`${base}/Patients/Add`);
+    expect(service.creating()).toBe(false);
+  });
+
+  it('uses a shared dropdown with numeric values and preserves the unspecified option', async () => {
+    const fixture = TestBed.createComponent(PatientRegistrationFieldsComponent);
+    const insured = { ...draft(), paymentType: 'Insurance' as const, insuranceCompanyId: 7 };
+    fixture.componentRef.setInput('draft', insured);
+    fixture.detectChanges(); await fixture.whenStable();
+    const select: HTMLSelectElement = fixture.nativeElement.querySelector('select[name=apiStatus]');
+    expect(select).not.toBeNull(); expect(select.options.length).toBe(5); expect(select.selectedIndex).toBe(0);
+    for (const [index, expected] of [[2, 1], [1, 0], [0, null]] as const) {
+      select.selectedIndex = index; select.dispatchEvent(new Event('change'));
+      await fixture.whenStable();
+      expect(createPatientRequest(insured).insuranceDetails?.status).toBe(expected);
+    }
+    fixture.destroy();
+  });
+
   it('normalizes returned fields and caches the real patient ID immediately', async () => {
     const result = firstValueFrom(service.addPatient(draft()));
     expect(service.patients()).toEqual([]);
@@ -202,14 +233,23 @@ describe('Patient registration contracts and safety', () => {
   });
 
   it('updates a patient without replacing birth date or numeric insurance status with defaults', async () => {
-    const patient = service.mapToFrontendPatient(saved);
+    const patient = service.mapToFrontendPatient({ ...saved, insuranceDetails: { ...saved.insuranceDetails!, status: 1 } });
     const result = firstValueFrom(service.updatePatient(42, patient));
     const request = http.expectOne(`${base}/Patients/Update/42`);
     expect(request.request.body.birthDate).toBe('1988-03-14T00:00:00.000Z');
-    expect(request.request.body.insuranceDetails.status).toBe(73);
+    expect(request.request.body.insuranceDetails.status).toBe(1);
     expect(request.request.body).not.toHaveProperty('userName');
     request.flush(saved);
     await result;
+  });
+
+  it('does not resubmit or silently replace an unknown historical insurance status', async () => {
+    const patient = service.mapToFrontendPatient(saved);
+    const form = patientEditDraft(patient); form.email = 'updated@example.invalid';
+    expect(patientEditChanges(patient, form)).toEqual({ email: 'updated@example.invalid' });
+    await expect(firstValueFrom(service.updatePatient(42, patient))).rejects.toThrow('valid insurance status');
+    http.expectNone(`${base}/Patients/Update/42`);
+    expect(patient.insuranceDetails?.apiStatus).toBe(73);
   });
 
   it('keeps omitted update fields omitted', async () => {

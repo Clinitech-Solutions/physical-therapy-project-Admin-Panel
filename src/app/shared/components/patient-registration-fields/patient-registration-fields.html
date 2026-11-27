@@ -249,11 +249,18 @@
       <div class="col-md-6">
         <label class="form-label fw-bold small w-100">
           {{ 'RECEPTIONIST.UI.PATIENT_INSURANCE_STATUS' | translate }}
-          <input [id]="formId + '-apiStatus'" name="apiStatus" type="number" step="1" class="form-control form-control-sm"
-            min="-2147483648" max="2147483647"
-            [(ngModel)]="details.apiStatus" [ngModelOptions]="{standalone: true}"
+          <select [id]="formId + '-apiStatus'" name="apiStatus" class="form-select form-select-sm"
+            [ngModel]="details.apiStatus ?? null" (ngModelChange)="details.apiStatus = $event" [ngModelOptions]="{standalone: true}"
             [class.is-invalid]="!!errorFor('apiStatus')" [attr.aria-invalid]="errorFor('apiStatus') ? true : null"
-            [attr.aria-describedby]="errorFor('apiStatus') ? formId + '-apiStatus-error' : null" />
+            [attr.aria-describedby]="errorFor('apiStatus') ? formId + '-apiStatus-error' : null">
+            <option [ngValue]="null">{{ 'RECEPTIONIST.UI.UNKNOWN' | translate }}</option>
+            @for (option of insuranceStatuses; track option.value) {
+              <option [ngValue]="option.value">{{ ('RECEPTIONIST.UI.' + option.label) | translate }}</option>
+            }
+            @if (hasUnknownInsuranceStatus()) {
+              <option [ngValue]="details.apiStatus" disabled>{{ 'RECEPTIONIST.UI.UNKNOWN' | translate }} ({{ details.apiStatus }})</option>
+            }
+          </select>
           @if (errorFor('apiStatus'); as error) {
             <small class="text-danger d-block fw-normal" [id]="formId + '-apiStatus-error'">{{ ('RECEPTIONIST.UI.' + error) | translate }}</small>
           }

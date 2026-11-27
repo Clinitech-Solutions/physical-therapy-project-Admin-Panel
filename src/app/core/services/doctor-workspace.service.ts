@@ -1,6 +1,6 @@
 import { inject, Injectable } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
-import { map, timeout, tap } from "rxjs";
+import { map, timeout, tap, Subject } from "rxjs";
 import { TranslateService } from "@ngx-translate/core";
 import { environment } from "../../../environments/environment";
 import {
@@ -38,6 +38,8 @@ export function clinicalError(
 }
 @Injectable({ providedIn: "root" })
 export class DoctorWorkspaceService {
+  private readonly reassessmentUpdates = new Subject<void>();
+  readonly reassessmentChanged = this.reassessmentUpdates.asObservable();
   private events=inject(ReceptionEvents);
   private http = inject(HttpClient);
   private base = environment.apiUrl;
@@ -150,7 +152,7 @@ export class DoctorWorkspaceService {
         `${this.base}/ReassessmentRequests/appointments/${numericId(id)}`,
         request,
       )
-      .pipe(timeout(30000));
+      .pipe(timeout(30000), tap(() => this.reassessmentUpdates.next()));
   }
   review(id: number) {
     return this.http
@@ -165,7 +167,7 @@ export class DoctorWorkspaceService {
         `${this.base}/ReassessmentRequests/${numericId(id)}/start`,
         { expectedVersion },
       )
-      .pipe(timeout(30000));
+      .pipe(timeout(30000), tap(() => this.reassessmentUpdates.next()));
   }
   completeReview(id: number, request: CompleteReassessment) {
     return this.http
@@ -173,7 +175,7 @@ export class DoctorWorkspaceService {
         `${this.base}/ReassessmentRequests/${numericId(id)}/complete`,
         request,
       )
-      .pipe(timeout(30000));
+      .pipe(timeout(30000), tap(() => this.reassessmentUpdates.next()));
   }
   cancelReview(id: number, expectedVersion: number, reason: string) {
     return this.http
@@ -181,6 +183,6 @@ export class DoctorWorkspaceService {
         `${this.base}/ReassessmentRequests/${numericId(id)}/cancel`,
         { expectedVersion, reason },
       )
-      .pipe(timeout(30000));
+      .pipe(timeout(30000), tap(() => this.reassessmentUpdates.next()));
   }
 }
