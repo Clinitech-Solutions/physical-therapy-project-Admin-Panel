@@ -1,0 +1,15 @@
+:host { display: contents; }
+.reschedule-fields { border: 0; padding: 0; margin: 0; min-width: 0; }
+.reschedule-fields label { display: grid; gap: .35rem; font-weight: 600; }
+.reschedule-grid, .reschedule-summary { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1rem; margin-block: 1rem; }
+.reschedule-summary { padding: .8rem; border: 1px solid var(--p-content-border-color, #64748b); border-radius: .5rem; }
+.reschedule-summary p { margin-block: .4rem 0; overflow-wrap: anywhere; }
+.reschedule-slots { display: grid; grid-template-columns: repeat(auto-fit,minmax(230px,1fr)); gap: .5rem; max-height: 240px; overflow: auto; padding: .2rem; }
+.reschedule-fields .reschedule-slot { display: flex; align-items: center; padding: .65rem; border: 1px solid var(--p-content-border-color, #64748b); border-radius: .4rem; cursor: pointer; font-weight: 400; }
+.reschedule-slot.selected { outline: 2px solid var(--p-primary-color, #0d9488); outline-offset: -2px; }
+.reschedule-slot:focus-within { outline: 2px solid var(--p-primary-color, #0d9488); }
+.reschedule-slot strong { display: block; }
+.reschedule-help { font-size: .85rem; margin-block: .75rem; }
+.reschedule-error { padding: .75rem; border-inline-start: 3px solid var(--p-orange-500, #f97316); }
+.reschedule-actions { display: flex; justify-content: flex-end; gap: .5rem; flex-wrap: wrap; margin-block-start: 1rem; }
+@media(max-width: 600px) { .reschedule-grid, .reschedule-summary { grid-template-columns: minmax(0,1fr); } }

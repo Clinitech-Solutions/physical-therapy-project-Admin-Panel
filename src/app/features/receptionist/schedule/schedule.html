@@ -270,7 +270,7 @@
                   </div>
 
                   <div class="session-actions app-action-group">
-                    @if(canScheduleEdit(session)){<button appButton="secondary" type="button" class="btn-absent-icon" [title]="'RECEPTIONIST.UI.EDIT_APPOINTMENT' | translate" [disabled]="editingLoading() || workflow.mutation.busy() || !!appointmentService?.mutation?.busy()" (click)="openEditAppointment(session); $event.stopPropagation()" [attr.aria-label]="'RECEPTIONIST.UI.EDIT_APPOINTMENT' | translate"><i class="bi bi-pencil"></i></button>}
+                    @if(canScheduleEdit(session)){<button appButton="secondary" actionSize="compact" type="button" class="btn-session-action" [disabled]="workflow.mutation.busy()" (click)="openEditAppointment(session); $event.stopPropagation()"><i class="bi bi-calendar2-week" aria-hidden="true"></i>{{ 'RECEPTIONIST.UI.PROFILE_RESCHEDULE' | translate }}</button>}
                     @if (canCancelUnattended(session)) {
                       <button appButton="danger" type="button" class="btn-absent-icon" [attr.data-cancel-appointment]="session.id" [title]="'RECEPTIONIST.CANCEL' | translate" [disabled]="workflow.mutation.busy()" (click)="cancelUnattended(session.id); $event.stopPropagation()" [attr.aria-label]="'RECEPTIONIST.CANCEL' | translate"><i class="bi bi-x-circle"></i></button>
                     }
@@ -318,26 +318,4 @@
   [patientId]="selectedProfilePatientId()">
 </app-patient-profile>
 
-<p-dialog [(visible)]="editVisible" [modal]="true" appendTo="body" [draggable]="false" [resizable]="false" [closable]="!appointmentService?.mutation?.busy()"
-  styleClass="clean-modal receptionist-modal" [style]="{width:'550px',maxWidth:'95vw'}" [header]="'RECEPTIONIST.UI.EDIT_APPOINTMENT' | translate">
-  @if (actionError()) { <p class="alert alert-warning" role="alert">{{ locale.label(actionError()) }}</p> }
-  @if (appointmentService?.mutation?.uncertain()) { <p class="alert alert-warning">{{ 'RECEPTIONIST.UI.OPERATION_OUTCOME_UNKNOWN' | translate }}</p> }
-  <fieldset class="border-0 w-100" [disabled]="!!appointmentService?.mutation?.busy() || !!appointmentService?.mutation?.uncertain()">
-    <label class="form-label w-100">{{ 'COMMON.DOCTOR' | translate }}
-      <select class="form-select" [(ngModel)]="editClinicianId">
-        <option [value]="editingAppointment()?.doctorId || editingAppointment()?.seniorId">#{{ editingAppointment()?.doctorId || editingAppointment()?.seniorId }}</option>
-        @for (doctor of allDoctors(); track doctor.id) { <option [value]="doctor.id">{{ doctor.name }}</option> }
-      </select>
-    </label>
-    <label class="form-label w-100">{{ 'COMMON.ROOM' | translate }}
-      <select class="form-select" [(ngModel)]="editRoomId">
-        <option [ngValue]="editingAppointment()?.roomId">#{{ editingAppointment()?.roomId }}</option>
-        @for (room of roomService.candidates(); track room.id) { <option [ngValue]="room.id">{{ room.name }}</option> }
-      </select>
-    </label>
-    <label class="form-label w-100">{{ 'RECEPTIONIST.UI.START_TIME' | translate }} *<input type="datetime-local" class="form-control" [(ngModel)]="editStart" required></label>
-    <label class="form-label w-100">{{ 'RECEPTIONIST.UI.END_TIME' | translate }}<output class="form-control">{{ locale.date(editEnd, true) }}</output></label>
-    <p class="small text-muted">{{ 'RECEPTIONIST.UI.PLANNED_HOUR_NOTICE' | translate }}</p>
-  </fieldset>
-  <ng-template pTemplate="footer"><button appButton="primary" type="button" class="btn btn-primary" (click)="saveAppointmentEdit()" [disabled]="!!appointmentService?.mutation?.busy() || !!appointmentService?.mutation?.uncertain()">{{ 'COMMON.SAVE' | translate }}</button></ng-template>
-</p-dialog>
+<app-appointment-reschedule [target]="rescheduleTarget()" (targetChange)="rescheduleTarget.set($event)" (saved)="rescheduleSaved()" />

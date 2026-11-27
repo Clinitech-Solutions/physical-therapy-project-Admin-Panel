@@ -1,0 +1,62 @@
+<p-dialog [(visible)]="visible" [modal]="true" appendTo="body" [draggable]="false" [resizable]="false"
+  [closable]="!saving() && !pending()" [closeOnEscape]="!saving() && !pending()" [dismissableMask]="false"
+  styleClass="clean-modal receptionist-modal appointment-reschedule-modal" transitionOptions="0ms" [style]="{width:'780px',maxWidth:'96vw'}" [header]="locale.text('PROFILE_RESCHEDULE','Reschedule')"
+  [attr.dir]="locale.language === 'ar-EG' ? 'rtl' : 'ltr'">
+  @if (target) {
+    <p><strong>{{ availability()?.patientName || target.patientName }}</strong> · {{ locale.text('APPOINTMENT_NUMBER','Appointment #{{id}}',{id:target.id}) }}</p>
+    @if (error()) { <p class="reschedule-error" role="alert">{{ error() | receptionistText }}</p> }
+    @if (pending()) {
+      <div role="status" class="reschedule-error">
+        <p>{{ locale.text('OPERATION_OUTCOME_UNKNOWN','The save outcome is uncertain. Check the saved result before retrying.') }}</p>
+        <div class="app-action-group">
+          <button appButton="secondary" type="button" (click)="reconcile()" [disabled]="saving()">{{ locale.text('CHECK_SAVED_RESULT','Check saved result') }}</button>
+          @if (missing()) { <button appButton="primary" type="button" (click)="retryOriginal()" [disabled]="saving()">{{ locale.text('RETRY_ORIGINAL','Retry original request') }}</button> }
+        </div>
+      </div>
+    }
+    <fieldset [disabled]="saving() || !!pending()" class="reschedule-fields">
+      <div class="reschedule-grid">
+        <label for="schedule-reschedule-date">{{ locale.text('PROFILE_NEW_DATE','New date') }}
+          <input id="schedule-reschedule-date" type="date" class="form-control" [min]="today" [(ngModel)]="date" (ngModelChange)="load()" required>
+        </label>
+        <label for="schedule-reschedule-clinician">{{ locale.text('PROFILE_DOCTOR','Doctor') }}
+          <select id="schedule-reschedule-clinician" class="form-select" [(ngModel)]="clinicianId" (ngModelChange)="load()" [disabled]="!clinicians.length">
+            @for (c of clinicians; track c.id) { <option [value]="c.id">{{ c.name }}</option> }
+          </select>
+        </label>
+      </div>
+      @if (loading()) { <p role="status">{{ locale.text('PROFILE_CHECKING','Checking clinician and room availability...') }}</p> }
+      @if (!loading() && !availability() && !pending()) { <button appButton="secondary" type="button" (click)="load()">{{ locale.text('RETRY','Retry') }}</button> }
+      @if (availability(); as a) {
+        <p class="reschedule-help">{{ locale.text('PROFILE_SLOT_HELP','Slots match saved clinician hours, absence, patient conflicts and room reservations. Availability is rechecked when saving.') }}</p>
+        <div class="reschedule-slots" role="radiogroup" [attr.aria-label]="locale.text('PROFILE_SLOTS','Available slots')">
+          @for (slot of a.slots; track slot.startTime + '-' + slot.roomId) {
+            <label class="reschedule-slot" [class.selected]="selected === slot">
+              <input type="radio" name="schedule-reschedule-slot" [value]="slot.startTime + '|' + slot.roomId" [checked]="selected === slot" (change)="selected = slot">
+              <span>{{ locale.date(slot.startTime,true) }} – {{ locale.date(slot.endTime,true) }} <strong>{{ slot.roomName }}</strong></span>
+            </label>
+          }
+        </div>
+        @if (!a.slots.length) {
+          <p role="status">{{ locale.text('PROFILE_NO_SLOTS','No available slots for this date.') }}
+            @for (notice of a.notices; track notice) { <span>{{ notice | receptionistText }} </span> }
+          </p>
+        }
+        <div class="reschedule-summary" aria-live="polite">
+          <div><strong>{{ locale.text('RESCHEDULE_CURRENT','Current appointment') }}</strong><p>{{ locale.date(a.currentStart,true) }} – {{ locale.date(a.currentEnd,true) }}<br>{{ a.currentClinicianName }} · {{ a.currentRoomName }}</p></div>
+          <div><strong>{{ locale.text('RESCHEDULE_PROPOSED','Proposed appointment') }}</strong><p>{{ selected ? locale.date(selected.startTime,true) + ' – ' + locale.date(selected.endTime,true) : locale.text('PROFILE_CHOOSE_SLOT','Choose a slot') }}<br>{{ a.clinicianName }} · {{ selected?.roomName }}</p></div>
+        </div>
+      }
+      <label for="schedule-reschedule-reason">{{ locale.text('PROFILE_REASON','Reason (required)') }}
+        <textarea id="schedule-reschedule-reason" class="form-control" [(ngModel)]="reason" maxlength="500" required aria-required="true" rows="2"></textarea>
+      </label>
+      <p class="reschedule-help">{{ locale.text('PROFILE_UNCHANGED','Other sessions and the financial agreement stay unchanged.') }}</p>
+    </fieldset>
+    <div class="app-action-group reschedule-actions">
+      <button appButton="dismiss" type="button" (click)="close()" [disabled]="saving() || !!pending()">{{ locale.text('CANCEL','Cancel') }}</button>
+      <button appButton="primary" type="button" (click)="save()" [actionPending]="saving()" [disabled]="!changed || !reason.trim() || loading() || !!pending()">
+        {{ saving() ? locale.text('PROFILE_SAVING','Saving...') : locale.text('SAVE','Save') }}
+      </button>
+    </div>
+  }
+</p-dialog>

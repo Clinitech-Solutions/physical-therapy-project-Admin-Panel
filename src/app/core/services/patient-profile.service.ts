@@ -33,11 +33,11 @@ export class PatientProfileService {
         }),
       );
   }
-  slots(id: number, date: string) {
+  slots(id: number, date: string, clinicianId?: string) {
     return this.http
       .get<RescheduleAvailability>(
         `${this.url}/appointments/${numericId(id)}/reschedule-slots`,
-        { params: { date } },
+        { params: clinicianId ? { date, clinicianId } : { date } },
       )
       .pipe(timeout(20000));
   }

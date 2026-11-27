@@ -275,6 +275,7 @@ describe("Shared profile and inline single-session reschedule (mocked HTTP)", ()
     expect(next.request.params.get("date")).toBe("2030-11-05");
     next.flush({ ...slots, date: "2030-11-05" });
     c.pickSlot(slots.slots[0]);
+    c.reason = "Synthetic reschedule reason";
     c.dateChanged("2030-11-06");
     expect(c.selectedSlot).toBeNull();
     slotRequest().flush({ ...slots, slots: [] });
@@ -300,6 +301,7 @@ describe("Shared profile and inline single-session reschedule (mocked HTTP)", ()
     await open();
     await edit();
     c.pickSlot(slots.slots[0]);
+    c.reason = "Synthetic reschedule reason";
     c.openEditor(c.sessions[1]);
     expect(c.editing?.id).toBe(11);
     expect(c.discardAction).toBeTruthy();
@@ -326,6 +328,7 @@ describe("Shared profile and inline single-session reschedule (mocked HTTP)", ()
     await open();
     await edit();
     c.pickSlot(slots.slots[0]);
+    c.reason = "Synthetic reschedule reason";
     c.reason = "Patient preference";
     const save = c.saveSession();
     void c.saveSession();
@@ -338,7 +341,7 @@ describe("Shared profile and inline single-session reschedule (mocked HTTP)", ()
       roomId: 2,
       reason: "Patient preference",
     });
-    expect(request.request.body.clinicianId).toBeUndefined();
+    expect(request.request.body.clinicianId).toBe(row.clinicianId);
     request.flush({
       operationKey: request.request.body.operationKey,
       appointmentId: 101,
@@ -358,6 +361,7 @@ describe("Shared profile and inline single-session reschedule (mocked HTTP)", ()
     await open();
     await edit();
     c.pickSlot(slots.slots[0]);
+    c.reason = "Synthetic reschedule reason";
     c.reason = "Keep this reason";
     const save = c.saveSession();
     http
@@ -379,6 +383,7 @@ describe("Shared profile and inline single-session reschedule (mocked HTTP)", ()
     await open();
     await edit();
     c.pickSlot(slots.slots[0]);
+    c.reason = "Synthetic reschedule reason";
     const save = c.saveSession();
     const request = http.expectOne(
       `${base}/Bookings/appointments/101/reschedule`,
@@ -410,6 +415,7 @@ describe("Shared profile and inline single-session reschedule (mocked HTTP)", ()
     await open();
     await edit();
     c.pickSlot(slots.slots[0]);
+    c.reason = "Synthetic reschedule reason";
     const save = c.saveSession();
     const request = http.expectOne(
       `${base}/Bookings/appointments/101/reschedule`,
@@ -437,6 +443,7 @@ describe("Shared profile and inline single-session reschedule (mocked HTTP)", ()
     await open();
     await edit();
     c.pickSlot(slots.slots[0]);
+    c.reason = "Synthetic reschedule reason";
     const save = c.saveSession();
     const request = http.expectOne(
       `${base}/Bookings/appointments/101/reschedule`,
@@ -459,6 +466,7 @@ describe("Shared profile and inline single-session reschedule (mocked HTTP)", ()
     await open();
     await edit();
     c.pickSlot(slots.slots[0]);
+    c.reason = "Synthetic reschedule reason";
     vi.useFakeTimers();
     try {
       const save = c.saveSession();
@@ -497,8 +505,33 @@ describe("Shared profile and inline single-session reschedule (mocked HTTP)", ()
     });
     c.openEditor(c.sessions[0]);
     expect(c.editing).toBeNull();
-    expect(document.querySelector("[id^=edit-session]")).toBeNull();
+    const button = document.querySelector<HTMLButtonElement>("#edit-session-11")!;
+    expect(button).not.toBeNull();
+    expect(button.textContent).toContain("Edit");
+    expect(button.disabled).toBe(true);
+    expect(document.querySelector("#session-edit-locked-11")?.textContent).toContain("Read only");
     http.expectNone((r) => r.url.endsWith("/reschedule-slots"));
+  });
+  it("opens the booked row's inline editor from the visible Edit button and localizes it", async () => {
+    await open();
+    const button = document.querySelector<HTMLButtonElement>("#edit-session-11")!;
+    expect(button.textContent).toContain("Edit");
+    expect(button.disabled).toBe(false);
+    button.click();
+    slotRequest().flush(slots);
+    await render();
+    expect(c.editing?.appointmentId).toBe(101);
+    expect(document.querySelector("#session-editor-11")).not.toBeNull();
+    TestBed.inject(TranslateService).use("ar");
+    await render();
+    expect(button.textContent).toContain("تعديل");
+  });
+  it("does not expose an Edit action for an unbooked session", async () => {
+    await open({ ...profile, courses: [{ ...profile.courses[0], sessions: [{ ...row, appointmentId: null, status: "NotScheduled", canReschedule: false }] }] });
+    expect(document.querySelector("#edit-session-11")).toBeNull();
+    c.openEditor(c.sessions[0]);
+    expect(c.editing).toBeNull();
+    http.expectNone(r => r.url.endsWith("/reschedule-slots"));
   });
   it("supports tab keyboard navigation and Arabic RTL", async () => {
     await open();

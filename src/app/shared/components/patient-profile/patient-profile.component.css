@@ -1,3 +1,7 @@
 :host {
   display: contents;
 }
+
+.profile-reschedule-action { display: inline-flex; align-items: center; gap: .35rem; white-space: nowrap; }
+.profile-edit-locked { display: block; margin-block-start: .25rem; color: var(--text-secondary); font-size: .75rem; }
+.editor-actions { flex-wrap: wrap; }

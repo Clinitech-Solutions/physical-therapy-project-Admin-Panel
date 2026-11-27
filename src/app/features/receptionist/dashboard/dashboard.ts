@@ -1,3 +1,5 @@
+import { AppointmentReschedule, RescheduleTarget, rescheduleEligible } from '../../../shared/components/appointment-reschedule/appointment-reschedule';
+import { AuthService } from '../../../core/services/auth';
 import { TableLoadingComponent } from '../../../shared/table-ui/table-ui';
 import { TableEmptyComponent } from '../../../shared/table-ui/table-ui';
 import { ActionButtonDirective } from '../../../shared/action-ui/action-button';
@@ -28,11 +30,20 @@ import { PatientProfileComponent } from '../../../shared/components/patient-prof
 @Component({
   selector: "app-receptionist-dashboard",
   standalone: true,
-  imports: [TableLoadingComponent, TableEmptyComponent, ActionButtonDirective, TablePresentationDirective, TableRegionDirective, ReassessmentQueue,CommonModule, TranslateModule, FormsModule, ButtonModule, TooltipModule, DialogModule, InputNumberModule, PatientProfileComponent],
+  imports: [AppointmentReschedule, TableLoadingComponent, TableEmptyComponent, ActionButtonDirective, TablePresentationDirective, TableRegionDirective, ReassessmentQueue,CommonModule, TranslateModule, FormsModule, ButtonModule, TooltipModule, DialogModule, InputNumberModule, PatientProfileComponent],
   templateUrl: "./dashboard.html",
   styleUrl: "./dashboard.css",
 })
 export class Dashboard implements OnInit {
+  readonly rescheduleTarget = signal<RescheduleTarget | null>(null);
+  readonly rescheduleAuth = inject(AuthService, { optional: true });
+  canReschedule(a: RescheduleTarget) {
+    return !!this.rescheduleAuth && ['Receptionist','Ceo','Admin','Owner'].some(r=>this.rescheduleAuth!.hasRole(r as never)) && rescheduleEligible(a);
+  }
+  rescheduleSaved() {
+    this.messageService.add({severity:'success',summary:this.locale.text('SUCCESS','Success'),detail:this.locale.text('PROFILE_SAVED','This session was rescheduled. Other appointments and financial terms are unchanged.')});
+    this.receptionistService.refreshTodaySessions();
+  }
   readonly locale = new ReceptionistLocale();
   langService = inject(LanguageService);
   receptionistService = inject(ReceptionistService, { optional: true }) ?? new ReceptionistService();
