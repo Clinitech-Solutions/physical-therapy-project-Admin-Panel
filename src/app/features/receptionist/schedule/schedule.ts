@@ -1,5 +1,3 @@
-import { AppointmentReschedule, RescheduleTarget, rescheduleEligible } from '../../../shared/components/appointment-reschedule/appointment-reschedule';
-import { AuthService } from '../../../core/services/auth';
 import { ActionButtonDirective } from '../../../shared/action-ui/action-button';
 import { ReceptionWarnings } from '../../../core/services/reception-warnings';
 import { AbsenceRecovery } from '../../../shared/components/absence-recovery/absence-recovery';
@@ -28,6 +26,7 @@ import {
   ReceptionistService,
   TodaySession
 } from '../../../core/services/receptionist.service';
+import { AppointmentService, Appointment } from '../../../core/services/appointment.service';
 import { PatientService } from '../../../core/services/patient.service';
 import { BillingService } from '../../../core/services/billing.service';
 
@@ -45,7 +44,7 @@ export interface ScheduleRoomOption {
 @Component({
   selector: 'app-receptionist-schedule',
   standalone: true,
-  imports: [AppointmentReschedule, ActionButtonDirective, ReceptionistTextPipe, AbsenceRecovery,
+  imports: [ActionButtonDirective, ReceptionistTextPipe, AbsenceRecovery,
     CommonModule,
     RouterModule,
     TranslateModule,
@@ -69,6 +68,7 @@ export class ScheduleComponent implements OnInit {
   messageService = inject(MessageService);
   receptionistService =
     inject(ReceptionistService, { optional: true }) ?? new ReceptionistService();
+  appointmentService = inject(AppointmentService, { optional: true });
   patientService = inject(PatientService, { optional: true });
   billingService =
     inject(BillingService, { optional: true }) ?? new BillingService();
@@ -77,17 +77,59 @@ export class ScheduleComponent implements OnInit {
   readonly clinicianService = inject(ClinicianService);
   readonly workflow = inject(AppointmentWorkflowService);
   readonly actionError = signal('');
-  readonly rescheduleTarget = signal<RescheduleTarget | null>(null);
-  readonly rescheduleAuth = inject(AuthService, { optional: true });
-  openEditAppointment(session: TodaySession) {
-    if (this.canScheduleEdit(session)) this.rescheduleTarget.set({...session, patientName:this.getPatientName(session)});
+  readonly editingAppointment = signal<Appointment | null>(null);
+  readonly editingLoading = signal(false);
+  editStart = '';
+  get editEnd(): string {
+    const start = new Date(this.editStart);
+    return Number.isFinite(start.getTime()) ? new Date(start.getTime() + 3600000).toISOString() : '';
   }
-  canScheduleEdit(a: RescheduleTarget) {
-    return !!this.rescheduleAuth && ['Receptionist','Ceo','Admin','Owner'].some(r=>this.rescheduleAuth!.hasRole(r as never)) && rescheduleEligible(a);
+  editClinicianId = '';
+  editRoomId: number | null = null;
+  get editVisible() { return this.editingAppointment() !== null; }
+  set editVisible(value: boolean) { if (!value && !this.appointmentService?.mutation.busy()) this.editingAppointment.set(null); }
+  async openEditAppointment(session: TodaySession) {
+    if(!this.canScheduleEdit(session))return;
+    if (!this.appointmentService || this.editingLoading()) return;
+    this.editingLoading.set(true); this.actionError.set('');
+    try {
+      const appointment = await firstValueFrom(this.appointmentService.getAppointment(session.id));
+      if(!this.canScheduleEdit(appointment))throw new ReceptionError('BOOKING_RULE_NOT_UPCOMING','Started or completed appointments cannot be rescheduled.');
+      if (typeof appointment.status !== 'number' || !Number.isInteger(appointment.status)) {
+        throw new ReceptionError('ENUM_DEFINITION_PENDING', 'This operation needs a confirmed backend status definition.');
+      }
+      const local = (value: string) => {
+        const date = new Date(value);
+        return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}T${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
+      };
+      this.editStart = local(appointment.startTime);
+      this.editClinicianId = appointment.doctorId ?? appointment.seniorId ?? '';
+      this.editRoomId = appointment.roomId ?? null; this.editingAppointment.set(appointment);
+    } catch (error) { this.actionError.set(error instanceof ReceptionError ? this.locale.text(error.key,error.message) : apiError(error)); this.warnings.show(this.actionError()); }
+    this.editingLoading.set(false);
   }
-  rescheduleSaved() {
-    this.messageService.add({severity:'success',summary:this.locale.text('SUCCESS','Success'),detail:this.locale.text('PROFILE_SAVED','This session was rescheduled. Other appointments and financial terms are unchanged.')});
+  async saveAppointmentEdit() {
+    const appointment = this.editingAppointment();
+    if (!appointment || !this.canScheduleEdit(appointment) || !this.appointmentService || this.appointmentService.mutation.busy()) return;
+    this.actionError.set('');
+    try {
+      const clinician = this.allDoctors().find(d => d.id === this.editClinicianId);
+      const unchanged = this.editClinicianId === (appointment.doctorId ?? appointment.seniorId);
+      if (!unchanged && !clinician) throw new ReceptionError('CLINICIAN_REQUIRED', 'Select a clinician from the server directory.');
+      await firstValueFrom(this.appointmentService.updateAppointment(appointment.id!, {
+        doctorId: unchanged ? appointment.doctorId ?? null : clinician!.roles.includes('Doctor') ? clinician!.id : null,
+        seniorId: unchanged ? appointment.seniorId ?? null : clinician!.roles.includes('Doctor') ? null : clinician!.id,
+        roomId: this.editRoomId, appointmentType: appointment.appointmentType,
+        startTime: new Date(this.editStart), endTime: new Date(this.editEnd), status: appointment.status as number
+      }));
+    } catch (error) { this.actionError.set(error instanceof ReceptionError ? this.locale.text(error.key,error.message) : apiError(error)); this.warnings.show(this.actionError()); return; }
+    this.editingAppointment.set(null);
+    this.messageService.add({severity:'success',summary:this.locale.text('SUCCESS','Success'),detail:this.locale.text('APPOINTMENT_OPERATION_SAVED','Appointment change saved. Refreshing the schedule separately.')});
     this.onSearchOrFilterChange();
+  }
+
+  canScheduleEdit(a:{status:string|number;actualCheckIn?:string|null;actualCheckOut?:string|null;treatmentStartedAt?:string|null;treatmentEndedAt?:string|null}) {
+    return [0,'Pending','Upcoming','Confirmed'].includes(a.status) && !a.actualCheckIn && !a.actualCheckOut && !a.treatmentStartedAt && !a.treatmentEndedAt;
   }
 
   viewMode = signal<'Week' | 'Day'>('Day');

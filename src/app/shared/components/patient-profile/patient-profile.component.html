@@ -2,7 +2,6 @@
   [visible]="visible"
   (visibleChange)="onVisibleChange($event)"
   [modal]="true"
-  transitionOptions="0ms"
   appendTo="body"
   [showHeader]="false"
   [closable]="false"
@@ -349,7 +348,7 @@
           {{ t("CLOSE_PENDING", "Close and keep the pending operation") }}
         </button>
         @if (saveError()) {
-          <span>{{ saveError() | receptionistText }}</span>
+          <span>{{ saveError() }}</span>
         }
       </div>
     }
@@ -462,21 +461,19 @@
                       >
                     </td>
                     <td>
-                      @if (row.appointmentId && canEdit) {
+                      @if (row.canReschedule && canEdit) {
                         <button appButton="secondary"
                           type="button"
                           [id]="'edit-session-' + row.id"
-                          class="profile-reschedule-action"
+                          class="profile-icon"
                           [attr.aria-label]="
-                            t('EDIT_BOOKED_SESSION', 'Edit appointment for session {{number}}', {
+                            t('EDIT_SESSION', 'Reschedule session {{number}}', {
                               number: row.sessionNumber,
                             })
                           "
                           [attr.aria-expanded]="editing?.id === row.id"
                           [attr.aria-controls]="'session-editor-' + row.id"
-                          [attr.aria-describedby]="!row.canReschedule ? 'session-edit-locked-' + row.id : null"
-                          [title]="row.canReschedule ? t('EDIT', 'Edit') : t('EDIT_LOCKED_HELP', 'Only upcoming pending appointments that have not arrived or started treatment can be edited.')"
-                          [disabled]="!row.canReschedule || saving() || !!pending()"
+                          [disabled]="saving() || !!pending()"
                           (click)="openEditor(row)"
                         >
                           <i
@@ -487,13 +484,9 @@
                             "
                             aria-hidden="true"
                           ></i>
-                          <span>{{ t("EDIT", "Edit") }}</span>
                         </button>
-                        @if (!row.canReschedule) {
-                          <small class="profile-edit-locked" [id]="'session-edit-locked-' + row.id">{{ t('READ_ONLY', 'Read only') }}</small>
-                        }
                       } @else {
-                        <span [title]="!row.appointmentId ? t('EDIT_BOOKED_ONLY', 'Edit is available after an appointment has been booked.') : ''">&mdash;</span>
+                        <span>&mdash;</span>
                       }
                     </td>
                   </tr>
@@ -553,13 +546,15 @@
                                       "
                                       readonly /></label
                                   ><label
-                                    >{{ t("DOCTOR", "Doctor") }}<select class="profile-control" [ngModel]="draftClinicianId" (ngModelChange)="clinicianChanged($event)">
-                                    @if (!permittedClinicians.length) { <option [value]="editing!.clinicianId">{{ editing!.doctorName }}</option> }
-                                    @for (clinician of permittedClinicians; track clinician.id) { <option [value]="clinician.id">{{ clinician.name }}</option> }
-                                  </select></label>
+                                    >{{ t("DOCTOR", "Doctor")
+                                    }}<input
+                                      class="profile-control"
+                                      [value]="editing!.doctorName"
+                                      readonly
+                                  /></label>
                                 </div>
                                 <h4>
-                                  {{ t("SLOTS", "Available slots") }}
+                                  {{ t("SLOTS", "Available 60-minute slots") }}
                                 </h4>
                                 @if (slotsLoading()) {
                                   <p role="status">
@@ -573,7 +568,7 @@
                                 }
                                 @if (slotsError()) {
                                   <p class="profile-alert" role="alert">
-                                    {{ slotsError() | receptionistText }}
+                                    {{ slotsError() }}
                                     <button appButton="secondary" type="button" (click)="loadSlots()">
                                       {{ t("RETRY", "Retry") }}
                                     </button>
@@ -583,7 +578,7 @@
                                   class="slot-grid"
                                   role="radiogroup"
                                   [attr.aria-label]="
-                                    t('SLOTS', 'Available slots')
+                                    t('SLOTS', 'Available 60-minute slots')
                                   "
                                 >
                                   @for (
@@ -596,7 +591,6 @@
                                       ><input
                                         type="radio"
                                         name="reschedule-slot"
-                                        [value]="slot.startTime + '|' + slot.roomId"
                                         [checked]="selectedSlot === slot"
                                         (change)="pickSlot(slot)"
                                       /><span
@@ -651,11 +645,9 @@
                                   }}
                                 </p>
                                 <label for="reschedule-reason"
-                                  >{{ t("REASON", "Reason (required)")
+                                  >{{ t("REASON", "Reason (optional)")
                                   }}<input
                                     id="reschedule-reason"
-                                    required
-                                    aria-required="true"
                                     class="profile-control"
                                     maxlength="500"
                                     [(ngModel)]="reason"
@@ -672,7 +664,7 @@
                                       >{{
                                         formatTime(editing!.startTime)
                                       }}
-                                      &middot; {{ formatTime(editing!.endTime) }} &middot; {{ editing!.doctorName }} &middot; {{ editing!.roomName }}</strong
+                                      &middot; {{ editing!.roomName }}</strong
                                     ></span
                                   ><i
                                     class="bi bi-arrow-right"
@@ -685,9 +677,9 @@
                                         : "—"
                                     }}<strong>{{
                                       selectedSlot
-                                        ? formatTime(selectedSlot.startTime) + " – " + formatTime(selectedSlot.endTime) +
+                                        ? formatTime(selectedSlot.startTime) +
                                           " / " +
-                                          selectedSlot.roomName + " / " + (slotData()?.clinicianName || editing!.doctorName)
+                                          selectedSlot.roomName
                                         : t("CHOOSE_SLOT", "Choose a slot")
                                     }}</strong></span
                                   >
@@ -716,7 +708,6 @@
                                     class="profile-button primary"
                                     (click)="saveSession()"
                                     [disabled]="
-                                      !reason.trim() ||
                                       !selectedSlot ||
                                       slotsLoading() ||
                                       !!slotsError() ||
@@ -735,7 +726,7 @@
                           </fieldset>
                           @if (saveError() && !pending()) {
                             <p class="profile-alert" role="alert">
-                              {{ saveError() | receptionistText }}
+                              {{ saveError() }}
                             </p>
                           }
                         </div>

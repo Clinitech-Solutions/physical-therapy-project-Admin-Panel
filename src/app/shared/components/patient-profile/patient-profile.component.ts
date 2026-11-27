@@ -118,8 +118,6 @@ export class PatientProfileComponent implements OnChanges, OnDestroy {
   draftDate = "";
   selectedSlot: RescheduleSlot | null = null;
   reason = "";
-  draftClinicianId = "";
-  permittedClinicians: {id: string; name: string; role: string}[] = [];
   private originalDate = "";
   discardAction: (() => void) | null = null;
   private slotsRequest?: Subscription;
@@ -207,17 +205,16 @@ export class PatientProfileComponent implements OnChanges, OnDestroy {
       !!this.selectedSlot &&
       !!this.editing &&
       (this.selectedSlot.startTime !== this.editing.startTime ||
-        this.selectedSlot.roomId !== this.editing.roomId || this.draftClinicianId !== this.editing.clinicianId)
+        this.selectedSlot.roomId !== this.editing.roomId)
     );
   }
   get dirty() {
     return (
       !!this.editing &&
       (this.draftDate !== this.originalDate ||
-        this.draftClinicianId !== this.editing.clinicianId ||
         (!!this.selectedSlot &&
           (this.selectedSlot.startTime !== this.editing.startTime ||
-            this.selectedSlot.roomId !== this.editing.roomId || this.draftClinicianId !== this.editing.clinicianId)) ||
+            this.selectedSlot.roomId !== this.editing.roomId)) ||
         !!this.reason.trim())
     );
   }
@@ -361,17 +358,11 @@ export class PatientProfileComponent implements OnChanges, OnDestroy {
     this.guardDiscard(() => {
       this.clearEditor();
       this.editing = { ...row };
-      this.draftClinicianId = row.clinicianId ?? "";
-      this.permittedClinicians = [];
       this.draftDate = this.cairoDay(row.startTime);
       this.originalDate = this.draftDate;
       this.loadSlots();
       setTimeout(() => document.getElementById("reschedule-date")?.focus(), 0);
     });
-  }
-  clinicianChanged(value: string) {
-    this.draftClinicianId = value;
-    this.loadSlots();
   }
   dateChanged(value: string) {
     this.draftDate = value;
@@ -393,7 +384,7 @@ export class PatientProfileComponent implements OnChanges, OnDestroy {
     }
     this.slotsLoading.set(true);
     this.slotsRequest = this.api
-      .slots(this.editing.appointmentId, this.draftDate, this.draftClinicianId)
+      .slots(this.editing.appointmentId, this.draftDate)
       .subscribe({
         next: (availability) => {
           if (
@@ -402,7 +393,6 @@ export class PatientProfileComponent implements OnChanges, OnDestroy {
           )
             return;
           this.slotData.set(availability);
-          this.permittedClinicians = availability.clinicians ?? [];
           this.slotsLoading.set(false);
           if (availability.version !== this.editing.version) {
             this.editing = {
@@ -411,9 +401,6 @@ export class PatientProfileComponent implements OnChanges, OnDestroy {
               startTime: availability.currentStart,
               endTime: availability.currentEnd,
               roomId: availability.currentRoomId,
-              roomName: availability.currentRoomName ?? this.editing.roomName,
-              clinicianId: availability.currentClinicianId ?? this.editing.clinicianId,
-              doctorName: availability.currentClinicianName ?? this.editing.doctorName,
             };
             this.saveError.set(
               this.t(
@@ -463,14 +450,12 @@ export class PatientProfileComponent implements OnChanges, OnDestroy {
     if (
       this.saving() ||
       this.pending() ||
-      !this.reason.trim() ||
-      !this.canEdit ||
       !this.editing?.appointmentId ||
       !this.selectedSlot ||
       !this.slotData() ||
       this.slotsLoading() ||
       (this.selectedSlot.startTime === this.editing.startTime &&
-        this.selectedSlot.roomId === this.editing.roomId && this.draftClinicianId === this.editing.clinicianId)
+        this.selectedSlot.roomId === this.editing.roomId)
     )
       return;
     const pending: PendingChange = {
@@ -481,8 +466,7 @@ export class PatientProfileComponent implements OnChanges, OnDestroy {
         expectedVersion: this.slotData()!.version,
         startTime: this.selectedSlot.startTime,
         roomId: this.selectedSlot.roomId,
-        reason: this.reason.trim(),
-        clinicianId: this.draftClinicianId,
+        reason: this.reason.trim() || null,
       },
     };
     this.persistPending(pending);
@@ -589,8 +573,6 @@ export class PatientProfileComponent implements OnChanges, OnDestroy {
     this.draftDate = "";
     this.selectedSlot = null;
     this.reason = "";
-    this.draftClinicianId = "";
-    this.permittedClinicians = [];
     this.slotData.set(null);
     this.slotsLoading.set(false);
     this.slotsError.set("");

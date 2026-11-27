@@ -106,12 +106,15 @@ describe('Reception refresh and concurrent reads',()=>{
     expect(clinical.assessments()).toEqual([]);expect(clinical.plans()).toEqual([]);
     expect(clinical.loading()).toBe(false);
   });
-  it('opens the audited reschedule flow without writing through the legacy appointment endpoint',()=>{
+  it('updates an appointment while preserving its pending status and string clinician ID',async()=>{
     const component=TestBed.runInInjectionContext(()=>new ScheduleComponent());
-    vi.spyOn(component.rescheduleAuth!, 'hasRole').mockReturnValue(true);
-    const source={id:12,patientId:1,doctorId:'doctor-guid',roomId:2,appointmentType:'Session',startTime:'2035-11-01T09:00:00Z',endTime:'2035-11-01T10:00:00Z',status:0};
-    component.openEditAppointment(source);
-    expect(component.rescheduleTarget()?.id).toBe(12);
-    http.expectNone(`${url}/Appointments/12`);
+    const source={id:12,patientId:1,doctorId:'doctor-guid',seniorId:null,roomId:2,appointmentType:'Session',startTime:'2026-11-01T09:00:00Z',endTime:'2026-11-01T10:00:00Z',status:0};
+    const open=component.openEditAppointment(source);
+    http.expectOne(`${url}/Appointments/12`).flush(source);await open;
+    const save=component.saveAppointmentEdit();const req=http.expectOne(`${url}/Appointments/12`);
+    expect(req.request.method).toBe('PUT');expect(req.request.body.status).toBe(0);expect(req.request.body.doctorId).toBe('doctor-guid');
+    expect(req.request.body).not.toHaveProperty('patientId');req.flush(null);await save;
+    http.expectOne(r=>r.url.endsWith('/Receptionist/today-sessions')).flush(emptyPage);
+    expect(component.editingAppointment()).toBeNull();
   });
 });

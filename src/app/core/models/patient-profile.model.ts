@@ -99,14 +99,8 @@ export interface RescheduleAvailability {
   date: string;
   slots: RescheduleSlot[];
   notices: string[];
-  clinicians?: { id: string; name: string; role: string }[];
-  currentClinicianId?: string;
-  currentClinicianName?: string;
-  currentRoomName?: string;
-  patientName?: string;
 }
 export interface RescheduleRequest {
-  clinicianId?: string;
   operationKey: string;
   expectedVersion: string;
   startTime: string;

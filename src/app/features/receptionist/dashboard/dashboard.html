@@ -147,9 +147,6 @@
             </td>
             <td style="text-align:end">
               <div class="d-flex gap-1 justify-content-end align-items-center">
-                @if (canReschedule(session)) {
-                  <button appButton="secondary" actionSize="compact" type="button" (click)="rescheduleTarget.set(session)" [disabled]="workflow.mutation.busy()"><i class="bi bi-calendar2-week" aria-hidden="true"></i>{{ 'RECEPTIONIST.UI.PROFILE_RESCHEDULE' | translate }}</button>
-                }
                 @if(statusStr === 'Confirmed' || statusStr === 'Pending') {
                 <button appButton="primary" actionSize="compact" type="button" class="btn-action action-primary" [attr.data-tip]="'RECEPTIONIST.CHECK_IN' | translate"
                   [disabled]="workflow.mutation.busy() || !workflow.canTransition('In Progress')" (click)="onCheckInClick(session)" [attr.aria-label]="'RECEPTIONIST.CHECK_IN' | translate">
@@ -193,5 +190,3 @@
   (visibleChange)="showProfileModal.set($event)"
   [patientId]="selectedProfilePatientId()">
 </app-patient-profile>
-
-<app-appointment-reschedule [target]="rescheduleTarget()" (targetChange)="rescheduleTarget.set($event)" (saved)="rescheduleSaved()" />
