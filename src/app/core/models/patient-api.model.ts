@@ -1,4 +1,12 @@
 /** Contracts verified against /openapi/v1.json on 2026-10-29. */
+/** Values verified against the backend InsuranceStatus enum; null means unspecified. */
+export const PATIENT_INSURANCE_STATUSES = [
+  { value: 0, label: 'APPROVED' },
+  { value: 1, label: 'PENDING' },
+  { value: 2, label: 'REJECTED' },
+  { value: 3, label: 'EXPIRED' },
+] as const;
+
 export interface InsuranceDetailsResponse {
   status: number | 'Approved' | 'Pending' | 'Rejected' | 'Expired' | null;
   copayPercentage: number | string | null;

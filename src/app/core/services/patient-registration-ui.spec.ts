@@ -293,7 +293,7 @@ describe('Patient edit form', () => {
     expect(input('email').value).toBe(saved.email);
     expect(input('dob').value).toBe('1988-03-14');
     expect(input('emergencyContact').value).toBe(saved.emergencyContact);
-    expect(input('apiStatus').value).toBe('1');
+    expect(document.querySelector<HTMLSelectElement>('.p-dialog select[name="apiStatus"]')!.selectedOptions[0].textContent?.trim()).toBe('Pending');
     expect(input('copayPercentage').value).toBe('0');
     expect(input('approvedSessions').value).toBe('12');
     expect(input('memberId').value).toBe('member-42');
@@ -306,18 +306,20 @@ describe('Patient edit form', () => {
   it('submits changes from all editable fields and uses the returned patient values', async () => {
     await loadDetails();
     for (const [name, value] of Object.entries({ userName: 'changed.user', nameEn: 'Changed Patient', email: 'changed@example.com',
-      phone: '01234567890', dob: '1990-01-20', emergencyContact: '', apiStatus: '73', copayPercentage: '25.5',
+      phone: '01234567890', dob: '1990-01-20', emergencyContact: '', copayPercentage: '25.5',
       approvedSessions: '20', memberId: 'new-member', employer: 'New employer' })) await fill(name, value);
     const gender = document.querySelector<HTMLSelectElement>('.p-dialog select[name="gender"]')!;
     gender.value = 'Male'; gender.dispatchEvent(new Event('change', { bubbles: true }));
     const company = document.querySelector<HTMLSelectElement>('.p-dialog select[name="insuranceCompanyId"]')!;
     company.selectedIndex = 2; company.dispatchEvent(new Event('change', { bubbles: true }));
+    const status = document.querySelector<HTMLSelectElement>('.p-dialog select[name="apiStatus"]')!;
+    status.selectedIndex = 4; status.dispatchEvent(new Event('change', { bubbles: true }));
     await fixture.whenStable();
     save().click();
     const request = http.expectOne(`${base}/Patients/Update/42`);
     expect(request.request.body).toEqual({ userName: 'changed.user', fullName: 'Changed Patient', email: 'changed@example.com',
       phoneNumber: '01234567890', birthDate: '1990-01-20T00:00:00.000Z', gender: 0, emergencyContact: null,
-      insuranceCompanyId: 8, insuranceDetails: { status: 73, copayPercentage: 25.5, approvedSessions: 20, memberId: 'new-member', employer: 'New employer' } });
+      insuranceCompanyId: 8, insuranceDetails: { status: 3, copayPercentage: 25.5, approvedSessions: 20, memberId: 'new-member', employer: 'New employer' } });
     request.flush({ ...saved, fullName: 'Changed Patient', email: 'changed@example.com' });
     await Promise.resolve();
     http.expectOne(r => r.url.endsWith('/Patients/GetAll')).flush({ items: [{ ...saved, fullName: 'Changed Patient' }], pageNumber: 1, totalPages: 1, hasNextPage: false });

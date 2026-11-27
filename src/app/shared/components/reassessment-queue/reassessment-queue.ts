@@ -34,7 +34,7 @@ import { PatientAvatar } from "../../../features/doctor/patient-avatar";
         <header>
           <h2>
             {{ "DOCTOR.REASSESSMENT_QUEUE" | translate }}
-            @if (!loading() && !error()) {
+            @if (hasLoaded() && !error()) {
               <span class="queue-count"
                 >{{ pending() }}
                 {{ "DOCTOR.PENDING_REVIEWS" | translate }}</span
@@ -59,7 +59,7 @@ import { PatientAvatar } from "../../../features/doctor/patient-avatar";
           />
           {{ "DOCTOR.INCLUDE_REVIEW_HISTORY" | translate }}</label
         >
-        @if (loading()) {
+        @if (loading() && !hasLoaded()) {
           <app-table-loading />
         }
         @if (error()) {
@@ -74,7 +74,7 @@ import { PatientAvatar } from "../../../features/doctor/patient-avatar";
             </button>
           </p>
         }
-        @if (!loading() && !error()) {
+        @if (rows().length || (!error() && (hasLoaded() || !loading()))) {
           @for (r of legacyVisible(); track r.id) {
             <article [attr.data-review-id]="r.id">
               <app-patient-avatar [name]="r.patientName" />
@@ -155,7 +155,7 @@ import { PatientAvatar } from "../../../features/doctor/patient-avatar";
             ><span>{{ "DOCTOR.REFRESH" | translate }}</span>
           </button>
         </div>
-        @if (loading() && !rows().length) {
+        @if (loading() && !hasLoaded()) {
           <p class="queue-state" role="status">
             {{ "DOCTOR.LOADING" | translate }}
           </p>
@@ -165,7 +165,7 @@ import { PatientAvatar } from "../../../features/doctor/patient-avatar";
             {{ error() }} {{ "SENIOR_REVIEW.REFRESH_HELP" | translate }}
           </p>
         }
-        @if (!error() && (rows().length || !loading())) {
+        @if (rows().length || (!error() && (hasLoaded() || !loading()))) {
           @for (r of visible(); track r.id) {
             <article class="request-row" [attr.data-review-id]="r.id">
               <app-patient-avatar [name]="r.patientName" />
@@ -234,6 +234,7 @@ export class ReassessmentQueue implements OnInit {
   private destroy = inject(DestroyRef);
   readonly locale = new ClinicalLocale();
   readonly loading = signal(false);
+  readonly hasLoaded = signal(false);
   readonly error = signal("");
   readonly rows = signal<ReassessmentRequest[]>([]);
   readonly filter = signal<"open" | "history">("open");
@@ -277,6 +278,8 @@ export class ReassessmentQueue implements OnInit {
   );
   private focusId = 0;
   private focusRestored = false;
+  private refreshQueued = false;
+  private lastRead = 0;
   ngOnInit() {
     this.route?.queryParamMap
       .pipe(takeUntilDestroyed(this.destroy))
@@ -288,10 +291,28 @@ export class ReassessmentQueue implements OnInit {
         if (this.rows().length) this.restoreFocus();
       });
     void this.load();
-    const timer = setInterval(() => {
-      if (document.visibilityState === "visible") void this.load();
-    }, 30000);
-    this.destroy.onDestroy(() => clearInterval(timer));
+    // A local reassessment write invalidates only this queue, not Reception pages.
+    this.api.reassessmentChanged
+      .pipe(takeUntilDestroyed(this.destroy))
+      .subscribe(() => {
+        if (this.loading()) this.refreshQueued = true;
+        else void this.load(true);
+      });
+    // Signals render local state; other users' changes still need a fallback read.
+    const refreshMs = this.review() ? 30000 : 60000;
+    const refreshIfVisible = () => {
+      if (document.visibilityState === "visible")
+        void this.load(true);
+    };
+    const refreshOnReturn = () => {
+      if (Date.now() - this.lastRead >= refreshMs) refreshIfVisible();
+    };
+    const timer = setInterval(refreshIfVisible, refreshMs);
+    document.addEventListener("visibilitychange", refreshOnReturn);
+    this.destroy.onDestroy(() => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", refreshOnReturn);
+    });
   }
   selectFilter(value: "open" | "history") {
     this.filter.set(value);
@@ -316,21 +337,33 @@ export class ReassessmentQueue implements OnInit {
       )?.focus();
     });
   }
-  async load() {
-    if (this.loading()) return;
+  async load(background = false) {
+    if (this.loading() || this.destroy.destroyed) return;
     this.loading.set(true);
     this.error.set("");
-    this.pendingCount.emit(null);
+    if (!background) this.pendingCount.emit(null);
     try {
-      this.rows.set(await firstValueFrom(this.api.requests()));
+      const rows = await firstValueFrom(
+        this.api.requests().pipe(takeUntilDestroyed(this.destroy)),
+      );
+      if (this.destroy.destroyed) return;
+      this.rows.set(rows);
+      this.hasLoaded.set(true);
+      this.lastRead = Date.now();
       this.pendingCount.emit(this.pending());
     } catch (e) {
-      this.rows.set([]);
+      if (this.destroy.destroyed) return;
       this.error.set(clinicalError(e, this.translate));
       this.pendingCount.emit(null);
     } finally {
-      this.loading.set(false);
-      this.restoreFocus();
+      if (!this.destroy.destroyed) {
+        this.loading.set(false);
+        this.restoreFocus();
+        if (this.refreshQueued) {
+          this.refreshQueued = false;
+          void this.load(true);
+        }
+      }
     }
   }
 }
